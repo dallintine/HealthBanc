@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>HealthBanc</name>
+    </assembly>
+    <members>
+        <member name="M:HealthBanc.Controllers.IdentityController.RegisterSuperAdmin(HealthBanc.ViewModels.RegistrationViewModel)">
+             <summary>
+             This Creates The SuperAdmin
+             </summary>        
+             <param name="registrationViewModel"></param>
+            <response code="200">Success : User Created Successfully,Please Check Email To Confirm Your Email Address And Login </response>
+            <reponse code="400">Error : List of Input Validation Errors</reponse>
+        </member>
+        <member name="M:HealthBanc.Controllers.IdentityController.ConfirmEmail(System.String,System.String)">
+             <summary>
+             This Confirms the UserEmail
+             </summary>
+             <param name="userId">Encoded String:Takes the UserID as query Parameter</param>
+             <param name="emailToken">Encoded String:Takes the EmailToken also as query Parameter</param>
+             <response code="200">Success : Redirect to Login</response>
+            <reponse code="400">Error : List of Input Validation Errors</reponse>
+        </member>
+        <member name="M:HealthBanc.Controllers.IdentityController.ForgotPassword(HealthBanc.ViewModels.ForgotPasswordViewModel)">
+            <summary>
+            Request user email to reset his password
+            </summary>
+            <response code = "200">Success : Please Check Your Mail For Further Instructions</response>
+            <response code = "404">Error : Username Does Not Exist </response>
+            <response code = "400">Error : List of Input Validation Errors</response>
+        </member>
+        <member name="M:HealthBanc.Controllers.IdentityController.ResetPassword(System.String,System.String,HealthBanc.ViewModels.ResetPasswordViewModel)">
+            <summary>
+            Resets the user Password
+            </summary>
+            <param name ="email">Encoded String:Takes the Email as query Parameter</param>
+            <param name ="emailToken">Encoded String:Takes the EmailToken as query Parameter</param>
+            <param name="viewModel"></param>
+            <response code ="200">Succcess : Password Changed Succefully</response>
+            <response code ="404">Failed : SecurityAnswer Does Not Match Contact Our Support Team</response>
+            <response code="400">Failed:List of Input Validation Errors</response>
+        </member>
+    </members>
+</doc>
