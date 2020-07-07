@@ -41,7 +41,7 @@ namespace HealthBanc
             //Add Swagger Service
             services.AddSwaggerGen(x =>
             {
-                x.SwaggerDoc("v1", new OpenApiInfo { Title = "PharmAll IdentityApi", Version = "v1" });
+                x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
 
                 x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
