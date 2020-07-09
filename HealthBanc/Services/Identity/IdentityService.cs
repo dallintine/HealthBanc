@@ -88,10 +88,10 @@ namespace HealthBanc.Services.Identity
         {
             try
             {
-                var decryptedUserId = _encryptAndDecrypt.DecryptString(userId, "hfahkbak78r32rg87griva..");
+                var decryptedUserId = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(userId), "hfahkbak78r32rg87griva..");
                 var user = await _userRepository.FindByIdAsync(int.Parse(decryptedUserId));
 
-                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
+                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(emailToken), "hfahkbak78r32rg87griva..");
                 var result = await _userManager.ConfirmEmailAsync(user, decryptedEmailToken);
                 if (result.Succeeded)
                 {
@@ -168,7 +168,7 @@ namespace HealthBanc.Services.Identity
                 // Email the user the verification code
                 try
                 {
-                    _emailSender.SendEmail(forgotPassword.Username, "", passwordResetLink);
+                    _emailSender.SendEmail(forgotPassword.Username,"d-f9c4860583d340f1bf25a355dc64caf2", passwordResetLink);
                     return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
                 }
                 catch (Exception ex)
@@ -218,7 +218,7 @@ namespace HealthBanc.Services.Identity
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
 
-                var confirmationUrl = $"https://mypharmidentity.sterlingapps.p.azurewebsites.net/v1/api/Identity/ConfirmEmail/?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var confirmationUrl = $"https://healthbanc.sterlingapps.p.azurewebsites.net/v1/api/Identity/ConfirmEmail/?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
 
                 // Email the user the verification code
