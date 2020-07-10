@@ -7,9 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using HealthBanc.Data;
+using HealthBanc.DataAccess.Implementation;
+using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Helpers.Jwt_Authorization;
+using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Services.EncryptionService;
+using HealthBanc.Services.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -41,7 +45,7 @@ namespace HealthBanc
             //Add Swagger Service
             services.AddSwaggerGen(x =>
             {
-                x.SwaggerDoc("v1", new OpenApiInfo { Title = "PharmAll IdentityApi", Version = "v1" });
+                x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
 
                 x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -78,9 +82,11 @@ namespace HealthBanc
 
             services.AddAutoMapper(typeof(Startup));
 
+            services.AddScoped<IdentityService>();
+            services.AddScoped<IEmailSender, EmailSender>();
+            services.AddScoped<IApplicationUserRepository,ApplicationUserRepository>();
+            services.Configure<AuthMessageSenderOption>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
-
-
 
             services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
             {
