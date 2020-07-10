@@ -141,6 +141,7 @@ namespace HealthBanc.Services.Identity
                 {
                     Token = tokenHandler.WriteToken(token),
                     Username = user.Email,
+                    Name = $"{user.FirstName} {user.LastName}",
                     ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
                 };
                 return new ResponseMessage { Data = loogedInResponse, Status = true, Message = "User was logged in successfully" };

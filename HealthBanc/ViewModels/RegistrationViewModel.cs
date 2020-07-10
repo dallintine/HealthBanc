@@ -16,5 +16,7 @@ namespace HealthBanc.ViewModels
         public string EmailAddress { get; set; }
         [Required, DataType(DataType.Password)]
         public string Password { get; set; }
+        [Required, DataType(DataType.Password), Compare("Password", ErrorMessage = "Password and Confirm Password Do Not Match")]
+        public string ConfirmPassword { get; set; }
     }
 }

@@ -4,9 +4,9 @@
         <name>HealthBanc</name>
     </assembly>
     <members>
-        <member name="M:HealthBanc.Controllers.IdentityController.RegisterSuperAdmin(HealthBanc.ViewModels.RegistrationViewModel)">
+        <member name="M:HealthBanc.Controllers.IdentityController.RegisterUser(HealthBanc.ViewModels.RegistrationViewModel)">
              <summary>
-             This Creates The SuperAdmin
+             This Creates The User
              </summary>        
              <param name="registrationViewModel"></param>
             <response code="200">Success : User Created Successfully,Please Check Email To Confirm Your Email Address And Login </response>
@@ -39,6 +39,15 @@
             <response code ="200">Succcess : Password Changed Succefully</response>
             <response code ="404">Failed : SecurityAnswer Does Not Match Contact Our Support Team</response>
             <response code="400">Failed:List of Input Validation Errors</response>
+        </member>
+        <member name="M:HealthBanc.Controllers.IdentityController.ChangePassword(HealthBanc.ViewModels.ChangePasswordViewModel)">
+            <summary>
+            Changes the user password
+            </summary>
+            <returns>returns LoggedInResponse Object</returns>
+            <response code="200">Success :Password Changed Succefully</response>
+            <response code="401">Error : Current Password is Wrong,Please Input Corrrect One,Or Reset Password</response>
+            <response code="400">Error :List of Input Validation Errors </response>
         </member>
     </members>
 </doc>

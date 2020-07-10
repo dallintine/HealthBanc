@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
 using HealthBanc.Domain.Models;
@@ -8,6 +9,7 @@ using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
 using HealthBanc.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -33,7 +35,7 @@ namespace HealthBanc.Controllers
 
 
         /// <summary>
-        /// This Creates The SuperAdmin
+        /// This Creates The User
         /// </summary>        
         /// <param name="registrationViewModel"></param>
         ///<response code="200">Success : User Created Successfully,Please Check Email To Confirm Your Email Address And Login </response>
@@ -42,7 +44,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> RegisterSuperAdmin([FromBody] RegistrationViewModel registrationViewModel)
+        public async Task<IActionResult> RegisterUser([FromBody] RegistrationViewModel registrationViewModel)
         {
             if (ModelState.IsValid)
             {
@@ -84,7 +86,7 @@ namespace HealthBanc.Controllers
                 var response = await _identityService.ConfirmEmail(userId, emailToken);
                 if (response.Status == true)
                 {
-                    return Redirect("https://pharmmall.azurewebsites.net/Login");
+                    return Redirect("https://pharmmall.azurewebsites.net/signin");
                 }
                 return BadRequest(response);
             }
@@ -215,6 +217,48 @@ namespace HealthBanc.Controllers
                     return Ok(response);
                 }
                 return BadRequest(response);
+            }
+            //return validation errors
+            var errors = new List<ResponseMessage>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(new ResponseMessage() { Message = error });
+            }
+            return BadRequest(errors);
+        }
+
+        //WORKING1
+        /// <summary>
+        /// Changes the user password
+        /// </summary>
+        /// <returns>returns LoggedInResponse Object</returns>
+        /// <response code="200">Success :Password Changed Succefully</response>
+        /// <response code="401">Error : Current Password is Wrong,Please Input Corrrect One,Or Reset Password</response>
+        /// <response code="400">Error :List of Input Validation Errors </response>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpPost("[action]")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordViewModel changePassword)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                var user = await _userManager.FindByIdAsync(userId);
+
+                if (user != null)
+                {
+                    var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
+                    if (userPassword.Succeeded)
+                    {
+                        return Ok(new ResponseMessage { Message = "Password Changed Succefully",Status=true });
+                    }
+                    return Unauthorized(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password"});
+                };
+                return BadRequest(new ResponseMessage { Message = "User does not exist"});
             }
             //return validation errors
             var errors = new List<ResponseMessage>();
