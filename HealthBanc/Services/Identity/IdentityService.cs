@@ -52,6 +52,7 @@ namespace HealthBanc.Services.Identity
                     Email = registrationViewModel.EmailAddress,
                     FirstName = registrationViewModel.FirstName,
                     LastName = registrationViewModel.LastName,
+                    PhoneNumber = registrationViewModel.PhoneNumber,
                     DateOfRegistration = DateTime.Now
                 };
 
@@ -206,6 +207,51 @@ namespace HealthBanc.Services.Identity
             }
             return new ResponseMessage { Message = "Error occured When Trying to reset user password" };
         }
+
+        //public async Task<ResponseMessage> CreateAdmin(CreateAdminRegViewModel regViewModel, string superAdminEmail, int superAdminId)
+        //{
+        //    var superAdmin = await _userManager.FindByEmailAsync(superAdminEmail);
+
+        //    var checkIfAdminExist = await _userManager.FindByNameAsync(regViewModel.Email);
+        //    if (checkIfAdminExist == null)
+        //    {
+        //        var user = new ApplicationUser
+        //        {
+        //            UserName = regViewModel.Email,
+        //            Email = regViewModel.Email,
+        //            FirstName = regViewModel.FirstName,
+        //            LastName = regViewModel.LastName,
+        //            DateOfRegistration = DateTime.Now,
+        //            SuperAdminId = superAdminId
+        //        };
+
+
+        //        user.AdminId = newAdmin.Id;
+
+        //        var result = await _userManager.CreateAsync(user);
+        //        if (result.Succeeded)
+        //        {
+        //            try
+        //            {
+        //                var role = await _classOrRole.GetRole(regViewModel.ClassOrRoleId);
+        //                await _userManager.AddToRoleAsync(user, role.Name);
+        //                await VerifyAdmin(user);
+        //                return new AccountRequest
+        //                {
+        //                    SuccessMessage = "Admin Was Created Successfully,Please Check Email For Further Instruction",
+        //                    Success = true
+        //                };
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                _logger.LogError(ex, "Error Occurred While Trying to Create the Admin");
+        //            }
+        //        }
+        //        return new AccountRequest { ErrorMessage = "Error Occurred While Trying to Create the Admin" };
+        //    }
+        //    return new AccountRequest { ErrorMessage = "User Already Exist" };
+        //}
+
 
         private async Task SendUserEmailVerificationAsync(ApplicationUser user)
         {
