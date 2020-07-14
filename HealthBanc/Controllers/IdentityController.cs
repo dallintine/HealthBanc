@@ -272,5 +272,78 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
+        /// <summary>
+        /// This Creates Admin Requires SuperAdmin Rights
+        /// </summary>
+        ///<response code="200">Success : Admin Was Created Successfully,User Should Check Email For Further Instruction</response>
+        ///<reponse code="400">Error : List of Input Validation Errors</reponse>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpPost("[action]")]
+        [Authorize(Policy = "SuperAdminRole")]
+        public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminRegViewModel regViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                string superAdminEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+                string getSuperAdminId = User.FindFirst("SuperAdminId")?.Value;
+                int superAdminId = int.Parse(getSuperAdminId);
+                var response = await _identityService.CreateAdmin(regViewModel, superAdminEmail, superAdminId);
+                if (response.Status == true)
+                {
+                    return Ok(response);
+                }
+                return BadRequest(response);
+            }
+            //return validation errors
+            var errors = new List<ResponseMessage>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(new ResponseMessage() { Message = error });
+            }
+            return BadRequest(errors);
+        }
+
+        /// <summary>
+        /// This Confirms the Created AdminEmail
+        /// </summary>
+        /// <param name="email">Encoded String:Takes the Useremail as query Parameter</param>
+        /// <param name="emailToken">Encoded String:Takes the EmailToken also as query Parameter</param>
+        /// <param name="regViewModel"></param>
+        /// <response code="200">Success : Email Confirmed Successfully Please Login</response>
+        ///<reponse code="400">Error : List of Input Validation Errors</reponse>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> AdminReg(string email, string emailToken, [FromBody] AdminRegViewModel regViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                var response = await _identityService.AdminReg(email, emailToken, regViewModel);
+                if (response.Status == true)
+                {
+                    return Ok(response);
+                }
+                if(response.ResponseCode == 2)
+                {
+                    return BadRequest(response);
+                }
+                return BadRequest(response);
+            }
+            //return validation errors
+            var errors = new List<ResponseMessage>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(new ResponseMessage() { Message = error });
+            }
+            return Unauthorized(errors);
+        }
+
     }
 }

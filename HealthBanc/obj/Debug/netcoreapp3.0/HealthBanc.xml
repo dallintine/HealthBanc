@@ -49,5 +49,22 @@
             <response code="401">Error : Current Password is Wrong,Please Input Corrrect One,Or Reset Password</response>
             <response code="400">Error :List of Input Validation Errors </response>
         </member>
+        <member name="M:HealthBanc.Controllers.IdentityController.CreateAdmin(HealthBanc.ViewModels.CreateAdminRegViewModel)">
+             <summary>
+             This Creates Admin Requires SuperAdmin Rights
+             </summary>
+            <response code="200">Success : Admin Was Created Successfully,User Should Check Email For Further Instruction</response>
+            <reponse code="400">Error : List of Input Validation Errors</reponse>
+        </member>
+        <member name="M:HealthBanc.Controllers.IdentityController.AdminReg(System.String,System.String,HealthBanc.ViewModels.AdminRegViewModel)">
+             <summary>
+             This Confirms the Created AdminEmail
+             </summary>
+             <param name="email">Encoded String:Takes the Useremail as query Parameter</param>
+             <param name="emailToken">Encoded String:Takes the EmailToken also as query Parameter</param>
+             <param name="regViewModel"></param>
+             <response code="200">Success : Email Confirmed Successfully Please Login</response>
+            <reponse code="400">Error : List of Input Validation Errors</reponse>
+        </member>
     </members>
 </doc>

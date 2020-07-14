@@ -87,6 +87,7 @@ namespace HealthBanc
             services.AddScoped<IApplicationUserRepository,ApplicationUserRepository>();
             services.Configure<AuthMessageSenderOption>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
+            services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
 
             services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
             {

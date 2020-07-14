@@ -29,7 +29,7 @@ namespace HealthBanc.Infrastructure.Mail
 
             var sendGridMessage = new SendGridMessage();
             sendGridMessage.SetFrom("hassan.olatade.hh@gmail.com", "PHARMHUB");
-            sendGridMessage.AddTo(email, "PHARMHUB - Email Confirmation");
+            sendGridMessage.AddTo(email, "PHARMHUB");
             sendGridMessage.SetTemplateId(templateId);
             sendGridMessage.SetTemplateData(new HelloEmail
             {
