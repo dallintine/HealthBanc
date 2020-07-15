@@ -201,8 +201,8 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                var decryptedEmail = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(email), "hfahkbak78r32rg87griva..");
-                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(emailToken), "hfahkbak78r32rg87griva..");
+                var decryptedEmail = _encryptAndDecrypt.DecryptString(email, "hfahkbak78r32rg87griva..");
+                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
 
                 var user = await _userManager.FindByEmailAsync(decryptedEmail);
                 if(user == null)
