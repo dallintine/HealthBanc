@@ -92,10 +92,10 @@ namespace HealthBanc.Services.Identity
         {
             try
             {
-                var decryptedUserId = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(userId), "hfahkbak78r32rg87griva..");
+                var decryptedUserId = _encryptAndDecrypt.DecryptString(userId, "hfahkbak78r32rg87griva..");
                 var user = await _userRepository.FindByIdAsync(int.Parse(decryptedUserId));
 
-                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(emailToken), "hfahkbak78r32rg87griva..");
+                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
                 var result = await _userManager.ConfirmEmailAsync(user, decryptedEmailToken);
                 if (result.Succeeded)
                 {
