@@ -340,7 +340,7 @@ namespace HealthBanc.Services.Identity
                 // Email the user the verification code
                 try
                 {
-                    _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", "confirmationUrl");
+                    _emailSender.SendEmail(user.UserName, "d-6aaf1c3f84434710a9319c4afa1e35f2", "confirmationUrl");
                 }
                 catch (Exception ex)
                 {
