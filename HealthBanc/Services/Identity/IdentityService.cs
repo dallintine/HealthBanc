@@ -66,7 +66,7 @@ namespace HealthBanc.Services.Identity
                     {
                         user.SuperAdminId = user.Id;
                         await _userManager.UpdateAsync(user);
-                        await _userManager.AddToRoleAsync(user, "SuperAdmin");
+                        //await _userManager.AddToRoleAsync(user, "SuperAdmin");
                         await SendUserEmailVerificationAsync(user);
                         return new ResponseMessage
                         {

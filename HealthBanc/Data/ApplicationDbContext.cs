@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.Data
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, AppRole, int>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -32,9 +32,10 @@ namespace HealthBanc.Data
 
             builder.Entity<ClassOrRole>().HasData(
                new { Id = 1, Name = "SuperAdmin" },
-               new { Id = 2, Name = "Initiator" },
-               new { Id = 3, Name = "Reviewer" },
-               new { Id = 4, Name = "Authorizer" }
+               new { Id = 2, Name = "RepSuperAdmin" },
+               new { Id = 3, Name = "Initiator" },
+               new { Id = 4, Name = "Reviewer" },
+               new { Id = 5, Name = "Authorizer" }
            );
         }
     }
