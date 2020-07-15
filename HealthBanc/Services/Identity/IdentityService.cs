@@ -167,7 +167,7 @@ namespace HealthBanc.Services.Identity
 
                 var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
 
-                var passwordResetLink = $"https://pharmmall.azurewebsites.net/v1/api/Identity/Reset_Password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var passwordResetLink = $"https://pharmmall.azurewebsites.net/v1/api/Identity/Reset_Password?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
 
                 // Email the user the verification code
@@ -312,7 +312,7 @@ namespace HealthBanc.Services.Identity
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
 
-                var confirmationUrl = $"https://healthbanc.sterlingapps.p.azurewebsites.net/v1/api/Identity/ConfirmEmail/?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var confirmationUrl = $"https://healthbanc.sterlingapps.p.azurewebsites.net/v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
 
                 // Email the user the verification code
