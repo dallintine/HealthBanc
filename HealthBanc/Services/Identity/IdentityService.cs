@@ -168,7 +168,7 @@ namespace HealthBanc.Services.Identity
 
                 var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
 
-                var passwordResetLink = $"https://pharmmall.azurewebsites.net/v1/api/Identity/Reset_Password?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var passwordResetLink = $"https://pharmmall.azurewebsites.net/reset-password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
 
                 // Email the user the verification code
