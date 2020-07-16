@@ -66,7 +66,7 @@ namespace HealthBanc.Services.Identity
                     {
                         user.SuperAdminId = user.Id;
                         await _userManager.UpdateAsync(user);
-                        await _userManager.AddToRoleAsync(user, "SuperAdmin");
+                        //await _userManager.AddToRoleAsync(user, "SuperAdmin");
                         await SendUserEmailVerificationAsync(user);
                         return new ResponseMessage
                         {
@@ -92,10 +92,10 @@ namespace HealthBanc.Services.Identity
         {
             try
             {
-                var decryptedUserId = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(userId), "hfahkbak78r32rg87griva..");
+                var decryptedUserId = _encryptAndDecrypt.DecryptString(userId, "hfahkbak78r32rg87griva..");
                 var user = await _userRepository.FindByIdAsync(int.Parse(decryptedUserId));
 
-                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(emailToken), "hfahkbak78r32rg87griva..");
+                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
                 var result = await _userManager.ConfirmEmailAsync(user, decryptedEmailToken);
                 if (result.Succeeded)
                 {
@@ -168,7 +168,7 @@ namespace HealthBanc.Services.Identity
 
                 var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
 
-                var passwordResetLink = $"https://pharmmall.azurewebsites.net/v1/api/Identity/Reset_Password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var passwordResetLink = $"https://pharmmall.azurewebsites.net/v1/api/Identity/Reset_Password?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
 
                 // Email the user the verification code
@@ -313,7 +313,7 @@ namespace HealthBanc.Services.Identity
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
 
-                var confirmationUrl = $"https://healthbanc.sterlingapps.p.azurewebsites.net/v1/api/Identity/ConfirmEmail/?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var confirmationUrl = $"https://healthbanc.sterlingapps.p.azurewebsites.net/v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
 
                 // Email the user the verification code
@@ -341,7 +341,7 @@ namespace HealthBanc.Services.Identity
                 // Email the user the verification code
                 try
                 {
-                    _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", "confirmationUrl");
+                    _emailSender.SendEmail(user.UserName, "d-6aaf1c3f84434710a9319c4afa1e35f2", "confirmationUrl");
                 }
                 catch (Exception ex)
                 {

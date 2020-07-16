@@ -352,7 +352,6 @@ C:\Users\Hassannh\Documents\NewPharmHall Repo\HealthBanc\HealthBanc\HealthBanc\o
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\appsettings.Development.json
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Properties\launchSettings.json
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\appsettings.json
-C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\LogsFolder\healthbanc.json
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.exe
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.deps.json
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.runtimeconfig.json
@@ -514,7 +513,6 @@ C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\unix\lib\netcoreapp2.0\System.Runtime.Caching.dll
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\win\lib\netcoreapp2.0\System.Runtime.Caching.dll
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\win\lib\netstandard2.0\System.Security.Cryptography.ProtectedData.dll
-C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csprojAssemblyReference.cache
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\staticwebassets\HealthBanc.StaticWebAssets.Manifest.cache
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\staticwebassets\HealthBanc.StaticWebAssets.xml
 C:\Users\HASSAN\Desktop\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cs
