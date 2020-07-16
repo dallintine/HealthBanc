@@ -131,6 +131,7 @@ namespace HealthBanc.Services.Identity
                         new Claim(ClaimTypes.Name, user.Id.ToString()),
                         new Claim("FirstName",user.FirstName),
                         new Claim("LastName",user.LastName),
+                        new Claim("PhoneNumber",user.PhoneNumber),
                         new Claim(ClaimTypes.Email, user.Email),
                         new Claim("LoggedOn", DateTime.Now.ToString()),
                     }),
