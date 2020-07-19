@@ -9,6 +9,7 @@ using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
 using HealthBanc.ViewModels;
+using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -33,13 +34,12 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
         }
 
-
-        /// <summary>
-        /// This Creates The User
-        /// </summary>        
-        /// <param name="registrationViewModel"></param>
-        ///<response code="200">Success : User Created Successfully,Please Check Email To Confirm Your Email Address And Login </response>
-        ///<reponse code="400">Error : List of Input Validation Errors</reponse>
+        ///<summary>
+        ///This Creates The User
+        ///</summary>        
+        ///<param name = "registrationViewModel" ></param >
+        ///<response code="200">Success : User Created Successfully,Please Check Email To Confirm Your Email Address And Login</response>
+        ///<reponse code = "400" > Error : List of Input Validation Errors</reponse>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
@@ -62,7 +62,7 @@ namespace HealthBanc.Controllers
                 .ToList();
             foreach (var error in errorList)
             {
-                errors.Add(new ResponseMessage() { Message = error,Status=false });
+                errors.Add(new ResponseMessage() { Message = error, Status = false });
                 _logger.LogInformation(error);
             }
             return BadRequest(errors);
@@ -97,7 +97,7 @@ namespace HealthBanc.Controllers
                 .ToList();
             foreach (var error in errorList)
             {
-                errors.Add(new ResponseMessage() { Message = error,Status =false });
+                errors.Add(new ResponseMessage() { Message = error, Status = false });
             }
             return BadRequest(errors);
         }
@@ -115,14 +115,14 @@ namespace HealthBanc.Controllers
                 //get the user
                 var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
 
-                if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "Account with this email does not exist" , Status =false });
+                if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "Account with this email does not exist", Status = false });
 
 
-                if (user.EmailConfirmed == false) return Unauthorized(new ResponseMessage { Message = "Please Confirm Your Email Address" , Status = false });
+                if (user.EmailConfirmed == false) return Unauthorized(new ResponseMessage { Message = "Please Confirm Your Email Address", Status = false });
 
                 if (user.LockoutEnd != null)
                 {
-                    return Unauthorized(new ResponseMessage { Message = "Your Account Has Been Locked,Please Contact Support" , Status = false });
+                    return Unauthorized(new ResponseMessage { Message = "Your Account Has Been Locked,Please Contact Support", Status = false });
                 }
 
                 //check that the user is not null and that his password is correct
@@ -136,7 +136,7 @@ namespace HealthBanc.Controllers
                     return Ok(response);
                 }
                 await _userManager.AccessFailedAsync(user);
-                return Unauthorized(new ResponseMessage { Message = "Username or password invalid, please try again with correct details." , Status = false });
+                return Unauthorized(new ResponseMessage { Message = "Username or password invalid, please try again with correct details.", Status = false });
             }
             //return validation errors
             var errors = new List<ResponseMessage>();
@@ -145,7 +145,7 @@ namespace HealthBanc.Controllers
                 .ToList();
             foreach (var error in errorList)
             {
-                errors.Add(new ResponseMessage() { Message = error , Status = false });
+                errors.Add(new ResponseMessage() { Message = error, Status = false });
             }
             return BadRequest(errors);
         }
@@ -178,7 +178,7 @@ namespace HealthBanc.Controllers
                 .ToList();
             foreach (var error in errorList)
             {
-                errors.Add(new ResponseMessage() { Message = error , Status = false });
+                errors.Add(new ResponseMessage() { Message = error, Status = false });
             }
             return BadRequest(errors);
         }
@@ -205,7 +205,7 @@ namespace HealthBanc.Controllers
                 var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
 
                 var user = await _userManager.FindByEmailAsync(decryptedEmail);
-                if(user == null)
+                if (user == null)
                 {
                     return NotFound(new ResponseMessage { Message = "User with the email could not be found" });
                 }
@@ -254,11 +254,11 @@ namespace HealthBanc.Controllers
                     var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
                     if (userPassword.Succeeded)
                     {
-                        return Ok(new ResponseMessage { Message = "Password Changed Succefully",Status=true });
+                        return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                     }
-                    return Unauthorized(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password"});
+                    return Unauthorized(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });
                 };
-                return BadRequest(new ResponseMessage { Message = "User does not exist"});
+                return BadRequest(new ResponseMessage { Message = "User does not exist" });
             }
             //return validation errors
             var errors = new List<ResponseMessage>();
@@ -327,7 +327,7 @@ namespace HealthBanc.Controllers
                 {
                     return Ok(response);
                 }
-                if(response.ResponseCode == 2)
+                if (response.ResponseCode == 2)
                 {
                     return BadRequest(response);
                 }

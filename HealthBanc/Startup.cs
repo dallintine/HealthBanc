@@ -14,18 +14,24 @@ using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
+using Microsoft.AspNet.OData.Builder;
+using Microsoft.AspNet.OData.Extensions;
+using Microsoft.AspNet.OData.Formatter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
+using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
 
 namespace HealthBanc
@@ -42,7 +48,11 @@ namespace HealthBanc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //Add Swagger Service
+            //services.AddOData();
+
+            services.AddControllers();
+
+            ///////////////Add Swagger Service
             services.AddSwaggerGen(x =>
             {
                 x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
@@ -80,6 +90,11 @@ namespace HealthBanc
                 x.IncludeXmlComments(xmlPath);
             });
 
+            //SetOutputFormatters(services);
+
+
+            /////////////////////////////////////Register Services
+            
             services.AddAutoMapper(typeof(Startup));
 
             services.AddScoped<IdentityService>();
@@ -150,7 +165,7 @@ namespace HealthBanc
                 };
             });
 
-            services.AddControllers();
+           
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -179,7 +194,32 @@ namespace HealthBanc
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                //endpoints.EnableDependencyInjection(); 
+                //endpoints.Select().OrderBy().Filter().SkipToken().MaxTop(4).Expand().Count();
+                //endpoints.MapODataRoute("odata", "odata", GetEdmModel());
             });
         }
+
+        //IEdmModel GetEdmModel()
+        //{
+        //    var builder = new ODataConventionModelBuilder();
+        //    builder.EntitySet<WeatherForecast>("WeatherForecast");
+        //    return builder.GetEdmModel();
+        //}
+
+        //private static void SetOutputFormatters(IServiceCollection services)
+        //{
+        //    services.AddMvcCore(options =>
+        //    {
+        //        IEnumerable<ODataOutputFormatter> outputFormatters =
+        //            options.OutputFormatters.OfType<ODataOutputFormatter>()
+        //                .Where(foramtter => foramtter.SupportedMediaTypes.Count == 0);
+
+        //        foreach (var outputFormatter in outputFormatters)
+        //        {
+        //            outputFormatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("application/odata"));
+        //        }
+        //    });
+        //}
     }
 }

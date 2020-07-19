@@ -1,9 +1,11 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace HealthBanc
 {
     public class WeatherForecast
     {
+        public Guid Id { get; set; }
         public DateTime Date { get; set; }
 
         public int TemperatureC { get; set; }
