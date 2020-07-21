@@ -113,6 +113,8 @@ namespace HealthBanc.Services.Identity
         public async Task<ResponseMessage> Login(ApplicationUser user, LoginViewModel loginModel)
         {
             await _userManager.ResetAccessFailedCountAsync(user);
+            var roles = await _userManager.GetRolesAsync(user);
+
 
             try
             {
@@ -133,6 +135,7 @@ namespace HealthBanc.Services.Identity
                         new Claim("LastName",user.LastName),
                         new Claim("PhoneNumber",user.PhoneNumber),
                         new Claim(ClaimTypes.Email, user.Email),
+                        new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
                         new Claim("LoggedOn", DateTime.Now.ToString()),
                     }),
                     SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
@@ -147,6 +150,7 @@ namespace HealthBanc.Services.Identity
                     Token = tokenHandler.WriteToken(token),
                     Username = user.Email,
                     Name = $"{user.FirstName} {user.LastName}",
+                    Roles = roles,
                     ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
                 };
                 return new ResponseMessage { Data = loogedInResponse, Status = true, Message = "User was logged in successfully" };
