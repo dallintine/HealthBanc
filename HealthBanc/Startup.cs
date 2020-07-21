@@ -138,6 +138,20 @@ namespace HealthBanc
                             .SetPreflightMaxAge(TimeSpan.FromSeconds(3600)));
             });
 
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("SuperAdminRole", policy => policy.RequireRole("SuperAdmin").RequireAuthenticatedUser());
+
+                options.AddPolicy("AdminRole", policy => policy.RequireRole("Initiator", "Reviewer", "Authorizer").RequireAuthenticatedUser());
+
+                options.AddPolicy("InitiatorRole", policy => policy.RequireRole("Initiator").RequireAuthenticatedUser());
+
+                options.AddPolicy("ReviewerRole", policy => policy.RequireRole("Reviewer").RequireAuthenticatedUser());
+
+                options.AddPolicy("AuthorizerRole", policy => policy.RequireRole("Authorizer").RequireAuthenticatedUser());
+
+            });
+
             //------------------------------------JWT Authentication Settings--------------------------------------//
             var appsettings = Configuration.GetSection("JwtSettings");
             services.Configure<JwtSettings>(appsettings);
@@ -164,8 +178,6 @@ namespace HealthBanc
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
             });
-
-           
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

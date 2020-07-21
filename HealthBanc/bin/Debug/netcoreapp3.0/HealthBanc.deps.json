@@ -26,8 +26,10 @@
         "dependencies": {
           "AutoMapper": "9.0.0",
           "AutoMapper.Extensions.Microsoft.DependencyInjection": "7.0.0",
+          "Microsoft.AspNet.Identity.Core": "2.2.3",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "3.0.0",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "3.1.0",
+          "Microsoft.AspNetCore.OData": "7.4.1",
           "Microsoft.EntityFrameworkCore": "3.1.0",
           "Microsoft.EntityFrameworkCore.SqlServer": "3.0.0",
           "Microsoft.EntityFrameworkCore.Tools": "3.0.0",
@@ -344,6 +346,17 @@
           "lib/netstandard2.0/AutoMapper.Extensions.Microsoft.DependencyInjection.dll": {}
         }
       },
+      "Microsoft.AspNet.Identity.Core/2.2.3": {
+        "runtime": {
+          "lib/net45/Microsoft.AspNet.Identity.Core.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.2.3.11125"
+          }
+        },
+        "compile": {
+          "lib/net45/Microsoft.AspNet.Identity.Core.dll": {}
+        }
+      },
       "Microsoft.AspNetCore.Authentication.Abstractions/2.0.0": {
         "dependencies": {
           "Microsoft.AspNetCore.Http.Abstractions": "2.0.0",
@@ -525,6 +538,22 @@
         },
         "compile": {
           "lib/netcoreapp3.0/Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll": {}
+        }
+      },
+      "Microsoft.AspNetCore.OData/7.4.1": {
+        "dependencies": {
+          "Microsoft.AspNetCore.Mvc.Core": "2.0.0",
+          "Microsoft.Extensions.DependencyInjection": "3.1.2",
+          "Microsoft.OData.Core": "7.6.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.AspNetCore.OData.dll": {
+            "assemblyVersion": "7.4.1.0",
+            "fileVersion": "7.4.1.10522"
+          }
+        },
+        "compile": {
+          "lib/netstandard2.0/Microsoft.AspNetCore.OData.dll": {}
         }
       },
       "Microsoft.AspNetCore.Razor/2.2.0": {
@@ -1393,6 +1422,32 @@
       },
       "Microsoft.NETCore.Platforms/2.1.2": {},
       "Microsoft.NETCore.Targets/1.1.0": {},
+      "Microsoft.OData.Core/7.6.1": {
+        "dependencies": {
+          "Microsoft.OData.Edm": "7.6.1",
+          "Microsoft.Spatial": "7.6.1"
+        },
+        "runtime": {
+          "lib/netstandard1.1/Microsoft.OData.Core.dll": {
+            "assemblyVersion": "7.6.1.0",
+            "fileVersion": "7.6.1.30930"
+          }
+        },
+        "compile": {
+          "lib/netstandard1.1/Microsoft.OData.Core.dll": {}
+        }
+      },
+      "Microsoft.OData.Edm/7.6.1": {
+        "runtime": {
+          "lib/netstandard1.1/Microsoft.OData.Edm.dll": {
+            "assemblyVersion": "7.6.1.0",
+            "fileVersion": "7.6.1.30930"
+          }
+        },
+        "compile": {
+          "lib/netstandard1.1/Microsoft.OData.Edm.dll": {}
+        }
+      },
       "Microsoft.OpenApi/1.1.1": {
         "runtime": {
           "lib/netstandard2.0/Microsoft.OpenApi.dll": {
@@ -1402,6 +1457,17 @@
         },
         "compile": {
           "lib/netstandard2.0/Microsoft.OpenApi.dll": {}
+        }
+      },
+      "Microsoft.Spatial/7.6.1": {
+        "runtime": {
+          "lib/netstandard1.1/Microsoft.Spatial.dll": {
+            "assemblyVersion": "7.6.1.0",
+            "fileVersion": "7.6.1.30930"
+          }
+        },
+        "compile": {
+          "lib/netstandard1.1/Microsoft.Spatial.dll": {}
         }
       },
       "Microsoft.VisualStudio.Web.CodeGeneration/3.0.0": {
@@ -4556,6 +4622,13 @@
       "path": "automapper.extensions.microsoft.dependencyinjection/7.0.0",
       "hashPath": "automapper.extensions.microsoft.dependencyinjection.7.0.0.nupkg.sha512"
     },
+    "Microsoft.AspNet.Identity.Core/2.2.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Mv5FpoaxspE8hlWLE4r1IdZtovg/OyFgVRhxQbx47J4sqdLImN1hnM1lnwCj+/wLmqtqFk/RYMoZ5GAcwm/00g==",
+      "path": "microsoft.aspnet.identity.core/2.2.3",
+      "hashPath": "microsoft.aspnet.identity.core.2.2.3.nupkg.sha512"
+    },
     "Microsoft.AspNetCore.Authentication.Abstractions/2.0.0": {
       "type": "package",
       "serviceable": true,
@@ -4688,6 +4761,13 @@
       "sha512": "sha512-+aVwCVmUWwXdhbCIvqImnU5HevVbZKW82O5m/JELqYVO/+L0usnEZCvSbOJr0XdN3k3vd6NjNU5+TBhOHff/lQ==",
       "path": "microsoft.aspnetcore.mvc.newtonsoftjson/3.0.0-preview3-19153-02",
       "hashPath": "microsoft.aspnetcore.mvc.newtonsoftjson.3.0.0-preview3-19153-02.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.OData/7.4.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-O9gRXJKWT1/Y4ekRSF9seFS6ttMPzKEm+NJMRjPCj2HFLWVl5rqqecqztZY2HpfEChD7UWJGIU1ucnOUPZAfHA==",
+      "path": "microsoft.aspnetcore.odata/7.4.1",
+      "hashPath": "microsoft.aspnetcore.odata.7.4.1.nupkg.sha512"
     },
     "Microsoft.AspNetCore.Razor/2.2.0": {
       "type": "package",
@@ -5102,12 +5182,33 @@
       "path": "microsoft.netcore.targets/1.1.0",
       "hashPath": "microsoft.netcore.targets.1.1.0.nupkg.sha512"
     },
+    "Microsoft.OData.Core/7.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dm4dAbgDehOv3sgxzlZW+FUtnn93irsv15uDJRNXKk5LUiA5ejZFhCp5hUd/JcUr5Hb0T0SAlhXxlPEKPEeavg==",
+      "path": "microsoft.odata.core/7.6.1",
+      "hashPath": "microsoft.odata.core.7.6.1.nupkg.sha512"
+    },
+    "Microsoft.OData.Edm/7.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-bi1IM0Uctpp34YnVJGy7afsTViArP/sQjFGWyg2p+z/16xumNUmG0H4y8xnjM57fJjGZHyC7Oe6WHbnJDcM1Pw==",
+      "path": "microsoft.odata.edm/7.6.1",
+      "hashPath": "microsoft.odata.edm.7.6.1.nupkg.sha512"
+    },
     "Microsoft.OpenApi/1.1.1": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-96jr5MPyQ9WzxiBlTH2czVLwpOn7a7Y6j1vRHIZ4sIOFSAclPW2G+iQwnbw7rFBabTALiFJJ7q5Z5r8s+RmGvw==",
       "path": "microsoft.openapi/1.1.1",
       "hashPath": "microsoft.openapi.1.1.1.nupkg.sha512"
+    },
+    "Microsoft.Spatial/7.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3gZZwLABqkyRHRuVHTHUUbEsyasSX/bD1c/UBQpoFPC0yElszBYdv80/awaaPjzeeQkfFLyGoxNySNkLTbHKOA==",
+      "path": "microsoft.spatial/7.6.1",
+      "hashPath": "microsoft.spatial.7.6.1.nupkg.sha512"
     },
     "Microsoft.VisualStudio.Web.CodeGeneration/3.0.0": {
       "type": "package",

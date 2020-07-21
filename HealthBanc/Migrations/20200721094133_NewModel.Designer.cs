@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthBanc.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20200715082618_FirstModelCreated")]
-    partial class FirstModelCreated
+    [Migration("20200721094133_NewModel")]
+    partial class NewModel
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -48,6 +48,38 @@ namespace HealthBanc.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "SuperAdmin",
+                            NormalizedName = "SUPERADMIN"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "RepSuperAdmin",
+                            NormalizedName = "REPSUPERADMIN"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Initiator",
+                            NormalizedName = "INITIATOR"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Reviewer",
+                            NormalizedName = "REVIEWER"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Authorizer",
+                            NormalizedName = "Authorizer"
+                        });
                 });
 
             modelBuilder.Entity("HealthBanc.Domain.Models.ApplicationUser", b =>
@@ -176,57 +208,6 @@ namespace HealthBanc.Migrations
                         {
                             Id = 5,
                             Name = "Authorizer"
-                        });
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("IdentityRole");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = "1",
-                            Name = "SuperAdmin",
-                            NormalizedName = "SUPERADMIN"
-                        },
-                        new
-                        {
-                            Id = "2",
-                            Name = "RepSuperAdmin",
-                            NormalizedName = "REPSUPERADMIN"
-                        },
-                        new
-                        {
-                            Id = "3",
-                            Name = "Initiator",
-                            NormalizedName = "INITIATOR"
-                        },
-                        new
-                        {
-                            Id = "4",
-                            Name = "Reviewer",
-                            NormalizedName = "REVIEWER"
-                        },
-                        new
-                        {
-                            Id = "5",
-                            Name = "Authorizer",
-                            NormalizedName = "Authorizer"
                         });
                 });
 

@@ -22,12 +22,12 @@ namespace HealthBanc.Data
         {
             base.OnModelCreating(builder);
 
-            builder.Entity<IdentityRole>().HasData(
-                 new { Id = "1", Name = "SuperAdmin", NormalizedName = "SUPERADMIN" },
-                 new { Id = "2", Name = "RepSuperAdmin", NormalizedName = "REPSUPERADMIN"},
-                 new { Id = "3", Name = "Initiator", NormalizedName = "INITIATOR" },
-                 new { Id = "4", Name = "Reviewer", NormalizedName = "REVIEWER" },
-                 new { Id = "5", Name = "Authorizer", NormalizedName = "Authorizer" }
+            builder.Entity<AppRole>().HasData(
+                 new { Id = 1, Name = "SuperAdmin", NormalizedName = "SUPERADMIN" },
+                 new { Id = 2, Name = "RepSuperAdmin", NormalizedName = "REPSUPERADMIN"},
+                 new { Id = 3, Name = "Initiator", NormalizedName = "INITIATOR" },
+                 new { Id = 4, Name = "Reviewer", NormalizedName = "REVIEWER" },
+                 new { Id = 5, Name = "Authorizer", NormalizedName = "Authorizer" }
             );
 
             builder.Entity<ClassOrRole>().HasData(

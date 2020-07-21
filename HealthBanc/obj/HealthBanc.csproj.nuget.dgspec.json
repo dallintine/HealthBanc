@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\HASSAN\\Desktop\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {}
+    "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {}
   },
   "projects": {
-    "C:\\Users\\HASSAN\\Desktop\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {
+    "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\HASSAN\\Desktop\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
+        "projectUniqueName": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
         "projectName": "HealthBanc",
-        "projectPath": "C:\\Users\\HASSAN\\Desktop\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
+        "projectPath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
         "packagesPath": "C:\\Users\\HASSAN\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\HASSAN\\Desktop\\HealthBanc\\HealthBanc\\HealthBanc\\obj\\",
+        "outputPath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -49,6 +49,10 @@
               "target": "Package",
               "version": "[7.0.0, )"
             },
+            "Microsoft.AspNet.Identity.Core": {
+              "target": "Package",
+              "version": "[2.2.3, )"
+            },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
               "version": "[3.0.0, )"
@@ -56,6 +60,10 @@
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
               "version": "[3.1.0, )"
+            },
+            "Microsoft.AspNetCore.OData": {
+              "target": "Package",
+              "version": "[7.4.1, )"
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",

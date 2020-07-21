@@ -5,12 +5,12 @@
     </assembly>
     <members>
         <member name="M:HealthBanc.Controllers.IdentityController.RegisterUser(HealthBanc.ViewModels.RegistrationViewModel)">
-             <summary>
-             This Creates The User
-             </summary>        
-             <param name="registrationViewModel"></param>
-            <response code="200">Success : User Created Successfully,Please Check Email To Confirm Your Email Address And Login </response>
-            <reponse code="400">Error : List of Input Validation Errors</reponse>
+            <summary>
+            This Creates The User
+            </summary>        
+            <param name = "registrationViewModel" ></param >
+            <response code="200">Success : User Created Successfully,Please Check Email To Confirm Your Email Address And Login</response>
+            <reponse code = "400" > Error : List of Input Validation Errors</reponse>
         </member>
         <member name="M:HealthBanc.Controllers.IdentityController.ConfirmEmail(System.String,System.String)">
              <summary>

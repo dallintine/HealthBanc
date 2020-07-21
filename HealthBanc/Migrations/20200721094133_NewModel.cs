@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HealthBanc.Migrations
 {
-    public partial class FirstModelCreated : Migration
+    public partial class NewModel : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -65,20 +65,6 @@ namespace HealthBanc.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ClassOrRoles", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "IdentityRole",
-                columns: table => new
-                {
-                    Id = table.Column<string>(nullable: false),
-                    Name = table.Column<string>(nullable: true),
-                    NormalizedName = table.Column<string>(nullable: true),
-                    ConcurrencyStamp = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_IdentityRole", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -188,6 +174,18 @@ namespace HealthBanc.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[,]
+                {
+                    { 1, null, "SuperAdmin", "SUPERADMIN" },
+                    { 2, null, "RepSuperAdmin", "REPSUPERADMIN" },
+                    { 3, null, "Initiator", "INITIATOR" },
+                    { 4, null, "Reviewer", "REVIEWER" },
+                    { 5, null, "Authorizer", "Authorizer" }
+                });
+
+            migrationBuilder.InsertData(
                 table: "ClassOrRoles",
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
@@ -197,18 +195,6 @@ namespace HealthBanc.Migrations
                     { 3, "Initiator" },
                     { 4, "Reviewer" },
                     { 5, "Authorizer" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "IdentityRole",
-                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
-                values: new object[,]
-                {
-                    { "1", null, "SuperAdmin", "SUPERADMIN" },
-                    { "2", null, "RepSuperAdmin", "REPSUPERADMIN" },
-                    { "3", null, "Initiator", "INITIATOR" },
-                    { "4", null, "Reviewer", "REVIEWER" },
-                    { "5", null, "Authorizer", "Authorizer" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -270,9 +256,6 @@ namespace HealthBanc.Migrations
 
             migrationBuilder.DropTable(
                 name: "ClassOrRoles");
-
-            migrationBuilder.DropTable(
-                name: "IdentityRole");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
