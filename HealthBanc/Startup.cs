@@ -12,8 +12,11 @@ using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
+using HealthBanc.Messaging.Core.Bus;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
+using IdentityApi.Messaging.InfraIoc;
+using MediatR;
 using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
 using Microsoft.AspNet.OData.Formatter;
@@ -127,6 +130,10 @@ namespace HealthBanc
                 , options => options.EnableRetryOnFailure(
                   maxRetryCount: 10, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
+            /////////////////////////////////////
+            services.AddMediatR(typeof(Startup));
+            RegisterServices(services);
+
             //---------------------------- CORS setting---------------------------------------------------------//
             services.AddCors(options =>
             {
@@ -180,6 +187,11 @@ namespace HealthBanc
             });
         }
 
+        private void RegisterServices(IServiceCollection services)
+        {
+            DependencyContainer.RegisterServices(services);
+        }
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -210,6 +222,18 @@ namespace HealthBanc
                 //endpoints.Select().OrderBy().Filter().SkipToken().MaxTop(4).Expand().Count();
                 //endpoints.MapODataRoute("odata", "odata", GetEdmModel());
             });
+        }
+
+        private void ConfigureEventBus(IApplicationBuilder app)
+        {
+            var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
+
+            //eventBus.Subscribe<DisableUserCreatedEvent, DisableUserEventHandler>();
+            //eventBus.Subscribe<UnlockUserCreatedEvent, UnlockUserEventHandler>();
+            //eventBus.Subscribe<EnableUserCreatedEvent, EnableUserEventHandler>();
+            //eventBus.Subscribe<ChangeIdenitySuperAdminEvent, ChangeIdentitySuperAdminEventHandler>();
+            //eventBus.Subscribe<DocumentExistCreatedEvent, DocumentExistEventHandler>();
+            //eventBus.Subscribe<DocumentStatusCreatedEvent, DocumentStatusEventHandler>();
         }
 
         //IEdmModel GetEdmModel()

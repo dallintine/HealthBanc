@@ -1,8 +1,12 @@
-﻿using HealthBanc.DataAccess.Interfaces;
+﻿using AutoMapper;
+using HealthBanc.DataAccess.Interfaces;
+using HealthBanc.Domain.Commands;
+using HealthBanc.Domain.Events;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
+using HealthBanc.Messaging.Core.Bus;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.ViewModels;
@@ -29,10 +33,12 @@ namespace HealthBanc.Services.Identity
         private readonly IEmailSender _emailSender;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IClassOrRoleRepository _classOrRole;
+        private readonly IMapper _mapper;
+        private readonly IEventBus _eventBus;
         private readonly JwtSettings _jwtsettings;
 
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager,IEncryptAndDecrypt encryptAndDecrypt,IEmailSender emailSender,
-             IOptions<JwtSettings> jwtsettings,IApplicationUserRepository userRepository,IClassOrRoleRepository classOrRole)
+             IOptions<JwtSettings> jwtsettings,IApplicationUserRepository userRepository,IClassOrRoleRepository classOrRole, IMapper mapper, IEventBus eventBus)
         {
             _logger = logger;
             _userManager = userManager;
@@ -40,6 +46,8 @@ namespace HealthBanc.Services.Identity
             _emailSender = emailSender;
             _userRepository = userRepository;
             _classOrRole = classOrRole;
+            _mapper = mapper;
+            _eventBus = eventBus;
             _jwtsettings = jwtsettings.Value;
         }
 
@@ -254,6 +262,10 @@ namespace HealthBanc.Services.Identity
                         var confirmationUrl = $"https://pharmmall.azurewebsites.net/v1/api/Identity/AdminReg/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
                         _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl);
 
+                        var pharmaHubCreateAdminEvent = _mapper.Map<PharmaHubCreateAdminEvent>(regViewModel);
+                        pharmaHubCreateAdminEvent.SuperAdminId = superAdminId;pharmaHubCreateAdminEvent.SuperAdminEmail = superAdminEmail;
+                        var pharmaHubCreateAdminCommand = new PharmaHubCreateAdminCommand(pharmaHubCreateAdminEvent);
+                        await _eventBus.SendCommand(pharmaHubCreateAdminCommand);
 
                         return new ResponseMessage
                         {
