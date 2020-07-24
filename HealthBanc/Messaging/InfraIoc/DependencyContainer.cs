@@ -1,7 +1,7 @@
 ﻿using HealthBanc.Domain.CommandHandlers;
 using HealthBanc.Domain.Commands;
 using HealthBanc.Messaging.Core.Bus;
-using IdentityApi.Messaging.InfraBus;
+using HealthBanc.Messaging.InfraBus;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RabbitMQ.Client;
@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace IdentityApi.Messaging.InfraIoc
+namespace HealthBanc.Messaging.InfraIoc
 {
     public class DependencyContainer
     {

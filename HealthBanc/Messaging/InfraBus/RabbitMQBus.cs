@@ -13,7 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace IdentityApi.Messaging.InfraBus
+namespace HealthBanc.Messaging.InfraBus
 {
     public sealed class RabbitMQBus : IEventBus
     {
