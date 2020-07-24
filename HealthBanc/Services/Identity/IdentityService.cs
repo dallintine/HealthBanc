@@ -264,6 +264,7 @@ namespace HealthBanc.Services.Identity
 
                         var pharmaHubCreateAdminEvent = _mapper.Map<PharmaHubCreateAdminEvent>(regViewModel);
                         pharmaHubCreateAdminEvent.SuperAdminId = superAdminId;pharmaHubCreateAdminEvent.SuperAdminEmail = superAdminEmail;
+                        pharmaHubCreateAdminEvent.Id = user.Id;
                         var pharmaHubCreateAdminCommand = new PharmaHubCreateAdminCommand(pharmaHubCreateAdminEvent);
                         await _eventBus.SendCommand(pharmaHubCreateAdminCommand);
 
