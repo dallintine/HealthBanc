@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Autofac.Extensions.DependencyInjection;
 using HealthBanc.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.Storage;
@@ -18,22 +20,28 @@ namespace HealthBanc
     {
         public static void Main(string[] args)
         {
-            var configuration = new ConfigurationBuilder()
-                 .AddEnvironmentVariables()
-                 .AddJsonFile("appsettings.json")
-                 .Build();
-
             var connectionString = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=pharmhallstracct;AccountKey=6L23/VXGOIk8QDo87OzGTs0wXbp7Vra2DPPWZ34AUGheDYtpNyCffJDW1oZZNvibJzfaYYLE+3ESaqwRryaM+g==;EndpointSuffix=core.windows.net");
 
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.AzureBlobStorage(connectionString)
-                .ReadFrom.Configuration(configuration)
+                .WriteTo.AzureBlobStorage(connectionString, Serilog.Events.LogEventLevel.Information, "logfolder", "healthbanc.txt", "{Timestamp:G}{Message}{NewLine:1}{Exception:1}")
+                .WriteTo.Console()
                 .CreateLogger();
+
+            var host = Host.CreateDefaultBuilder(args)
+           .UseSerilog()
+           .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+           .ConfigureWebHostDefaults(webHostBuilder =>
+           {
+               webHostBuilder
+               .UseContentRoot(Directory.GetCurrentDirectory())
+               .UseIISIntegration()
+               .UseStartup<Startup>();
+           })
+           .Build();
 
             try
             {
                 Log.Information("Application Starting Up");
-                var host = CreateHostBuilder(args).Build();
                 using (var scope = host.Services.CreateScope())
                 {
                     var services = scope.ServiceProvider;
@@ -57,13 +65,8 @@ namespace HealthBanc
             {
                 Log.CloseAndFlush();
             }
-        }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+            host.Run();
+        }
     }
 }

@@ -1,12 +1,11 @@
 ﻿using AutoMapper;
 using HealthBanc.DataAccess.Interfaces;
-using HealthBanc.Domain.Commands;
-using HealthBanc.Domain.Events;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
-using HealthBanc.Messaging.Core.Bus;
+using HealthBanc.Messages.Events;
+using HealthBanc.RabbitMq;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.ViewModels;
@@ -34,11 +33,12 @@ namespace HealthBanc.Services.Identity
         private readonly IApplicationUserRepository _userRepository;
         private readonly IClassOrRoleRepository _classOrRole;
         private readonly IMapper _mapper;
-        private readonly IEventBus _eventBus;
+        private readonly IBusPublisher _busPublisher;
         private readonly JwtSettings _jwtsettings;
 
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager,IEncryptAndDecrypt encryptAndDecrypt,IEmailSender emailSender,
-             IOptions<JwtSettings> jwtsettings,IApplicationUserRepository userRepository,IClassOrRoleRepository classOrRole, IMapper mapper, IEventBus eventBus)
+             IOptions<JwtSettings> jwtsettings,IApplicationUserRepository userRepository,IClassOrRoleRepository classOrRole, IMapper mapper,
+             IBusPublisher busPublisher)
         {
             _logger = logger;
             _userManager = userManager;
@@ -47,7 +47,7 @@ namespace HealthBanc.Services.Identity
             _userRepository = userRepository;
             _classOrRole = classOrRole;
             _mapper = mapper;
-            _eventBus = eventBus;
+            _busPublisher = busPublisher;
             _jwtsettings = jwtsettings.Value;
         }
 
@@ -229,6 +229,8 @@ namespace HealthBanc.Services.Identity
             var superAdmin = await _userManager.FindByEmailAsync(superAdminEmail);
 
             var checkIfAdminExist = await _userManager.FindByNameAsync(regViewModel.Email);
+
+
             if (checkIfAdminExist == null)
             {
                 var user = new ApplicationUser
@@ -239,7 +241,7 @@ namespace HealthBanc.Services.Identity
                     LastName = regViewModel.LastName,
                     DateOfRegistration = DateTime.Now,
                     SuperAdminId = superAdminId
-                };                
+                };
 
                 var result = await _userManager.CreateAsync(user);
                 if (result.Succeeded)
@@ -262,11 +264,13 @@ namespace HealthBanc.Services.Identity
                         var confirmationUrl = $"https://pharmmall.azurewebsites.net/v1/api/Identity/AdminReg/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
                         _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl);
 
-                        var pharmaHubCreateAdminEvent = _mapper.Map<PharmaHubCreateAdminEvent>(regViewModel);
-                        pharmaHubCreateAdminEvent.SuperAdminId = superAdminId;pharmaHubCreateAdminEvent.SuperAdminEmail = superAdminEmail;
-                        pharmaHubCreateAdminEvent.Id = user.Id;
-                        var pharmaHubCreateAdminCommand = new PharmaHubCreateAdminCommand(pharmaHubCreateAdminEvent);
-                        await _eventBus.SendCommand(pharmaHubCreateAdminCommand);
+
+                        //var adminCreatedEvent = _mapper.Map<AdminCreated>(regViewModel);
+                        //adminCreatedEvent.SuperAdminId = superAdminId; adminCreatedEvent.SuperAdminEmail = superAdminEmail;
+                        //adminCreatedEvent.Id = user.Id;
+                        await _busPublisher.PublishAsync( new AdminCreated(user.Id,regViewModel.StockOrderLimit, regViewModel.FirstName, regViewModel.LastName, regViewModel.Email, regViewModel.PhoneNumber,
+                            superAdminId, superAdminEmail, regViewModel.ClassOrRoleId), null);
+                        _logger.LogCritical("testing");
 
                         return new ResponseMessage
                         {

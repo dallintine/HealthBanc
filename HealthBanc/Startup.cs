@@ -5,15 +5,16 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Autofac;
 using AutoMapper;
 using HealthBanc.Data;
 using HealthBanc.DataAccess.Implementation;
 using HealthBanc.DataAccess.Interfaces;
+using HealthBanc.Dispatchers;
 using HealthBanc.Domain.Models;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
-using HealthBanc.Messaging.Core.Bus;
-using HealthBanc.Messaging.InfraIoc;
+using HealthBanc.RabbitMq;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
 using MediatR;
@@ -41,12 +42,20 @@ namespace HealthBanc
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IWebHostEnvironment env)
         {
-            Configuration = configuration;
+            // In ASP.NET Core 3.0 `env` will be an IWebHostEnvironment, not IHostingEnvironment.
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(env.ContentRootPath)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables();
+            this.Configuration = builder.Build();
         }
 
-        public IConfiguration Configuration { get; }
+        public IConfigurationRoot Configuration { get; private set; }
+
+        public ILifetimeScope AutofacContainer { get; private set; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -55,7 +64,7 @@ namespace HealthBanc
 
             services.AddControllers();
 
-            ///////////////Add Swagger Service
+            ///////////////Add Swagger Service/////////////////////////
             services.AddSwaggerGen(x =>
             {
                 x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
@@ -93,11 +102,14 @@ namespace HealthBanc
                 x.IncludeXmlComments(xmlPath);
             });
 
+            ///////////////Add Swagger Service/////////////////////////
+            ///
+
             //SetOutputFormatters(services);
 
 
-            /////////////////////////////////////Register Services
-            
+            /////////////////////////////////////Register Services//////////////////////////////
+
             services.AddAutoMapper(typeof(Startup));
 
             services.AddScoped<IdentityService>();
@@ -130,9 +142,9 @@ namespace HealthBanc
                 , options => options.EnableRetryOnFailure(
                   maxRetryCount: 10, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
-            /////////////////////////////////////
-            services.AddMediatR(typeof(Startup));
-            RegisterServices(services);
+            /////////////////////////////////////Register Services//////////////////////////////
+            ///
+
 
             //---------------------------- CORS setting---------------------------------------------------------//
             services.AddCors(options =>
@@ -144,6 +156,8 @@ namespace HealthBanc
                             .AllowAnyHeader()
                             .SetPreflightMaxAge(TimeSpan.FromSeconds(3600)));
             });
+
+            //---------------------------- CORS setting---------------------------------------------------------//
 
             services.AddAuthorization(options =>
             {
@@ -185,15 +199,21 @@ namespace HealthBanc
                     IssuerSigningKey = new SymmetricSecurityKey(key)
                 };
             });
+
+            //------------------------------------JWT Authentication Settings--------------------------------------//
         }
 
-        private void RegisterServices(IServiceCollection services)
+        public void ConfigureContainer(ContainerBuilder builder)
         {
-            DependencyContainer.RegisterServices(services);
+            // Register your own things directly with Autofac, like:
+            builder.RegisterAssemblyTypes(Assembly.GetEntryAssembly())
+                   .AsImplementedInterfaces();
+            builder.AddRabbitMq();
+            builder.AddDispatchers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime)
         {
             app.UseCors("CorsPolicy");
 
@@ -222,18 +242,14 @@ namespace HealthBanc
                 //endpoints.Select().OrderBy().Filter().SkipToken().MaxTop(4).Expand().Count();
                 //endpoints.MapODataRoute("odata", "odata", GetEdmModel());
             });
-        }
 
-        private void ConfigureEventBus(IApplicationBuilder app)
-        {
-            var eventBus = app.ApplicationServices.GetRequiredService<IEventBus>();
+            app.UseRabbitMq();
 
-            //eventBus.Subscribe<DisableUserCreatedEvent, DisableUserEventHandler>();
-            //eventBus.Subscribe<UnlockUserCreatedEvent, UnlockUserEventHandler>();
-            //eventBus.Subscribe<EnableUserCreatedEvent, EnableUserEventHandler>();
-            //eventBus.Subscribe<ChangeIdenitySuperAdminEvent, ChangeIdentitySuperAdminEventHandler>();
-            //eventBus.Subscribe<DocumentExistCreatedEvent, DocumentExistEventHandler>();
-            //eventBus.Subscribe<DocumentStatusCreatedEvent, DocumentStatusEventHandler>();
+            applicationLifetime.ApplicationStopped.Register(() =>
+            {
+                //consulClient.Agent.ServiceDeregister(serviceId);
+                AutofacContainer.Dispose();
+            });
         }
 
         //IEdmModel GetEdmModel()

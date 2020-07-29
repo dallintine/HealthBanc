@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using HealthBanc.Domain.Events;
+using HealthBanc.Messages.Events;
 using HealthBanc.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace HealthBanc.Mappers
     {
         public ViewModelToMessageProfile()
         {
-            CreateMap<CreateAdminRegViewModel, PharmaHubCreateAdminEvent>();
+            CreateMap<CreateAdminRegViewModel, AdminCreated>();
         }
     }
 }

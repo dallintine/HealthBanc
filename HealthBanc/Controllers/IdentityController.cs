@@ -289,6 +289,7 @@ namespace HealthBanc.Controllers
                 string getSuperAdminId = User.FindFirst("SuperAdminId")?.Value;
                 int superAdminId = int.Parse(getSuperAdminId);
                 var response = await _identityService.CreateAdmin(regViewModel, superAdminEmail, superAdminId);
+
                 if (response.Status == true)
                 {
                     return Ok(response);
