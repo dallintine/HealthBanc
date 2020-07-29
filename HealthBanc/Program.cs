@@ -22,10 +22,10 @@ namespace HealthBanc
         {
             var connectionString = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=pharmhallstracct;AccountKey=6L23/VXGOIk8QDo87OzGTs0wXbp7Vra2DPPWZ34AUGheDYtpNyCffJDW1oZZNvibJzfaYYLE+3ESaqwRryaM+g==;EndpointSuffix=core.windows.net");
 
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.AzureBlobStorage(connectionString, Serilog.Events.LogEventLevel.Information, "logfolder", "healthbanc.txt", "{Timestamp:G}{Message}{NewLine:1}{Exception:1}")
-                .WriteTo.Console()
-                .CreateLogger();
+            //Log.Logger = new LoggerConfiguration()
+            //    //.WriteTo.AzureBlobStorage(connectionString, Serilog.Events.LogEventLevel.Information, "logfolder", "healthbanc.txt", "{Timestamp:G}{Message}{NewLine:1}{Exception:1}")
+            //    .WriteTo.Console()
+            //    .CreateLogger();
 
             var host = Host.CreateDefaultBuilder(args)
            .UseSerilog()
