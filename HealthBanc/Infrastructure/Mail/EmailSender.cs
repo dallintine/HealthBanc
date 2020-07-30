@@ -28,8 +28,8 @@ namespace HealthBanc.Infrastructure.Mail
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
 
             var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom("hassan.olatade.hh@gmail.com", "PHARMHUB");
-            sendGridMessage.AddTo(email, "PHARMHUB");
+            sendGridMessage.SetFrom("hassan.olatade.hh@gmail.com", "HEALTHBANC");
+            sendGridMessage.AddTo(email, "HEALTHBANC");
             sendGridMessage.SetTemplateId(templateId);
             sendGridMessage.SetTemplateData(new HelloEmail
             {
