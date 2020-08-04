@@ -199,6 +199,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Status = false, Message = "Please check for validation errors" });
         }
 
+        [HttpGet("[action]")]
         public async Task<IActionResult> GetAdminRoles()
         {
             try
