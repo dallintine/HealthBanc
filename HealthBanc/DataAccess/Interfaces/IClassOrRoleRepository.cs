@@ -9,6 +9,7 @@ namespace HealthBanc.DataAccess.Interfaces
 {
     public interface IClassOrRoleRepository : IBaseRepository<ClassOrRole>
     {
+        Task<List<ClassOrRole>> GetAdminRoles();
         Task<List<ClassOrRole>> GetAllRole();
         Task<ClassOrRole> GetRole(int Id);
     }

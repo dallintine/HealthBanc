@@ -25,13 +25,15 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAllUsers([FromQuery]PaginationQuery paginationQuery)
         {
-            var users =await _applicationUserRepository.GetAllUsers(paginationQuery);
+            var users = await _applicationUserRepository.GetAllUsers(paginationQuery);
 
             var paginatedResponse = new PagedResponse<ApplicationUser>
             {
-                Data = users,
+                Data = users.Data,
                 PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = users.RecordCount,
+                PageCount = users.PageCount                
             };
 
             return Ok(paginatedResponse);

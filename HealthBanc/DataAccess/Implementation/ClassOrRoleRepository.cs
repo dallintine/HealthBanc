@@ -2,6 +2,7 @@
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,12 @@ namespace HealthBanc.DataAccess.Implementation
         {
             var role = await _context.ClassOrRoles.FirstOrDefaultAsync(x => x.Id == Id);
             return role;
+        }
+
+        public async Task<List<ClassOrRole>> GetAdminRoles()
+        {
+            var roles = await _context.ClassOrRoles.Where(x => x.Id > 3).ToListAsync();
+            return roles;
         }
 
         public async Task<List<ClassOrRole>> GetAllRole()

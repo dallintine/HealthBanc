@@ -4,11 +4,13 @@ using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using HealthBanc.Request;
+using HealthBanc.Response;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace HealthBanc.DataAccess.Implementation
@@ -22,13 +24,15 @@ namespace HealthBanc.DataAccess.Implementation
             _mapper = mapper;
         }
 
-        public async Task<List<ApplicationUser>> GetAllUsers(PaginationQuery paginationQuery)
+        public async Task<PagedResponse<ApplicationUser>> GetAllUsers(PaginationQuery paginationQuery)
         {
-            var queryable = _context.Users.AsQueryable();
+            var paginatedResponse = new PagedResponse<ApplicationUser>();
+            var queryable = _context.Users.Where(x => x.UniqueUsername == null).AsQueryable();
 
             if(paginationQuery is null)
             {
-                return await _context.Users.ToListAsync();
+                paginatedResponse.Data = await queryable.ToListAsync();
+                return paginatedResponse;
             }
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))
@@ -44,12 +48,22 @@ namespace HealthBanc.DataAccess.Implementation
 
             if (paginationQuery.Filter is null)
             {
-                return await queryable.Skip(skip).Take(paginationQuery.PageSize).ToListAsync();
+                var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).AsQueryable();
+                paginatedResponse.Data =  await newQueryable.ToListAsync();
+                var recordCount = await queryable.CountAsync();
+                paginatedResponse.RecordCount = recordCount;
+                paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
+                return paginatedResponse;
             }
-            else
+            else 
             {
-                return await queryable.Where(x => x.ServiceUsed.Contains(paginationQuery.Filter.ToString())).Skip(skip).Take(paginationQuery.PageSize).ToListAsync();
-            }
+                var newQueryable = queryable.Where(x => x.ServiceUsed.Contains(paginationQuery.Filter.ToString())).Skip(skip).Take(paginationQuery.PageSize);
+                paginatedResponse.Data = await newQueryable.ToListAsync();
+                var recordCount = await queryable.CountAsync();
+                paginatedResponse.RecordCount = recordCount;
+                paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
+                return paginatedResponse;
+            } 
         }
 
         public async Task<ApplicationUser>  FindByIdAsync(int id)

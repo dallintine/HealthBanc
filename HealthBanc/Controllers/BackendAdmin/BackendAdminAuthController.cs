@@ -160,21 +160,23 @@ namespace HealthBanc.Controllers
                 try
                 {
                     var checkEmail = await _userManager.FindByEmailAsync(createAdminViewModel.Email);
-                    if (checkEmail != null) return NotFound(new ResponseMessage{ Message = "Email Already Exist" });
+                    if (checkEmail != null) return BadRequest(new ResponseMessage{ Message = "Email Already Exist" });
+                    var checkIfUserExist = await _userRepository.FindByUniqueUsername(createAdminViewModel.UserName);
+                    if (checkIfUserExist != null) return BadRequest(new ResponseMessage { Message = "Username Already Exist" });
 
                     var admin = new ApplicationUser()
                     {
                         FirstName = createAdminViewModel.FirstName,
                         LastName = createAdminViewModel.LastName,
                         Email = createAdminViewModel.Email,
-                        UserName = createAdminViewModel.UserName
+                        UniqueUsername = createAdminViewModel.UserName,
+                        EmailConfirmed = true
                     };
                     var result = _userManager.CreateAsync(admin).Result;
                     if (result.Succeeded)
                     {
                         var role = await _roleRepository.GetRole(createAdminViewModel.RoleId);
                         await _userManager.AddToRoleAsync(checkEmail, role.Name);
-                        await _userManager.AddToRoleAsync(admin, "BackendAdmin");
                         return Ok(new ResponseMessage{ Message = "Admin has been created successfully", Status = true });
                     }
                 }
@@ -195,6 +197,20 @@ namespace HealthBanc.Controllers
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Status = false, Message = "Please check for validation errors" });
+        }
+
+        public async Task<IActionResult> GetAdminRoles()
+        {
+            try
+            {
+                var roles = await _roleRepository.GetAdminRoles();
+                return Ok(new ResponseMessage {Data=roles,Message="Admin roles was fetched susseffully"});
+            }
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occurred while trying to get admin roles: " + ex);
+                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get admin roles" });
+            }           
         }
     }
 }
