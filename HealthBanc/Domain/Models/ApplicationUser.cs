@@ -19,7 +19,7 @@ namespace HealthBanc.Domain.Models
         public int? SuperAdminId { get; set; }
         public int? AdminId { get; set; }
         public DateTime LastLoginDate { get; set; }
-        public List<Service> ServiceUsed { get; set; }
+        public string ServiceUsed { get; set; }
         public string UniqueUsername { get; set; }
     }
 }

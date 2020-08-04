@@ -1,5 +1,5 @@
-﻿using Autofac.Core;
-using AutoMapper;
+﻿using AutoMapper;
+using HealthBanc.Domain.Models;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using System;
 using System.Collections.Generic;

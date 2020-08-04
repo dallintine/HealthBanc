@@ -4,6 +4,7 @@ using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using HealthBanc.Request;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -43,11 +44,11 @@ namespace HealthBanc.DataAccess.Implementation
 
             if (paginationQuery.Filter is null)
             {
-                return await queryable.Include(x => x.ServiceUsed).Skip(skip).Take(paginationQuery.PageSize).ToListAsync();
+                return await queryable.Skip(skip).Take(paginationQuery.PageSize).ToListAsync();
             }
             else
             {
-                return await queryable.Include(x => x.ServiceUsed.All(x => x.Id == paginationQuery.Filter)).Skip(skip).Take(paginationQuery.PageSize).ToListAsync();
+                return await queryable.Where(x => x.ServiceUsed.Contains(paginationQuery.Filter.ToString())).Skip(skip).Take(paginationQuery.PageSize).ToListAsync();
             }
         }
 
@@ -72,8 +73,7 @@ namespace HealthBanc.DataAccess.Implementation
         public async Task<DashboardDTO> GetUsersStatus()
         {
             var registeredUsers = await _context.Users.CountAsync();
-            //var activeUsers = await _context.Users.Where(x => (DateTime.Now - x.LastLoginDate).Days >= 30).CountAsync();
-            var activeUsers = await _context.Users.Where(x => x.LastLoginDate.AddDays(30) <= DateTime.Now).CountAsync();
+            var activeUsers = await _context.Users.Where(x => x.LastLoginDate.AddDays(30) >= DateTime.Now).CountAsync();
             var inactiveUsers = registeredUsers - activeUsers;
             var dashboardDTO = new DashboardDTO
             {
@@ -90,7 +90,7 @@ namespace HealthBanc.DataAccess.Implementation
             var dashboardServiceList = _mapper.Map<List<Service>, List<ServiceBreakdown>>(services);
             foreach(var item in dashboardServiceList)
             {
-                 item.Count = await _context.Users.Include(x => x.ServiceUsed.All(p => p.Id == item.Id)).CountAsync();
+                 item.Count = await _context.Users.Where(x => x.ServiceUsed.Contains(item.Id.ToString())).CountAsync();
             }
             var dashboardDTO = new DashboardDTO();
             dashboardDTO.ServiceBreakdowns = dashboardServiceList;
@@ -100,16 +100,18 @@ namespace HealthBanc.DataAccess.Implementation
         public async Task<DashboardDTO> GetSignUpAnalytics()
         {
             string[] months = new string[]{ "Janaury", "February", "March", "April","May","June","July","August","September","October","November","December" };
+            var count = 1;
             var dashboardDTO = new DashboardDTO();
 
             dashboardDTO.SignUpMonths = new List<SignUpMonth>();
-            
-            foreach(var item in months)
+
+            foreach (var item in months)
             {
                 var userRegisteredInParticularMonth = await _context.Users.Where(x => x.DateOfRegistration.Year == DateTime.Now.Year &&
-                x.DateOfRegistration.Month.ToString() == item).CountAsync();
+                x.DateOfRegistration.Month == count).CountAsync();
                 var signUpMonth = new SignUpMonth(item, userRegisteredInParticularMonth);
                 dashboardDTO.SignUpMonths.Add(signUpMonth);
+                count++;
             }
             return dashboardDTO;
         }

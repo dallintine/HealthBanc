@@ -45,6 +45,11 @@ namespace HealthBanc.Data
                new { Id = 8, Name = "Technical-Support"},
                new { Id = 9, Name = "Analyst"}
            );
+
+            builder.Entity<Service>().HasData(
+                new { Id=1, Name="Pharmmall"},
+                new {Id = 2, Name="Insurance"}
+           );
         }
     }
 }
