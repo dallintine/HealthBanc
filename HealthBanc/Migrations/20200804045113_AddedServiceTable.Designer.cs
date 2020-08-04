@@ -4,14 +4,16 @@ using HealthBanc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HealthBanc.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200804045113_AddedServiceTable")]
+    partial class AddedServiceTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -77,30 +79,6 @@ namespace HealthBanc.Migrations
                             Id = 5,
                             Name = "Authorizer",
                             NormalizedName = "Authorizer"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "Super-Administrator",
-                            NormalizedName = "SUPER-ADMINISTRATOR"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Name = "Administrator",
-                            NormalizedName = "ADMINISTRATOR"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Name = "Technical-Support",
-                            NormalizedName = "TECHNICAL-SUPPORT"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            Name = "Analyst",
-                            NormalizedName = "ANALYST"
                         });
                 });
 
@@ -177,9 +155,6 @@ namespace HealthBanc.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
-                    b.Property<string>("UniqueUsername")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("UserName")
                         .HasColumnType("nvarchar(256)")
                         .HasMaxLength(256);
@@ -236,26 +211,6 @@ namespace HealthBanc.Migrations
                         {
                             Id = 5,
                             Name = "Authorizer"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "Super-Administrator"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Name = "Administrator"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Name = "Technical-Support"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            Name = "Analyst"
                         });
                 });
 

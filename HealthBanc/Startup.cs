@@ -14,6 +14,7 @@ using HealthBanc.Dispatchers;
 using HealthBanc.Domain.Models;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
+using HealthBanc.Messages.Events;
 using HealthBanc.RabbitMq;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
@@ -37,6 +38,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
+using Polly;
 
 namespace HealthBanc
 {
@@ -118,6 +120,7 @@ namespace HealthBanc
             services.Configure<AuthMessageSenderOption>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
+            services.AddScoped<IServiceRepository, ServiceRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -132,7 +135,8 @@ namespace HealthBanc
                 options.Password.RequireUppercase = true;
                 options.Password.RequireLowercase = true;
                 options.Password.RequireNonAlphanumeric = false;
-            }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+            }).AddEntityFrameworkStores<ApplicationDbContext>().
+            AddDefaultTokenProviders();
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
                 options.TokenLifespan = TimeSpan.FromDays(2));
@@ -143,7 +147,17 @@ namespace HealthBanc
                   maxRetryCount: 10, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
             /////////////////////////////////////Register Services//////////////////////////////
-            ///
+
+
+
+            ///////Add http client
+
+            services.AddHttpClient("Fiorano", client =>
+            {
+                client.BaseAddress = new Uri("http://172.18.4.77:1880/restgateway/services/");
+            })
+                .AddTransientHttpErrorPolicy(x =>
+                x.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(300)));
 
 
             //---------------------------- CORS setting---------------------------------------------------------//
@@ -213,8 +227,27 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, UserManager<ApplicationUser> userManger)
         {
+            if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
+            {
+                ApplicationUser user = new ApplicationUser()
+                {
+                    UniqueUsername = "hassannh",
+                    UserName = "hassan.hassan@sterling.ng",
+                    Email = "hassan.hassan@sterling.ng",
+                    FirstName = "Hassan",
+                    LastName = "Hassan",
+                    EmailConfirmed = true
+                };
+
+                var result = userManger.CreateAsync(user).Result;
+
+                if (result.Succeeded)
+                {
+                    userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
+                }
+            }
             app.UseCors("CorsPolicy");
 
             app.UseHttpsRedirection();
@@ -243,7 +276,8 @@ namespace HealthBanc
                 //endpoints.MapODataRoute("odata", "odata", GetEdmModel());
             });
 
-            app.UseRabbitMq();
+            app.UseRabbitMq()
+                .SubscribeEvent<ServiceUsedCreated>();
 
             applicationLifetime.ApplicationStopped.Register(() =>
             {

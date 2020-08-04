@@ -161,6 +161,8 @@ namespace HealthBanc.Services.Identity
                     Roles = roles,
                     ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
                 };
+                user.LastLoginDate = DateTime.Now;
+                await _userManager.UpdateAsync(user);
                 return new ResponseMessage { Data = loogedInResponse, Status = true, Message = "User was logged in successfully" };
             }
             catch (Exception ex)
@@ -261,7 +263,7 @@ namespace HealthBanc.Services.Identity
 
                         // TODO: Replace with APIRoutes that will contain the static routes to use
 
-                        var confirmationUrl = $"https://pharmmall.azurewebsites.net/v1/api/Identity/AdminReg/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                        var confirmationUrl = $"https://pharmmall.azurewebsites.net/set-new-password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}&destination=adminreg";
                         _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl);
 
 

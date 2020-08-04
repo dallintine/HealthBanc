@@ -4,6 +4,25 @@
         <name>HealthBanc</name>
     </assembly>
     <members>
+        <member name="M:HealthBanc.Controllers.BackendAdminAuthController.BackendLogin(HealthBanc.ViewModels.ADCredentials)">
+            <summary>
+            Logs the BackendUser In
+            </summary>
+            <returns>returns LoggedInResponse Object</returns>
+            <response code="200"> Return LoggedInResponse Object</response>
+            <response code="401">Success : Username or password invalid, please try again with correct details.</response>
+            <response code="400">Error : List of Input Validation Errors </response>
+            <response code="404"> Error : User Does Not Exist</response>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdminAuthController.CreateBackendAdmin(HealthBanc.ViewModels.CreateAdminViewModel)">
+            <summary>
+            Creates the BackendUser 
+            </summary>
+            <response code="200"> Return LoggedInResponse Object</response>
+            <response code="401">Success : Username or password invalid, please try again with correct details.</response>
+            <response code="400">Error : List of Input Validation Errors </response>
+            <response code="404"> Error : User Does Not Exist</response>
+        </member>
         <member name="M:HealthBanc.Controllers.IdentityController.RegisterUser(HealthBanc.ViewModels.RegistrationViewModel)">
             <summary>
             This Creates The User

@@ -16,7 +16,7 @@ namespace HealthBanc.Data
         {
         }
         public DbSet<ClassOrRole> ClassOrRoles { get; set; }
-
+        public DbSet<Service> Services { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -27,7 +27,11 @@ namespace HealthBanc.Data
                  new { Id = 2, Name = "RepSuperAdmin", NormalizedName = "REPSUPERADMIN"},
                  new { Id = 3, Name = "Initiator", NormalizedName = "INITIATOR" },
                  new { Id = 4, Name = "Reviewer", NormalizedName = "REVIEWER" },
-                 new { Id = 5, Name = "Authorizer", NormalizedName = "Authorizer" }
+                 new { Id = 5, Name = "Authorizer", NormalizedName = "Authorizer" },
+                 new { Id = 6, Name = "Super-Administrator", NormalizedName = "SUPER-ADMINISTRATOR" },
+                 new { Id = 7, Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
+                 new { Id = 8, Name = "Technical-Support", NormalizedName = "TECHNICAL-SUPPORT" },
+                 new { Id = 9, Name = "Analyst", NormalizedName = "ANALYST" }
             );
 
             builder.Entity<ClassOrRole>().HasData(
@@ -35,7 +39,11 @@ namespace HealthBanc.Data
                new { Id = 2, Name = "RepSuperAdmin" },
                new { Id = 3, Name = "Initiator" },
                new { Id = 4, Name = "Reviewer" },
-               new { Id = 5, Name = "Authorizer" }
+               new { Id = 5, Name = "Authorizer" },
+               new { Id = 6, Name = "Super-Administrator"},
+               new { Id = 7, Name = "Administrator"},
+               new { Id = 8, Name = "Technical-Support"},
+               new { Id = 9, Name = "Analyst"}
            );
         }
     }

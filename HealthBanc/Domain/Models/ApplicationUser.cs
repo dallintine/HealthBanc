@@ -18,5 +18,8 @@ namespace HealthBanc.Domain.Models
         public bool IsDeleted { get; set; }
         public int? SuperAdminId { get; set; }
         public int? AdminId { get; set; }
+        public DateTime LastLoginDate { get; set; }
+        public List<Service> ServiceUsed { get; set; }
+        public string UniqueUsername { get; set; }
     }
 }

@@ -9,6 +9,7 @@ using HealthBanc.Logging;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,6 +20,29 @@ namespace HealthBanc
 {
     public class Program
     {
+
+        //public class BackendDbContextFactory : IDesignTimeDbContextFactory<BackendDbContext>
+        //{
+        //    public BackendDbContext CreateDbContext(string[] args)
+        //    {
+        //        var optionsBuilder = new DbContextOptionsBuilder<BackendDbContext>();
+        //        optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBancBackend; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
+
+        //        return new BackendDbContext(optionsBuilder.Options);
+        //    }
+        //}
+
+        public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+        {
+            public ApplicationDbContext CreateDbContext(string[] args)
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+                optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
+
+                return new ApplicationDbContext(optionsBuilder.Options);
+            }
+        }
+
         public static void Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder(args)
@@ -41,8 +65,8 @@ namespace HealthBanc
                     var services = scope.ServiceProvider;
                     try
                     {
-                        var context = services.GetRequiredService<ApplicationDbContext>();
-                        context.Database.Migrate();
+                        //var context = services.GetRequiredService<ApplicationDbContext>();
+                        //context.Database.Migrate();
                     }
                     catch (Exception ex)
                     {
