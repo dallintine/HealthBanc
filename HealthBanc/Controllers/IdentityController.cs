@@ -83,6 +83,10 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
+                if (userId is null || emailToken is null)
+                {
+                    return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
+                }
                 var response = await _identityService.ConfirmEmail(userId, emailToken);
                 if (response.Status == true)
                 {
@@ -201,6 +205,10 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
+                if (email is null || emailToken is null)
+                {
+                    return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
+                }
                 var decryptedEmail = _encryptAndDecrypt.DecryptString(email, "hfahkbak78r32rg87griva..");
                 var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
 
@@ -323,6 +331,10 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
+                if(email is null || emailToken is null)
+                {
+                    return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
+                }
                 var response = await _identityService.AdminReg(email, emailToken, regViewModel);
                 if (response.Status == true)
                 {
