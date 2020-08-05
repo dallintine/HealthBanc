@@ -25,5 +25,6 @@ namespace HealthBanc.Request
         public string SearchText { get; set; }
         public int SortBy { get; set; }
         public int? Filter { get; set; }
+        public int? Status { get; set; }
     }
 }

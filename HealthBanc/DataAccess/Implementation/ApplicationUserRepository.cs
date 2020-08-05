@@ -34,6 +34,14 @@ namespace HealthBanc.DataAccess.Implementation
                 paginatedResponse.Data = await queryable.ToListAsync();
                 return paginatedResponse;
             }
+            //If Status is null returns all registered users
+            //if status is 1 returns active users
+            //if status is 2 returns deactivated users
+            if (paginationQuery.Status != null)
+            {
+                if (paginationQuery.Status == 1) queryable = queryable.Where(x => x.LastLoginDate.AddDays(30) >= DateTime.Now).AsQueryable();
+                if (paginationQuery.Status == 2) queryable = queryable.Where(x => x.LastLoginDate.AddDays(30) <= DateTime.Now).AsQueryable();
+            }
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))
             {
@@ -41,10 +49,11 @@ namespace HealthBanc.DataAccess.Implementation
                 x.Email.Contains(paginationQuery.SearchText) || x.PhoneNumber.Contains(paginationQuery.SearchText));
             }
 
+            //Sort the users
             queryable = paginationQuery.SortBy == 1 ? queryable.OrderBy(s => s.FirstName) : paginationQuery.SortBy == 2 ? queryable.OrderBy(s => s.LastName) :
                 paginationQuery.SortBy == 3 ? queryable.OrderBy(s => s.Email) : queryable.OrderByDescending(s => s.DateOfRegistration);
 
-            var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
+            var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;           
 
             if (paginationQuery.Filter is null)
             {
@@ -57,6 +66,7 @@ namespace HealthBanc.DataAccess.Implementation
             }
             else 
             {
+                //filter users by service used via their the Service ID.
                 var newQueryable = queryable.Where(x => x.ServiceUsed.Contains(paginationQuery.Filter.ToString())).Skip(skip).Take(paginationQuery.PageSize);
                 paginatedResponse.Data = await newQueryable.ToListAsync();
                 var recordCount = await queryable.CountAsync();
