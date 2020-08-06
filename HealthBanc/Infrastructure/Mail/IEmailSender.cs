@@ -8,5 +8,6 @@ namespace HealthBanc.Infrastructure.Mail
     public interface IEmailSender
     {
         void SendEmail(string email,string templateId, string url);
+        void SendEmailWithObject(string email, string templateId, EmailSender.HelloEmail helloEmail);
     }
 }

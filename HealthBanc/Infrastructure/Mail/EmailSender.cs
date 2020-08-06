@@ -39,10 +39,35 @@ namespace HealthBanc.Infrastructure.Mail
             var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
         }
 
-        private class HelloEmail
+        public void SendEmailWithObject(string email, string templateId, HelloEmail helloEmail)
+        {
+            var has = Options.SendGridApiKey;
+            var sendGridClient = new SendGridClient(Options.SendGridApiKey);
+
+            var sendGridMessage = new SendGridMessage();
+            sendGridMessage.SetFrom("hassan.olatade.hh@gmail.com", "HEALTHBANC");
+            sendGridMessage.AddTo(email, "HEALTHBANC");
+            sendGridMessage.SetTemplateId(templateId);
+            sendGridMessage.SetTemplateData(new HelloEmail
+            {
+                token = helloEmail.token,
+                HealthServiceProviderName = helloEmail.HealthServiceProviderName,
+                HealthServiveProviderType = helloEmail.HealthServiveProviderType,
+                EmailAddress = helloEmail.EmailAddress,
+                PhoneNumber = helloEmail.PhoneNumber
+            });
+
+            var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
+        }
+
+        public class HelloEmail
         {
             [JsonProperty("token")]
             public string token { get; set; }
+            public string HealthServiceProviderName { get; set; }
+            public string HealthServiveProviderType { get; set; }
+            public string EmailAddress { get; set; }
+            public string PhoneNumber { get; set; }
         }
     }
 }
