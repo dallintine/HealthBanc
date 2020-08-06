@@ -3,6 +3,7 @@ using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Request;
 using HealthBanc.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace HealthBanc.Controllers.BackendAdmin
             _applicationUserRepository = applicationUserRepository;
         }
 
+        [Authorize]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAllUsers([FromQuery]PaginationQuery paginationQuery)
         {

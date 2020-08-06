@@ -5,6 +5,7 @@ using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Response;
 using HealthBanc.ViewModels;
 using Microsoft.AspNet.OData;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -86,7 +87,7 @@ namespace HealthBanc.Controllers
                             //Generate Token
                             var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
                             var tokenHandler = new JwtSecurityTokenHandler();
-                            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret2));
+                            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
                             var tokenDescriptor = new SecurityTokenDescriptor
                             {
                                 Subject = new ClaimsIdentity(new[]
@@ -152,6 +153,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<IActionResult> CreateBackendAdmin(CreateAdminViewModel createAdminViewModel)
         {

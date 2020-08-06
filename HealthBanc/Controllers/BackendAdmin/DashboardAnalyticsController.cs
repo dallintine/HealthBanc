@@ -1,6 +1,7 @@
 ﻿using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using HealthBanc.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -26,6 +27,7 @@ namespace HealthBanc.Controllers.BackendAdmin
             _logger = logger;
         }
 
+        [Authorize]
         [HttpGet("[action]")]
         public async Task<IActionResult> DashboardAnalytics()
         {
@@ -53,6 +55,7 @@ namespace HealthBanc.Controllers.BackendAdmin
 
         }
 
+        [Authorize]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetServices()
         {
