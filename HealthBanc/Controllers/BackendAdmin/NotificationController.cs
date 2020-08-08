@@ -24,6 +24,12 @@ namespace HealthBanc.Controllers.BackendAdmin
             _mapper = mapper;
         }
 
+        //WORKING1
+        /// <summary>
+        /// Send Helium Notification
+        /// </summary>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
         public  IActionResult SendHeliumNotification(HeliumHealthCollectionViewModel heliumHealth)
         {

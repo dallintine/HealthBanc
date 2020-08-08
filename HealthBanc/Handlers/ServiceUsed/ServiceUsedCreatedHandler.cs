@@ -23,7 +23,8 @@ namespace HealthBanc.Handlers.ServiceUsed
             var appUser = await _userRepository.GetByEmailAsync(@event.Email);
             if(appUser != null)
             {
-                appUser.ServiceUsed = appUser.ServiceUsed +","+ @event.Id;
+                var service = await _serviceRepository.GetServiceById(@event.Id);
+                appUser.ServiceUsed = appUser.ServiceUsed +service.Name+",";
                 _userRepository.Update(appUser);
                 await _userRepository.Save();
                 await Task.CompletedTask;

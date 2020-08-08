@@ -121,6 +121,7 @@ namespace HealthBanc
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
+            services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -227,7 +228,8 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, UserManager<ApplicationUser> userManger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, UserManager<ApplicationUser> userManger,
+            IBackendAdminRepository backendAdminRepository)
         {
             if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
             {
@@ -240,12 +242,21 @@ namespace HealthBanc
                     LastName = "Hassan",
                     EmailConfirmed = true
                 };
+                BackendAdminUser adminUser = new BackendAdminUser()
+                {
+                    Email = "hassan.hassan@sterling.ng",
+                    FirstName = "Hassan",
+                    LastName = "Hassan",
+                    ClassOrRoleId = 6
+                };
 
                 var result = userManger.CreateAsync(user).Result;
 
                 if (result.Succeeded)
                 {
                     userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
+                    backendAdminRepository.Create(adminUser);
+                    backendAdminRepository.Save().Wait();
                 }
             }
             app.UseCors("CorsPolicy");

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HealthBanc.Domain.Models;
+using HealthBanc.DTO.ApplicationUserDTOs;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace HealthBanc.Mappers
         public DomainToDTOProfile()
         {
             CreateMap<Service, ServiceBreakdown>();
+            CreateMap<ApplicationUser, ApplicationUserDTO>();
         }
     }
 }

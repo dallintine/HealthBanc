@@ -23,7 +23,7 @@ namespace HealthBanc.DataAccess.Implementation
 
         public async Task<List<ClassOrRole>> GetAdminRoles()
         {
-            var roles = await _context.ClassOrRoles.Where(x => x.Id > 3).ToListAsync();
+            var roles = await _context.ClassOrRoles.Where(x => x.Id > 5).ToListAsync();
             return roles;
         }
 

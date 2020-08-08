@@ -33,16 +33,18 @@ namespace HealthBanc.Controllers
         private readonly ILogger<BackendAdminAuthController> _logger;
         private readonly IClassOrRoleRepository _roleRepository;
         private readonly IApplicationUserRepository _userRepository;
+        private readonly IBackendAdminRepository _adminRepository;
         private readonly JwtSettings _jwtsettings;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
-            ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository)
+            ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository)
         {
             _userManager = userManager;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _roleRepository = roleRepository;
             _userRepository = userRepository;
+            _adminRepository = adminRepository;
             _jwtsettings = jwtsettings.Value;
         }
 
@@ -51,12 +53,7 @@ namespace HealthBanc.Controllers
         /// <summary>
         /// Logs the BackendUser In
         /// </summary>
-        /// <returns>returns LoggedInResponse Object</returns>
-        /// <response code="200"> Return LoggedInResponse Object</response>
-        /// <response code="401">Success : Username or password invalid, please try again with correct details.</response>
-        /// <response code="400">Error : List of Input Validation Errors </response>
-        /// <response code="404"> Error : User Does Not Exist</response>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
@@ -114,7 +111,7 @@ namespace HealthBanc.Controllers
                                 ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
                                 Roles = roles,
                             };
-                            return Ok(new ResponseMessage{ Data = loggedInResponseDTO, Status = true,Message="Login was successfully" });
+                            return Ok(new ResponseMessage<LoggedInResponseDTO> { Data = loggedInResponseDTO, Status = true,Message="Login was successfully" });
                         }
                         else
                         {
@@ -144,11 +141,6 @@ namespace HealthBanc.Controllers
         /// <summary>
         /// Creates the BackendUser 
         /// </summary>
-        /// <response code="200"> Return LoggedInResponse Object</response>
-        /// <response code="401">Success : Username or password invalid, please try again with correct details.</response>
-        /// <response code="400">Error : List of Input Validation Errors </response>
-        /// <response code="404"> Error : User Does Not Exist</response>
-
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
@@ -171,6 +163,7 @@ namespace HealthBanc.Controllers
                         FirstName = createAdminViewModel.FirstName,
                         LastName = createAdminViewModel.LastName,
                         Email = createAdminViewModel.Email,
+                        UserName = createAdminViewModel.Email,
                         UniqueUsername = createAdminViewModel.UserName,
                         EmailConfirmed = true
                     };
@@ -178,7 +171,16 @@ namespace HealthBanc.Controllers
                     if (result.Succeeded)
                     {
                         var role = await _roleRepository.GetRole(createAdminViewModel.RoleId);
-                        await _userManager.AddToRoleAsync(checkEmail, role.Name);
+                        await _userManager.AddToRoleAsync(admin, role.Name);
+                        BackendAdminUser adminUser = new BackendAdminUser()
+                        {
+                            Email = createAdminViewModel.Email,
+                            FirstName = createAdminViewModel.FirstName,
+                            LastName = createAdminViewModel.LastName,
+                            ClassOrRoleId = createAdminViewModel.RoleId
+                        };
+                        _adminRepository.Create(adminUser);
+                        await _adminRepository.Save();
                         return Ok(new ResponseMessage{ Message = "Admin has been created successfully", Status = true });
                     }
                 }
@@ -201,6 +203,73 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Status = false, Message = "Please check for validation errors" });
         }
 
+        //WORKING1
+        /// <summary>
+        /// Get All admin users
+        /// </summary>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<List<BackendAdminUser>>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [Authorize]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetBackendAdminUsers()
+        {
+            try
+            {
+                var users = await _adminRepository.GetBackendAdmins();
+                return Ok(new ResponseMessage<List<BackendAdminUser>>{ Data = users, Status = true, Message = "Admin users was fetched successfully" });
+            }
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occurred while trying to fetch admin users " + ex);
+                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to fetch admin users" });
+            }
+        }
+
+        //WORKING1
+        /// <summary>
+        /// Change Admin Role
+        /// </summary>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        [Authorize]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> ChangeAdminRole([FromQuery] string email,int roleId)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+                var admin = await _adminRepository.GetAdminByEmail(email);
+                if(user != null)
+                {
+                    var userRole = await _userManager.GetRolesAsync(user);
+                    var removeRoleResult = _userManager.RemoveFromRoleAsync(user, userRole.FirstOrDefault());
+                    var role = await _roleRepository.GetRole(roleId);
+                    var result = _userManager.AddToRoleAsync(user, role.Name).Result;
+                    if (result.Succeeded)
+                    {
+                        admin.ClassOrRoleId = roleId;
+                        _adminRepository.Update(admin);
+                        await _adminRepository.Save();
+                        return Ok(new ResponseMessage {Message="Role was changed successfully", Status=true });
+                    }
+                }
+                return NotFound(new ResponseMessage { Message="User does not exist" });
+            }
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occurred while trying to change admin role " + ex);
+                return BadRequest("An error occurred while trying to change to change admin role");
+            }           
+        }
+
+        //WORKING1
+        /// <summary>
+        /// Get Admin Roles
+        /// </summary>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [Authorize]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAdminRoles()
         {
@@ -214,6 +283,41 @@ namespace HealthBanc.Controllers
                 _logger.LogCritical("An error occurred while trying to get admin roles: " + ex);
                 return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get admin roles" });
             }           
+        }
+
+        //WORKING1
+        /// <summary>
+        /// Delete Admin
+        /// </summary>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        [Authorize]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> RemoveAdmin(string email)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user != null)
+                {
+                    var result = _userManager.DeleteAsync(user).Result;
+                    if (result.Succeeded)
+                    {
+                        var admin = await _adminRepository.GetAdminByEmail(email);
+                        _adminRepository.Delete(admin);
+                        await _adminRepository.Save();
+                        return Ok(new ResponseMessage { Message = "Admin was deleted successfully", Status = true });
+                    }
+                    return BadRequest("An error occurred while trying to change to delete admin");
+                }
+                return NotFound(new ResponseMessage { Message = "User does not exist" });
+            }
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occurred while trying to delete admin " + ex);
+                return BadRequest("An error occurred while trying to change to delete admin");
+            }
         }
     }
 }

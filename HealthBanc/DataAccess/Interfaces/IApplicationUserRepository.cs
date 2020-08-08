@@ -16,8 +16,8 @@ namespace HealthBanc.DataAccess.Interfaces
         Task<ApplicationUser> FindByUniqueUsername(string username);
         Task<PagedResponse<ApplicationUser>> GetAllUsers(PaginationQuery paginationQuery = null);
         Task<ApplicationUser> GetByEmailAsync(string email);
-        Task<DashboardDTO> GetServiceBreakdown();
-        Task<DashboardDTO> GetSignUpAnalytics();
+        Task<DashboardDTO> GetServiceBreakdown(int? Id);
+        Task<DashboardDTO> GetSignUpAnalytics(int? Id);
         Task<DashboardDTO> GetUsersStatus();
     }
 }

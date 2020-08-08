@@ -12,4 +12,12 @@ namespace HealthBanc.Response
         public string Message { get; set; }
         public object Data { get; set; }
     }
+
+    public class ResponseMessage<T>
+    {
+        public bool Status { get; set; }
+        public int ResponseCode { get; set; }
+        public string Message { get; set; }
+        public T Data { get; set; }
+    }
 }

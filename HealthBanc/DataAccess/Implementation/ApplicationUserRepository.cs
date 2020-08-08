@@ -86,7 +86,7 @@ namespace HealthBanc.DataAccess.Implementation
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.UniqueUsername == username);
             return user;
-        }
+        }       
 
         public async Task<ApplicationUser> GetByEmailAsync(string email)
         {
@@ -96,8 +96,9 @@ namespace HealthBanc.DataAccess.Implementation
 
         public async Task<DashboardDTO> GetUsersStatus()
         {
-            var registeredUsers = await _context.Users.CountAsync();
-            var activeUsers = await _context.Users.Where(x => x.LastLoginDate.AddDays(30) >= DateTime.Now).CountAsync();
+            var users = _context.Users.Where(x => x.UniqueUsername == null).AsQueryable();
+            var registeredUsers = await users.CountAsync();
+            var activeUsers = await users.Where(x => x.LastLoginDate.AddDays(30) >= DateTime.Now).CountAsync();
             var inactiveUsers = registeredUsers - activeUsers;
             var dashboardDTO = new DashboardDTO
             {
@@ -108,35 +109,68 @@ namespace HealthBanc.DataAccess.Implementation
             return dashboardDTO;
         }
 
-        public async Task<DashboardDTO> GetServiceBreakdown()
+        public async Task<DashboardDTO> GetServiceBreakdown(int? Id)
         {
             var services = await _context.Services.ToListAsync();
+            var users = _context.Users.Where(x => x.UniqueUsername == null).AsQueryable();
             var dashboardServiceList = _mapper.Map<List<Service>, List<ServiceBreakdown>>(services);
-            foreach(var item in dashboardServiceList)
+            if(Id is null)
             {
-                 item.Count = await _context.Users.Where(x => x.ServiceUsed.Contains(item.Id.ToString())).CountAsync();
+                foreach (var item in dashboardServiceList)
+                {
+                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Name)).CountAsync();
+                }
             }
+            else if(Id == 1)
+            {
+                foreach (var item in dashboardServiceList)
+                {
+                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Id.ToString()) && x.DateOfRegistration.Year == DateTime.Now.Year).CountAsync();
+                }
+            }
+            else if(Id == 2)
+            {
+                foreach (var item in dashboardServiceList)
+                {
+                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Id.ToString()) && x.DateOfRegistration.Month == DateTime.Now.Month).CountAsync();
+                }
+            }           
             var dashboardDTO = new DashboardDTO();
             dashboardDTO.ServiceBreakdowns = dashboardServiceList;
             return dashboardDTO;
         }
 
-        public async Task<DashboardDTO> GetSignUpAnalytics()
+        public async Task<DashboardDTO> GetSignUpAnalytics(int? Id)
         {
             string[] months = new string[]{ "Janaury", "February", "March", "April","May","June","July","August","September","October","November","December" };
             var count = 1;
+            var users = _context.Users.Where(x => x.UniqueUsername == null).AsQueryable();
             var dashboardDTO = new DashboardDTO();
 
             dashboardDTO.SignUpMonths = new List<SignUpMonth>();
 
-            foreach (var item in months)
+            if(Id is null)
             {
-                var userRegisteredInParticularMonth = await _context.Users.Where(x => x.DateOfRegistration.Year == DateTime.Now.Year &&
-                x.DateOfRegistration.Month == count).CountAsync();
-                var signUpMonth = new SignUpMonth(item, userRegisteredInParticularMonth);
-                dashboardDTO.SignUpMonths.Add(signUpMonth);
-                count++;
+                foreach (var item in months)
+                {
+                    var userRegisteredInParticularMonth = await users.Where(x => x.DateOfRegistration.Month == count).CountAsync();
+                    var signUpMonth = new SignUpMonth(item, userRegisteredInParticularMonth);
+                    dashboardDTO.SignUpMonths.Add(signUpMonth);
+                    count++;
+                }
             }
+            else if(Id == 1)
+            {
+                foreach (var item in months)
+                {
+                    var userRegisteredInParticularMonth = await users.Where(x => x.DateOfRegistration.Year == DateTime.Now.Year &&
+                    x.DateOfRegistration.Month == count).CountAsync();
+                    var signUpMonth = new SignUpMonth(item, userRegisteredInParticularMonth);
+                    dashboardDTO.SignUpMonths.Add(signUpMonth);
+                    count++;
+                }
+            }
+           
             return dashboardDTO;
         }
     }
