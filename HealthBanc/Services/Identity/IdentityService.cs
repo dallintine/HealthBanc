@@ -139,9 +139,9 @@ namespace HealthBanc.Services.Identity
                         new Claim("SuperAdminId", user.SuperAdminId.ToString()),
                         new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
                         new Claim(ClaimTypes.Name, user.Id.ToString()),
-                        new Claim("FirstName",user.FirstName),
-                        new Claim("LastName",user.LastName),
-                        new Claim("PhoneNumber",user.PhoneNumber),
+                        new Claim("FirstName",user.FirstName??"Not Available"),
+                        new Claim("LastName",user.LastName??"Not Available"),
+                        new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
                         new Claim(ClaimTypes.Email, user.Email),
                         new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
                         new Claim("LoggedOn", DateTime.Now.ToString()),
@@ -241,6 +241,7 @@ namespace HealthBanc.Services.Identity
                     Email = regViewModel.Email,
                     FirstName = regViewModel.FirstName,
                     LastName = regViewModel.LastName,
+                    PhoneNumber = regViewModel.PhoneNumber,
                     DateOfRegistration = DateTime.Now,
                     SuperAdminId = superAdminId
                 };
