@@ -4,24 +4,100 @@
         <name>HealthBanc</name>
     </assembly>
     <members>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.ApplicationUserController.GetAllUsers(HealthBanc.Request.PaginationQuery)">
+            <summary>
+            Get All Users
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.ApplicationUserController.GetUser(System.String)">
+            <summary>
+            Get  User Detail
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.DashboardAnalyticsController.DashboardAnalytics">
+            <summary>
+            Get All Dashboard Analytics
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.DashboardAnalyticsController.GetUsersStatus">
+            <summary>
+            Get Users Status
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.DashboardAnalyticsController.GetServiceBreakdown(System.Nullable{System.Int32})">
+            <summary>
+            Get Service Breakdown
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.DashboardAnalyticsController.GetSignUpAnalytics(System.Nullable{System.Int32})">
+            <summary>
+            Get SignUp Analytics
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.DashboardAnalyticsController.GetServices">
+            <summary>
+            Get ALl Service
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.SendHeliumNotification(HealthBanc.ViewModels.HeliumHealthCollectionViewModel)">
+            <summary>
+            Send Helium Notification
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.CreateNotification(HealthBanc.ViewModels.NotificationViewModel)">
+            <summary>
+            Create Notification
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.GetAllNotification(HealthBanc.Request.PaginationQuery)">
+            <summary>
+            Get paged Notification
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.GetNotification(System.Int32)">
+            <summary>
+            Get paged Notification
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.TrashNotification(System.Int32)">
+            <summary>
+            Move notification to trash
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.DeleteNotification(System.Int32)">
+            <summary>
+            Delete notification
+            </summary>
+        </member>
         <member name="M:HealthBanc.Controllers.BackendAdminAuthController.BackendLogin(HealthBanc.ViewModels.ADCredentials)">
             <summary>
             Logs the BackendUser In
             </summary>
-            <returns>returns LoggedInResponse Object</returns>
-            <response code="200"> Return LoggedInResponse Object</response>
-            <response code="401">Success : Username or password invalid, please try again with correct details.</response>
-            <response code="400">Error : List of Input Validation Errors </response>
-            <response code="404"> Error : User Does Not Exist</response>
         </member>
         <member name="M:HealthBanc.Controllers.BackendAdminAuthController.CreateBackendAdmin(HealthBanc.ViewModels.CreateAdminViewModel)">
             <summary>
             Creates the BackendUser 
             </summary>
-            <response code="200"> Return LoggedInResponse Object</response>
-            <response code="401">Success : Username or password invalid, please try again with correct details.</response>
-            <response code="400">Error : List of Input Validation Errors </response>
-            <response code="404"> Error : User Does Not Exist</response>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdminAuthController.GetBackendAdminUsers">
+            <summary>
+            Get All admin users
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdminAuthController.ChangeAdminRole(System.String,System.Int32)">
+            <summary>
+            Change Admin Role
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdminAuthController.GetAdminRoles">
+            <summary>
+            Get Admin Roles
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdminAuthController.RemoveAdmin(System.String)">
+            <summary>
+            Delete Admin
+            </summary>
         </member>
         <member name="M:HealthBanc.Controllers.IdentityController.RegisterUser(HealthBanc.ViewModels.RegistrationViewModel)">
             <summary>

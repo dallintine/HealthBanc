@@ -61,5 +61,32 @@ namespace HealthBanc.Controllers.BackendAdmin
                 return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get all users" });
             }
         }
+
+        //WORKING1
+        /// <summary>
+        /// Get  User Detail
+        /// </summary>
+        [ProducesResponseType(200, Type = typeof(PagedResponse<ApplicationUserDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [Authorize]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetUser([FromQuery]string email)
+        {
+            if(email != null)
+            {
+                try
+                {
+                    var user = await _applicationUserRepository.GetByEmailAsync(email);
+                    var userDTO = _mapper.Map<ApplicationUserDTO>(user);
+                    return Ok(new ResponseMessage<ApplicationUserDTO> { Data = userDTO, Status = true, Message = "User detail was fetched successfully" });
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogCritical("An error occured while trying to get user detail " + ex);
+                    return BadRequest(new ResponseMessage { Message = "An error occured while trying to get user detail"});
+                }                
+            }
+            return BadRequest(new ResponseMessage { Message = "email can not be null" });
+        }
     }
 }

@@ -294,7 +294,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [Authorize]
         [HttpGet("[action]")]
-        public async Task<IActionResult> RemoveAdmin(string email)
+        public async Task<IActionResult> RemoveAdmin([FromQuery]string email)
         {
             try
             {

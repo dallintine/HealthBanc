@@ -96,7 +96,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<DashboardDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        //[Authorize]
+        [Authorize]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetServiceBreakdown([FromQuery] int? timeId)
         {
@@ -158,6 +158,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<Service>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
+        [Authorize]
         public async Task<IActionResult> GetServices()
         {
             try

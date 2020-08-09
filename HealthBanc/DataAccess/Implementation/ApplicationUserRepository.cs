@@ -76,6 +76,12 @@ namespace HealthBanc.DataAccess.Implementation
             } 
         }
 
+        public async Task<ApplicationUser> FindByEmailAsync(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == email && x.UniqueUsername == null);
+            return user;
+        }
+
         public async Task<ApplicationUser>  FindByIdAsync(int id)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == id);

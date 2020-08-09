@@ -4,14 +4,16 @@ using HealthBanc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HealthBanc.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200809105529_AddedNotificationTable")]
+    partial class AddedNotificationTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -332,7 +334,12 @@ namespace HealthBanc.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ServiceId");
 
                     b.ToTable("Services");
 
@@ -462,10 +469,17 @@ namespace HealthBanc.Migrations
             modelBuilder.Entity("HealthBanc.Domain.Models.Notification", b =>
                 {
                     b.HasOne("HealthBanc.Domain.Models.Service", "Service")
-                        .WithMany("Notifications")
+                        .WithMany()
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthBanc.Domain.Models.Service", b =>
+                {
+                    b.HasOne("HealthBanc.Domain.Models.Service", null)
+                        .WithMany("Services")
+                        .HasForeignKey("ServiceId");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>

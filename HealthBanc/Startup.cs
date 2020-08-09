@@ -18,6 +18,7 @@ using HealthBanc.Messages.Events;
 using HealthBanc.RabbitMq;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
+using HealthBanc.Services.ImageService;
 using MediatR;
 using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
@@ -116,12 +117,14 @@ namespace HealthBanc
 
             services.AddScoped<IdentityService>();
             services.AddScoped<IEmailSender, EmailSender>();
+            services.AddScoped<IImageService, ImageService>();
             services.AddScoped<IApplicationUserRepository,ApplicationUserRepository>();
             services.Configure<AuthMessageSenderOption>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

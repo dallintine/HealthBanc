@@ -12,6 +12,7 @@ namespace HealthBanc.DataAccess.Interfaces
 {
     public interface IApplicationUserRepository : IBaseRepository<ApplicationUser>
     {
+        Task<ApplicationUser> FindByEmailAsync(string email);
         Task<ApplicationUser> FindByIdAsync(int id);
         Task<ApplicationUser> FindByUniqueUsername(string username);
         Task<PagedResponse<ApplicationUser>> GetAllUsers(PaginationQuery paginationQuery = null);
