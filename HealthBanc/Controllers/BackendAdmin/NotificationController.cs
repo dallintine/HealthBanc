@@ -125,17 +125,15 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             try
             {
+                if (paginationQuery.Status < 1 || paginationQuery.Status > 4)
+                {
+                    return BadRequest(new ResponseMessage { Message = "Status value is invalid" });
+                }
                 var notifications = await _notificationRepository.GetAllNotifications(paginationQuery);
 
-                var paginatedResponse = new PagedResponse<Notification>
-                {
-                    Data = notifications.Data,
-                    PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                    PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                    RecordCount = notifications.RecordCount,
-                    PageCount = notifications.PageCount
-                };
-                return Ok(new ResponseMessage<PagedResponse<Notification>> { Data= paginatedResponse, Message="Notification was fecthed successfully",Status= true });
+                notifications.PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null;
+                notifications.PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null;
+                return Ok(new ResponseMessage<PagedResponse<Notification>> { Data= notifications, Message="Notification was fecthed successfully",Status= true });
             }
             catch (Exception ex)
             {
