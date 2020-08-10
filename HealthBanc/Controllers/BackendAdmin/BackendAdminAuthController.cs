@@ -243,7 +243,7 @@ namespace HealthBanc.Controllers
                 if(user != null)
                 {
                     var userRole = await _userManager.GetRolesAsync(user);
-                    var removeRoleResult = _userManager.RemoveFromRoleAsync(user, userRole.FirstOrDefault());
+                    var removeRoleResult = _userManager.RemoveFromRoleAsync(user, userRole.FirstOrDefault()).Result;
                     var role = await _roleRepository.GetRole(roleId);
                     var result = _userManager.AddToRoleAsync(user, role.Name).Result;
                     if (result.Succeeded)
