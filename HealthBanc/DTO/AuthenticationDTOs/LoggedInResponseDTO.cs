@@ -13,4 +13,15 @@ namespace HealthBanc.DTO.AuthenticationDTOs
         public DateTime ExpiryTime { get; set; }
         public IEnumerable<string> Roles { get; set; }
     }
+
+    public class LoggedInAdminResponseDTO
+    {
+        public string Token { get; set; }
+        public string Username { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public DateTime ExpiryTime { get; set; }
+        public IEnumerable<string> Roles { get; set; }
+    }
 }

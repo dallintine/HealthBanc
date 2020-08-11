@@ -53,7 +53,7 @@ namespace HealthBanc.Controllers
         /// <summary>
         /// Logs the BackendUser In
         /// </summary>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInAdminResponseDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
@@ -104,14 +104,17 @@ namespace HealthBanc.Controllers
 
                             //create the token 
                             var token = tokenHandler.CreateToken(tokenDescriptor);
-                            var loggedInResponseDTO = new LoggedInResponseDTO
+                            var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
                             {
                                 Token = tokenHandler.WriteToken(token),
                                 Username = aDCredentials.AD_Username,
+                                FirstName = checkIfUserExist.FirstName,
+                                LastName = checkIfUserExist.LastName,
+                                Email = checkIfUserExist.Email,
                                 ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
                                 Roles = roles,
                             };
-                            return Ok(new ResponseMessage<LoggedInResponseDTO> { Data = loggedInResponseDTO, Status = true,Message="Login was successfully" });
+                            return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true,Message="Login was successfully" });
                         }
                         else
                         {
