@@ -113,6 +113,36 @@ namespace HealthBanc.Controllers.BackendAdmin
             return BadRequest(new ResponseMessage { Data = errors,Message="There were validation errors"});
         }
 
+
+        //WORKING1
+        /// <summary>
+        /// Change notification status
+        /// </summary>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        [Authorize]
+        public async Task<IActionResult> ChangeNotificationStatus([FromQuery] int Id,int statusId)
+        {
+            try
+            {
+                var notification = await _notificationRepository.GetNotificationById(Id);
+                if (notification != null)
+                {
+                    notification.Status = statusId;
+                    _notificationRepository.Update(notification);
+                    await _notificationRepository.Save();
+                    return Ok(new ResponseMessage {Status=true,Message="Status was changed successfully"});
+                }
+                return NotFound(new ResponseMessage { Message="Notification was not found"});
+            }
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occurred while trying to change notification status " + ex);
+                return BadRequest(new ResponseMessage {Message= "An error occurred while trying to change notification status"});
+            }           
+        }
+
         //WORKING1
         /// <summary>
         /// Get paged Notification
