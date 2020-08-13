@@ -113,6 +113,37 @@ namespace HealthBanc.Controllers.BackendAdmin
             return BadRequest(new ResponseMessage { Data = errors,Message="There were validation errors"});
         }
 
+        //WORKING1
+        /// <summary>
+        /// Restore Notification
+        /// </summary>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        [Authorize]
+        public async Task<IActionResult> RestoreNotification(int notificationId)
+        {
+            try
+            {
+                var notification = await _notificationRepository.GetNotificationById(notificationId);
+                if (notification != null)
+                {
+                    notification.Status = notification.RestoreServiceId??notification.Status;
+                    notification.RestoreServiceId = null;
+                    _notificationRepository.Update(notification);
+                    await _notificationRepository.Save();
+                    return Ok(new ResponseMessage {Message="Notification was changed successfully", Status=true });
+                }
+                return NotFound(new ResponseMessage { Message = "Notification was not found"});
+            }  
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occurrd while trying to restore notification: "+ ex);
+                return BadRequest("An error occurrd while trying to restore notification");
+            }
+        }
+
 
         //WORKING1
         /// <summary>
@@ -212,12 +243,13 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             if (Id < 1)
             {
-                return BadRequest(new ResponseMessage { Message = "Id can not be less than 1" });
+                return BadRequest(new ResponseMessage { Message = "Id can not be less than 1"});
             }
             try
             {
                 var notification = await _notificationRepository.GetNotificationById(Id);
                 if (notification is null) return NotFound(new ResponseMessage { Message = "Notification was not found" });
+                notification.RestoreServiceId = notification.Status;
                 notification.Status = 4;
                 _notificationRepository.Update(notification);
                 await _notificationRepository.Save();

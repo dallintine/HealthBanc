@@ -19,6 +19,7 @@ namespace HealthBanc.Domain.Models
         public string ImageURl { get; set; }
         [Required]
         public int ServiceId { get; set; }
+        public int? RestoreServiceId { get; set; }
         public Service Service { get; set; }
         [Required]
         public int Status { get; set; }

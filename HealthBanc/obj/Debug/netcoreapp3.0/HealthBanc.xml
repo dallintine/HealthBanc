@@ -49,6 +49,16 @@
             Create Notification
             </summary>
         </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.RestoreNotification(System.Int32)">
+            <summary>
+            Restore Notification
+            </summary>
+        </member>
+        <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.ChangeNotificationStatus(System.Int32,System.Int32)">
+            <summary>
+            Change notification status
+            </summary>
+        </member>
         <member name="M:HealthBanc.Controllers.BackendAdmin.NotificationController.GetAllNotification(HealthBanc.Request.PaginationQuery)">
             <summary>
             Get paged Notification
