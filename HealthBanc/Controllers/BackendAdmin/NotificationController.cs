@@ -157,6 +157,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             try
             {
+                if (statusId < 1 || statusId > 3) return BadRequest(new ResponseMessage { Message = "statusId is invalId" });
                 var notification = await _notificationRepository.GetNotificationById(Id);
                 if (notification != null)
                 {
