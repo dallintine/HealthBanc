@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -122,28 +124,37 @@ namespace HealthBanc.Services.Insurance
 
         public string AxaMansardGetToken(string userName,string password)
         {
-            const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
-            const string action = "http://tempuri.org/getToken ";
-
-            XmlDocument soapEnvelopXml = CreateTokenEnvelope(userName,password);
-            HttpWebRequest webRequest = CreateWebRequest(url, action);
-
-            using (Stream stream = webRequest.GetRequestStream())
+            try
             {
-                soapEnvelopXml.Save(stream);
-            }
+                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/getToken";
 
-            //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+                XmlDocument soapEnvelopXml = CreateTokenEnvelope(userName, password);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
 
-            string result;
-            using (WebResponse response = webRequest.GetResponse())
-            {
-                using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                using (Stream stream = webRequest.GetRequestStream())
                 {
-                    result = rd.ReadToEnd();
+                    soapEnvelopXml.Save(stream);
                 }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                return result;
             }
-            return result;
+            catch(Exception ex)
+            {
+                string result = ex.ToString();
+                return result;
+            }
+            
         }
 
         private static HttpWebRequest CreateWebRequest(string url, string action)
@@ -264,6 +275,34 @@ namespace HealthBanc.Services.Insurance
             </soap:Envelope>");
             return soapEnvelopeXml;
         }
+
+
+
+        //public async Task<string> CreateSoapEnvelope()
+        //{
+        //    string soapString = @"<?xml version=""1.0"" encoding=""utf-8""?>
+        //  <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+        //      <soap:Body>
+        //          <HelloWorld xmlns=""http://tempuri.org/"" />
+        //      </soap:Body>
+        //  </soap:Envelope>";
+
+        //    HttpResponseMessage response = await PostXmlRequest("your_url_here", soapString);
+        //    string content = await response.Content.ReadAsStringAsync();
+
+        //    return content;
+        //}
+
+        //public static async Task<HttpResponseMessage> PostXmlRequest(string baseUrl, string xmlString)
+        //{
+        //    using (var httpClient = new HttpClient())
+        //    {
+        //        var httpContent = new StringContent(xmlString, Encoding.UTF8, "text/xml");
+        //        httpContent.Headers.Add("SOAPAction", "http://tempuri.org/HelloWorld");
+
+        //        return await httpClient.PostAsync(baseUrl, httpContent);
+        //    }
+        //}
 
     }
 }
