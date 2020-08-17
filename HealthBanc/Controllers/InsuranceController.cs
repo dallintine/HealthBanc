@@ -20,7 +20,7 @@ namespace HealthBanc.Controllers
             _insuranceService = insuranceService;
         }
 
-        [HttpPost("[action]")]
+        [HttpGet("[action]")]
         public IActionResult AxaMansardGetToken(string userName,string password)
         {
             var result = _insuranceService.AxaMansardGetToken(userName, password);
