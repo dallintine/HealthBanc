@@ -19,6 +19,7 @@ using HealthBanc.RabbitMq;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
 using HealthBanc.Services.ImageService;
+using HealthBanc.Services.Insurance;
 using MediatR;
 using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
@@ -123,6 +124,7 @@ namespace HealthBanc
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
+            services.AddScoped<InsuranceService>();
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
 

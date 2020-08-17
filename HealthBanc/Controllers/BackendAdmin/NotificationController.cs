@@ -206,7 +206,7 @@ namespace HealthBanc.Controllers.BackendAdmin
 
         //WORKING1
         /// <summary>
-        /// Get paged Notification
+        /// Get specific Notification
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<Notification>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]

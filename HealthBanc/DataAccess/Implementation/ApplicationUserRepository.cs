@@ -124,7 +124,7 @@ namespace HealthBanc.DataAccess.Implementation
             {
                 foreach (var item in dashboardServiceList)
                 {
-                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Name)).CountAsync();
+                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Id.ToString())).CountAsync();
                 }
             }
             else if(Id == 1)
