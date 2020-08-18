@@ -123,9 +123,9 @@ namespace HealthBanc.Services.Insurance
             return result;
         }
 
-        public ResponseMessage AxaMansardGetToken(string userName,string password)
+        public ResponseInsure AxaMansardGetToken(string userName,string password)
         {
-            var responseMessage = new ResponseMessage();
+            var responseMessage = new ResponseInsure();
             try
             {
                 const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
