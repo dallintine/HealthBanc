@@ -718,9 +718,6 @@ C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netc
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csprojAssemblyReference.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.AssemblyInfoInputs.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.AssemblyInfo.cs
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csproj.CoreCompileInputs.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cs
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.RazorTargetAssemblyInfo.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csproj.CopyComplete
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\staticwebassets\HealthBanc.StaticWebAssets.Manifest.cache
@@ -729,3 +726,6 @@ C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netc
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.xml
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.pdb
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.genruntimeconfig.cache
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csproj.CoreCompileInputs.cache
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cache
