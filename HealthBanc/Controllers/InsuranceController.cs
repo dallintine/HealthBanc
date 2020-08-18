@@ -95,7 +95,8 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetStates()
         {
-            return Ok();
+            var result = _insuranceService.AxaMansardGetStates("ki");
+            return Ok(result);
         }
 
     }
