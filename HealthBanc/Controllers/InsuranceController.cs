@@ -31,7 +31,7 @@ namespace HealthBanc.Controllers
         public IActionResult AxaMansardGetToken(string userName,string password)
         {
             var result = _insuranceService.AxaMansardGetToken(userName, password);
-            var jsResult = JsonConvert.DeserializeObject<GetTokenResult>(result);
+            var jsResult = JsonConvert.DeserializeObject<Body>(result);
             //StringReader stringReader = new StringReader(result);
             //XmlSerializer serializer = new XmlSerializer(typeof(GetTokenResult));
             //GetTokenResult getToken = (GetTokenResult)serializer.Deserialize(stringReader);
