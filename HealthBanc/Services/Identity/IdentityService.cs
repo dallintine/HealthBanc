@@ -35,10 +35,11 @@ namespace HealthBanc.Services.Identity
         private readonly IMapper _mapper;
         private readonly IBusPublisher _busPublisher;
         private readonly JwtSettings _jwtsettings;
+        private readonly TokenValidationParameters _tokenValidationParameters;
 
-        public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager,IEncryptAndDecrypt encryptAndDecrypt,IEmailSender emailSender,
-             IOptions<JwtSettings> jwtsettings,IApplicationUserRepository userRepository,IClassOrRoleRepository classOrRole, IMapper mapper,
-             IBusPublisher busPublisher)
+        public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
+             IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
+             IBusPublisher busPublisher, TokenValidationParameters tokenValidationParameters)
         {
             _logger = logger;
             _userManager = userManager;
@@ -49,6 +50,7 @@ namespace HealthBanc.Services.Identity
             _mapper = mapper;
             _busPublisher = busPublisher;
             _jwtsettings = jwtsettings.Value;
+            _tokenValidationParameters = tokenValidationParameters;
         }
 
         public async Task<ResponseMessage> RegisterSuperAdmin(RegistrationViewModel registrationViewModel)
@@ -170,6 +172,41 @@ namespace HealthBanc.Services.Identity
                 _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
             }
             return new ResponseMessage { Message = "Error occured please try again later" };
+        }
+
+        //public async Task<ResponseMessage> RefreshTokenAsync(string token,string requestRefreshToken)
+        //{
+        //    var validatedToken = GetPrincipalFromToken(token);
+        //    if(validatedToken == null)
+        //    {
+        //        return new ResponseMessage { Data = new[] { "Invalid Token" } };
+        //    }
+        //    var expiryDateUnix = long.Parse(validatedToken.Claims.Single(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
+        //    var expiryDateTimeUtc = new DateTime(1970, 1, 1, 1, 0, 0, 0,DateTimeKind.Utc)
+        //        .AddSeconds(expiryDateUnix)
+        //        .Subtract(_jwtsettings.TokenLifeTime);
+        //}
+        private ClaimsPrincipal GetPrincipalFromToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            try
+            {
+                var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out var validatedToken);
+                if (!IsJwtWithValidSecurityAlgorithm(validatedToken))
+                {
+                    return null;
+                }
+                return principal;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private bool IsJwtWithValidSecurityAlgorithm(SecurityToken validatedToken)
+        {
+            return (validatedToken is JwtSecurityToken jwtSecurityToken) && jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
         }
 
         public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword)

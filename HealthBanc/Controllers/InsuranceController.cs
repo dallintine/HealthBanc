@@ -34,11 +34,11 @@ namespace HealthBanc.Controllers
         //    return Ok(getToken);
 
         [HttpGet("[action]")]
-        public IActionResult AxaMansardGetToken(string userName,string password)
+        public IActionResult AxaMansardGetToken()
         {           
             try
             {
-                var result = _insuranceService.AxaMansardGetToken(userName, password);
+                var result = _insuranceService.AxaMansardGetToken();
                 StringReader stringReader = new StringReader(result.Data);
                 //var stringReader = @"<?xml version=""1.0"" encoding=""utf - 8""?><soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema""><soap:Body><getTokenResponse xmlns=""http://tempuri.org/""><getTokenResult><IsSuccessful>true</IsSuccessful><message>V2NXM01D2EgGUGzHgbbBTbxPAeFY/LokUwBUAEIAQQBOAEsAMAAxAA==</message><ReturnedObject xsi:type=""xsd:string"">STERLINGBANK</ReturnedObject><ReturnCode>00</ReturnCode></getTokenResult></getTokenResponse></soap:Body></soap:Envelope>";
                 //StringReader stringReaders = new StringReader(stringReader);
@@ -71,14 +71,18 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public IActionResult AxaMansardCreateUserProfile(UserProfileviewModel userProfile)
         {
-            var result = _insuranceService.AxaMansardCreateUserProfile(userProfile);
-            return Ok();
+            var tokenResult = _insuranceService.AxaMansardGetToken();
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(tokenResult.Data);
+            var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+            var result = _insuranceService.AxaMansardCreateUserProfile(userProfile,token);
+            return Ok(result);
         }
 
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetMedicalCondition()
         {
-            var tokenResult = _insuranceService.AxaMansardGetToken("f", "f");
+            var tokenResult = _insuranceService.AxaMansardGetToken();
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(tokenResult.Data);
             var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
@@ -89,13 +93,22 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetTowns(string state)
         {
-            return Ok();
+            var tokenResult = _insuranceService.AxaMansardGetToken();
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(tokenResult.Data);
+            var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+            var result = _insuranceService.AxaMansardGetTowns(state,token);
+            return Ok(result);
         }
 
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetStates()
         {
-            var result = _insuranceService.AxaMansardGetStates("ki");
+            var tokenResult = _insuranceService.AxaMansardGetToken();
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(tokenResult.Data);
+            var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+            var result = _insuranceService.AxaMansardGetStates(token);
             return Ok(result);
         }
 

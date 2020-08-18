@@ -19,12 +19,12 @@ namespace HealthBanc.Services.Insurance
 
         }
 
-        public string AxaMansardCreateUserProfile(UserProfileviewModel userProfile)
+        public string AxaMansardCreateUserProfile(UserProfileviewModel userProfile,string token)
         {
             const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
             const string action = "http://tempuri.org/SaveHealth";
 
-            XmlDocument soapEnvelopXml = CreateSoapEnvelope(userProfile);
+            XmlDocument soapEnvelopXml = CreateSoapEnvelope(userProfile,token);
             HttpWebRequest webRequest = CreateWebRequest(url, action);
 
             using (Stream stream = webRequest.GetRequestStream())
@@ -123,7 +123,7 @@ namespace HealthBanc.Services.Insurance
             return result;
         }
 
-        public ResponseInsure AxaMansardGetToken(string userName,string password)
+        public ResponseInsure AxaMansardGetToken()
         {
             var responseMessage = new ResponseInsure();
             try
@@ -131,7 +131,7 @@ namespace HealthBanc.Services.Insurance
                 const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
                 const string action = "http://tempuri.org/getToken";
 
-                XmlDocument soapEnvelopXml = CreateTokenEnvelope(userName, password);
+                XmlDocument soapEnvelopXml = CreateTokenEnvelope();
                 HttpWebRequest webRequest = CreateWebRequest(url, action);
 
                 using (Stream stream = webRequest.GetRequestStream())
@@ -171,7 +171,7 @@ namespace HealthBanc.Services.Insurance
             return webRequest;
         }
 
-        private static XmlDocument CreateSoapEnvelope(UserProfileviewModel userProfile)
+        private static XmlDocument CreateSoapEnvelope(UserProfileviewModel userProfile,string token)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
             soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -215,7 +215,7 @@ namespace HealthBanc.Services.Insurance
                 <StateOfResidence>{userProfile.StateOfResidence}</StateOfResidence>
                 <TownOfResidence>{userProfile.TownOfResidence}</TownOfResidence>
               </ HealthObject>
-              <token> string </token>
+              <token>{token}</token>
             </SaveHealth>
           </soap:Body>
         </soap:Envelope >");
@@ -264,8 +264,7 @@ namespace HealthBanc.Services.Insurance
             </soap:Envelope>");
             return soapEnvelopeXml;
         }
-
-        private static XmlDocument CreateTokenEnvelope(string userName, string password)
+        private static XmlDocument CreateTokenEnvelope()
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
             //StringBuilder sb = new StringBuilder();
@@ -285,7 +284,6 @@ namespace HealthBanc.Services.Insurance
             </soap:Envelope>");
             return soapEnvelopeXml;
         }
-
 
         //public async Task<string> CreateSoapEnvelope()
         //{
