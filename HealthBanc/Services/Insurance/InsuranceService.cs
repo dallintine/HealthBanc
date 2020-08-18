@@ -156,7 +156,7 @@ namespace HealthBanc.Services.Insurance
             catch(Exception ex)
             {
                 responseMessage.Data = ex.ToString();
-                responseMessage.Status = true;
+                responseMessage.Status = false;
                 return responseMessage;
             }            
         }
