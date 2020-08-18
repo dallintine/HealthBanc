@@ -14,18 +14,9 @@ namespace HealthBanc.Response.AxaMansard
 		[XmlElement(ElementName = "message", Namespace = "http://tempuri.org/")]
 		public string Message { get; set; }
 		[XmlElement(ElementName = "ReturnedObject", Namespace = "http://tempuri.org/")]
-		public ReturnedObject ReturnedObject { get; set; }
+		public string ReturnedObject { get; set; }
 		[XmlElement(ElementName = "ReturnCode", Namespace = "http://tempuri.org/")]
 		public string ReturnCode { get; set; }
-	}
-
-	[XmlRoot(ElementName = "ReturnedObject", Namespace = "http://tempuri.org/")]
-	public class ReturnedObject
-	{
-		[XmlAttribute(AttributeName = "type", Namespace = "http://www.w3.org/2001/XMLSchema-instance")]
-		public string Type { get; set; }
-		[XmlText]
-		public string Text { get; set; }
 	}
 
 	[XmlRoot(ElementName = "getTokenResponse", Namespace = "http://tempuri.org/")]
@@ -33,8 +24,6 @@ namespace HealthBanc.Response.AxaMansard
 	{
 		[XmlElement(ElementName = "getTokenResult", Namespace = "http://tempuri.org/")]
 		public GetTokenResult GetTokenResult { get; set; }
-		[XmlAttribute(AttributeName = "xmlns")]
-		public string Xmlns { get; set; }
 	}
 
 	[XmlRoot(ElementName = "Body", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
@@ -49,11 +38,11 @@ namespace HealthBanc.Response.AxaMansard
 	{
 		[XmlElement(ElementName = "Body", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
 		public Body Body { get; set; }
-		[XmlAttribute(AttributeName = "soap", Namespace = "http://www.w3.org/2000/xmlns/")]
-		public string Soap { get; set; }
 		[XmlAttribute(AttributeName = "xsi", Namespace = "http://www.w3.org/2000/xmlns/")]
 		public string Xsi { get; set; }
 		[XmlAttribute(AttributeName = "xsd", Namespace = "http://www.w3.org/2000/xmlns/")]
 		public string Xsd { get; set; }
+		[XmlAttribute(AttributeName = "soap", Namespace = "http://www.w3.org/2000/xmlns/")]
+		public string Soap { get; set; }
 	}
 }

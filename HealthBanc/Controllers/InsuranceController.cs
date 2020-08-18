@@ -38,28 +38,29 @@ namespace HealthBanc.Controllers
         {           
             try
             {
-                //var result = _insuranceService.AxaMansardGetToken(userName, password);
-                //StringReader stringReader = new StringReader(result);
+                var result = _insuranceService.AxaMansardGetToken(userName, password);
+                StringReader stringReader = new StringReader(result.Data);
                 //var stringReader = @"<?xml version=""1.0"" encoding=""utf - 8""?><soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema""><soap:Body><getTokenResponse xmlns=""http://tempuri.org/""><getTokenResult><IsSuccessful>true</IsSuccessful><message>V2NXM01D2EgGUGzHgbbBTbxPAeFY/LokUwBUAEIAQQBOAEsAMAAxAA==</message><ReturnedObject xsi:type=""xsd:string"">STERLINGBANK</ReturnedObject><ReturnCode>00</ReturnCode></getTokenResult></getTokenResponse></soap:Body></soap:Envelope>";
                 //StringReader stringReaders = new StringReader(stringReader);
-                ////XmlDocument doc = new XmlDocument();
-                ////doc.LoadXml(stringReader);
-                //string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
-                //XmlSerializer serializer = new XmlSerializer(typeof(Envelope));
-                //Envelope getToken = (Envelope)serializer.Deserialize(stringReaders);
+                //XmlDocument doc = new XmlDocument();
+                //doc.LoadXml(stringReader);
+               // string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
+                XmlSerializer serializer = new XmlSerializer(typeof(Envelope));
+                Envelope getToken = (Envelope)serializer.Deserialize(stringReader);
+                return Ok(getToken);
 
-                var result = _insuranceService.AxaMansardGetToken(userName, password);
-                if(result.Status == true)
-                {
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.LoadXml(result.Data);
-                    var getToken = new GetTokenResult();
-                    getToken.ReturnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
-                    getToken.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-                    getToken.Message = xmlDoc.GetElementsByTagName("Message").Item(0).InnerText;
-                    return Ok(getToken);
-                }
-                return BadRequest(result);
+                //var result = _insuranceService.AxaMansardGetToken(userName, password);
+                //if(result.Status == true)
+                //{
+                //    XmlDocument xmlDoc = new XmlDocument();
+                //    xmlDoc.LoadXml(stringReader);
+                //    var getToken = new GetTokenResult();
+                //    getToken.ReturnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                //    getToken.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                //    getToken.Message = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+                //    return Ok(getToken);
+                //}
+                //return BadRequest(result);
             }
             catch(Exception ex)
             {
