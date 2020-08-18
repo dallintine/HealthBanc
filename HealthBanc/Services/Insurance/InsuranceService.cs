@@ -239,15 +239,15 @@ namespace HealthBanc.Services.Insurance
         private static XmlDocument CreateTownEnvelope(string state,string token)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
-            soapEnvelopeXml.LoadXml(@"<?xml version=""1.0"" encoding=""utf-8""?>
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
                    <GetTowns xmlns=""http://tempuri.org/"">
-                        < State > string </ State >
-                        < token > string </ token >
-                    </ GetTowns >
-                </ soap:Body >
-            </soap:Envelope >");
+                        <State>{state}</ State >
+                        <token>{token}</token>
+                    </GetTowns>
+                </soap:Body>
+            </soap:Envelope>");
             return soapEnvelopeXml;
         }
 
