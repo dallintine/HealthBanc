@@ -18,7 +18,7 @@ namespace HealthBanc.Services.Insurance
 
         }
 
-        public string AxaMansardCreateUserProfile(UseProfileviewModel userProfile)
+        public string AxaMansardCreateUserProfile(UserProfileviewModel userProfile)
         {
             const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
             const string action = "http://tempuri.org/SaveHealth";
@@ -167,49 +167,49 @@ namespace HealthBanc.Services.Insurance
             return webRequest;
         }
 
-        private static XmlDocument CreateSoapEnvelope(UseProfileviewModel userProfile)
+        private static XmlDocument CreateSoapEnvelope(UserProfileviewModel userProfile)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
-            soapEnvelopeXml.LoadXml(@"<?xml version=""1.0"" encoding=""utf-8""?>
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
           <soap:Body>
             <SaveHealth xmlns = ""http://tempuri.org/"" >
               <HealthObject>
-                <TransId > string </ TransId >
+                <TransId></ TransId >
                 <Gender>{userProfile.Gender}</Gender>
-                <CustomerNo> string </ CustomerNo >
-                <Surname> string </ Surname >
-                <Othernames> string </ Othernames >
-                <MaidenName> string </ MaidenName >
-                <DateOfBirth> dateTime </ DateOfBirth >
-                <PhoneNumber> string </ PhoneNumber >
-                <Email> string </ Email >
-                <ContactAddress> string </ ContactAddress >
-                <Occupation> string </ Occupation >
-                <MaritalStatus> string </ MaritalStatus >
-                <BankName> string </ BankName >
-                <AccountNo> string </ AccountNo >
-                <BVN> string </ BVN >
-                <Weight> decimal </ Weight >
-                <Height> decimal </ Height >
-                <BloodGroup> string </ BloodGroup >
-                <Genotype> string </ Genotype >
-                <Identification> string </ Identification >
-                <Religion> int </ Religion >
-                <Hobbies> string </ Hobbies >
-                <CareProviderName> string </ CareProviderName >
-                <CPPhone> string </ CPPhone >
-                <CPAddress> string </ CPAddress >
-                <CPCity> string </CPCity >
-                <CPEmail> string </CPEmail>
-                <AlternateHospital> string </ AlternateHospital>
-                <MedicalCondition> string </MedicalCondition>
-                <PlanCode> string </PlanCode>
-                <Premium> decimal </Premium>
-                <CustomerPhoto> string </CustomerPhoto>
-                <IdentityPhoto> string </IdentityPhoto>
-                <StateOfResidence> string </StateOfResidence>
-                <TownOfResidence> string </TownOfResidence>
+                <CustomerNo>{userProfile.CustomerNo}</CustomerNo>
+                <Surname>{userProfile.Surname}</Surname>
+                <Othernames>{userProfile.Othernames}</Othernames>
+                <MaidenName>{userProfile.MaidenName}</MaidenName>
+                <DateOfBirth>{userProfile.DateOfBirth}</DateOfBirth>
+                <PhoneNumber>{userProfile.PhoneNumber}</PhoneNumber>
+                <Email>{userProfile.Email}</Email>
+                <ContactAddress>{userProfile.ContactAddress}</ContactAddress>
+                <Occupation>{userProfile.Occupation}</Occupation>
+                <MaritalStatus>{userProfile.MaritalStatus}</MaritalStatus>
+                <BankName>{userProfile.BankName}</BankName>
+                <AccountNo>{userProfile.AccountNo}</AccountNo>
+                <BVN>{userProfile.BVN}</BVN>
+                <Weight>{userProfile.Weight}</Weight>
+                <Height>{userProfile.Height}</Height>
+                <BloodGroup>{userProfile.BloodGroup}</BloodGroup>
+                <Genotype>{userProfile.Genotype}</Genotype>
+                <Identification>{userProfile.Identification}</Identification>
+                <Religion>{userProfile.Religion}</Religion>
+                <Hobbies>{userProfile.Hobbies}</Hobbies>
+                <CareProviderName>{userProfile.CareProviderName}</CareProviderName>
+                <CPPhone>{userProfile.CPPhone}</CPPhone>
+                <CPAddress>{userProfile.CPAddress}<CPAddress>
+                <CPCity>{userProfile.CPCity}</CPCity>
+                <CPEmail>{userProfile.CPEmail}</CPEmail>
+                <AlternateHospital>{userProfile.AlternateHospital}</AlternateHospital>
+                <MedicalCondition>{userProfile.MedicalCondition}</MedicalCondition>
+                <PlanCode>{userProfile.PlanCode}</PlanCode>
+                <Premium>{userProfile.Premium}</Premium>
+                <CustomerPhoto>{userProfile.CustomerPhoto}</CustomerPhoto>
+                <IdentityPhoto>{userProfile.IdentityPhoto}</IdentityPhoto>
+                <StateOfResidence>{userProfile.StateOfResidence}</StateOfResidence>
+                <TownOfResidence>{userProfile.TownOfResidence}</TownOfResidence>
               </ HealthObject>
               <token> string </token>
             </SaveHealth>
@@ -264,7 +264,13 @@ namespace HealthBanc.Services.Insurance
         private static XmlDocument CreateTokenEnvelope(string userName, string password)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
-            soapEnvelopeXml.LoadXml(@"<?xml version=""1.0"" encoding=""utf-8""?>
+            //StringBuilder sb = new StringBuilder();
+            //sb.Append("<? xml version = \"1.0\" encoding = \"utf - 8\" ?>");
+            //sb.Append("<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">");
+            //sb.Append("<soap:Body>");
+            //sb.Append("<getToken xmlns=\"http://tempuri.org/\">");
+            //sb.Append("<Username>userName</Username>");
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
                    <getToken xmlns=""http://tempuri.org/"">
@@ -275,7 +281,6 @@ namespace HealthBanc.Services.Insurance
             </soap:Envelope>");
             return soapEnvelopeXml;
         }
-
 
 
         //public async Task<string> CreateSoapEnvelope()

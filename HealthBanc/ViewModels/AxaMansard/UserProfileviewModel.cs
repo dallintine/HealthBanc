@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.ViewModels.AxaMansard
 {
-    public class UseProfileviewModel
+    public class UserProfileviewModel
     {
         public string TransId { get; set; }
         public string Gender { get; set; }
