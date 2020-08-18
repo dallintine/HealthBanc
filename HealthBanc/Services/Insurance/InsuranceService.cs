@@ -254,11 +254,11 @@ namespace HealthBanc.Services.Insurance
         private static XmlDocument CreateMedicalConditionEnvelope(string token)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
-            soapEnvelopeXml.LoadXml(@"<?xml version=""1.0"" encoding=""utf-8""?>
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
                     <GetMedicalConditions xmlns=""http://tempuri.org/"">
-                    < token > string </token>
+                    <token>{token}</token>
                     </GetMedicalConditions>
                 </ soap:Body >
             </soap:Envelope >");

@@ -34,7 +34,7 @@ namespace HealthBanc.Response.AxaMansard
 	}
 
 	[XmlRoot(ElementName = "Envelope", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
-	public class Envelope
+	public class EnvelopeTokenResponse
 	{
 		[XmlElement(ElementName = "Body", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
 		public Body Body { get; set; }

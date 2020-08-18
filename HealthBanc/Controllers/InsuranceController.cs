@@ -45,8 +45,8 @@ namespace HealthBanc.Controllers
                 //XmlDocument doc = new XmlDocument();
                 //doc.LoadXml(stringReader);
                // string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
-                XmlSerializer serializer = new XmlSerializer(typeof(Envelope));
-                Envelope getToken = (Envelope)serializer.Deserialize(stringReader);
+                XmlSerializer serializer = new XmlSerializer(typeof(EnvelopeTokenResponse));
+                EnvelopeTokenResponse getToken = (EnvelopeTokenResponse)serializer.Deserialize(stringReader);
                 return Ok(getToken);
 
                 //var result = _insuranceService.AxaMansardGetToken(userName, password);
@@ -78,7 +78,12 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetMedicalCondition()
         {
-            return Ok();
+            var tokenResult = _insuranceService.AxaMansardGetToken("f", "f");
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(tokenResult.Data);
+            var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+            var result = _insuranceService.AxaMansardGetMedicalCondition(token);
+            return Ok(result);
         }
 
         [HttpGet("[action]")]
