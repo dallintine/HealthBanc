@@ -3,7 +3,6 @@ using HealthBanc.Response.AxaMansard;
 using HealthBanc.Services.Insurance;
 using HealthBanc.ViewModels.AxaMansard;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,14 +26,25 @@ namespace HealthBanc.Controllers
             _insuranceService = insuranceService;
         }
 
+        //var result = _insuranceService.AxaMansardGetToken(userName, password);
+        ////var jsResult = JsonConvert.DeserializeObject<GetTokenResult>(result);
+        //XmlSerializer serializer = new XmlSerializer(typeof(GetTokenResponse));
+        //StringReader stringReader = new StringReader(result);
+        //GetTokenResponse getToken = (GetTokenResponse)serializer.Deserialize(stringReader);
+        //    return Ok(getToken);
+
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetToken(string userName,string password)
         {
             var result = _insuranceService.AxaMansardGetToken(userName, password);
-            //var jsResult = JsonConvert.DeserializeObject<GetTokenResult>(result);
-            XmlSerializer serializer = new XmlSerializer(typeof(GetTokenResponse));
             StringReader stringReader = new StringReader(result);
-            GetTokenResponse getToken = (GetTokenResponse)serializer.Deserialize(stringReader);
+            //var stringReader = @"<?xml version=""1.0"" encoding=""utf - 8""?><soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema""><soap:Body><getTokenResponse xmlns=""http://tempuri.org/""><getTokenResult><IsSuccessful>true</IsSuccessful><message>V2NXM01D2EgGUGzHgbbBTbxPAeFY/LokUwBUAEIAQQBOAEsAMAAxAA==</message><ReturnedObject xsi:type=""xsd:string"">STERLINGBANK</ReturnedObject><ReturnCode>00</ReturnCode></getTokenResult></getTokenResponse></soap:Body></soap:Envelope>";
+            //StringReader stringReaders = new StringReader(stringReader);
+            //XmlDocument doc = new XmlDocument();
+            //doc.LoadXml(stringReader);
+            //string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
+            XmlSerializer serializer = new XmlSerializer(typeof(EnvelopeHome));
+            EnvelopeHome getToken = (EnvelopeHome)serializer.Deserialize(stringReader);
             return Ok(getToken);
         }
 
