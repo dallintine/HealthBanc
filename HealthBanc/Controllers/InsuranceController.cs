@@ -45,9 +45,9 @@ namespace HealthBanc.Controllers
                 //XmlDocument doc = new XmlDocument();
                 //doc.LoadXml(stringReader);
                 //string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
-                XmlSerializer serializer = new XmlSerializer(typeof(EnvelopeHome));
-                EnvelopeHome getToken = (EnvelopeHome)serializer.Deserialize(stringReader);
-                return Ok(getToken);
+                //XmlSerializer serializer = new XmlSerializer(typeof(EnvelopeHome));
+                //EnvelopeHome getToken = (EnvelopeHome)serializer.Deserialize(stringReader);
+                return Ok(result);
             }
             catch(Exception ex)
             {
