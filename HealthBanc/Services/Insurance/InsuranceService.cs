@@ -1,4 +1,5 @@
-﻿using HealthBanc.ViewModels.AxaMansard;
+﻿using HealthBanc.Response;
+using HealthBanc.ViewModels.AxaMansard;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -122,8 +123,9 @@ namespace HealthBanc.Services.Insurance
             return result;
         }
 
-        public string AxaMansardGetToken(string userName,string password)
+        public ResponseMessage AxaMansardGetToken(string userName,string password)
         {
+            var responseMessage = new ResponseMessage();
             try
             {
                 const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
@@ -147,14 +149,16 @@ namespace HealthBanc.Services.Insurance
                         result = rd.ReadToEnd();
                     }
                 }
-                return result;
+                responseMessage.Data = result;
+                responseMessage.Status = true;
+                return responseMessage;
             }
             catch(Exception ex)
             {
-                string result = ex.ToString();
-                return result;
-            }
-            
+                responseMessage.Data = ex.ToString();
+                responseMessage.Status = true;
+                return responseMessage;
+            }            
         }
 
         private static HttpWebRequest CreateWebRequest(string url, string action)

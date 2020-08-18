@@ -49,15 +49,17 @@ namespace HealthBanc.Controllers
                 //Envelope getToken = (Envelope)serializer.Deserialize(stringReader);
 
                 var result = _insuranceService.AxaMansardGetToken(userName, password);
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.LoadXml(result);
-                var getToken = new GetTokenResult();
-                getToken.ReturnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
-                getToken.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-                getToken.Message = xmlDoc.GetElementsByTagName("Message").Item(0).InnerText;
-
-                return Ok(getToken);
-
+                if(result.Status == true)
+                {
+                    XmlDocument xmlDoc = new XmlDocument();
+                    xmlDoc.LoadXml(result.Data);
+                    var getToken = new GetTokenResult();
+                    getToken.ReturnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                    getToken.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                    getToken.Message = xmlDoc.GetElementsByTagName("Message").Item(0).InnerText;
+                    return Ok(getToken);
+                }
+                return BadRequest(result);
             }
             catch(Exception ex)
             {
