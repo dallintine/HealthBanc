@@ -31,11 +31,11 @@ namespace HealthBanc.Controllers
         public IActionResult AxaMansardGetToken(string userName,string password)
         {
             var result = _insuranceService.AxaMansardGetToken(userName, password);
-            //var jsResult = JsonConvert.DeserializeObject<Body>(result);
-            //StringReader stringReader = new StringReader(result);
-            //XmlSerializer serializer = new XmlSerializer(typeof(GetTokenResult));
-            //GetTokenResult getToken = (GetTokenResult)serializer.Deserialize(stringReader);
-            return Ok(result);
+            //var jsResult = JsonConvert.DeserializeObject<GetTokenResult>(result);
+            XmlSerializer serializer = new XmlSerializer(typeof(GetTokenResponse));
+            StringReader stringReader = new StringReader(result);
+            GetTokenResponse getToken = (GetTokenResponse)serializer.Deserialize(stringReader);
+            return Ok(getToken);
         }
 
         [HttpGet("[action]")]
