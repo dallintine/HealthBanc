@@ -109,7 +109,6 @@ namespace HealthBanc.Services.Identity
                 var result = await _userManager.ConfirmEmailAsync(user, decryptedEmailToken);
                 if (result.Succeeded)
                 {
-                    await Welcome(user);
                     return new ResponseMessage { Status = true };
                 }
             }

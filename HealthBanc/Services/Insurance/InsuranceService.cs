@@ -225,11 +225,11 @@ namespace HealthBanc.Services.Insurance
         private static XmlDocument CreateStateEnvelope(string token)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
-            soapEnvelopeXml.LoadXml(@"<?xml version=""1.0"" encoding=""utf-8""?>
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
                     <GetStates xmlns=""http://tempuri.org/"">
-                    <token>9K7RB35D2EiOVccPx9+PTpsKg0uZB9+rUwBUAEIAQQBOAEsAMAAxAA==</token>
+                    <token>{token}</token>
                     </GetStates>
                 </soap:Body>
             </soap:Envelope>");
@@ -243,8 +243,8 @@ namespace HealthBanc.Services.Insurance
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
                    <GetTowns xmlns=""http://tempuri.org/"">
-                        <State>{state}</ State >
-                        <token>{token}</token>
+                    <State>{state}</ State >
+                    <token>{token}</token>
                     </GetTowns>
                 </soap:Body>
             </soap:Envelope>");
@@ -264,6 +264,7 @@ namespace HealthBanc.Services.Insurance
             </soap:Envelope>");
             return soapEnvelopeXml;
         }
+
         private static XmlDocument CreateTokenEnvelope()
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
