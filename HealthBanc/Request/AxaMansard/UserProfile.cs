@@ -1,37 +1,25 @@
-﻿using Microsoft.AspNetCore.Http;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace HealthBanc.ViewModels.AxaMansard
+namespace HealthBanc.Request.AxaMansard
 {
-    public class UserProfileviewModel
+    public class UserProfile
     {
-        [Required]
+        public string TransId { get; set; }
         public string Gender { get; set; }
         public string CustomerNo { get; set; }
-        [Required]
         public string Surname { get; set; }
-        [Required]
         public string Othernames { get; set; }
         public string MaidenName { get; set; }
-        [Required]
         public DateTime DateOfBirth { get; set; }
-        [Required]
         public string PhoneNumber { get; set; }
-        [Required]
         public string Email { get; set; }
-        [Required]
         public string ContactAddress { get; set; }
-        [Required]
         public string Occupation { get; set; }
-        [Required]
         public string MaritalStatus { get; set; }
-        [Required]
         public string BankName { get; set; }
-        [Required]
         public string AccountNo { get; set; }
         public string BVN { get; set; }
         public Decimal Weight { get; set; }
@@ -41,30 +29,18 @@ namespace HealthBanc.ViewModels.AxaMansard
         public string Identification { get; set; }
         public int Religion { get; set; }
         public string Hobbies { get; set; }
-        [Required]
         public string CareProviderName { get; set; }
-        [Required]
         public string CPPhone { get; set; }
-        [Required]
         public string CPAddress { get; set; }
-        [Required]
         public string CPCity { get; set; }
-        [Required]
         public string CPEmail { get; set; }
-        [Required]
         public string AlternateHospital { get; set; }
         public string MedicalCondition { get; set; }
-        [Required]
         public string PlanCode { get; set; }
-        [Required]
         public Decimal Premium { get; set; }
-        [Required]
-        public IFormFile CustomerPhoto { get; set; }
-        [Required]
-        public IFormFile IdentityPhoto { get; set; }
-        [Required]
+        public string CustomerPhoto { get; set; }
+        public string IdentityPhoto { get; set; }
         public string StateOfResidence { get; set; }
-        [Required]
         public string TownOfResidence { get; set; }
     }
 }

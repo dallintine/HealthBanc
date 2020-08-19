@@ -1,5 +1,8 @@
-﻿using HealthBanc.Response;
+﻿using HealthBanc.Request.AxaMansard;
+using HealthBanc.Response;
 using HealthBanc.ViewModels.AxaMansard;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,35 +17,81 @@ namespace HealthBanc.Services.Insurance
 {
     public class InsuranceService
     {
-        public InsuranceService()
-        {
+        private readonly IWebHostEnvironment _environment;
 
+        public InsuranceService(IWebHostEnvironment environment)
+        {
+            _environment = environment;
         }
 
-        public string AxaMansardCreateUserProfile(UserProfileviewModel userProfile,string token)
+        public async Task<string> GetBase64(IFormFile file,string surnName)
         {
-            const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
-            const string action = "http://tempuri.org/SaveHealth";
-
-            XmlDocument soapEnvelopXml = CreateSoapEnvelope(userProfile,token);
-            HttpWebRequest webRequest = CreateWebRequest(url, action);
-
-            using (Stream stream = webRequest.GetRequestStream())
+            try
             {
-                soapEnvelopXml.Save(stream);
-            }
-
-            //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
-
-            string result;
-            using (WebResponse response = webRequest.GetResponse())
-            {
-                using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                if (file.Length > 0)
                 {
-                    result = rd.ReadToEnd();
+                    var fileName = file.FileName;
+                    var myUniqueFileName = Convert.ToString(Guid.NewGuid()).Substring(0, 5);
+                    var fileExtension = Path.GetExtension(fileName);
+                    var name = string.Concat( surnName, myUniqueFileName);
+                    var newFileName = string.Concat(myUniqueFileName, fileExtension);
+
+                    var fileDirectoryPath = Path.Combine(_environment.WebRootPath, "insurance");
+                    var filePath = Path.Combine(_environment.WebRootPath, "insurance") + $@"\{newFileName}";
+                    if (!System.IO.Directory.Exists(fileDirectoryPath))
+                    {
+                        Directory.CreateDirectory(fileDirectoryPath);
+                    }
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+                    var base64String = Convert.ToBase64String(File.ReadAllBytes(filePath));
+                    File.Delete(filePath);
+                    return base64String;
                 }
+                return "false";
             }
-            return result;
+            catch (Exception ex)
+            {
+                return "false";
+            }
+        }
+
+        public ResponseInsure AxaMansardCreateUserProfile(UserProfile userProfile,string token)
+        {
+            var responseMessage = new ResponseInsure();
+            try
+            {
+                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/SaveHealth";
+
+                XmlDocument soapEnvelopXml = CreateSoapEnvelope(userProfile, token);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
+
+                using (Stream stream = webRequest.GetRequestStream())
+                {
+                    soapEnvelopXml.Save(stream);
+                }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                responseMessage.Data = result; responseMessage.Status = true;
+                return responseMessage;
+            }
+            catch(Exception ex)
+            {
+                responseMessage.Status = false;
+                return responseMessage;
+            }           
         }
 
         public string AxaMansardGetStates(string token)
@@ -171,15 +220,15 @@ namespace HealthBanc.Services.Insurance
             return webRequest;
         }
 
-        private static XmlDocument CreateSoapEnvelope(UserProfileviewModel userProfile,string token)
+        private static XmlDocument CreateSoapEnvelope(UserProfile userProfile,string token)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
             soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
           <soap:Body>
-            <SaveHealth xmlns = ""http://tempuri.org/"" >
+            <SaveHealth xmlns =""http://tempuri.org/"">
               <HealthObject>
-                <TransId></ TransId >
+                <TransId>123456789123</TransId >
                 <Gender>{userProfile.Gender}</Gender>
                 <CustomerNo>{userProfile.CustomerNo}</CustomerNo>
                 <Surname>{userProfile.Surname}</Surname>
@@ -203,7 +252,7 @@ namespace HealthBanc.Services.Insurance
                 <Hobbies>{userProfile.Hobbies}</Hobbies>
                 <CareProviderName>{userProfile.CareProviderName}</CareProviderName>
                 <CPPhone>{userProfile.CPPhone}</CPPhone>
-                <CPAddress>{userProfile.CPAddress}<CPAddress>
+                <CPAddress>{userProfile.CPAddress}</CPAddress>
                 <CPCity>{userProfile.CPCity}</CPCity>
                 <CPEmail>{userProfile.CPEmail}</CPEmail>
                 <AlternateHospital>{userProfile.AlternateHospital}</AlternateHospital>
@@ -214,11 +263,11 @@ namespace HealthBanc.Services.Insurance
                 <IdentityPhoto>{userProfile.IdentityPhoto}</IdentityPhoto>
                 <StateOfResidence>{userProfile.StateOfResidence}</StateOfResidence>
                 <TownOfResidence>{userProfile.TownOfResidence}</TownOfResidence>
-              </ HealthObject>
+              </HealthObject>
               <token>{token}</token>
             </SaveHealth>
           </soap:Body>
-        </soap:Envelope >");
+        </soap:Envelope>");
             return soapEnvelopeXml;
         }
 
@@ -244,7 +293,7 @@ namespace HealthBanc.Services.Insurance
                 <soap:Body>
                    <GetTowns xmlns=""http://tempuri.org/"">
                     <State>{state}</ State >
-                    <token>{token}</token>
+                    <token>LZS4nCFE2EjtTpxsgVlyQrQd/BXpX8EeUwBUAEIAQQBOAEsAMAAxAA==</token>
                     </GetTowns>
                 </soap:Body>
             </soap:Envelope>");

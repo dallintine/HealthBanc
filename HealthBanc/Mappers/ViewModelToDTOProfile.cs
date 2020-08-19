@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using HealthBanc.Request.AxaMansard;
 using HealthBanc.ViewModels;
+using HealthBanc.ViewModels.AxaMansard;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +15,8 @@ namespace HealthBanc.Mappers
         public ViewModelToDTOProfile()
         {
             CreateMap<HeliumHealthCollectionViewModel, HelloEmail>();
+
+            CreateMap<UserProfileviewModel, UserProfile>();
         }
     }
 }
