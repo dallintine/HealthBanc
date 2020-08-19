@@ -236,34 +236,34 @@ namespace HealthBanc
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, UserManager<ApplicationUser> userManger,
             IBackendAdminRepository backendAdminRepository)
         {
-            //if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
-            //{
-            //    ApplicationUser user = new ApplicationUser()
-            //    {
-            //        UniqueUsername = "hassannh",
-            //        UserName = "hassan.hassan@sterling.ng",
-            //        Email = "hassan.hassan@sterling.ng",
-            //        FirstName = "Hassan",
-            //        LastName = "Hassan",
-            //        EmailConfirmed = true
-            //    };
-            //    BackendAdminUser adminUser = new BackendAdminUser()
-            //    {
-            //        Email = "hassan.hassan@sterling.ng",
-            //        FirstName = "Hassan",
-            //        LastName = "Hassan",
-            //        ClassOrRoleId = 6
-            //    };
+            if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
+            {
+                ApplicationUser user = new ApplicationUser()
+                {
+                    UniqueUsername = "hassannh",
+                    UserName = "hassan.hassan@sterling.ng",
+                    Email = "hassan.hassan@sterling.ng",
+                    FirstName = "Hassan",
+                    LastName = "Hassan",
+                    EmailConfirmed = true
+                };
+                BackendAdminUser adminUser = new BackendAdminUser()
+                {
+                    Email = "hassan.hassan@sterling.ng",
+                    FirstName = "Hassan",
+                    LastName = "Hassan",
+                    ClassOrRoleId = 6
+                };
 
-            //    var result = userManger.CreateAsync(user).Result;
+                var result = userManger.CreateAsync(user).Result;
 
-            //    if (result.Succeeded)
-            //    {
-            //        userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
-            //        backendAdminRepository.Create(adminUser);
-            //        backendAdminRepository.Save().Wait();
-            //    }
-            //}
+                if (result.Succeeded)
+                {
+                    userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
+                    backendAdminRepository.Create(adminUser);
+                    backendAdminRepository.Save().Wait();
+                }
+            }
             app.UseCors("CorsPolicy");
 
             app.UseHttpsRedirection();
