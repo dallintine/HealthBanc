@@ -96,7 +96,14 @@ namespace HealthBanc.Controllers
                 var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
                 if(result.Status == true)
                 {
-                    return Ok(new ResponseMessage { Data = result.Data, Message = "Profile was created successfully" ,Status=true});
+                    XmlDocument xmlDoc2 = new XmlDocument();
+                    xmlDoc2.LoadXml(result.Data);
+
+                    var getResponse = new AxaResponse();
+                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                    getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                    getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
+                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = "Profile was created successfully" ,Status=true});
                 }
                 return BadRequest(new ResponseMessage { Message="Connection Timeout. Error occurred while trying to coonecting to axa mansard"});
             }
@@ -107,22 +114,38 @@ namespace HealthBanc.Controllers
         public IActionResult AxaMansardGetMedicalCondition()
         {
             var tokenResult = _insuranceService.AxaMansardGetToken();
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(tokenResult.Data);
-            var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-            var result = _insuranceService.AxaMansardGetMedicalCondition(token);
-            return Ok(result);
+            if(tokenResult.Status == true)
+            {
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(tokenResult.Data);
+                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+                var result = _insuranceService.AxaMansardGetMedicalCondition(token);
+                if(result.Status == true)
+                {
+                    return Ok(new ResponseMessage { Data= result,Message="Medical condition was fetched successfully",Status=true});
+                }
+                return BadRequest(new ResponseMessage { Message = "Connection Timeout. Error occurred while trying to coonecting to axa mansard" });
+            }
+            return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
         }
 
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetTowns(string state)
         {
             var tokenResult = _insuranceService.AxaMansardGetToken();
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(tokenResult.Data);
-            var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-            var result = _insuranceService.AxaMansardGetTowns(state,token);
-            return Ok(result);
+            if (tokenResult.Status == true)
+            {
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(tokenResult.Data);
+                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+                var result = _insuranceService.AxaMansardGetTowns(state, token);
+                if(result.Status == true)
+                {
+                    return Ok(new ResponseMessage { Data = result.Data, Message = "Towns was fetched sucessfully", Status = true });
+                }
+                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
+            }
+            return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
         [HttpGet("[action]")]

@@ -94,82 +94,112 @@ namespace HealthBanc.Services.Insurance
             }           
         }
 
-        public string AxaMansardGetStates(string token)
+        public ResponseInsure AxaMansardGetStates(string token)
         {
-            const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
-            const string action = "http://tempuri.org/GetStates";
-
-            XmlDocument soapEnvelopXml = CreateStateEnvelope(token);
-            HttpWebRequest webRequest = CreateWebRequest(url, action);
-
-            using (Stream stream = webRequest.GetRequestStream())
+            var responseMessage = new ResponseInsure();
+            try
             {
-                soapEnvelopXml.Save(stream);
-            }
+                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/GetStates";
 
-            //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+                XmlDocument soapEnvelopXml = CreateStateEnvelope(token);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
 
-            string result;
-            using (WebResponse response = webRequest.GetResponse())
-            {
-                using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                using (Stream stream = webRequest.GetRequestStream())
                 {
-                    result = rd.ReadToEnd();
+                    soapEnvelopXml.Save(stream);
                 }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                responseMessage.Data = result; responseMessage.Status = true;
+                return responseMessage;
             }
-            return result;
+            catch(Exception ex)
+            {
+                responseMessage.Status = false;
+                return responseMessage;
+            }            
         }
 
-        public string AxaMansardGetTowns(string state,string token)
+        public ResponseInsure AxaMansardGetTowns(string state,string token)
         {
-            const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
-            const string action = "http://tempuri.org/GetTowns";
-
-            XmlDocument soapEnvelopXml = CreateTownEnvelope(state,token);
-            HttpWebRequest webRequest = CreateWebRequest(url, action);
-
-            using (Stream stream = webRequest.GetRequestStream())
+            var responseMessage = new ResponseInsure();
+            try
             {
-                soapEnvelopXml.Save(stream);
-            }
+                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/GetTowns";
 
-            //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+                XmlDocument soapEnvelopXml = CreateTownEnvelope(state, token);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
 
-            string result;
-            using (WebResponse response = webRequest.GetResponse())
-            {
-                using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                using (Stream stream = webRequest.GetRequestStream())
                 {
-                    result = rd.ReadToEnd();
+                    soapEnvelopXml.Save(stream);
                 }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                responseMessage.Data = result; responseMessage.Status = true;
+                return responseMessage;
             }
-            return result;
+            catch(Exception ex)
+            {
+                responseMessage.Status = false;
+                return responseMessage;
+            }            
         }
 
-        public string AxaMansardGetMedicalCondition(string token)
+        public ResponseInsure AxaMansardGetMedicalCondition(string token)
         {
-            const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
-            const string action = "http://tempuri.org/GetMedicalConditions";
-
-            XmlDocument soapEnvelopXml = CreateMedicalConditionEnvelope(token);
-            HttpWebRequest webRequest = CreateWebRequest(url, action);
-
-            using (Stream stream = webRequest.GetRequestStream())
+            var responseMessage = new ResponseInsure();
+            try
             {
-                soapEnvelopXml.Save(stream);
-            }
+                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/GetMedicalConditions";
 
-            //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+                XmlDocument soapEnvelopXml = CreateMedicalConditionEnvelope(token);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
 
-            string result;
-            using (WebResponse response = webRequest.GetResponse())
-            {
-                using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                using (Stream stream = webRequest.GetRequestStream())
                 {
-                    result = rd.ReadToEnd();
+                    soapEnvelopXml.Save(stream);
                 }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                responseMessage.Data = result; responseMessage.Status = true;
+                return responseMessage;
             }
-            return result;
+            catch(Exception ex)
+            {
+                responseMessage.Status = false;
+                return responseMessage;
+            }
         }
 
         public ResponseInsure AxaMansardGetToken()
@@ -292,8 +322,8 @@ namespace HealthBanc.Services.Insurance
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
                    <GetTowns xmlns=""http://tempuri.org/"">
-                    <State>{state}</ State >
-                    <token>LZS4nCFE2EjtTpxsgVlyQrQd/BXpX8EeUwBUAEIAQQBOAEsAMAAxAA==</token>
+                    <State>{state}</State>
+                    <token>{token}</token>
                     </GetTowns>
                 </soap:Body>
             </soap:Envelope>");
