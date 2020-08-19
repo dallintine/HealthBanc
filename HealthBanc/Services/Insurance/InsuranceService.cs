@@ -87,8 +87,9 @@ namespace HealthBanc.Services.Insurance
                 responseMessage.Data = result; responseMessage.Status = true;
                 return responseMessage;
             }
-            catch(Exception ex)
+            catch(WebException ex)
             {
+                string pageContent = new StreamReader(ex.Response.GetResponseStream()).ReadToEnd().ToString();
                 responseMessage.Status = false;
                 return responseMessage;
             }           
@@ -243,7 +244,7 @@ namespace HealthBanc.Services.Insurance
         private static HttpWebRequest CreateWebRequest(string url, string action)
         {
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
-            webRequest.Headers.Add("SOAPAction:" + action);
+            webRequest.Headers.Add("SOAPAction:"+action);
             webRequest.ContentType = "text/xml;charset=\"utf-8\"";
             webRequest.Accept = "text/xml";
             webRequest.Method = "POST";
@@ -252,6 +253,8 @@ namespace HealthBanc.Services.Insurance
 
         private static XmlDocument CreateSoapEnvelope(UserProfile userProfile,string token)
         {
+            string s = XmlConvert.ToString(userProfile.DateOfBirth);
+            DateTime time = XmlConvert.ToDateTime(s);
             XmlDocument soapEnvelopeXml = new XmlDocument();
             soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
@@ -264,7 +267,7 @@ namespace HealthBanc.Services.Insurance
                 <Surname>{userProfile.Surname}</Surname>
                 <Othernames>{userProfile.Othernames}</Othernames>
                 <MaidenName>{userProfile.MaidenName}</MaidenName>
-                <DateOfBirth>{userProfile.DateOfBirth}</DateOfBirth>
+                <DateOfBirth>{time}</DateOfBirth>
                 <PhoneNumber>{userProfile.PhoneNumber}</PhoneNumber>
                 <Email>{userProfile.Email}</Email>
                 <ContactAddress>{userProfile.ContactAddress}</ContactAddress>
@@ -294,7 +297,7 @@ namespace HealthBanc.Services.Insurance
                 <StateOfResidence>{userProfile.StateOfResidence}</StateOfResidence>
                 <TownOfResidence>{userProfile.TownOfResidence}</TownOfResidence>
               </HealthObject>
-              <token>{token}</token>
+              <token>wcAAM1dE2EgfQj+wmwHpRLH6Mr2QHSSZUwBUAEIAQQBOAEsAMAAxAA==</token>
             </SaveHealth>
           </soap:Body>
         </soap:Envelope>");

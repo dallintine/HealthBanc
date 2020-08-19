@@ -93,6 +93,8 @@ namespace HealthBanc.Controllers
                 var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, userProfile.Surname);
                 var profile = _mapper.Map<UserProfile>(userProfile);
                 profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
+                //string s = XmlConvert.ToString(userProfile.DateOfBirth);
+                //DateTime when = XmlConvert.ToDateTime(s);
                 var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
                 if(result.Status == true)
                 {
@@ -100,10 +102,9 @@ namespace HealthBanc.Controllers
                     xmlDoc2.LoadXml(result.Data);
 
                     var getResponse = new AxaResponse();
-                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
                     getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
                     getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
-                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = "Profile was created successfully" ,Status=true});
+                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message , Status=true});
                 }
                 return BadRequest(new ResponseMessage { Message="Connection Timeout. Error occurred while trying to coonecting to axa mansard"});
             }
@@ -124,7 +125,7 @@ namespace HealthBanc.Controllers
                 {
                     return Ok(new ResponseMessage { Data= result,Message="Medical condition was fetched successfully",Status=true});
                 }
-                return BadRequest(new ResponseMessage { Message = "Connection Timeout. Error occurred while trying to coonecting to axa mansard" });
+                return BadRequest(new ResponseMessage { Message = "Connection Timeout. Error occurred while trying coonecting to axa mansard" });
             }
             return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
         }
