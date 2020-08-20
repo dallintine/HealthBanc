@@ -63,7 +63,7 @@ namespace HealthBanc.Services.Insurance
             var responseMessage = new ResponseInsure();
             try
             {
-                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
                 const string action = "http://tempuri.org/SaveHealth";
 
                 XmlDocument soapEnvelopXml = CreateSoapEnvelope(userProfile, token);
@@ -100,7 +100,7 @@ namespace HealthBanc.Services.Insurance
             var responseMessage = new ResponseInsure();
             try
             {
-                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
                 const string action = "http://tempuri.org/GetStates";
 
                 XmlDocument soapEnvelopXml = CreateStateEnvelope(token);
@@ -136,7 +136,7 @@ namespace HealthBanc.Services.Insurance
             var responseMessage = new ResponseInsure();
             try
             {
-                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
                 const string action = "http://tempuri.org/GetTowns";
 
                 XmlDocument soapEnvelopXml = CreateTownEnvelope(state, token);
@@ -172,7 +172,7 @@ namespace HealthBanc.Services.Insurance
             var responseMessage = new ResponseInsure();
             try
             {
-                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
                 const string action = "http://tempuri.org/GetMedicalConditions";
 
                 XmlDocument soapEnvelopXml = CreateMedicalConditionEnvelope(token);
@@ -208,7 +208,7 @@ namespace HealthBanc.Services.Insurance
             var responseMessage = new ResponseInsure();
             try
             {
-                const string url = "https://online.axamansard.com/eSalesTest/webservice/axamdemo.asmx";
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
                 const string action = "http://tempuri.org/getToken";
 
                 XmlDocument soapEnvelopXml = CreateTokenEnvelope();
@@ -253,8 +253,8 @@ namespace HealthBanc.Services.Insurance
 
         private static XmlDocument CreateSoapEnvelope(UserProfile userProfile,string token)
         {
-            string s = XmlConvert.ToString(userProfile.DateOfBirth);
-            DateTime time = XmlConvert.ToDateTime(s);
+            //string s = XmlConvert.ToString(userProfile.DateOfBirth);
+            //DateTime time = XmlConvert.ToDateTime(s);
             XmlDocument soapEnvelopeXml = new XmlDocument();
             soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
@@ -267,7 +267,7 @@ namespace HealthBanc.Services.Insurance
                 <Surname>{userProfile.Surname}</Surname>
                 <Othernames>{userProfile.Othernames}</Othernames>
                 <MaidenName>{userProfile.MaidenName}</MaidenName>
-                <DateOfBirth>{time}</DateOfBirth>
+                <DateOfBirth>2020-08-20T06:51:28.084Z</DateOfBirth>
                 <PhoneNumber>{userProfile.PhoneNumber}</PhoneNumber>
                 <Email>{userProfile.Email}</Email>
                 <ContactAddress>{userProfile.ContactAddress}</ContactAddress>
@@ -297,7 +297,7 @@ namespace HealthBanc.Services.Insurance
                 <StateOfResidence>{userProfile.StateOfResidence}</StateOfResidence>
                 <TownOfResidence>{userProfile.TownOfResidence}</TownOfResidence>
               </HealthObject>
-              <token>wcAAM1dE2EgfQj+wmwHpRLH6Mr2QHSSZUwBUAEIAQQBOAEsAMAAxAA==</token>
+              <token>pKY5hdZE2Eh+1+PZrKIbTKhKwbNKoBhlUwBUAEIAQQBOAEsAMAAxAA==</token>
             </SaveHealth>
           </soap:Body>
         </soap:Envelope>");
