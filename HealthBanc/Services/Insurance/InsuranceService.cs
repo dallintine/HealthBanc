@@ -297,7 +297,7 @@ namespace HealthBanc.Services.Insurance
                 <StateOfResidence>{userProfile.StateOfResidence}</StateOfResidence>
                 <TownOfResidence>{userProfile.TownOfResidence}</TownOfResidence>
               </HealthObject>
-              <token>pKY5hdZE2Eh+1+PZrKIbTKhKwbNKoBhlUwBUAEIAQQBOAEsAMAAxAA==</token>
+              <token>{token}</token>
             </SaveHealth>
           </soap:Body>
         </soap:Envelope>");
