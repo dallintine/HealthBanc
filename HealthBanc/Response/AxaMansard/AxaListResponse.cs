@@ -9,7 +9,7 @@ namespace HealthBanc.Response.AxaMansard
     {
         public string Code { get; set; }
 
-        public string Class { get; set; }
+        public string Text { get; set; }
     }
 
     public class AxaListResponseRoot
