@@ -19,6 +19,7 @@ namespace HealthBanc.Data
         public DbSet<Service> Services { get; set; }
         public DbSet<BackendAdminUser> BackendAdminUsers { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<AxaMansardUserProfile> AxaMansardUserProfile { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

@@ -13,17 +13,9 @@ namespace HealthBanc.ViewModels.AxaMansard
         [Required]
         public string Gender { get; set; }
         public string CustomerNo { get; set; }
-        [Required]
-        public string Surname { get; set; }
-        [Required]
-        public string Othernames { get; set; }
         public string MaidenName { get; set; }
         [Required]
         public DateTime DateOfBirth { get; set; }
-        [Required]
-        public string PhoneNumber { get; set; }
-        [Required]
-        public string Email { get; set; }
         [Required]
         public string ContactAddress { get; set; }
         [Required]
@@ -58,8 +50,6 @@ namespace HealthBanc.ViewModels.AxaMansard
         public string MedicalCondition { get; set; }
         [Required]
         public string PlanCode { get; set; }
-        [Required]
-        public Decimal Premium { get; set; }
         [Required]
         public IFormFile CustomerPhoto { get; set; }
         [Required]

@@ -127,6 +127,7 @@ namespace HealthBanc
             services.AddScoped<InsuranceService>();
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

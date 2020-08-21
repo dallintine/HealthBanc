@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Request.AxaMansard;
 using HealthBanc.Response;
@@ -16,6 +17,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
@@ -28,11 +30,13 @@ namespace HealthBanc.Controllers
     {
         private readonly InsuranceService _insuranceService;
         private readonly IMapper _mapper;
+        private readonly IAxaMansardUserProfileRepository _axaMansard;
 
-        public InsuranceController(InsuranceService insuranceService, IMapper mapper)
+        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
+            _axaMansard = axaMansard;
         }
 
         [HttpGet("[action]")]
@@ -75,6 +79,7 @@ namespace HealthBanc.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<IActionResult> AxaMansardCreateUserProfile([FromForm] UserProfileviewModel userProfile)
         {
@@ -83,25 +88,44 @@ namespace HealthBanc.Controllers
             {
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(tokenResult.Data);
-                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-                var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, userProfile.Surname);
-                var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, userProfile.Surname);
                 var profile = _mapper.Map<UserProfile>(userProfile);
-                profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
-                var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
-                if (result.Status == true)
+                profile.Surname = User.FindFirst("FirstName")?.Value; profile.Othernames = User.FindFirst("LastName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
+                profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
+
+                var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
+                var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
+                profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;                
+
+                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+
+                var premiumResult = _insuranceService.AxaMansardPremiumPlan(profile.PlanCode, token);
+                if (premiumResult.Status == true)
                 {
                     XmlDocument xmlDoc2 = new XmlDocument();
-                    xmlDoc2.LoadXml(result.Data);
+                    xmlDoc2.LoadXml(premiumResult.Data);                   
+                    var premiumResponse= xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
 
-                    var getResponse = new AxaResponse();
-                    getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
-                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                    profile.Premium = Decimal.Parse(premiumResponse);
+                    var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
+                    if (result.Status == true)
+                    {
+                        XmlDocument xmlDoc3 = new XmlDocument();
+                        xmlDoc2.LoadXml(result.Data);
 
-                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
+                        var getResponse = new AxaResponse();
+                        getResponse.IsSuccessful = xmlDoc3.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                        getResponse.Message = xmlDoc3.GetElementsByTagName("message").Item(0).InnerText;
+                        getResponse.ReturnCode = xmlDoc3.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+
+                        var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
+                        _axaMansard.Create(axaInsuranceUser);
+                        await _axaMansard.Save();
+
+                        return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
+                    }
+                    return BadRequest(new ResponseMessage { Message = "Connection Timeout. Error occurred while trying to coonecting to axa mansard" });
                 }
-                return BadRequest(new ResponseMessage { Message = "Connection Timeout. Error occurred while trying to coonecting to axa mansard" });
+                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });                
             }
             return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
         }
@@ -179,6 +203,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
@@ -205,6 +230,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [Authorize]
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetHealthPremium(string planCode)
         {
@@ -256,6 +282,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
@@ -282,6 +309,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]

@@ -137,7 +137,7 @@ namespace HealthBanc.Services.Insurance
             try
             {
                 const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
-                const string action = "http://tempuri.org/GetStates";
+                const string action = "http://tempuri.org/GetBanks";
 
                 XmlDocument soapEnvelopXml = CreateBanksEnvelope();
                 HttpWebRequest webRequest = CreateWebRequest(url, action);

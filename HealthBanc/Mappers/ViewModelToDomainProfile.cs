@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HealthBanc.Domain.Models;
+using HealthBanc.Request.AxaMansard;
 using HealthBanc.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace HealthBanc.Mappers
         public ViewModelToDomainProfile()
         {
             CreateMap<NotificationViewModel, Notification>();
+            CreateMap<UserProfile, AxaMansardUserProfile>();
         }
     }
 }
