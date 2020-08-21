@@ -7,6 +7,7 @@ namespace HealthBanc.Domain.Models
 {
     public class AxaMansardUserProfile
     {
+        public int Id { get; set; }
         public string TransId { get; set; }
         public string Gender { get; set; }
         public string CustomerNo { get; set; }
