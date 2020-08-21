@@ -469,6 +469,15 @@ namespace HealthBanc.Services.Insurance
             return soapEnvelopeXml;
         }
 
+        public  string Filter(string val,List<char> charsToRemove)
+        {
+            foreach(var c in charsToRemove)
+            {
+                val = val.Replace(c.ToString(), String.Empty);
+            }
+            return val;
+        }
+
 
 
         //public async Task<string> CreateSoapEnvelope()

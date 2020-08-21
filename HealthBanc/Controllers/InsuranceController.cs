@@ -6,6 +6,7 @@ using HealthBanc.Response.AxaMansard;
 using HealthBanc.Services.Insurance;
 using HealthBanc.ViewModels.AxaMansard;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
@@ -164,6 +165,9 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetHealthPlans()
         {
@@ -182,11 +186,12 @@ namespace HealthBanc.Controllers
 
                     var getResponse = new AxaResponse();
                     getResponse.Message = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
-                    return Ok(new ResponseMessage { Data = getResponse, Message = "HealthPan was fetched successfully", Status = true });
+                    var responseResult = JsonConvert.DeserializeObject<AxaListResponseRoot>(getResponse.Message);
+                    return Ok(new ResponseMessage<AxaListResponseRoot> { Data = responseResult, Message = "HealthPan was fetched successfully", Status = true });
                 }
-                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching healthplan from  axa mansard: Connection timeout", Status = false });
+                return BadRequest(new ResponseMessage<AxaListResponseRoot> { Message = "An error occurred while fetching healthplan from  axa mansard: Connection timeout", Status = false });
             }
-            return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
+            return BadRequest(new ResponseMessage<AxaListResponseRoot> { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
         [HttpGet("[action]")]
