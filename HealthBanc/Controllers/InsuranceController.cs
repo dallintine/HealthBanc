@@ -33,13 +33,6 @@ namespace HealthBanc.Controllers
             _mapper = mapper;
         }
 
-        //var result = _insuranceService.AxaMansardGetToken(userName, password);
-        ////var jsResult = JsonConvert.DeserializeObject<GetTokenResult>(result);
-        //XmlSerializer serializer = new XmlSerializer(typeof(GetTokenResponse));
-        //StringReader stringReader = new StringReader(result);
-        //GetTokenResponse getToken = (GetTokenResponse)serializer.Deserialize(stringReader);
-        //    return Ok(getToken);
-
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetToken()
         {           
@@ -48,31 +41,18 @@ namespace HealthBanc.Controllers
                 var result = _insuranceService.AxaMansardGetToken();
                 if(result.Status != false)
                 {
-                     StringReader stringReader = new StringReader(result.Data);
-                //var stringReader = @"<?xml version=""1.0"" encoding=""utf - 8""?><soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema""><soap:Body><getTokenResponse xmlns=""http://tempuri.org/""><getTokenResult><IsSuccessful>true</IsSuccessful><message>V2NXM01D2EgGUGzHgbbBTbxPAeFY/LokUwBUAEIAQQBOAEsAMAAxAA==</message><ReturnedObject xsi:type=""xsd:string"">STERLINGBANK</ReturnedObject><ReturnCode>00</ReturnCode></getTokenResult></getTokenResponse></soap:Body></soap:Envelope>";
-                //StringReader stringReaders = new StringReader(stringReader);
-                //XmlDocument doc = new XmlDocument();
-                //doc.LoadXml(stringReader);
-               // string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
-                XmlSerializer serializer = new XmlSerializer(typeof(EnvelopeTokenResponse));
-                EnvelopeTokenResponse getToken = (EnvelopeTokenResponse)serializer.Deserialize(stringReader);
-                return Ok(getToken);
+                    XmlDocument xmlDoc2 = new XmlDocument();
+                    xmlDoc2.LoadXml(result.Data);
 
-                //var result = _insuranceService.AxaMansardGetToken(userName, password);
-                //if(result.Status == true)
-                //{
-                //    XmlDocument xmlDoc = new XmlDocument();
-                //    xmlDoc.LoadXml(stringReader);
-                //    var getToken = new GetTokenResult();
-                //    getToken.ReturnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
-                //    getToken.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-                //    getToken.Message = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-                //    return Ok(getToken);
-                //}
-                //return BadRequest(result);
+                    var getResponse = new AxaResponse();
+                    getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                    getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
+                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+
+                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
+
                 }
                 return BadRequest(new ResponseMessage { Message = "An error occurred while connecting to aza mansard. Time Out" });
-
             }
             catch(Exception ex)
             {
@@ -93,8 +73,6 @@ namespace HealthBanc.Controllers
                 var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, userProfile.Surname);
                 var profile = _mapper.Map<UserProfile>(userProfile);
                 profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
-                //string s = XmlConvert.ToString(userProfile.DateOfBirth);
-                //DateTime when = XmlConvert.ToDateTime(s);
                 var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
                 if(result.Status == true)
                 {
@@ -104,6 +82,8 @@ namespace HealthBanc.Controllers
                     var getResponse = new AxaResponse();
                     getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
                     getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
+                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+
                     return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message , Status=true});
                 }
                 return BadRequest(new ResponseMessage { Message="Connection Timeout. Error occurred while trying to coonecting to axa mansard"});
@@ -123,7 +103,14 @@ namespace HealthBanc.Controllers
                 var result = _insuranceService.AxaMansardGetMedicalCondition(token);
                 if(result.Status == true)
                 {
-                    return Ok(new ResponseMessage { Data= result,Message="Medical condition was fetched successfully",Status=true});
+                    XmlDocument xmlDoc2 = new XmlDocument();
+                    xmlDoc2.LoadXml(result.Data);
+
+                    var getResponse = new AxaResponse();
+                    getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                    getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
+                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                    return Ok(new ResponseMessage { Data= getResponse, Message="Medical condition was fetched successfully",Status=true});
                 }
                 return BadRequest(new ResponseMessage { Message = "Connection Timeout. Error occurred while trying coonecting to axa mansard" });
             }
@@ -142,7 +129,14 @@ namespace HealthBanc.Controllers
                 var result = _insuranceService.AxaMansardGetTowns(state, token);
                 if(result.Status == true)
                 {
-                    return Ok(new ResponseMessage { Data = result.Data, Message = "Towns was fetched sucessfully", Status = true });
+                    XmlDocument xmlDoc2 = new XmlDocument();
+                    xmlDoc2.LoadXml(result.Data);
+
+                    var getResponse = new AxaResponse();
+                    getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                    getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
+                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                    return Ok(new ResponseMessage { Data = getResponse, Message = "Medical condition was fetched successfully", Status = true });
                 }
                 return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
             }
@@ -152,19 +146,28 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetStates()
         {
-            //var tokenResult = _insuranceService.AxaMansardGetToken();
-            //XmlDocument xmlDoc = new XmlDocument();
-            //xmlDoc.LoadXml(tokenResult.Data);
-            //var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-            //var result = _insuranceService.AxaMansardGetStates(token);
-            var result = @"<?xml version=""1.0"" encoding=""utf - 8""?><soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema""><soap:Body><GetStatesResponse xmlns=""http://tempuri.org/""><GetStatesResult>[{""Code"":""6"",""Text"":""Abia""},{""Code"":""7"",""Text"":""Adamawa""}]</GetStatesResult></GetStatesResponse></soap:Body></soap:Envelope>";
-          
-            StringReader stringReader = new StringReader(result);
-            XmlSerializer serializer = new XmlSerializer(typeof(EnvelopeGetStates));
-            //XmlSerializer serializer = new XmlSerializer(typeof(List<StateArray>), new XmlRootAttribute("EnvelopeGetStates"));
-            EnvelopeGetStates getToken = (EnvelopeGetStates)serializer.Deserialize(stringReader);
-            return Ok(getToken);
-        }
+            var tokenResult = _insuranceService.AxaMansardGetToken();
+            if (tokenResult.Status == true)
+            {
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(tokenResult.Data);
+                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+                var result = _insuranceService.AxaMansardGetStates(token);
+                if (result.Status == true)
+                {
 
+                    XmlDocument xmlDoc2 = new XmlDocument();
+                    xmlDoc2.LoadXml(result.Data);
+
+                    var getResponse = new AxaResponse();
+                    getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                    getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
+                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                    return Ok(new ResponseMessage { Data = getResponse, Message = "Medical condition was fetched successfully", Status = true });
+                }
+                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token from  axa mansard: Connection timeout", Status = false });
+            }
+            return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
+        }
     }
 }
