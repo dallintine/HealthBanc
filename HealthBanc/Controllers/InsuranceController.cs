@@ -35,7 +35,6 @@ namespace HealthBanc.Controllers
             _mapper = mapper;
         }
 
-        [Authorize]
         [HttpGet("[action]")]
         public List<string> GetState()
         {
@@ -201,9 +200,9 @@ namespace HealthBanc.Controllers
                     var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
                     return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "HealthPan was fetched successfully", Status = true });
                 }
-                return BadRequest(new ResponseMessage<AxaListResponseRoot> { Message = "An error occurred while fetching healthplan from  axa mansard: Connection timeout", Status = false });
+                return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "An error occurred while fetching healthplan from  axa mansard: Connection timeout", Status = false });
             }
-            return BadRequest(new ResponseMessage<AxaListResponseRoot> { Message = "And error occurred while trying to get token from axa mansard" });
+            return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
         [HttpGet("[action]")]
@@ -231,6 +230,8 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetReligion()
         {
@@ -246,16 +247,17 @@ namespace HealthBanc.Controllers
                     XmlDocument xmlDoc2 = new XmlDocument();
                     xmlDoc2.LoadXml(result.Data);
 
-                    var getResponse = new AxaResponse();
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("GetReligionResponse").Item(0).InnerText;
-                    //var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
-                    return Ok(new ResponseMessage{ Data = getResponse, Message = "HealthPan was fetched successfully", Status = true });
+                    var response = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
+                    var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
+                    return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "HealthPan was fetched successfully", Status = true });
                 }
-                return BadRequest(new ResponseMessage{ Message = "An error occurred while fetching healthplan from  axa mansard: Connection timeout", Status = false });
+                return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "An error occurred while fetching healthplan from  axa mansard: Connection timeout", Status = false });
             }
-            return BadRequest(new ResponseMessage{ Message = "And error occurred while trying to get token from axa mansard" });
+            return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetIdentificationType()
         {
@@ -271,16 +273,31 @@ namespace HealthBanc.Controllers
                     XmlDocument xmlDoc2 = new XmlDocument();
                     xmlDoc2.LoadXml(result.Data);
 
-                    var getResponse = new AxaResponse();
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("GetIdentificationTypesResult").Item(0).InnerText;
-                    //var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
-                    return Ok(new ResponseMessage{ Data = getResponse, Message = "Identification was fetched successfully", Status = true });
+                    var response = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
+                    var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
+                    return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Identification was fetched successfully", Status = true });
                 }
-                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching identification from  axa mansard: Connection timeout", Status = false });
+                return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "An error occurred while fetching identification from  axa mansard: Connection timeout", Status = false });
             }
-            return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
+            return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "And error occurred while trying to get token from axa mansard" });
+        }
 
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        [HttpGet("[action]")]
+        public IActionResult AxaMansardGetBanks()
+        {            
+            var result = _insuranceService.AxaMansardGetBanks();
+            if (result.Status == true)
+            {
+                XmlDocument xmlDoc2 = new XmlDocument();
+                xmlDoc2.LoadXml(result.Data);
 
+                var response = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
+                var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
+                return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Identification was fetched successfully", Status = true });
+            }
+            return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "An error occurred while fetching identification from  axa mansard: Connection timeout", Status = false });            
         }
     }
 }
