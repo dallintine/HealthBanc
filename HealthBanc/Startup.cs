@@ -107,7 +107,7 @@ namespace HealthBanc
             });
 
             ///////////////Add Swagger Service/////////////////////////
-            ///
+            //
 
             //SetOutputFormatters(services);
 

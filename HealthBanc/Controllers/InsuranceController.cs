@@ -180,14 +180,12 @@ namespace HealthBanc.Controllers
                 var result = _insuranceService.AxaMansardGetHealthPlans(token);
                 if (result.Status == true)
                 {
-
                     XmlDocument xmlDoc2 = new XmlDocument();
                     xmlDoc2.LoadXml(result.Data);
 
-                    var getResponse = new AxaResponse();
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
-                    var responseResult = JsonConvert.DeserializeObject<AxaListResponseRoot>(getResponse.Message);
-                    return Ok(new ResponseMessage<AxaListResponseRoot> { Data = responseResult, Message = "HealthPan was fetched successfully", Status = true });
+                    var response = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
+                    var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
+                    return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "HealthPan was fetched successfully", Status = true });
                 }
                 return BadRequest(new ResponseMessage<AxaListResponseRoot> { Message = "An error occurred while fetching healthplan from  axa mansard: Connection timeout", Status = false });
             }
