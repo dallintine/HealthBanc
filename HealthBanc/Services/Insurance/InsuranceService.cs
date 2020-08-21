@@ -130,6 +130,77 @@ namespace HealthBanc.Services.Insurance
                 return responseMessage;
             }            
         }
+        public ResponseInsure AxaMansardGetReligion(string token)
+        {
+            var responseMessage = new ResponseInsure();
+            try
+            {
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/GetReligion";
+
+                XmlDocument soapEnvelopXml = CreateReligionEnvelope(token);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
+
+                using (Stream stream = webRequest.GetRequestStream())
+                {
+                    soapEnvelopXml.Save(stream);
+                }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                responseMessage.Data = result; responseMessage.Status = true;
+                return responseMessage;
+            }
+            catch (Exception ex)
+            {
+                responseMessage.Status = false;
+                return responseMessage;
+            }
+        }
+
+        public ResponseInsure AxaMansardGetIdentification(string token)
+        {
+            var responseMessage = new ResponseInsure();
+            try
+            {
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/GetIdentificationTypes";
+
+                XmlDocument soapEnvelopXml = CreateGetIdentificationTypesEnvelope(token);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
+
+                using (Stream stream = webRequest.GetRequestStream())
+                {
+                    soapEnvelopXml.Save(stream);
+                }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                responseMessage.Data = result; responseMessage.Status = true;
+                return responseMessage;
+            }
+            catch (Exception ex)
+            {
+                responseMessage.Status = false;
+                return responseMessage;
+            }
+        }
 
         public ResponseInsure AxaMansardGetHealthPlans(string token)
         {
@@ -404,6 +475,20 @@ namespace HealthBanc.Services.Insurance
             return soapEnvelopeXml;
         }
 
+        private static XmlDocument CreateReligionEnvelope(string token)
+        {
+            XmlDocument soapEnvelopeXml = new XmlDocument();
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
+            <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+                <soap:Body>
+                    <GetReligion xmlns=""http://tempuri.org/"">
+                    <token>{token}</token>
+                    </GetReligion>
+                </soap:Body>
+            </soap:Envelope>");
+            return soapEnvelopeXml;
+        }
+
         private static XmlDocument CreateTownEnvelope(string state,string token)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
@@ -448,6 +533,20 @@ namespace HealthBanc.Services.Insurance
             return soapEnvelopeXml;
         }
 
+        private static XmlDocument CreateGetIdentificationTypesEnvelope(string token)
+        {
+            XmlDocument soapEnvelopeXml = new XmlDocument();
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
+            <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+                <soap:Body>
+                    <GetIdentificationTypes xmlns=""http://tempuri.org/"">
+                    <token>{token}</token>
+                    </GetIdentificationTypes>
+                </soap:Body>
+            </soap:Envelope>");
+            return soapEnvelopeXml;
+        }
+
         private static XmlDocument CreateTokenEnvelope()
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
@@ -468,16 +567,6 @@ namespace HealthBanc.Services.Insurance
             </soap:Envelope>");
             return soapEnvelopeXml;
         }
-
-        public  string Filter(string val,List<char> charsToRemove)
-        {
-            foreach(var c in charsToRemove)
-            {
-                val = val.Replace(c.ToString(), String.Empty);
-            }
-            return val;
-        }
-
 
 
         //public async Task<string> CreateSoapEnvelope()
