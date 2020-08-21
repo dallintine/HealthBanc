@@ -131,6 +131,42 @@ namespace HealthBanc.Services.Insurance
             }            
         }
 
+        public ResponseInsure AxaMansardGetHealthPlans(string token)
+        {
+            var responseMessage = new ResponseInsure();
+            try
+            {
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/GetHealthPlans";
+
+                XmlDocument soapEnvelopXml = CreateHealthPlanEnvelope(token);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
+
+                using (Stream stream = webRequest.GetRequestStream())
+                {
+                    soapEnvelopXml.Save(stream);
+                }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                responseMessage.Data = result; responseMessage.Status = true;
+                return responseMessage;
+            }
+            catch (Exception ex)
+            {
+                responseMessage.Status = false;
+                return responseMessage;
+            }
+        }
+
         public ResponseInsure AxaMansardGetTowns(string state,string token)
         {
             var responseMessage = new ResponseInsure();
@@ -165,6 +201,42 @@ namespace HealthBanc.Services.Insurance
                 responseMessage.Status = false;
                 return responseMessage;
             }            
+        }
+
+        public ResponseInsure AxaMansardPremiumPlan(string planCode, string token)
+        {
+            var responseMessage = new ResponseInsure();
+            try
+            {
+                const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
+                const string action = "http://tempuri.org/GetHealthPremium";
+
+                XmlDocument soapEnvelopXml = CreatePremiumPlanEnvelope(planCode, token);
+                HttpWebRequest webRequest = CreateWebRequest(url, action);
+
+                using (Stream stream = webRequest.GetRequestStream())
+                {
+                    soapEnvelopXml.Save(stream);
+                }
+
+                //InsertSoap envelope into web request(soapEnvelopeXMl, webRequest);
+
+                string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+                responseMessage.Data = result; responseMessage.Status = true;
+                return responseMessage;
+            }
+            catch (Exception ex)
+            {
+                responseMessage.Status = false;
+                return responseMessage;
+            }
         }
 
         public ResponseInsure AxaMansardGetMedicalCondition(string token)
@@ -318,6 +390,20 @@ namespace HealthBanc.Services.Insurance
             return soapEnvelopeXml;
         }
 
+        private static XmlDocument CreateHealthPlanEnvelope(string token)
+        {
+            XmlDocument soapEnvelopeXml = new XmlDocument();
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
+            <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+                <soap:Body>
+                    <GetHealthPlans xmlns=""http://tempuri.org/"">
+                    <token>{token}</token>
+                    </GetHealthPlans>
+                </soap:Body>
+            </soap:Envelope>");
+            return soapEnvelopeXml;
+        }
+
         private static XmlDocument CreateTownEnvelope(string state,string token)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
@@ -328,6 +414,21 @@ namespace HealthBanc.Services.Insurance
                     <State>{state}</State>
                     <token>{token}</token>
                     </GetTowns>
+                </soap:Body>
+            </soap:Envelope>");
+            return soapEnvelopeXml;
+        }
+
+        private static XmlDocument CreatePremiumPlanEnvelope(string planCode, string token)
+        {
+            XmlDocument soapEnvelopeXml = new XmlDocument();
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
+            <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
+                <soap:Body>
+                   <GetHealthPremium  xmlns=""http://tempuri.org/"">
+                    <plancode>{planCode}</plancode>
+                    <token>{token}</token>
+                    </GetHealthPremium>
                 </soap:Body>
             </soap:Envelope>");
             return soapEnvelopeXml;
@@ -367,6 +468,8 @@ namespace HealthBanc.Services.Insurance
             </soap:Envelope>");
             return soapEnvelopeXml;
         }
+
+
 
         //public async Task<string> CreateSoapEnvelope()
         //{
