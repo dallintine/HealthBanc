@@ -247,7 +247,7 @@ namespace HealthBanc.Controllers
                     XmlDocument xmlDoc2 = new XmlDocument();
                     xmlDoc2.LoadXml(result.Data);
 
-                    var response = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
+                    var response = xmlDoc2.GetElementsByTagName("GetReligionResult").Item(0).InnerText;
                     var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
                     return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "HealthPan was fetched successfully", Status = true });
                 }
@@ -273,7 +273,7 @@ namespace HealthBanc.Controllers
                     XmlDocument xmlDoc2 = new XmlDocument();
                     xmlDoc2.LoadXml(result.Data);
 
-                    var response = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
+                    var response = xmlDoc2.GetElementsByTagName("GetIdentificationTypesResult").Item(0).InnerText;
                     var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
                     return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Identification was fetched successfully", Status = true });
                 }
@@ -293,7 +293,7 @@ namespace HealthBanc.Controllers
                 XmlDocument xmlDoc2 = new XmlDocument();
                 xmlDoc2.LoadXml(result.Data);
 
-                var response = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
+                var response = xmlDoc2.GetElementsByTagName("GetBanksResult").Item(0).InnerText;
                 var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
                 return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Identification was fetched successfully", Status = true });
             }
