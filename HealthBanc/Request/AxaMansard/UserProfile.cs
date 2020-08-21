@@ -22,12 +22,12 @@ namespace HealthBanc.Request.AxaMansard
         public string BankName { get; set; }
         public string AccountNo { get; set; }
         public string BVN { get; set; }
-        public Decimal? Weight { get; set; }
-        public Decimal? Height { get; set; }
+        public Decimal Weight { get; set; }
+        public Decimal Height { get; set; }
         public string BloodGroup { get; set; }
         public string Genotype { get; set; }
         public string Identification { get; set; }
-        public int? Religion { get; set; }
+        public int Religion { get; set; }
         public string Hobbies { get; set; }
         public string CareProviderName { get; set; }
         public string CPPhone { get; set; }

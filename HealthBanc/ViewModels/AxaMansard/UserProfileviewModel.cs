@@ -27,13 +27,10 @@ namespace HealthBanc.ViewModels.AxaMansard
         [Required]
         public string AccountNo { get; set; }
         public string BVN { get; set; }
-        public Decimal? Weight { get; set; }
-        public Decimal? Height { get; set; }
         public string BloodGroup { get; set; }
         public string Genotype { get; set; }
         [Required]
         public string Identification { get; set; }
-        public int? Religion { get; set; }
         public string Hobbies { get; set; }
         [Required]
         public string CareProviderName { get; set; }

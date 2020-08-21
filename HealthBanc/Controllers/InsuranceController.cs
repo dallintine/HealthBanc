@@ -66,7 +66,6 @@ namespace HealthBanc.Controllers
                     var getResponse = new AxaResponse();
                     getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
                     getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
-                    getResponse.ReturnCode = xmlDoc2.GetElementsByTagName("ReturnCode").Item(0).InnerText;
 
                     return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
 
@@ -94,38 +93,48 @@ namespace HealthBanc.Controllers
 
                 var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                 var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
-                profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;                
+                profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
 
                 var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-
-                var premiumResult = _insuranceService.AxaMansardPremiumPlan(profile.PlanCode, token);
-                if (premiumResult.Status == true)
+                var returnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                if(returnCode == "00")
                 {
-                    XmlDocument xmlDoc2 = new XmlDocument();
-                    xmlDoc2.LoadXml(premiumResult.Data);                   
-                    var premiumResponse= xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
+                    var premiumResult = _insuranceService.AxaMansardPremiumPlan(profile.PlanCode, token);
 
-                    profile.Premium = Decimal.Parse(premiumResponse);
-                    var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
-                    if (result.Status == true)
+                    if (premiumResult.Status == true)
                     {
-                        XmlDocument xmlDoc3 = new XmlDocument();
-                        xmlDoc2.LoadXml(result.Data);
+                        XmlDocument xmlDoc2 = new XmlDocument();
+                        xmlDoc2.LoadXml(premiumResult.Data);
+                        var premiumResponse = xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
 
-                        var getResponse = new AxaResponse();
-                        getResponse.IsSuccessful = xmlDoc3.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-                        getResponse.Message = xmlDoc3.GetElementsByTagName("message").Item(0).InnerText;
-                        getResponse.ReturnCode = xmlDoc3.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                        profile.Premium = Decimal.Parse("5600");
 
-                        var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
-                        _axaMansard.Create(axaInsuranceUser);
-                        await _axaMansard.Save();
+                        profile.Premium = Decimal.Parse(premiumResponse);
+                        var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
+                        if (result.Status == true)
+                        {
+                            XmlDocument xmlDoc3 = new XmlDocument();
+                            xmlDoc3.LoadXml(result.Data);
 
-                        return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
+                            var getResponse = new AxaResponse();
+                            getResponse.IsSuccessful = xmlDoc3.GetElementsByTagName("IsSuccessful").Item(0).InnerText ?? "";
+                            getResponse.Message = xmlDoc3.GetElementsByTagName("message").Item(0).InnerText ?? "";
+
+                            var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
+                            _axaMansard.Create(axaInsuranceUser);
+                            await _axaMansard.Save();
+
+                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
+                        }
+                        var getResponse2 = new AxaResponse();
+                        getResponse2.Message = token;
+                        getResponse2.ReturnCode = returnCode;
+                        getResponse2.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                        return BadRequest(new ResponseMessage { Message = getResponse2.Message,Data=getResponse2 });
                     }
-                    return BadRequest(new ResponseMessage { Message = "Connection Timeout. Error occurred while trying to coonecting to axa mansard" });
+                    return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });
                 }
-                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });                
+                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
             }
             return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
         }
