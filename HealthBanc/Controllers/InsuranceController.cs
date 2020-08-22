@@ -128,7 +128,6 @@ namespace HealthBanc.Controllers
                         }
                         var getResponse2 = new AxaResponse();
                         getResponse2.Message = token;
-                        getResponse2.ReturnCode = returnCode;
                         getResponse2.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
                         return BadRequest(new ResponseMessage { Message = getResponse2.Message,Data=getResponse2 });
                     }
