@@ -20,6 +20,6 @@ namespace HealthBanc.RabbitMq
 
         public async Task PublishAsync<TEvent>(TEvent @event, ICorrelationContext context)
             where TEvent : IEvent
-            => await _busClient.PublishAsync(@event, ctx => ctx.UseMessageContext(context));
+            => await _busClient.PublishAsync(@event, ctx => ctx.UseMessageContext(context).UsePublishAcknowledge(false));
     }
 }
