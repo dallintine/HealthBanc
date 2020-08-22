@@ -31,7 +31,7 @@ namespace HealthBanc.Controllers
         private readonly InsuranceService _insuranceService;
         private readonly IMapper _mapper;
         private readonly IAxaMansardUserProfileRepository _axaMansard;
-        private readonly ILogger<InsuranceController> _logger
+        private readonly ILogger<InsuranceController> _logger;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger)
         {
