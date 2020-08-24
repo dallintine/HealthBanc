@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using Microsoft.Extensions.Logging;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security.Claims;
@@ -31,12 +32,14 @@ namespace HealthBanc.Controllers
         private readonly InsuranceService _insuranceService;
         private readonly IMapper _mapper;
         private readonly IAxaMansardUserProfileRepository _axaMansard;
+        private readonly ILogger<InsuranceController> _logger;
 
-        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard)
+        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
             _axaMansard = axaMansard;
+            _logger = logger;
         }
 
         [HttpGet("[action]")]
@@ -82,7 +85,9 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> AxaMansardCreateUserProfile([FromForm] UserProfileviewModel userProfile)
         {
-            var tokenResult = _insuranceService.AxaMansardGetToken();
+            try
+            {
+                var tokenResult = _insuranceService.AxaMansardGetToken();
             if (tokenResult.Status == true)
             {
                 XmlDocument xmlDoc = new XmlDocument();
@@ -136,6 +141,12 @@ namespace HealthBanc.Controllers
                 return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
             }
             return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
+            }
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occure when trying to create profile "+ex);
+                return BadRequest();
+            }            
         }
 
         [HttpGet("[action]")]
