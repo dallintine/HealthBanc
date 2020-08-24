@@ -562,7 +562,7 @@ namespace HealthBanc.Services.Insurance
             <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
                 <soap:Body>
                     <GetMedicalConditions xmlns=""http://tempuri.org/"">
-                    <token>{token}</token>
+                    <Token>{token}</Token>
                     </GetMedicalConditions>
                 </soap:Body>
             </soap:Envelope>");

@@ -10,7 +10,7 @@ namespace HealthBanc.Helpers.Jwt_Authorization
         public string Site { get; set; }
         public string Audience { get; set; }
         public string ExpirationTime { get; set; }
-        //public TimeSpan TokenLifeTime { get; set; }
+        public TimeSpan TokenLifeTime { get; set; }
         public string Secret { get; set; }
         public string Secret2 { get; set; }
     }

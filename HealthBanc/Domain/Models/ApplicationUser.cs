@@ -21,5 +21,7 @@ namespace HealthBanc.Domain.Models
         public DateTime LastLoginDate { get; set; }
         public string ServiceUsed { get; set; }
         public string UniqueUsername { get; set; }
+        //public string RefreshToken { get; set; }
+        //public DateTime RefreshTokenExpiryTime { get; set; }
     }
 }

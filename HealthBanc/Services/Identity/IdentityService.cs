@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using HealthBanc.Data;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.AuthenticationDTOs;
@@ -9,7 +10,9 @@ using HealthBanc.RabbitMq;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.ViewModels;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -18,6 +21,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -35,11 +39,12 @@ namespace HealthBanc.Services.Identity
         private readonly IMapper _mapper;
         private readonly IBusPublisher _busPublisher;
         private readonly JwtSettings _jwtsettings;
-        //private readonly TokenValidationParameters _tokenValidationParameters;
+        private readonly TokenValidationParameters _tokenValidationParameters;
+        private readonly ApplicationDbContext _dbContext;
 
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
              IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
-             IBusPublisher busPublisher/* TokenValidationParameters tokenValidationParameters*/)
+             IBusPublisher busPublisher, TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext)
         {
             _logger = logger;
             _userManager = userManager;
@@ -50,7 +55,8 @@ namespace HealthBanc.Services.Identity
             _mapper = mapper;
             _busPublisher = busPublisher;
             _jwtsettings = jwtsettings.Value;
-            //_tokenValidationParameters = tokenValidationParameters;
+            _tokenValidationParameters = tokenValidationParameters;
+            _dbContext = dbContext;
         }
 
         public async Task<ResponseMessage> RegisterSuperAdmin(RegistrationViewModel registrationViewModel)
@@ -154,6 +160,7 @@ namespace HealthBanc.Services.Identity
                 };
                 //create the token 
                 var token = tokenHandler.CreateToken(tokenDescriptor);
+                var refreshToken = GenerateRefreshToken();
                 var loogedInResponse = new LoggedInResponseDTO
                 {
                     Token = tokenHandler.WriteToken(token),
@@ -173,18 +180,123 @@ namespace HealthBanc.Services.Identity
             return new ResponseMessage { Message = "Error occured please try again later" };
         }
 
-        //public async Task<ResponseMessage> RefreshTokenAsync(string token,string requestRefreshToken)
+        //public async Task<LoggedInResponseDTO> Login(ApplicationUser user, LoginViewModel loginModel)
+        //{
+        //    await _userManager.ResetAccessFailedCountAsync(user);
+
+        //    var authResponse = await GetAuthenticationResultForUserAsync(user);
+
+        //    return authResponse;
+        //}
+
+        //private async Task<LoggedInResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)
+        //{           
+        //    var roles = await _userManager.GetRolesAsync(user);
+
+        //    try
+        //    {
+        //        //Generate Token
+        //        var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
+        //        var tokenHandler = new JwtSecurityTokenHandler();
+        //        var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
+        //        var tokenDescriptor = new SecurityTokenDescriptor
+        //        {
+        //            Subject = new ClaimsIdentity(new[]
+        //            {
+        //                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+        //                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        //                new Claim("SuperAdminId", user.SuperAdminId.ToString()),
+        //                new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
+        //                new Claim(ClaimTypes.Name, user.Id.ToString()),
+        //                new Claim("FirstName",user.FirstName??"Not Available"),
+        //                new Claim("LastName",user.LastName??"Not Available"),
+        //                new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
+        //                new Claim("id",user.Id.ToString()),
+        //                new Claim(ClaimTypes.Email, user.Email),
+        //                new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
+        //                new Claim("LoggedOn", DateTime.Now.ToString()),
+        //            }),
+        //            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
+        //            //Issuer = _jwtsettings.Site,
+        //            //Audience = _jwtsettings.Audience,
+        //            Expires = DateTime.Now.Add(_jwtsettings.TokenLifeTime),
+        //        };
+        //        //create the token 
+        //        var token = tokenHandler.CreateToken(tokenDescriptor);
+        //        var refreshToken = new RefreshToken
+        //        {
+        //            Token = Guid.NewGuid().ToString(),
+        //            JwtId = token.Id,
+        //            UserId = user.Id,
+        //            CreationDate = DateTime.Now,
+        //            ExpiryDate = DateTime.Now.AddMonths(6),
+        //        };
+        //        await _dbContext.RefreshTokens.AddAsync(refreshToken);
+        //        await _dbContext.SaveChangesAsync();
+        //        return new LoggedInResponseDTO
+        //        {
+        //            Success= true,
+        //            Token = tokenHandler.WriteToken(token),
+        //            RefreshToken = refreshToken.Token,
+        //            Username = user.Email,
+        //            Name = $"{user.FirstName} {user.LastName}",
+        //            Roles = roles,
+        //            ExpiryTime = DateTime.Now.Add(_jwtsettings.TokenLifeTime),
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
+        //        return new LoggedInResponseDTO { Errors = new[] { "Error occurred while validating token" } };
+        //    }
+        //}
+
+        //public async Task<LoggedInResponseDTO> RefreshTokenAsync(string token, string refreshToken)
         //{
         //    var validatedToken = GetPrincipalFromToken(token);
-        //    if(validatedToken == null)
+        //    if (validatedToken == null)
         //    {
-        //        return new ResponseMessage { Data = new[] { "Invalid Token" } };
+        //        return new LoggedInResponseDTO { Errors = new[] { "Invalid Token" } };
         //    }
         //    var expiryDateUnix = long.Parse(validatedToken.Claims.Single(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
-        //    var expiryDateTimeUtc = new DateTime(1970, 1, 1, 1, 0, 0, 0,DateTimeKind.Utc)
-        //        .AddSeconds(expiryDateUnix)
-        //        .Subtract(_jwtsettings.TokenLifeTime);
+        //    var expiryDateTimeUtc = new DateTime(1970, 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        //        .AddSeconds(expiryDateUnix);
+        //    if(expiryDateTimeUtc> DateTime.UtcNow)
+        //    {
+        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token hasn't expired yet" } };
+        //    }
+        //    var jti = validatedToken.Claims.Single(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
+
+        //    var stroredRefreshToken = await _dbContext.RefreshTokens.SingleOrDefaultAsync(x => x.Token == refreshToken);
+        //    if(stroredRefreshToken == null)
+        //    {
+        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token hasn't expired yet" } };
+        //    }
+        //    if(DateTime.UtcNow > stroredRefreshToken.ExpiryDate)
+        //    {
+        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token has expired" } };
+        //    }
+        //    if (stroredRefreshToken.Invalidated)
+        //    {
+        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token has been validate" } };
+        //    }
+        //    if (stroredRefreshToken.Used)
+        //    {
+        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token has been used" } };
+        //    }
+
+        //    if (stroredRefreshToken.JwtId != jti)
+        //    {
+        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token does not match the JWT" } };
+        //    }
+        //    stroredRefreshToken.Used = true;
+        //    _dbContext.RefreshTokens.Update(stroredRefreshToken);
+        //    await _dbContext.SaveChangesAsync();
+
+        //    var user = await _userManager.FindByIdAsync(validatedToken.Claims.Single(x => x.Type == "id").Value);
+        //    return await GetAuthenticationResultForUserAsync(user);
         //}
+
         //private ClaimsPrincipal GetPrincipalFromToken(string token)
         //{
         //    var tokenHandler = new JwtSecurityTokenHandler();
@@ -197,7 +309,7 @@ namespace HealthBanc.Services.Identity
         //        }
         //        return principal;
         //    }
-        //    catch
+        //    catch(Exception ex)
         //    {
         //        return null;
         //    }
@@ -387,6 +499,7 @@ namespace HealthBanc.Services.Identity
                 }
             }
         }
+
         private async Task Welcome(ApplicationUser user)
         {
             // Get the user details
@@ -408,6 +521,48 @@ namespace HealthBanc.Services.Identity
                     _logger.LogError(ex, "Falied to send Email Verification Mail to Admin From Method VerifyAdmin()");
                 }
             }
+        }
+
+        public string GenerateAccessToken(IEnumerable<Claim> claims)
+        {
+            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345"));
+            var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
+            var tokeOptions = new JwtSecurityToken(
+                issuer: "http://localhost:5000",
+                audience: "http://localhost:5000",
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(5),
+                signingCredentials: signinCredentials
+            );
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(tokeOptions);
+            return tokenString;
+        }
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomNumber);
+                return Convert.ToBase64String(randomNumber);
+            }
+        }
+        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false, //you might want to validate the audience and issuer depending on your use case
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345")),
+                ValidateLifetime = false //here we are saying that we don't care about the token's expiration date
+            };
+            var tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken securityToken;
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
+            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+            return principal;
         }
     }
 }

@@ -203,22 +203,29 @@ namespace HealthBanc
             var key = Encoding.ASCII.GetBytes(appSettingValues.Secret);
 
             //Authentication Middleware
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                RequireExpirationTime = false,
+                ValidIssuer = appSettingValues.Site,
+                ValidAudience = appSettingValues.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(key)
+            };
+            services.AddSingleton(tokenValidationParameters);
+
             services.AddAuthentication(options =>
             {
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+            }).AddJwtBearer(/*JwtBearerDefaults.AuthenticationScheme,*/ options =>
             {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidateAudience = true,
-                    ValidIssuer = appSettingValues.Site,
-                    ValidAudience = appSettingValues.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(key)
-                };
+                options.SaveToken = true;
+                options.TokenValidationParameters = tokenValidationParameters;
             });
 
             //------------------------------------JWT Authentication Settings--------------------------------------//

@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
 using HealthBanc.Domain.Models;
+using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
@@ -112,7 +113,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<ActionResult<ResponseMessage>> Login([FromBody] LoginViewModel loginViewModel)
+        public async Task<ActionResult> Login([FromBody] LoginViewModel loginViewModel)
         {
             if (ModelState.IsValid)
             {
@@ -153,6 +154,64 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(errors);
         }
+
+        //[ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        //[ProducesResponseType(401, Type = typeof(ResponseMessage))]
+        //[ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        //[ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        //[HttpPost("[action]")]
+        //public async Task<ActionResult> Login([FromBody] LoginViewModel loginViewModel)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        //get the user
+        //        var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
+
+        //        if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "Account with this email does not exist", Status = false });
+
+
+        //        if (user.EmailConfirmed == false) return Unauthorized(new ResponseMessage { Message = "Please Confirm Your Email Address", Status = false });
+
+        //        if (user.LockoutEnd != null)
+        //        {
+        //            return Unauthorized(new ResponseMessage { Message = "Your Account Has Been Locked,Please Contact Support", Status = false });
+        //        }
+
+        //        //check that the user is not null and that his password is correct
+        //        if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
+        //        {
+        //            var response = await _identityService.Login(user, loginViewModel);
+        //            if (!response.Success)
+        //            {
+        //                 return BadRequest(new ResponseMessage<LoggedInResponseDTO> {Data=response,Message="An error occurred while creating token"});
+        //            }
+        //            return Ok(new ResponseMessage<LoggedInResponseDTO> { Data = response, Message = "User was authenticated successfully", Status = true });
+        //        }
+        //        await _userManager.AccessFailedAsync(user);
+        //        return Unauthorized(new ResponseMessage<LoggedInResponseDTO> { Message = "Username or password invalid, please try again with correct details.", Status = false });
+        //    }
+        //    //return validation errors
+        //    var errors = new List<ResponseMessage>();
+        //    var errorList = ModelState.Values.SelectMany(m => m.Errors)
+        //        .Select(e => e.ErrorMessage)
+        //        .ToList();
+        //    foreach (var error in errorList)
+        //    {
+        //        errors.Add(new ResponseMessage() { Message = error, Status = false });
+        //    }
+        //    return BadRequest(errors);
+        //}
+
+        //[HttpPost("[action]")]
+        //public async Task<IActionResult> RefreshToken(RefreshTokenViewModel refreshModel)
+        //{
+        //    var authResponse = await _identityService.RefreshTokenAsync(refreshModel.Token, refreshModel.RefreshToken);
+        //    if (!authResponse.Success)
+        //    {
+        //        return BadRequest(new ResponseMessage<LoggedInResponseDTO> { Data = authResponse,Message="An error occurred while trying to refresh token" });
+        //    }
+        //    return Ok(new ResponseMessage<LoggedInResponseDTO> { Data = authResponse, Message = "Token was refreshed successfully" });
+        //}
 
         //WORKING1
         /// <summary>
