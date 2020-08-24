@@ -164,9 +164,9 @@ namespace HealthBanc.Controllers
                     XmlDocument xmlDoc2 = new XmlDocument();
                     xmlDoc2.LoadXml(result.Data);
 
-                    var getResponse = new AxaResponse();
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("GetMedicalConditionsResult").Item(0).InnerText;
-                    return Ok(new ResponseMessage { Data = getResponse, Message = "Medical condition was fetched successfully", Status = true });
+                    var response = xmlDoc2.GetElementsByTagName("GetMedicalConditionsResult").Item(0).InnerText;
+                    var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
+                    return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Medical condition was fetched successfully", Status = true });
                 }
                 return BadRequest(new ResponseMessage { Message = "Connection Timeout. Error occurred while trying coonecting to axa mansard" });
             }
