@@ -125,73 +125,11 @@ namespace HealthBanc.Services.Identity
             return new ResponseMessage { Message = "Error occurred when trying to confirm email please try again later" };
         }
 
-        public async Task<ResponseMessage> Login(ApplicationUser user, LoginViewModel loginModel)
-        {
-            await _userManager.ResetAccessFailedCountAsync(user);
-            var roles = await _userManager.GetRolesAsync(user);
-
-
-            try
-            {
-                //Generate Token
-                var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(new[]
-                    {
-                        new Claim(JwtRegisteredClaimNames.Sub, loginModel.EmailAddress),
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                        new Claim("SuperAdminId", user.SuperAdminId.ToString()),
-                        new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
-                        new Claim(ClaimTypes.Name, user.Id.ToString()),
-                        new Claim("FirstName",user.FirstName??"Not Available"),
-                        new Claim("LastName",user.LastName??"Not Available"),
-                        new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
-                        new Claim(ClaimTypes.Email, user.Email),
-                        new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
-                        new Claim("LoggedOn", DateTime.Now.ToString()),
-                    }),
-                    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
-                    Issuer = _jwtsettings.Site,
-                    Audience = _jwtsettings.Audience,
-                    Expires = DateTime.UtcNow.AddMinutes(expirationTime)
-                };
-                //create the token 
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                var refreshToken = GenerateRefreshToken();
-                var loogedInResponse = new LoggedInResponseDTO
-                {
-                    Token = tokenHandler.WriteToken(token),
-                    Username = user.Email,
-                    Name = $"{user.FirstName} {user.LastName}",
-                    Roles = roles,
-                    ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
-                };
-                user.LastLoginDate = DateTime.Now;
-                await _userManager.UpdateAsync(user);
-                return new ResponseMessage { Data = loogedInResponse, Status = true, Message = "User was logged in successfully" };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
-            }
-            return new ResponseMessage { Message = "Error occured please try again later" };
-        }
-
-        //public async Task<LoggedInResponseDTO> Login(ApplicationUser user, LoginViewModel loginModel)
+        //public async Task<ResponseMessage> Login(ApplicationUser user, LoginViewModel loginModel)
         //{
         //    await _userManager.ResetAccessFailedCountAsync(user);
-
-        //    var authResponse = await GetAuthenticationResultForUserAsync(user);
-
-        //    return authResponse;
-        //}
-
-        //private async Task<LoggedInResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)
-        //{           
         //    var roles = await _userManager.GetRolesAsync(user);
+
 
         //    try
         //    {
@@ -203,7 +141,7 @@ namespace HealthBanc.Services.Identity
         //        {
         //            Subject = new ClaimsIdentity(new[]
         //            {
-        //                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+        //                new Claim(JwtRegisteredClaimNames.Sub, loginModel.EmailAddress),
         //                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         //                new Claim("SuperAdminId", user.SuperAdminId.ToString()),
         //                new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
@@ -211,114 +149,178 @@ namespace HealthBanc.Services.Identity
         //                new Claim("FirstName",user.FirstName??"Not Available"),
         //                new Claim("LastName",user.LastName??"Not Available"),
         //                new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
-        //                new Claim("id",user.Id.ToString()),
         //                new Claim(ClaimTypes.Email, user.Email),
         //                new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
         //                new Claim("LoggedOn", DateTime.Now.ToString()),
         //            }),
         //            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
-        //            //Issuer = _jwtsettings.Site,
-        //            //Audience = _jwtsettings.Audience,
-        //            Expires = DateTime.Now.Add(_jwtsettings.TokenLifeTime),
+        //            Issuer = _jwtsettings.Site,
+        //            Audience = _jwtsettings.Audience,
+        //            Expires = DateTime.UtcNow.AddMinutes(expirationTime)
         //        };
         //        //create the token 
         //        var token = tokenHandler.CreateToken(tokenDescriptor);
-        //        var refreshToken = new RefreshToken
+        //        var refreshToken = GenerateRefreshToken();
+        //        var loogedInResponse = new LoggedInResponseDTO
         //        {
-        //            Token = Guid.NewGuid().ToString(),
-        //            JwtId = token.Id,
-        //            UserId = user.Id,
-        //            CreationDate = DateTime.Now,
-        //            ExpiryDate = DateTime.Now.AddMonths(6),
-        //        };
-        //        await _dbContext.RefreshTokens.AddAsync(refreshToken);
-        //        await _dbContext.SaveChangesAsync();
-        //        return new LoggedInResponseDTO
-        //        {
-        //            Success= true,
         //            Token = tokenHandler.WriteToken(token),
-        //            RefreshToken = refreshToken.Token,
         //            Username = user.Email,
         //            Name = $"{user.FirstName} {user.LastName}",
         //            Roles = roles,
-        //            ExpiryTime = DateTime.Now.Add(_jwtsettings.TokenLifeTime),
+        //            ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
         //        };
+        //        user.LastLoginDate = DateTime.Now;
+        //        await _userManager.UpdateAsync(user);
+        //        return new ResponseMessage { Data = loogedInResponse, Status = true, Message = "User was logged in successfully" };
         //    }
         //    catch (Exception ex)
         //    {
         //        _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
-        //        return new LoggedInResponseDTO { Errors = new[] { "Error occurred while validating token" } };
         //    }
+        //    return new ResponseMessage { Message = "Error occured please try again later" };
         //}
 
-        //public async Task<LoggedInResponseDTO> RefreshTokenAsync(string token, string refreshToken)
-        //{
-        //    var validatedToken = GetPrincipalFromToken(token);
-        //    if (validatedToken == null)
-        //    {
-        //        return new LoggedInResponseDTO { Errors = new[] { "Invalid Token" } };
-        //    }
-        //    var expiryDateUnix = long.Parse(validatedToken.Claims.Single(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
-        //    var expiryDateTimeUtc = new DateTime(1970, 1, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-        //        .AddSeconds(expiryDateUnix);
-        //    if(expiryDateTimeUtc> DateTime.UtcNow)
-        //    {
-        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token hasn't expired yet" } };
-        //    }
-        //    var jti = validatedToken.Claims.Single(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
+        public async Task<ResponseMessage> Login2(ApplicationUser user, LoginViewModel loginModel)
+        {
+            await _userManager.ResetAccessFailedCountAsync(user);
 
-        //    var stroredRefreshToken = await _dbContext.RefreshTokens.SingleOrDefaultAsync(x => x.Token == refreshToken);
-        //    if(stroredRefreshToken == null)
-        //    {
-        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token hasn't expired yet" } };
-        //    }
-        //    if(DateTime.UtcNow > stroredRefreshToken.ExpiryDate)
-        //    {
-        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token has expired" } };
-        //    }
-        //    if (stroredRefreshToken.Invalidated)
-        //    {
-        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token has been validate" } };
-        //    }
-        //    if (stroredRefreshToken.Used)
-        //    {
-        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token has been used" } };
-        //    }
+            var authResponse = await GetAuthenticationResultForUserAsync(user);
+            if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
 
-        //    if (stroredRefreshToken.JwtId != jti)
-        //    {
-        //        return new LoggedInResponseDTO { Errors = new[] { "This refresh token does not match the JWT" } };
-        //    }
-        //    stroredRefreshToken.Used = true;
-        //    _dbContext.RefreshTokens.Update(stroredRefreshToken);
-        //    await _dbContext.SaveChangesAsync();
+            return new ResponseMessage { Data = authResponse, Message = "Error occured please try again later"};
+        }
 
-        //    var user = await _userManager.FindByIdAsync(validatedToken.Claims.Single(x => x.Type == "id").Value);
-        //    return await GetAuthenticationResultForUserAsync(user);
-        //}
+        public async Task<ResponseMessage> Refresh2(RefreshTokenViewModel refreshToken)
+        {
+            var principal = GetPrincipalFromExpiredToken(refreshToken.Token);
+            var username = principal.Identity.Name; //this is mapped to the Name claim by default
+            var user = await _userRepository.FindByIdAsync(int.Parse(username));
+            if (user == null)
+            {
+                return new ResponseMessage { Message = "User could not be fetched" };
+            }
+            if(user.RefreshToken != refreshToken.RefreshToken)
+            {
+                return new ResponseMessage { Message = "Invalid refresh token" };
+            }
+            if(user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return new ResponseMessage { Message = "This refresh token has expired" };
+            }
+            var newRefreshToken = GenerateRefreshToken();
+            user.RefreshToken = newRefreshToken;
+            _userRepository.Update(user);
+            await _userRepository.Save();
 
-        //private ClaimsPrincipal GetPrincipalFromToken(string token)
-        //{
-        //    var tokenHandler = new JwtSecurityTokenHandler();
-        //    try
-        //    {
-        //        var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out var validatedToken);
-        //        if (!IsJwtWithValidSecurityAlgorithm(validatedToken))
-        //        {
-        //            return null;
-        //        }
-        //        return principal;
-        //    }
-        //    catch(Exception ex)
-        //    {
-        //        return null;
-        //    }
-        //}
+            var authResponse = await GetAuthenticationResultForUserAsync(user);
+            if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
 
-        //private bool IsJwtWithValidSecurityAlgorithm(SecurityToken validatedToken)
-        //{
-        //    return (validatedToken is JwtSecurityToken jwtSecurityToken) && jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
-        //}
+            return new ResponseMessage { Data = authResponse, Message = "Error occured, please try again later" };
+        }
+
+        private async Task<LoggedInResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+
+            try
+            {
+                //Generate Token
+                var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(new[]
+                    {
+                        new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                        new Claim("SuperAdminId", user.SuperAdminId.ToString()),
+                        new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
+                        new Claim(ClaimTypes.Name, user.Id.ToString()),
+                        new Claim("FirstName",user.FirstName??"Not Available"),
+                        new Claim("LastName",user.LastName??"Not Available"),
+                        new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
+                        new Claim("id",user.Id.ToString()),
+                        new Claim(ClaimTypes.Email, user.Email),
+                        new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
+                        new Claim("LoggedOn", DateTime.Now.ToString()),
+                    }),
+                    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
+                    Issuer = _jwtsettings.Site,
+                    Audience = _jwtsettings.Audience,
+                    Expires = DateTime.Now.AddMinutes(expirationTime),
+                };
+                //create the token 
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+                var refreshToken = GenerateRefreshToken();
+
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+                _userRepository.Update(user);
+                await _userRepository.Save();
+
+                var loggedInResponse = new LoggedInResponseDTO
+                {
+                    Token = tokenHandler.WriteToken(token),
+                    Username = user.Email,
+                    Name = $"{user.FirstName} {user.LastName}",
+                    Roles = roles,
+                    ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
+                    Success = true,
+                    RefreshToken = refreshToken
+                };
+                return loggedInResponse;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
+                return new LoggedInResponseDTO { Errors = new[] { "Error occurred while validating token" } };
+            }
+        }
+
+        public string GenerateAccessToken(IEnumerable<Claim> claims)
+        {
+            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345"));
+            var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
+            var tokeOptions = new JwtSecurityToken(
+                issuer: "http://localhost:5000",
+                audience: "http://localhost:5000",
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(5),
+                signingCredentials: signinCredentials
+            );
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(tokeOptions);
+            return tokenString;
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomNumber);
+                return Convert.ToBase64String(randomNumber);
+            }
+        }
+
+        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            //var tokenValidationParameters = new TokenValidationParameters
+            //{
+            //    ValidateAudience = false, //you might want to validate the audience and issuer depending on your use case
+            //    ValidateIssuer = false,
+            //    ValidateIssuerSigningKey = true,
+            //    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345")),
+            //    ValidateLifetime = false //here we are saying that we don't care about the token's expiration date
+            //};
+            var tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken securityToken;
+            var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
+            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+            return principal;
+        }
 
         public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword)
         {
@@ -521,48 +523,6 @@ namespace HealthBanc.Services.Identity
                     _logger.LogError(ex, "Falied to send Email Verification Mail to Admin From Method VerifyAdmin()");
                 }
             }
-        }
-
-        public string GenerateAccessToken(IEnumerable<Claim> claims)
-        {
-            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345"));
-            var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
-            var tokeOptions = new JwtSecurityToken(
-                issuer: "http://localhost:5000",
-                audience: "http://localhost:5000",
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(5),
-                signingCredentials: signinCredentials
-            );
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(tokeOptions);
-            return tokenString;
-        }
-        public string GenerateRefreshToken()
-        {
-            var randomNumber = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(randomNumber);
-                return Convert.ToBase64String(randomNumber);
-            }
-        }
-        public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
-        {
-            var tokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateAudience = false, //you might want to validate the audience and issuer depending on your use case
-                ValidateIssuer = false,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345")),
-                ValidateLifetime = false //here we are saying that we don't care about the token's expiration date
-            };
-            var tokenHandler = new JwtSecurityTokenHandler();
-            SecurityToken securityToken;
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out securityToken);
-            var jwtSecurityToken = securityToken as JwtSecurityToken;
-            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                throw new SecurityTokenException("Invalid token");
-            return principal;
         }
     }
 }

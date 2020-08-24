@@ -209,7 +209,7 @@ namespace HealthBanc
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
                 ValidateAudience = false,
-                ValidateLifetime = true,
+                ValidateLifetime = false,
                 RequireExpirationTime = false,
                 ValidIssuer = appSettingValues.Site,
                 ValidAudience = appSettingValues.Audience,

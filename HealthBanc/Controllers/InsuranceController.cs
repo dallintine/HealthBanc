@@ -173,6 +173,8 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
         }
 
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetTowns(string state)
         {
@@ -188,15 +190,17 @@ namespace HealthBanc.Controllers
                     XmlDocument xmlDoc2 = new XmlDocument();
                     xmlDoc2.LoadXml(result.Data);
 
-                    var getResponse = new AxaResponse();
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("GetTownsResult").Item(0).InnerText;
-                    return Ok(new ResponseMessage { Data = getResponse, Message = "Town was fetched successfully", Status = true });
+                    var response = xmlDoc2.GetElementsByTagName("GetTownsResult").Item(0).InnerText;
+                    var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
+                    return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Town was fetched successfully", Status = true });
                 }
                 return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
             }
             return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetStates()
         {
@@ -213,9 +217,9 @@ namespace HealthBanc.Controllers
                     XmlDocument xmlDoc2 = new XmlDocument();
                     xmlDoc2.LoadXml(result.Data);
 
-                    var getResponse = new AxaResponse();
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("GetStatesResult").Item(0).InnerText;
-                    return Ok(new ResponseMessage { Data = getResponse, Message = "State was fetched successfully", Status = true });
+                    var response = xmlDoc2.GetElementsByTagName("GetStatesResult").Item(0).InnerText;
+                    var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
+                    return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "State was fetched successfully", Status = true });
                 }
                 return BadRequest(new ResponseMessage { Message = "An error occurred while fetching State from  axa mansard: Connection timeout", Status = false });
             }
