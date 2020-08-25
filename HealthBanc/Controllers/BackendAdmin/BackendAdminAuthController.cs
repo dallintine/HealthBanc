@@ -378,8 +378,7 @@ namespace HealthBanc.Controllers
                     SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
                     Issuer = _jwtsettings.Site,
                     Audience = _jwtsettings.Audience,
-                    //Expires = DateTime.Now.AddMinutes(expirationTime)
-                    Expires = DateTime.UtcNow.Add(_jwtsettings.TokenLifeTime),
+                    Expires = DateTime.Now.Add(_jwtsettings.TokenLifeTime),
 
                 };
                 //create the token 
@@ -387,7 +386,7 @@ namespace HealthBanc.Controllers
                 var refreshToken = GenerateRefreshToken();
 
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+                user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(7);
                 _userRepository.Update(user);
                 await _userRepository.Save();
 
@@ -398,8 +397,7 @@ namespace HealthBanc.Controllers
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email,
-                    //ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
-                    ExpiryTime = DateTime.UtcNow.Add(_jwtsettings.TokenLifeTime),
+                    ExpiryTime = DateTime.Now.Add(_jwtsettings.TokenLifeTime),
                     Roles = roles,
                     Success = true,
                     RefreshToken = refreshToken

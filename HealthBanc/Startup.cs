@@ -202,7 +202,7 @@ namespace HealthBanc
             //Encoding The Secret
             var key = Encoding.ASCII.GetBytes(appSettingValues.Secret);
 
-            //Authentication Middleware
+            /////////////////Authentication Middleware            
 
             var tokenValidationParameters = new TokenValidationParameters
             {
@@ -211,6 +211,7 @@ namespace HealthBanc
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 RequireExpirationTime = true,
+                LifetimeValidator = TokenLifetimeValidator.Validate,
                 ValidIssuer = appSettingValues.Site,
                 ValidAudience = appSettingValues.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(key)
@@ -238,6 +239,19 @@ namespace HealthBanc
                    .AsImplementedInterfaces();
             builder.AddRabbitMq();
             builder.AddDispatchers();
+        }
+
+        public static class TokenLifetimeValidator
+        {
+            public static bool Validate(
+                DateTime? notBefore,
+                DateTime? expires,
+                SecurityToken tokenToValidate,
+                TokenValidationParameters @param
+            )
+            {
+                return (expires != null && expires > DateTime.UtcNow);
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
