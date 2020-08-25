@@ -378,7 +378,7 @@ namespace HealthBanc.Controllers
                     SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
                     Issuer = _jwtsettings.Site,
                     Audience = _jwtsettings.Audience,
-                    Expires = DateTime.Now.Add(_jwtsettings.TokenLifeTime),
+                    Expires = DateTime.Now.AddMinutes(expirationTime),
 
                 };
                 //create the token 
@@ -397,7 +397,7 @@ namespace HealthBanc.Controllers
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email,
-                    ExpiryTime = DateTime.Now.Add(_jwtsettings.TokenLifeTime),
+                    ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
                     Roles = roles,
                     Success = true,
                     RefreshToken = refreshToken
