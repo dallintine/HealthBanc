@@ -36,7 +36,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         /// </summary>
         [ProducesResponseType(200, Type = typeof(PagedResponse<ApplicationUserDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAllUsers([FromQuery]PaginationQuery paginationQuery)
         {
@@ -68,7 +68,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         /// </summary>
         [ProducesResponseType(200, Type = typeof(PagedResponse<ApplicationUserDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetUser([FromQuery]string email)
         {

@@ -18,6 +18,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -34,10 +35,12 @@ namespace HealthBanc.Controllers
         private readonly IClassOrRoleRepository _roleRepository;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IBackendAdminRepository _adminRepository;
+        private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly JwtSettings _jwtsettings;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
-            ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository)
+            ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
+            TokenValidationParameters tokenValidationParameters)
         {
             _userManager = userManager;
             _httpClientFactory = httpClientFactory;
@@ -45,6 +48,7 @@ namespace HealthBanc.Controllers
             _roleRepository = roleRepository;
             _userRepository = userRepository;
             _adminRepository = adminRepository;
+            _tokenValidationParameters = tokenValidationParameters;
             _jwtsettings = jwtsettings.Value;
         }
 
@@ -71,55 +75,60 @@ namespace HealthBanc.Controllers
                 {
                     try
                     {
-                        //var httpClient = _httpClientFactory.CreateClient("Fiorano");
-                        //var loginCredentials = new ADCredentialsRoot();
-                        //loginCredentials.AD_Credentials = aDCredentials;
-                        //HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
-                        //var authentication = await httpClient.PostAsync("AD/ADAuthentication", content);
-                        //string apiResponse = await authentication.Content.ReadAsStringAsync();
-                        //var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
-                        if (/*result.AD_Response.ResponseCode == "00"*/ true)
+                        var httpClient = _httpClientFactory.CreateClient("Fiorano");
+                        var loginCredentials = new ADCredentialsRoot();
+                        loginCredentials.AD_Credentials = aDCredentials;
+                        HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
+                        var authentication = await httpClient.PostAsync("AD/ADAuthentication", content);
+                        if (authentication.IsSuccessStatusCode)
                         {
-                            var roles = await _userManager.GetRolesAsync(checkIfUserExist);
-                            //Generate Token
-                            var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
-                            var tokenHandler = new JwtSecurityTokenHandler();
-                            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
-                            var tokenDescriptor = new SecurityTokenDescriptor
+                            string apiResponse = await authentication.Content.ReadAsStringAsync();
+                            var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
+                            if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                             {
-                                Subject = new ClaimsIdentity(new[]
-                                {
-                                new Claim(JwtRegisteredClaimNames.Sub, aDCredentials.AD_Username),
-                                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                                new Claim(ClaimTypes.Email,  aDCredentials.AD_Username),
-                                new Claim("FirstName",checkIfUserExist.FirstName as string),
-                                new Claim("LastName",checkIfUserExist.LastName as string),
-                                new Claim(ClaimTypes.Role, roles.FirstOrDefault() as string)
-                                }),
-                                SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
-                                Issuer = _jwtsettings.Site,
-                                Audience = _jwtsettings.Audience,
-                                Expires = DateTime.UtcNow.AddMinutes(expirationTime)
-                            };
+                                //var roles = await _userManager.GetRolesAsync(checkIfUserExist);
+                                ////Generate Token
+                                //var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
+                                //var tokenHandler = new JwtSecurityTokenHandler();
+                                //var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
+                                //var tokenDescriptor = new SecurityTokenDescriptor
+                                //{
+                                //    Subject = new ClaimsIdentity(new[]
+                                //    {
+                                //new Claim(JwtRegisteredClaimNames.Sub, aDCredentials.AD_Username),
+                                //new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                                //new Claim(ClaimTypes.Email,  aDCredentials.AD_Username),
+                                //new Claim("FirstName",checkIfUserExist.FirstName as string),
+                                //new Claim("LastName",checkIfUserExist.LastName as string),
+                                //new Claim(ClaimTypes.Role, roles.FirstOrDefault() as string)
+                                //}),
+                                //    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
+                                //    Issuer = _jwtsettings.Site,
+                                //    Audience = _jwtsettings.Audience,
+                                //    Expires = DateTime.UtcNow.AddMinutes(expirationTime)
+                                //};
 
-                            //create the token 
-                            var token = tokenHandler.CreateToken(tokenDescriptor);
-                            var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
+                                ////create the token 
+                                //var token = tokenHandler.CreateToken(tokenDescriptor);
+                                //var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
+                                //{
+                                //    Token = tokenHandler.WriteToken(token),
+                                //    Username = aDCredentials.AD_Username,
+                                //    FirstName = checkIfUserExist.FirstName,
+                                //    LastName = checkIfUserExist.LastName,
+                                //    Email = checkIfUserExist.Email,
+                                //    ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
+                                //    Roles = roles,
+                                //};
+                                var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                                return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
+                            }
+                            else
                             {
-                                Token = tokenHandler.WriteToken(token),
-                                Username = aDCredentials.AD_Username,
-                                FirstName = checkIfUserExist.FirstName,
-                                LastName = checkIfUserExist.LastName,
-                                Email = checkIfUserExist.Email,
-                                ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
-                                Roles = roles,
-                            };
-                            return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true,Message="Login was successfully" });
+                                return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
+                            }
                         }
-                        else
-                        {
-                            return Unauthorized(new ResponseMessage { Message = "Username or password invalid, please try again with correct details." });
-                        }
+                        return BadRequest(new ResponseMessage { Message = "An error occurred when connecting to core ADService" });
                     }
                     catch (Exception ex)
                     {
@@ -140,6 +149,18 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage{ Data = errors,Status=false,Message="Please check for validation errors" });
         }
 
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> BackendRefreshToken(RefreshTokenViewModel refreshModel)
+        {
+            var authResponse = await Refresh2(refreshModel);
+            if (!authResponse.Status)
+            {
+                return BadRequest(authResponse);
+            }
+            return Ok(authResponse);
+        }
+
         //WORKING1
         /// <summary>
         /// Creates the BackendUser 
@@ -148,7 +169,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator")]
         [HttpPost("[action]")]
         public async Task<IActionResult> CreateBackendAdmin(CreateAdminViewModel createAdminViewModel)
         {
@@ -212,7 +233,7 @@ namespace HealthBanc.Controllers
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<BackendAdminUser>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetBackendAdminUsers()
         {
@@ -235,7 +256,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator")]
         [HttpPost("[action]")]
         public async Task<IActionResult> ChangeAdminRole([FromQuery] string email,int roleId)
         {
@@ -272,7 +293,7 @@ namespace HealthBanc.Controllers
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAdminRoles()
         {
@@ -295,7 +316,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> RemoveAdmin([FromQuery]string email)
         {
@@ -321,6 +342,112 @@ namespace HealthBanc.Controllers
                 _logger.LogCritical("An error occurred while trying to delete admin " + ex);
                 return BadRequest("An error occurred while trying to change to delete admin");
             }
+        }
+
+        private async Task<LoggedInAdminResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+
+            try
+            {
+                //Generate Token
+                var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(new[]
+                    {
+                    new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(ClaimTypes.Email,  user.Email),
+                    new Claim("FirstName",user.FirstName as string),
+                    new Claim("LastName",user.LastName as string),
+                    new Claim(ClaimTypes.Name, user.Id.ToString()),
+                    new Claim(ClaimTypes.Role, roles.FirstOrDefault() as string)
+                    }),
+                    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
+                    Issuer = _jwtsettings.Site,
+                    Audience = _jwtsettings.Audience,
+                    Expires = DateTime.UtcNow.AddMinutes(expirationTime)
+                };
+                //create the token 
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+                var refreshToken = GenerateRefreshToken();
+
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+                _userRepository.Update(user);
+                await _userRepository.Save();
+
+                var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
+                {
+                    Token = tokenHandler.WriteToken(token),
+                    Username = user.UniqueUsername,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email,
+                    ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
+                    Roles = roles,
+                    Success = true,
+                    RefreshToken = refreshToken
+                };
+                return loggedInAdminResponseDTO;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
+                return new LoggedInAdminResponseDTO { Errors = new[] { "Error occurred while validating token" } };
+            }
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomNumber);
+                return Convert.ToBase64String(randomNumber);
+            }
+        }
+
+        private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            SecurityToken securityToken;
+            var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
+            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+            return principal;
+        }
+
+        private async Task<ResponseMessage> Refresh2(RefreshTokenViewModel refreshToken)
+        {
+            var principal = GetPrincipalFromExpiredToken(refreshToken.Token);
+            var username = principal.Identity.Name; //this is mapped to the Name claim by default
+            var user = await _userRepository.FindByIdAsync(int.Parse(username));
+            if (user == null)
+            {
+                return new ResponseMessage { Message = "User could not be fetched" };
+            }
+            if (user.RefreshToken != refreshToken.RefreshToken)
+            {
+                return new ResponseMessage { Message = "Invalid refresh token" };
+            }
+            if (user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return new ResponseMessage { Message = "This refresh token has expired" };
+            }
+            var newRefreshToken = GenerateRefreshToken();
+            user.RefreshToken = newRefreshToken;
+            _userRepository.Update(user);
+            await _userRepository.Save();
+
+            var authResponse = await GetAuthenticationResultForUserAsync(user);
+            if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
+
+            return new ResponseMessage { Data = authResponse, Message = "Error occured, please try again later" };
         }
     }
 }

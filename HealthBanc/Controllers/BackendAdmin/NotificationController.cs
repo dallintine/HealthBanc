@@ -77,7 +77,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> CreateNotification([FromForm]NotificationViewModel notificationViewModel)
         {
             if (ModelState.IsValid)
@@ -121,7 +121,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> RestoreNotification(int notificationId)
         {
             try
@@ -152,7 +152,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> ChangeNotificationStatus([FromQuery] int Id,int statusId)
         {
             try
@@ -182,7 +182,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<Notification>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> GetAllNotification([FromQuery] PaginationQuery paginationQuery)
         {
             try
@@ -211,7 +211,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<Notification>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> GetNotification([FromQuery]int Id)
         {
             if(Id < 1)
@@ -239,7 +239,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> TrashNotification([FromQuery] int Id)
         {
             if (Id < 1)
@@ -271,7 +271,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        [Authorize]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> DeleteNotification([FromQuery] int Id)
         {
             if (Id < 1)

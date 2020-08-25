@@ -278,21 +278,6 @@ namespace HealthBanc.Services.Identity
             }
         }
 
-        public string GenerateAccessToken(IEnumerable<Claim> claims)
-        {
-            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345"));
-            var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
-            var tokeOptions = new JwtSecurityToken(
-                issuer: "http://localhost:5000",
-                audience: "http://localhost:5000",
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(5),
-                signingCredentials: signinCredentials
-            );
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(tokeOptions);
-            return tokenString;
-        }
-
         public string GenerateRefreshToken()
         {
             var randomNumber = new byte[32];
@@ -304,15 +289,7 @@ namespace HealthBanc.Services.Identity
         }
 
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
-        {
-            //var tokenValidationParameters = new TokenValidationParameters
-            //{
-            //    ValidateAudience = false, //you might want to validate the audience and issuer depending on your use case
-            //    ValidateIssuer = false,
-            //    ValidateIssuerSigningKey = true,
-            //    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@345")),
-            //    ValidateLifetime = false //here we are saying that we don't care about the token's expiration date
-            //};
+        {            
             var tokenHandler = new JwtSecurityTokenHandler();
             SecurityToken securityToken;
             var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out securityToken);
