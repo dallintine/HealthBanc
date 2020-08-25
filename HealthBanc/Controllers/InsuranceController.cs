@@ -149,6 +149,7 @@ namespace HealthBanc.Controllers
             }            
         }
 
+        [Authorize]
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetMedicalCondition()
         {
@@ -173,6 +174,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
         }
 
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
@@ -199,6 +201,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
@@ -279,6 +282,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
         }
 
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]

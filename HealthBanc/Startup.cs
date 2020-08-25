@@ -206,11 +206,11 @@ namespace HealthBanc
 
             var tokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = false,
+                ValidateIssuer = true,
                 ValidateIssuerSigningKey = true,
-                ValidateAudience = false,
-                ValidateLifetime = false,
-                RequireExpirationTime = false,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                RequireExpirationTime = true,
                 ValidIssuer = appSettingValues.Site,
                 ValidAudience = appSettingValues.Audience,
                 IssuerSigningKey = new SymmetricSecurityKey(key)
