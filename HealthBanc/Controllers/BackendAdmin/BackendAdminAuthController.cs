@@ -149,6 +149,15 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage{ Data = errors,Status=false,Message="Please check for validation errors" });
         }
 
+        [HttpGet("[action]")]
+        public IActionResult GetTime()
+        {
+            var utc = DateTime.UtcNow;
+            var utcLocal = DateTime.UtcNow.ToLongDateString();
+            var timeNow = DateTime.Now;
+            return Ok(new ResponseMessage { Message = utc + ":::" + utcLocal + ":::" + timeNow });
+        }
+
 
         [HttpPost("[action]")]
         public async Task<IActionResult> BackendRefreshToken(RefreshTokenViewModel refreshModel)
@@ -369,7 +378,7 @@ namespace HealthBanc.Controllers
                     SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
                     Issuer = _jwtsettings.Site,
                     Audience = _jwtsettings.Audience,
-                    Expires = DateTime.UtcNow.AddMinutes(expirationTime)
+                    Expires = DateTime.Now.AddMinutes(expirationTime)
                 };
                 //create the token 
                 var token = tokenHandler.CreateToken(tokenDescriptor);
