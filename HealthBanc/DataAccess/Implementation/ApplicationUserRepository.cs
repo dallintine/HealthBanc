@@ -124,21 +124,21 @@ namespace HealthBanc.DataAccess.Implementation
             {
                 foreach (var item in dashboardServiceList)
                 {
-                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Id.ToString())).CountAsync();
+                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Name.ToString())).CountAsync();
                 }
             }
             else if(Id == 1)
             {
                 foreach (var item in dashboardServiceList)
                 {
-                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Id.ToString()) && x.DateOfRegistration.Year == DateTime.Now.Year).CountAsync();
+                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Name.ToString()) && x.DateOfRegistration.Year == DateTime.Now.Year).CountAsync();
                 }
             }
             else if(Id == 2)
             {
                 foreach (var item in dashboardServiceList)
                 {
-                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Id.ToString()) && x.DateOfRegistration.Month == DateTime.Now.Month).CountAsync();
+                    item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Name.ToString()) && x.DateOfRegistration.Month == DateTime.Now.Month).CountAsync();
                 }
             }           
             var dashboardDTO = new DashboardDTO();
