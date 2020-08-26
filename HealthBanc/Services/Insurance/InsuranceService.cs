@@ -533,7 +533,7 @@ namespace HealthBanc.Services.Insurance
                 <soap:Body>
                    <GetTowns xmlns=""http://tempuri.org/"">
                     <State>{state}</State>
-                    <token>{token}</token>
+                    <Token>{token}</Token>
                     </GetTowns>
                 </soap:Body>
             </soap:Envelope>");
