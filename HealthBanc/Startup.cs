@@ -40,6 +40,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
+using OfficeOpenXml;
 using Polly;
 
 namespace HealthBanc
@@ -128,6 +129,7 @@ namespace HealthBanc
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
+            services.AddScoped<ExcelPackage>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

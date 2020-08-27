@@ -20,6 +20,7 @@ namespace HealthBanc.Data
         public DbSet<BackendAdminUser> BackendAdminUsers { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<AxaMansardUserProfile> AxaMansardUserProfile { get; set; }
+        public DbSet<TestUserProfile> TestUserProfiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -51,7 +52,7 @@ namespace HealthBanc.Data
 
             builder.Entity<Service>().HasData(
                 new { Id=1, Name="Pharmmall"},
-                new {Id = 2, Name="Insurance"}
+                new {Id = 2, Name="HealthInsured"}
            );
         }
     }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
+using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Response;
@@ -26,13 +27,16 @@ namespace HealthBanc.Controllers
         private readonly IdentityService _identityService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
+        private readonly IApplicationUserRepository _userRepository;
 
-        public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt)
+        public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
+            IApplicationUserRepository userRepository)
         {
             _logger = logger;
             _identityService = identityService;
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
+            _userRepository = userRepository;
         }
 
         ///<summary>
@@ -458,6 +462,27 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error });
             }
             return Unauthorized(errors);
+        }
+
+        [HttpGet("[action]")]
+        [Authorize]
+        public async Task<IActionResult> GetUserServices()
+        {
+            try
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var user = await _userRepository.FindByIdAsync(Id);
+                if (user != null)
+                {
+                    return Ok(new ResponseMessage { Data = user.ServiceUsed, Status = true, Message = "Service used was fetched successfully" });
+                }
+                return NotFound(new ResponseMessage { Message = "User was not found" });
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get service used by user" });
+            }           
         }
 
     }

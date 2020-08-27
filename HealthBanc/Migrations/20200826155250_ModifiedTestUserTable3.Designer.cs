@@ -4,14 +4,16 @@ using HealthBanc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HealthBanc.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200826155250_ModifiedTestUserTable3")]
+    partial class ModifiedTestUserTable3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -471,53 +473,8 @@ namespace HealthBanc.Migrations
                         new
                         {
                             Id = 2,
-                            Name = "HealthInsured"
+                            Name = "Insurance"
                         });
-                });
-
-            modelBuilder.Entity("HealthBanc.Domain.Models.TestUserProfile", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DateOfBirth")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FirstName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MaritalStatus")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NextofKin")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OtherName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Plan")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Sex")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SurnName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TransId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TestUserProfiles");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>

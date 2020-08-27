@@ -15,6 +15,7 @@ namespace HealthBanc.DTO.AuthenticationDTOs
         public DateTime ExpiryTime { get; set; }
         public IEnumerable<string> Roles { get; set; }
         public IEnumerable<string> Errors { get; set; }
+        public List<string> Services { get; set; }
     }
 
     public class LoggedInAdminResponseDTO

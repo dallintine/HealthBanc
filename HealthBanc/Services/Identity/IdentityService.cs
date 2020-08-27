@@ -259,6 +259,12 @@ namespace HealthBanc.Services.Identity
                 _userRepository.Update(user);
                 await _userRepository.Save();
 
+                var serviceList = user.ServiceUsed.Split(",").ToList();
+                if(serviceList.LastOrDefault() == "")
+                {
+                    serviceList.RemoveAt(serviceList.Count - 1);
+                }
+
                 var loggedInResponse = new LoggedInResponseDTO
                 {
                     Token = tokenHandler.WriteToken(token),
@@ -267,7 +273,8 @@ namespace HealthBanc.Services.Identity
                     Roles = roles,
                     ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
                     Success = true,
-                    RefreshToken = refreshToken
+                    RefreshToken = refreshToken,
+                    Services = serviceList
                 };
                 return loggedInResponse;
             }
@@ -439,7 +446,6 @@ namespace HealthBanc.Services.Identity
                     var setPassword = await _userManager.ResetPasswordAsync(user, token.Result, regViewModel.NewPassword);
                     if (setPassword.Succeeded)
                     {
-                        await Welcome(user);
                         return new ResponseMessage { Message = "Email Confirmed Successfully,Please Log In", Status = true };
                     }
                 }
