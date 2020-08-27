@@ -259,12 +259,6 @@ namespace HealthBanc.Services.Identity
                 _userRepository.Update(user);
                 await _userRepository.Save();
 
-                var serviceList = user.ServiceUsed.Split(",").ToList();
-                if(serviceList.LastOrDefault() == "")
-                {
-                    serviceList.RemoveAt(serviceList.Count - 1);
-                }
-
                 var loggedInResponse = new LoggedInResponseDTO
                 {
                     Token = tokenHandler.WriteToken(token),
@@ -273,9 +267,18 @@ namespace HealthBanc.Services.Identity
                     Roles = roles,
                     ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
                     Success = true,
-                    RefreshToken = refreshToken,
-                    Services = serviceList
+                    RefreshToken = refreshToken
                 };
+
+                if (user.ServiceUsed != null)
+                {
+                    var serviceList = user.ServiceUsed.Split(",").ToList();
+                    if (serviceList.LastOrDefault() == "")
+                    {
+                        serviceList.RemoveAt(serviceList.Count - 1);
+                    }
+                    loggedInResponse.Services = serviceList;
+                }                
                 return loggedInResponse;
             }
             catch (Exception ex)
