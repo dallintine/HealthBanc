@@ -100,6 +100,23 @@ namespace HealthBanc.Controllers
                 int Id = int.Parse(userId);
                 var user = await _userRepository.FindByIdAsync(Id);
 
+
+                var supportedTypes = new[] { ".JPG", ".JPE", ".PNG", ".JPEG" };
+                var customerPhoto = System.IO.Path.GetExtension(userProfile.CustomerPhoto.FileName).ToUpperInvariant();
+                var identityPhoto = System.IO.Path.GetExtension(userProfile.IdentityPhoto.FileName).ToUpperInvariant();
+
+                if (!supportedTypes.Contains(customerPhoto) || !supportedTypes.Contains(identityPhoto))
+                {
+                    return BadRequest(new ResponseMessage { Message = "FIle extension is invalid - Only Upload PNG/JPEG/JPG/JPE" });
+                }
+
+                var customerPhotorSize = userProfile.CustomerPhoto.Length;
+                var identityPhotoSize = userProfile.IdentityPhoto.Length;
+                if ((customerPhotorSize / 1048576) > 3 || (identityPhotoSize / 1048576) > 3)
+                {
+                    return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than 3 Megabyte" });
+                }
+
                 var tokenResult = _insuranceService.AxaMansardGetToken();
             if (tokenResult.Status == true)
             {

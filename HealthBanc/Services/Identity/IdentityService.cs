@@ -74,7 +74,6 @@ namespace HealthBanc.Services.Identity
                     DateOfRegistration = DateTime.Now
                 };
 
-
                 var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
                 if (result.Succeeded)
                 {

@@ -12,6 +12,7 @@ using HealthBanc.DataAccess.Implementation;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Dispatchers;
 using HealthBanc.Domain.Models;
+using HealthBanc.Handlers.HealthMallAdmin;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Messages.Events;
@@ -317,7 +318,8 @@ namespace HealthBanc
             });
 
             app.UseRabbitMq()
-                .SubscribeEvent<ServiceUsedCreated>();
+                .SubscribeEvent<ServiceUsedCreated>()
+                .SubscribeEvent<AdminDeletedCreated>();
 
             applicationLifetime.ApplicationStopped.Register(() =>
             {
