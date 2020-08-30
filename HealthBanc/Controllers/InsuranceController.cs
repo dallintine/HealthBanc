@@ -112,9 +112,9 @@ namespace HealthBanc.Controllers
 
                 var customerPhotorSize = userProfile.CustomerPhoto.Length;
                 var identityPhotoSize = userProfile.IdentityPhoto.Length;
-                if ((customerPhotorSize / 1048576) > 3 || (identityPhotoSize / 1048576) > 3)
+                if ((customerPhotorSize / 1048576) > 1 || (identityPhotoSize / 1048576) > 1)
                 {
-                    return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than 3 Megabyte" });
+                    return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than 1 Megabyte" });
                 }
 
                 var tokenResult = _insuranceService.AxaMansardGetToken();

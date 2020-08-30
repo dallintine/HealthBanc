@@ -324,7 +324,7 @@ namespace HealthBanc.Services.Identity
                 // Email the user the verification code
                 try
                 {
-                    _emailSender.SendEmail(forgotPassword.Username,"d-f9c4860583d340f1bf25a355dc64caf2", passwordResetLink);
+                    _emailSender.SendEmail(forgotPassword.Username,"d-f9c4860583d340f1bf25a355dc64caf2", passwordResetLink,null);
                     return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
                 }
                 catch (Exception ex)
@@ -401,19 +401,15 @@ namespace HealthBanc.Services.Identity
                         // TODO: Replace with APIRoutes that will contain the static routes to use
 
                         var confirmationUrl = $"https://pharmmall.azurewebsites.net/set-new-password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}&destination=adminreg";
-                        _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl);
+                        _emailSender.SendEmail(user.UserName, "d-6035520c662a43fba6ad2718deaedf79", confirmationUrl, superAdmin.FirstName + " " + superAdmin.LastName);
 
 
-                        //var adminCreatedEvent = _mapper.Map<AdminCreated>(regViewModel);
-                        //adminCreatedEvent.SuperAdminId = superAdminId; adminCreatedEvent.SuperAdminEmail = superAdminEmail;
-                        //adminCreatedEvent.Id = user.Id;
                         await _busPublisher.PublishAsync( new AdminCreated(user.Id,regViewModel.StockOrderLimit, regViewModel.FirstName, regViewModel.LastName, regViewModel.Email, regViewModel.PhoneNumber,
                             superAdminId, superAdminEmail, regViewModel.ClassOrRoleId), null);
-                        _logger.LogCritical("testing");
 
                         return new ResponseMessage
                         {
-                            Message = "Admin Was Created Successfully,Please Check Email For Further Instruction",
+                            Message = "Admin was invited successfully. Admin should check email for invite",
                             Status = true
                         };
                     }
@@ -424,7 +420,30 @@ namespace HealthBanc.Services.Identity
                 }
                 return new ResponseMessage { Message = "Error Occurred While Trying to Create the Admin" };
             }
-            return new ResponseMessage { Message = "User Already Exist" };
+            else
+            {
+                if (checkIfAdminExist.AdminId == null)
+                {
+                    checkIfAdminExist.SuperAdminId = superAdminId;
+                    await _userManager.UpdateAsync(checkIfAdminExist);
+
+                    var role = await _classOrRole.GetRole(regViewModel.ClassOrRoleId);
+                    await _userManager.AddToRoleAsync(checkIfAdminExist, role.Name);
+
+                    var loginPage = $"https://pharmmall.azurewebsites.net/signin";
+                    _emailSender.SendEmail(checkIfAdminExist.Email, "d-bb5d5f1175764248be51f9c1bdaf533e", loginPage, superAdmin.FirstName +" "+superAdmin.LastName);
+
+                    await _busPublisher.PublishAsync(new AdminCreated(checkIfAdminExist.Id, regViewModel.StockOrderLimit, checkIfAdminExist.FirstName, checkIfAdminExist.LastName,
+                        checkIfAdminExist.Email, checkIfAdminExist.PhoneNumber,superAdminId, superAdminEmail, regViewModel.ClassOrRoleId), null);
+
+                    return new ResponseMessage
+                    {
+                        Message = "Admin was invited successfully. Admin should check email for invite",
+                        Status = true
+                    };
+                }
+                return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
+            }            
         }
 
         public async Task<ResponseMessage> AdminReg(string email, string emailToken, AdminRegViewModel regViewModel)
@@ -478,7 +497,7 @@ namespace HealthBanc.Services.Identity
                 // Email the user the verification code
                 try
                 {
-                    _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl);
+                    _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl,null);
                 }
                 catch (Exception ex)
                 {
@@ -501,7 +520,7 @@ namespace HealthBanc.Services.Identity
                 // Email the user the verification code
                 try
                 {
-                    _emailSender.SendEmail(user.UserName, "d-6aaf1c3f84434710a9319c4afa1e35f2", "confirmationUrl");
+                    _emailSender.SendEmail(user.UserName, "d-6aaf1c3f84434710a9319c4afa1e35f2", "confirmationUrl", null) ;
                 }
                 catch (Exception ex)
                 {

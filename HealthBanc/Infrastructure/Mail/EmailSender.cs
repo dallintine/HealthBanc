@@ -22,7 +22,7 @@ namespace HealthBanc.Infrastructure.Mail
         }
         public AuthMessageSenderOption Options { get; }
 
-        public void SendEmail(string email,string templateId, string url)
+        public void SendEmail(string email,string templateId, string url,string companyName)
         {
             var has = Options.SendGridApiKey;
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
@@ -34,6 +34,7 @@ namespace HealthBanc.Infrastructure.Mail
             sendGridMessage.SetTemplateData(new HelloEmail
             {
                 token = url,
+                company = companyName
             });
 
             var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
@@ -64,6 +65,7 @@ namespace HealthBanc.Infrastructure.Mail
         {
             [JsonProperty("token")]
             public string token { get; set; }
+            public string company { get; set; }
             public string HealthServiceProviderName { get; set; }
             public string HealthServiveProviderType { get; set; }
             public string EmailAddress { get; set; }
