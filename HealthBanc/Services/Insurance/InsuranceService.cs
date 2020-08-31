@@ -42,7 +42,7 @@ namespace HealthBanc.Services.Insurance
                     var newFileName = string.Concat(myUniqueFileName, fileName);
 
                     var fileDirectoryPath = Path.Combine(_environment.WebRootPath, "insurance");
-                    var filePath = Path.Combine(_environment.WebRootPath, "insurance") + $@"\{newFileName}";
+                    var filePath = Path.Combine(_environment.WebRootPath, "insurance") + $@"\{newFileName}.jpg";
                     if (!System.IO.Directory.Exists(fileDirectoryPath))
                     {
                         Directory.CreateDirectory(fileDirectoryPath);
