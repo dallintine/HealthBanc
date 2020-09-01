@@ -13,8 +13,12 @@ namespace HealthBanc.Response.Tokenize
     }
     public class Data
     {
+        public Message message { get; set; }
         public string url { get; set; }
         public string status { get; set; }
         public string reference { get; set; }
+    }
+    public class Message
+    {
     }
 }

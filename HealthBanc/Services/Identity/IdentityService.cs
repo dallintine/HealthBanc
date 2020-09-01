@@ -422,6 +422,10 @@ namespace HealthBanc.Services.Identity
             }
             else
             {
+                if (checkIfAdminExist.ServiceUsed.Contains("Pharmmall"))
+                {
+                    return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
+                }
                 if (checkIfAdminExist.AdminId == null)
                 {
                     checkIfAdminExist.SuperAdminId = superAdminId;
