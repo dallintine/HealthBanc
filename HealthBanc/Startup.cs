@@ -67,6 +67,11 @@ namespace HealthBanc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHsts(options =>
+            {
+                //options.IncludeSubDomains = true;
+                //options.MaxAge = TimeSpan.FromDays(365);
+            });
             //services.AddOData();
 
             services.AddControllers();
@@ -149,6 +154,8 @@ namespace HealthBanc
                 options.Password.RequireNonAlphanumeric = false;
             }).AddEntityFrameworkStores<ApplicationDbContext>().
             AddDefaultTokenProviders();
+
+
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
                 options.TokenLifespan = TimeSpan.FromDays(2));
@@ -299,6 +306,8 @@ namespace HealthBanc
                 }
             }
             app.UseCors("CorsPolicy");
+
+            app.UseHsts();
 
             app.UseHttpsRedirection();
 

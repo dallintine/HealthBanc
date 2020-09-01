@@ -3,21 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace HealthBanc.Response.Tokenize
+namespace HealthBanc.Request.Tokenize
 {
-    public class SendOtp
+    public class SendPin
     {
-        public SendOtp()
+        public SendPin()
         {
-        }
 
-        public SendOtp(string otp, string reference)
+        }
+        public SendPin(string pin, string reference)
         {
-            this.otp = otp;
+            this.pin = pin;
             this.reference = reference;
         }
 
-        public string otp { get; set; }
+        public string pin { get; set; }
         public string reference { get; set; }
     }
 }
