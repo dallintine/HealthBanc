@@ -728,7 +728,6 @@ C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netc
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csproj.CoreCompileInputs.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csprojAssemblyReference.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\EPPlus.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.Drawing.Common.dll

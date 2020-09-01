@@ -21,6 +21,7 @@ using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
 using HealthBanc.Services.ImageService;
 using HealthBanc.Services.Insurance;
+using HealthBanc.Services.Tokenization;
 using MediatR;
 using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
@@ -131,6 +132,7 @@ namespace HealthBanc
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
             services.AddScoped<ExcelPackage>();
+            services.AddScoped<TokenizationService>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -167,7 +169,14 @@ namespace HealthBanc
                 client.BaseAddress = new Uri("http://172.18.4.77:1880/restgateway/services/");
             })
                 .AddTransientHttpErrorPolicy(x =>
-                x.WaitAndRetryAsync(3, _ => TimeSpan.FromMilliseconds(300)));
+                x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+            services.AddHttpClient("Paystack", client =>
+            {
+                client.BaseAddress = new Uri("http://flutterapi.sterlingapps.p.azurewebsites.net/");
+            })
+              .AddTransientHttpErrorPolicy(x =>
+              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
 
             //---------------------------- CORS setting---------------------------------------------------------//
