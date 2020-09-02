@@ -7,16 +7,20 @@ namespace HealthBanc.ViewModels
 {
     public class ChargeCardViewModel
     {
-        public string email { get; set; }
-        public string amount { get; set; }
+        [Required]
         public Card card { get; set; }
+        [Required]
         public string pin { get; set; }
     }
     public class Card
     {
+        [Required]
         public string cvv { get; set; }
+        [Required]
         public int expiry_month { get; set; }
+        [Required]
         public int expiry_year { get; set; }
+        [Required]
         public string number { get; set; }
         public string type { get; set; }
     }
