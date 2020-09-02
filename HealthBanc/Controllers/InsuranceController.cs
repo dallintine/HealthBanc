@@ -39,9 +39,10 @@ namespace HealthBanc.Controllers
         private readonly ILogger<InsuranceController> _logger;
         private readonly ApplicationDbContext _dbContext;
         private readonly IApplicationUserRepository _userRepository;
+        private readonly IAxaMansardCompletionRepository _completionRepository;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger,
-            ApplicationDbContext dbContext, IApplicationUserRepository userRepository)
+            ApplicationDbContext dbContext, IApplicationUserRepository userRepository, IAxaMansardCompletionRepository completionRepository)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
@@ -49,6 +50,7 @@ namespace HealthBanc.Controllers
             _logger = logger;
             _dbContext = dbContext;
             _userRepository = userRepository;
+            _completionRepository = completionRepository;
         }
 
         [HttpGet("[action]")]
@@ -161,6 +163,10 @@ namespace HealthBanc.Controllers
                             var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
                             _axaMansard.Create(axaInsuranceUser);
                             await _axaMansard.Save();
+
+                            var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
+                            _completionRepository.Create(completionProfile);
+                            await _completionRepository.Save();
 
                             var newServiceString = user.ServiceUsed + "HealthInsured,";
                             user.ServiceUsed = newServiceString;
@@ -497,6 +503,26 @@ namespace HealthBanc.Controllers
                 _logger.LogCritical("An error occurred while trying to generate user excel file: " + ex);
                 return BadRequest();
             }
+        }
+
+        [HttpGet("[action]")]
+        [Authorize]
+        public async Task<IActionResult> GetProfileCompletion()
+        {
+            try
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+
+                var profile = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
+                if (profile == null) return Ok(new ResponseMessage { Message = "Profile completion state does not exist",Status = true, ResponseCode=10 });
+                return Ok(new ResponseMessage { Data = profile, Status = true, Message = "Profile completion state was fetched successfully", ResponseCode=0 });
+            }
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occurred while trying to get user profile completion: " + ex);
+                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get user profile information.Please try again later" });
+            }            
         }
     }
 }

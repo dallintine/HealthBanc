@@ -138,6 +138,7 @@ namespace HealthBanc
             services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
             services.AddScoped<ExcelPackage>();
             services.AddScoped<TokenizationService>();
+            services.AddScoped<IAxaMansardCompletionRepository,AxaMansardCompletionRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

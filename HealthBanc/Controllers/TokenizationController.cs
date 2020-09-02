@@ -20,12 +20,15 @@ namespace HealthBanc.Controllers
         private readonly TokenizationService _tokenizationService;
         private readonly IMapper _mapper;
         private readonly IAxaMansardUserProfileRepository _mansardUserProfileRepository;
+        private readonly IAxaMansardCompletionRepository _completionRepository;
 
-        public TokenizationController(TokenizationService tokenizationService,IMapper mapper, IAxaMansardUserProfileRepository mansardUserProfileRepository)
+        public TokenizationController(TokenizationService tokenizationService,IMapper mapper, IAxaMansardUserProfileRepository mansardUserProfileRepository,
+            IAxaMansardCompletionRepository completionRepository)
         {
             _tokenizationService = tokenizationService;
             _mapper = mapper;
             _mansardUserProfileRepository = mansardUserProfileRepository;
+            _completionRepository = completionRepository;
         }
 
         /// <summary>
@@ -65,5 +68,7 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = "There were validation errors" });
         }
+
+        
     }
 }
