@@ -309,6 +309,14 @@ namespace HealthBanc
 
             app.UseHsts();
 
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers.Add("X-Frame-Options", "DENY");
+                //context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'");
+                context.Response.Headers.Add("Feature-Policy", "accelerometer 'none'; camera 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none';");
+                await next();
+            });
+
             app.UseHttpsRedirection();
 
             var swaggerOptions = new Helpers.SwaggerOptions();

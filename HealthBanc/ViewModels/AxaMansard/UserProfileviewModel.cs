@@ -22,9 +22,9 @@ namespace HealthBanc.ViewModels.AxaMansard
         public string Occupation { get; set; }
         [Required]
         public string MaritalStatus { get; set; }
-        [Required]
+        //[Required]
         public string BankName { get; set; }
-        [Required]
+        //[Required]
         public string AccountNo { get; set; }
         public string BVN { get; set; }
         public string BloodGroup { get; set; }

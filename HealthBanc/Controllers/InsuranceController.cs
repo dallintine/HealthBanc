@@ -100,6 +100,9 @@ namespace HealthBanc.Controllers
                 int Id = int.Parse(userId);
                 var user = await _userRepository.FindByIdAsync(Id);
 
+                var checkIfUserHasBeenProfiled = await _axaMansard.GetByAdminIdAsync(Id);
+                if (checkIfUserHasBeenProfiled != null) return BadRequest(new ResponseMessage { Message = "User has a profile already" });
+
 
                 var supportedTypes = new[] { ".JPG", ".JPE", ".PNG", ".JPEG" };
                 var customerPhoto = System.IO.Path.GetExtension(userProfile.CustomerPhoto.FileName).ToUpperInvariant();

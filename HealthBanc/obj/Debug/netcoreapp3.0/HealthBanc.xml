@@ -171,5 +171,12 @@
              <response code="200">Success : Email Confirmed Successfully Please Login</response>
             <reponse code="400">Error : List of Input Validation Errors</reponse>
         </member>
+        <member name="M:HealthBanc.Controllers.TokenizationController.ChargeCard(HealthBanc.ViewModels.ChargeCardViewModel)">
+            <summary>
+            Charge user card for tokenization process
+            </summary>
+            <param name="chargeCard"></param>
+            <returns></returns>
+        </member>
     </members>
 </doc>
