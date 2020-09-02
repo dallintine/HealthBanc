@@ -316,7 +316,7 @@ namespace HealthBanc
                 context.Response.Headers.Add("X-Frame-Options", "DENY");
                 context.Response.Headers.Add("Referrer-Policy", "no-referrer");
                 context.Response.Headers.Add("X-Permitted-Cross-Domain-Policies", "none");
-                context.Response.Headers.Add("Content-Security-Policy-Report-Only", "default-src 'self'");
+                context.Response.Headers.Add("Content-Security-Policy", "unsafe-inline 'self'");
                 context.Response.Headers.Add("Feature-Policy", "accelerometer 'none'; camera 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none';");
                 await next();
             });
