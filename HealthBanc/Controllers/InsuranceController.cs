@@ -26,6 +26,7 @@ using Microsoft.AspNetCore.Http;
 using HealthBanc.Data;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
+using HealthBanc.DTO.ApplicationUserDTOs;
 
 namespace HealthBanc.Controllers
 {
@@ -505,6 +506,8 @@ namespace HealthBanc.Controllers
             }
         }
 
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
         [HttpGet("[action]")]
         [Authorize]
         public async Task<IActionResult> GetProfileCompletion()
@@ -515,13 +518,18 @@ namespace HealthBanc.Controllers
                 int Id = int.Parse(userId);
 
                 var profile = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
-                if (profile == null) return Ok(new ResponseMessage { Message = "Profile completion state does not exist",Status = true, ResponseCode=10 });
-                return Ok(new ResponseMessage { Data = profile, Status = true, Message = "Profile completion state was fetched successfully", ResponseCode=0 });
+                if (profile == null)
+                {
+                    var profileState = new HealthInsuredProfileStateDTO(false, false);
+                    return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileState, Status = true, Message = "Profile completion state was fetched successfully"});
+                }
+                var profileSate2 = new HealthInsuredProfileStateDTO(profile.ProfileCompleted, profile.TokenizationCompleted);
+                return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileSate2, Status = true, Message = "Profile completion state was fetched successfully" });
             }
             catch(Exception ex)
             {
                 _logger.LogCritical("An error occurred while trying to get user profile completion: " + ex);
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get user profile information.Please try again later" });
+                return BadRequest(new ResponseMessage<HealthInsuredProfileStateDTO>{ Message = "An error occurred while trying to get user profile information.Please try again later" });
             }            
         }
     }
