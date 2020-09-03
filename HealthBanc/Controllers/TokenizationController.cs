@@ -2,14 +2,18 @@
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
+using HealthBanc.Services;
 using HealthBanc.Services.Tokenization;
 using HealthBanc.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Twilio.Rest.Api.V2010.Account;
 
 namespace HealthBanc.Controllers
 {
@@ -21,14 +25,18 @@ namespace HealthBanc.Controllers
         private readonly IMapper _mapper;
         private readonly IAxaMansardUserProfileRepository _mansardUserProfileRepository;
         private readonly IAxaMansardCompletionRepository _completionRepository;
+        private readonly SendLogViaWhatApp _logViaWhatApp;
+        private readonly ILogger<TokenizationController> _logger;
 
         public TokenizationController(TokenizationService tokenizationService,IMapper mapper, IAxaMansardUserProfileRepository mansardUserProfileRepository,
-            IAxaMansardCompletionRepository completionRepository)
+            IAxaMansardCompletionRepository completionRepository,SendLogViaWhatApp logViaWhatApp,ILogger<TokenizationController> logger)
         {
             _tokenizationService = tokenizationService;
             _mapper = mapper;
             _mansardUserProfileRepository = mansardUserProfileRepository;
             _completionRepository = completionRepository;
+            _logViaWhatApp = logViaWhatApp;
+            _logger = logger;
         }
 
         /// <summary>
@@ -38,37 +46,73 @@ namespace HealthBanc.Controllers
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [Authorize]
         [HttpPost("[action]")]
         public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard)
         {
-            if (ModelState.IsValid)
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                    int Id = int.Parse(userId);
+
+                    var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
+                    if (userAxamansardProfile != null)
+                    {
+                        var chargeCardRequest = _mapper.Map<ChargeCard>(chargeCard);
+                        chargeCardRequest.email = userAxamansardProfile.Email; chargeCardRequest.amount = userAxamansardProfile.Premium.ToString();
+                        chargeCardRequest.reference = "12234";
+                        var cardResponse = await _tokenizationService.ChargeCard(chargeCardRequest,Id);
+                        if (cardResponse.Status) return Ok(cardResponse);
+                        return BadRequest(cardResponse);
+                    }
+                    return BadRequest(new ResponseMessage { Message = "User has not been profiled", Status = false });
+                }
+                //return validation errors
+                var errors = new List<string>();
+                var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                foreach (var error in errorList)
+                {
+                    errors.Add(error);
+                }
+                return BadRequest(new ResponseMessage { Data = errors, Message = "There were validation errors" });
+            }
+            catch(Exception ex)
+            {
+                _logViaWhatApp.SendLog("An error occurred while trying to charge card: " + ex.ToString());
+                _logger.LogCritical("An error occurred while trying to submit user otp: " + ex);
+                return BadRequest("An error occurred while trying to charge card: "+ex);                
+            }
+            
+        }
+
+        [Authorize]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> SubmitOtp(string otp,string pin)
+        {
+            try
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
 
                 var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
-                if(userAxamansardProfile != null)
+                if (userAxamansardProfile != null)
                 {
-                    var chargeCardRequest = _mapper.Map<ChargeCard>(chargeCard);
-                    chargeCardRequest.email = userAxamansardProfile.Email;chargeCardRequest.amount = userAxamansardProfile.Premium.ToString();
-                    chargeCardRequest.reference = "12234";
-                    var cardResponse = await _tokenizationService.ChargeCard(chargeCardRequest);
-                    return Ok(cardResponse);
+                    var response = await _tokenizationService.SendOtp(otp, userAxamansardProfile, pin);
+                    if (response.Status) return Ok(response);
+                    return BadRequest(response);
                 }
-                return BadRequest(new ResponseMessage { Message = "User has not been profiled", Status = false});
+                return BadRequest(new ResponseMessage { Message = "User has not been profiled", Status = false });               
             }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
+            catch(Exception ex)
             {
-                errors.Add(error);
+                _logViaWhatApp.SendLog("An error occurred while trying to submit user otp: " +ex.ToString());
+                _logger.LogCritical("An error occurred while trying to submit user otp: " + ex);
+                return BadRequest("An error occurred while trying to charge card: " + ex);
             }
-            return BadRequest(new ResponseMessage { Data = errors, Message = "There were validation errors" });
         }
-
-        
     }
 }

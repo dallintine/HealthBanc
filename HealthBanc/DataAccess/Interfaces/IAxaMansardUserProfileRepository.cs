@@ -10,5 +10,6 @@ namespace HealthBanc.DataAccess.Interfaces
     public interface IAxaMansardUserProfileRepository : IBaseRepository<AxaMansardUserProfile>
     {
         Task<AxaMansardUserProfile> GetByAdminIdAsync(int id);
+        Task<AxaMansardUserProfile> GetByIdAsync(int id);
     }
 }

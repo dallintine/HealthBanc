@@ -162,6 +162,7 @@ namespace HealthBanc.Controllers
                             getResponse.Message = xmlDoc3.GetElementsByTagName("message").Item(0).InnerText ?? "";
 
                             var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
+                            axaInsuranceUser.SuperAdminId = Id;
                             _axaMansard.Create(axaInsuranceUser);
                             await _axaMansard.Save();
 

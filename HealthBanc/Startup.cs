@@ -17,6 +17,7 @@ using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Messages.Events;
 using HealthBanc.RabbitMq;
+using HealthBanc.Services;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
 using HealthBanc.Services.ImageService;
@@ -139,6 +140,7 @@ namespace HealthBanc
             services.AddScoped<ExcelPackage>();
             services.AddScoped<TokenizationService>();
             services.AddScoped<IAxaMansardCompletionRepository,AxaMansardCompletionRepository>();
+            services.AddScoped<SendLogViaWhatApp>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

@@ -15,11 +15,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Twilio;
 
 namespace HealthBanc
 {
     public class Program
-    {
+    {      
 
         //public class BackendDbContextFactory : IDesignTimeDbContextFactory<BackendDbContext>
         //{
@@ -45,6 +46,11 @@ namespace HealthBanc
 
         public static void Main(string[] args)
         {
+            const string accountSid = "AC873adab76c91476279740be6e94ea5b1";
+            const string authToken = "6153db4ce7db433412dca8837f4ba5fa";
+
+            TwilioClient.Init(accountSid, authToken);
+
             var host = Host.CreateDefaultBuilder(args)
            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
            .ConfigureWebHostDefaults(webHostBuilder =>

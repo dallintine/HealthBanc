@@ -2450,7 +2450,7 @@
           "System.Threading": "4.3.0"
         },
         "compile": {
-          "ref/netstandard1.3/_._": {}
+          "ref/netstandard1.3/System.Collections.Specialized.dll": {}
         },
         "runtime": {
           "lib/netstandard1.3/System.Collections.Specialized.dll": {}
@@ -4139,6 +4139,21 @@
         },
         "runtime": {
           "lib/netstandard1.3/System.Xml.XmlSerializer.dll": {}
+        }
+      },
+      "Twilio/5.46.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.IdentityModel.Tokens": "5.3.0",
+          "Newtonsoft.Json": "11.0.2",
+          "System.Collections.Specialized": "4.3.0",
+          "System.IdentityModel.Tokens.Jwt": "5.3.0"
+        },
+        "compile": {
+          "lib/netstandard2.0/Twilio.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Twilio.dll": {}
         }
       }
     }
@@ -12030,6 +12045,25 @@
         "system.xml.xmlserializer.4.3.0.nupkg.sha512",
         "system.xml.xmlserializer.nuspec"
       ]
+    },
+    "Twilio/5.46.0": {
+      "sha512": "fqGGntBR/7BE9iEtohOd+tj8BLul7v/uIGMGOu9Id4oWvnpJD+r/+YVV9zdqDTp5+Q6nu9S8o99KBfCmrzM96A==",
+      "type": "package",
+      "path": "twilio/5.46.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net35/Twilio.dll",
+        "lib/net35/Twilio.xml",
+        "lib/net451/Twilio.dll",
+        "lib/net451/Twilio.xml",
+        "lib/netstandard1.4/Twilio.dll",
+        "lib/netstandard1.4/Twilio.xml",
+        "lib/netstandard2.0/Twilio.dll",
+        "lib/netstandard2.0/Twilio.xml",
+        "twilio.5.46.0.nupkg.sha512",
+        "twilio.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -12072,7 +12106,8 @@
       "Serilog.Sinks.AzureBlobStorage >= 1.4.0",
       "Serilog.Sinks.File >= 4.1.0",
       "Serilog.Sinks.Seq >= 4.0.0",
-      "Swashbuckle.AspNetCore >= 5.0.0-rc4"
+      "Swashbuckle.AspNetCore >= 5.0.0-rc4",
+      "Twilio >= 5.46.0"
     ]
   },
   "packageFolders": {
@@ -12271,6 +12306,10 @@
           "Swashbuckle.AspNetCore": {
             "target": "Package",
             "version": "[5.0.0-rc4, )"
+          },
+          "Twilio": {
+            "target": "Package",
+            "version": "[5.46.0, )"
           }
         },
         "imports": [

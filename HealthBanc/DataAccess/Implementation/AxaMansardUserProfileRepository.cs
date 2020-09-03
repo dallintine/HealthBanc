@@ -19,5 +19,10 @@ namespace HealthBanc.DataAccess.Implementation
         {
             return await _context.AxaMansardUserProfile.FirstOrDefaultAsync(x => x.SuperAdminId == id);
         }
+
+        public async Task<AxaMansardUserProfile> GetByIdAsync(int id)
+        {
+            return await _context.AxaMansardUserProfile.FirstOrDefaultAsync(x => x.Id== id);
+        }
     }
 }
