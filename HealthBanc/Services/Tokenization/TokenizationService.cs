@@ -55,7 +55,7 @@ namespace HealthBanc.Services.Tokenization
                             var user = await _axaMansardUser.GetByAdminIdAsync(id);
                             if (user != null)
                             {
-                                var result = await SendPin(chargeCard.pin,user);
+                                var result = await SendPin(chargeCard.pin,user,chargeCard.reference);
                                 return result;
                             }                            
                         }
@@ -64,7 +64,7 @@ namespace HealthBanc.Services.Tokenization
                             var user = await _axaMansardUser.GetByAdminIdAsync(id);
                             if (user != null)
                             {
-                                var result = await SubmitBirthDay(user.DateOfBirth,user,chargeCard.pin);
+                                var result = await SubmitBirthDay(user.DateOfBirth,user,chargeCard.pin,chargeCard.reference);
                                 return result;
                             }
                         }
@@ -86,7 +86,7 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        public async Task<ResponseMessage> SendOtp( string otp,AxaMansardUserProfile user,string pin)
+        public async Task<ResponseMessage> SendOtp( string otp,AxaMansardUserProfile user,string pin,string reference)
         {
             try
             {
@@ -105,15 +105,15 @@ namespace HealthBanc.Services.Tokenization
                         if (!validResponse.Contains(otpResponse.data.status)) return new ResponseMessage { Message = otpResponse.data.url };
                         if (otpResponse.data.status == "send_birthday")
                         {
-                          var result = await SubmitBirthDay(user.DateOfBirth, user, pin);
+                          var result = await SubmitBirthDay(user.DateOfBirth, user, pin,reference);
                         }
                         if (otpResponse.data.status == "send_phone")
                         {
-                            var result = await SubmitPhone(user.PhoneNumber, user, pin);
+                            var result = await SubmitPhone(user.PhoneNumber, user, pin,reference);
                         }
                         if (otpResponse.data.status == "send_pin")
                         {
-                            var result = await SendPin(pin, user);
+                            var result = await SendPin(pin, user,reference);
                         }
                         if (otpResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
                         if (otpResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
@@ -131,11 +131,11 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        private async Task<ResponseMessage> SendPin(string pin,AxaMansardUserProfile user)
+        private async Task<ResponseMessage> SendPin(string pin,AxaMansardUserProfile user, string reference)
         {
             try
             {
-                var pinRequest = new SendPin(pin, "123456");
+                var pinRequest = new SendPin(pin, reference);
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(pinRequest), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync("api/paystack/SubmitPIN", content);
@@ -151,11 +151,11 @@ namespace HealthBanc.Services.Tokenization
                         if (pinResponse.data.status == "send_otp") return new ResponseMessage { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };                       
                         if (pinResponse.data.status == "send_birthday")
                         {
-                                var result = await SubmitBirthDay(user.DateOfBirth,user,pin);
+                                var result = await SubmitBirthDay(user.DateOfBirth,user,pin,reference);
                         }
                         if (pinResponse.data.status == "send_phone")
                         {
-                            var result = await SubmitPhone(user.PhoneNumber,user,pin);
+                            var result = await SubmitPhone(user.PhoneNumber,user,pin,reference);
                         }
                         if (pinResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
                         if (pinResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
@@ -173,11 +173,11 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        private async Task<ResponseMessage> SubmitPhone(string phoneNumber, AxaMansardUserProfile user,string pin)
+        private async Task<ResponseMessage> SubmitPhone(string phoneNumber, AxaMansardUserProfile user,string pin,string reference)
         {
             try
             {
-                var phoneRequest = new SubmitPhoneNumber(phoneNumber, "123456");
+                var phoneRequest = new SubmitPhoneNumber(phoneNumber, reference);
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneRequest), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync("api/paystack/SubmitPhone", content);
@@ -193,11 +193,11 @@ namespace HealthBanc.Services.Tokenization
                         if (phoneResponse.data.status == "send_otp") return new ResponseMessage { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
                         if (phoneResponse.data.status == "send_birthday")
                         {
-                            var result = await SubmitBirthDay(user.DateOfBirth,user,pin);
+                            var result = await SubmitBirthDay(user.DateOfBirth,user,pin,reference);
                         }
                         if (phoneResponse.data.status == "send_pin")
                         {
-                            var result = await SendPin(pin, user);
+                            var result = await SendPin(pin, user,reference);
                         }
                         if (phoneResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
                         if (phoneResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
@@ -216,11 +216,11 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        private async Task<ResponseMessage> SubmitBirthDay(DateTime date, AxaMansardUserProfile user,string pin)
+        private async Task<ResponseMessage> SubmitBirthDay(DateTime date, AxaMansardUserProfile user,string pin, string reference)
         {
             try
             {
-                var birthRequest = new SubmitBirthday(date, "1234546");
+                var birthRequest = new SubmitBirthday(date, reference);
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(birthRequest), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync("api/paystack/SubmitBirthDay", content);
@@ -236,11 +236,11 @@ namespace HealthBanc.Services.Tokenization
                         if (birthdayResponse.data.status == "send_otp") return new ResponseMessage { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
                         if (birthdayResponse.data.status == "send_phone")
                         {
-                            var result = await SubmitPhone(user.PhoneNumber, user, pin);
+                            var result = await SubmitPhone(user.PhoneNumber, user, pin,reference);
                         }
                         if (birthdayResponse.data.status == "send_pin")
                         {
-                            var result = await SendPin(pin, user);
+                            var result = await SendPin(pin, user,reference);
                         }
                         if (birthdayResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
                         if (birthdayResponse.data.status == "open_url") return new ResponseMessage { Message = "" };

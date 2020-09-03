@@ -15,6 +15,7 @@ namespace HealthBanc.Mappers
         {
             CreateMap<Service, ServiceBreakdown>();
             CreateMap<ApplicationUser, ApplicationUserDTO>();
+            CreateMap<AxaMansardUserProfile, AxaMansardUserDTO>();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HealthBanc.DataAccess.Interfaces;
+using HealthBanc.Domain.Models;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Services;
@@ -27,9 +28,11 @@ namespace HealthBanc.Controllers
         private readonly IAxaMansardCompletionRepository _completionRepository;
         private readonly SendLogViaWhatApp _logViaWhatApp;
         private readonly ILogger<TokenizationController> _logger;
+        private readonly ITokenizationReferenceRepository _tokenizationReference;
 
         public TokenizationController(TokenizationService tokenizationService,IMapper mapper, IAxaMansardUserProfileRepository mansardUserProfileRepository,
-            IAxaMansardCompletionRepository completionRepository,SendLogViaWhatApp logViaWhatApp,ILogger<TokenizationController> logger)
+            IAxaMansardCompletionRepository completionRepository,SendLogViaWhatApp logViaWhatApp,ILogger<TokenizationController> logger,
+            ITokenizationReferenceRepository tokenizationReference)
         {
             _tokenizationService = tokenizationService;
             _mapper = mapper;
@@ -37,6 +40,7 @@ namespace HealthBanc.Controllers
             _completionRepository = completionRepository;
             _logViaWhatApp = logViaWhatApp;
             _logger = logger;
+            _tokenizationReference = tokenizationReference;
         }
 
         /// <summary>
@@ -65,7 +69,14 @@ namespace HealthBanc.Controllers
                         card.email = userAxamansardProfile.Email; card.amount = userAxamansardProfile.Premium.ToString();
                         card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;card.card = chargeCardRequest;
                         var cardResponse = await _tokenizationService.ChargeCard(card, Id);
-                        if (cardResponse.Status) return Ok(cardResponse);
+                        if (cardResponse.Status == true)
+                        {
+                            var tokenizeReference = new TokenizationReference();
+                            tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = card.reference;
+                            _tokenizationReference.Create(tokenizeReference);
+                            await _tokenizationReference.Save();
+                            return Ok(cardResponse);
+                        }
                         return BadRequest(cardResponse);
                     }
                     return BadRequest(new ResponseMessage { Message = "User has not been profiled", Status = false });
@@ -92,7 +103,7 @@ namespace HealthBanc.Controllers
 
         [Authorize]
         [HttpPost("[action]")]
-        public async Task<IActionResult> SubmitOtp(string otp,string pin)
+        public async Task<IActionResult> SubmitOtp(string otp,string pin,string reference)
         {
             try
             {
@@ -102,7 +113,7 @@ namespace HealthBanc.Controllers
                 var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
                 if (userAxamansardProfile != null)
                 {
-                    var response = await _tokenizationService.SendOtp(otp, userAxamansardProfile, pin);
+                    var response = await _tokenizationService.SendOtp(otp, userAxamansardProfile, pin,reference);
                     if (response.Status) return Ok(response);
                     return BadRequest(response);
                 }

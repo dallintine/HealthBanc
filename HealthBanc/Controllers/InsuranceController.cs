@@ -186,7 +186,7 @@ namespace HealthBanc.Controllers
                 }
                 return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
             }
-            return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
+            return BadRequest(new ResponseMessage { Message = "Token could not be fetched,please try again later: Connection timeout", Status = false });
             }
             catch(Exception ex)
             {
@@ -399,6 +399,24 @@ namespace HealthBanc.Controllers
                 return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Identification was fetched successfully", Status = true });
             }
             return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "An error occurred while fetching identification from  axa mansard: Connection timeout", Status = false });            
+        }
+
+        [Authorize]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetAxaMansardProfile()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var profile = await _axaMansard.GetByAdminIdAsync(Id);
+            if(profile != null)
+            {
+                var profileDTO = _mapper.Map<AxaMansardUserDTO>(profile);
+                profileDTO.EnrolleeNumber = _insuranceService.GetUniqueCode(7);
+                return Ok(new ResponseMessage<AxaMansardUserDTO> {Data= profileDTO, Message="user profile was fetched successfully",Status=true });
+            }
+            return BadRequest(new ResponseMessage<AxaMansardUserDTO> { Message = "Profile was not found" });
         }
 
         [HttpGet("[action]")]

@@ -22,6 +22,7 @@ namespace HealthBanc.Data
         public DbSet<AxaMansardUserProfile> AxaMansardUserProfile { get; set; }
         public DbSet<TestUserProfile> TestUserProfiles { get; set; }
         public DbSet<AxaMansardCompletionProfile> AxaMansardCompletionProfiles { get; set; }
+        public DbSet<TokenizationReference> TokenizationReferences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

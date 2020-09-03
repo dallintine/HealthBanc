@@ -676,7 +676,7 @@ namespace HealthBanc.Services.Insurance
             return excelModels;
         }
 
-        public static string GetUniqueCode(int nCount)
+        public string GetUniqueCode(int nCount)
         {
             string uniqueNumber = string.Empty;
             while (uniqueNumber.Length < nCount)
