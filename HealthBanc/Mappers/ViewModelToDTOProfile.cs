@@ -17,6 +17,8 @@ namespace HealthBanc.Mappers
             CreateMap<HeliumHealthCollectionViewModel, HelloEmail>();
 
             CreateMap<UserProfileviewModel, UserProfile>();
+
+            CreateMap<Card, HealthBanc.Request.Tokenize.Card>();
         }
     }
 }

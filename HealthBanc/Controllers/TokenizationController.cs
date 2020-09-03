@@ -60,10 +60,11 @@ namespace HealthBanc.Controllers
                     var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
                     if (userAxamansardProfile != null)
                     {
-                        var chargeCardRequest = _mapper.Map<ChargeCard>(chargeCard);
-                        chargeCardRequest.email = userAxamansardProfile.Email; chargeCardRequest.amount = userAxamansardProfile.Premium.ToString();
-                        chargeCardRequest.reference = "12234";
-                        var cardResponse = await _tokenizationService.ChargeCard(chargeCardRequest,Id);
+                        var card = new ChargeCard();
+                        var chargeCardRequest = _mapper.Map<Request.Tokenize.Card>(chargeCard.card);
+                        card.email = userAxamansardProfile.Email; card.amount = userAxamansardProfile.Premium.ToString();
+                        card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;card.card = chargeCardRequest;
+                        var cardResponse = await _tokenizationService.ChargeCard(card, Id);
                         if (cardResponse.Status) return Ok(cardResponse);
                         return BadRequest(cardResponse);
                     }
