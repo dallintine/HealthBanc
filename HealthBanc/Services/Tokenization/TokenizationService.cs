@@ -259,6 +259,62 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
+        public async Task<ResponseMessage> InsertSubscription(SubscribePayment subscribePayment)
+        {
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+                HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync("api/Subscription/InsertSubscription", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    var subscribePaymentResponse = new SubscribePaymentResponse();
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
+                    if (subscribePaymentResponse.status == true)
+                    {
+                        return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
+                    }
+                    return new ResponseMessage { Message = subscribePaymentResponse.message, Status = false };
+                }
+                return new ResponseMessage { Message = "Could not connect to paystack payment service" };
+            }
+            catch(Exception ex)
+            {
+                _logViaWhatApp.SendLog("An error occurred while trying to InsertSubscription: " + ex.ToString());
+                _logger.LogCritical("An error occurred while trying to InsertSubscription: " + ex);
+                return new ResponseMessage { Status = false, Message = "This on us. Can not insert subscription" };
+            }            
+        }
+
+        public async Task<ResponseMessage> UpdateSubscription(SubscribePayment subscribePayment)
+        {
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+                HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync("api/Subscription/UpdateSubscription", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    var updatePaymentResponse = new SubscribePaymentResponse();
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    updatePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
+                    if (updatePaymentResponse.status == true)
+                    {
+                        return new ResponseMessage { Message = updatePaymentResponse.message, Status = true };
+                    }
+                    return new ResponseMessage { Message = updatePaymentResponse.message, Status = false };
+                }
+                return new ResponseMessage { Message = "Could not connect to paystack payment service" };
+            }
+            catch (Exception ex)
+            {
+                _logViaWhatApp.SendLog("An error occurred while trying to InsertSubscription: " + ex.ToString());
+                _logger.LogCritical("An error occurred while trying to InsertSubscription: " + ex);
+                return new ResponseMessage { Status = false, Message = "This on us. Can not insert subscription" };
+            }
+        }
+
         public async Task<ResponseMessage<ChargeCardResponse>> ValidateCharge (string reference)
         {
             try

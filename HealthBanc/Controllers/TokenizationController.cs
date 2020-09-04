@@ -62,6 +62,11 @@ namespace HealthBanc.Controllers
                     int Id = int.Parse(userId);
 
                     var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
+                    var checkprofileComplete = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
+                    if(checkprofileComplete.TokenizationCompleted == true)
+                    {
+                        return BadRequest(new ResponseMessage {Message="This card has been tokenised previously", });
+                    }
                     if (userAxamansardProfile != null)
                     {
                         var card = new ChargeCard();
@@ -70,11 +75,18 @@ namespace HealthBanc.Controllers
                         card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;card.card = chargeCardRequest;
                         var cardResponse = await _tokenizationService.ChargeCard(card, Id);
                         if (cardResponse.Status == true)
-                        {
+                        { 
                             var tokenizeReference = new TokenizationReference();
                             tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = card.reference;
                             _tokenizationReference.Create(tokenizeReference);
                             await _tokenizationReference.Save();
+                            
+                            if(checkprofileComplete != null)
+                            {
+                                checkprofileComplete.TokenizationCompleted = true;
+                                _completionRepository.Update(checkprofileComplete);
+                                await _completionRepository.Save();
+                            }
                             return Ok(cardResponse);
                         }
                         return BadRequest(cardResponse);
@@ -96,7 +108,7 @@ namespace HealthBanc.Controllers
             {
                 _logViaWhatApp.SendLog("An error occurred while trying to charge card: " + ex.ToString());
                 _logger.LogCritical("An error occurred while trying to submit user otp: " + ex);
-                return BadRequest("An error occurred while trying to charge card: "+ex);                
+                return BadRequest("An error occurred while trying to charge card: ");                
             }
             
         }
@@ -123,7 +135,7 @@ namespace HealthBanc.Controllers
             {
                 _logViaWhatApp.SendLog("An error occurred while trying to submit user otp: " +ex.ToString());
                 _logger.LogCritical("An error occurred while trying to submit user otp: " + ex);
-                return BadRequest("An error occurred while trying to charge card: " + ex);
+                return BadRequest("An error occurred while trying to charge card: ");
             }
         }
     }

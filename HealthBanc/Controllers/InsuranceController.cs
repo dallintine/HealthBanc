@@ -129,7 +129,7 @@ namespace HealthBanc.Controllers
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(tokenResult.Data);
                 var profile = _mapper.Map<UserProfile>(userProfile);
-                profile.Surname = User.FindFirst("FirstName")?.Value; profile.Othernames = User.FindFirst("LastName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
+                profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
                 profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
 
                 var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);

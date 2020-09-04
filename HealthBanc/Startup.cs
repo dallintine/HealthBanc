@@ -189,6 +189,13 @@ namespace HealthBanc
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            services.AddHttpClient("PaystackPayment", client =>
+            {
+                client.BaseAddress = new Uri("https://dfs.sterlingapps.p.azurewebsites.net/");
+            })
+             .AddTransientHttpErrorPolicy(x =>
+             x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
 
             //---------------------------- CORS setting---------------------------------------------------------//
             services.AddCors(options =>
