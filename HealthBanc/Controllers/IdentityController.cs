@@ -21,7 +21,7 @@ namespace HealthBanc.Controllers
 {
     [Route("v1/api/[controller]")]
     [ApiController]
-    public class IdentityController : ControllerBase
+    public class IdentityController : Controller
     {
         private readonly ILogger<IdentityController> _logger;
         private readonly IdentityService _identityService;
@@ -97,6 +97,10 @@ namespace HealthBanc.Controllers
                 {
                     return Redirect("https://pharmmall.azurewebsites.net/signin");
                 }
+                if(response.ResponseCode  == 23)
+                {
+                    return View("ConfirmEmail");
+                }
                 return BadRequest(response);
             }
             //return validation errors
@@ -109,6 +113,30 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error, Status = false });
             }
             return BadRequest(errors);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResendConfirmationLink(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if(user == null || user.UniqueUsername != null)
+            {
+                ViewBag.Error = "User does not exist";
+                return View("ConfirmEmail");
+            }
+            if(user.EmailConfirmed == true)
+            {
+                ViewBag.Error = "Your email address has previously been confirmed, kindly proceed to login";
+                return View("ConfirmEmail");
+            }
+            var confirmResult = await _identityService.SendUserEmailVerificationAsync(user);
+            if(confirmResult.Status == true)
+            {
+                ViewBag.Success = "Link was sent successfully, kindly check your email";
+                return View("ConfirmEmail");
+            }
+            ViewBag.Error = confirmResult.Message;
+            return View("ConfirmEmail");
         }
 
 
@@ -293,6 +321,23 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ResetPasswordLink(string email)
+        {
+            var model = new ForgotPasswordViewModel()
+            {
+                Username = email
+            };
+            var response = await _identityService.ForgotPassword(model);
+            if (response.Status == true)
+            {
+                ViewBag.Success = response.Message;
+                return View("ResetPassword");
+            }
+            ViewBag.Error = response.Message;
+            return View("ResetPassword");
+        }
+
         //WORKING1
         /// <summary>
         /// Resets the user Password
@@ -315,8 +360,8 @@ namespace HealthBanc.Controllers
                 {
                     return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
                 }
-                var decryptedEmail = _encryptAndDecrypt.DecryptString(email, "hfahkbak78r32rg87griva..");
-                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
+                var decryptedEmail = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(email), "hfahkbak78r32rg87griva..");
+                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(HttpUtility.UrlDecode(emailToken), "hfahkbak78r32rg87griva..");
 
                 var user = await _userManager.FindByEmailAsync(decryptedEmail);
                 if (user == null)
@@ -330,6 +375,10 @@ namespace HealthBanc.Controllers
                 {
                     return Ok(response);
                 }
+                if(response.ResponseCode == 23)
+                {
+                    return View("ResetPassword");
+                }             
                 return BadRequest(response);
             }
             //return validation errors
@@ -342,7 +391,7 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error });
             }
             return BadRequest(errors);
-        }
+        }       
 
         //WORKING1
         /// <summary>

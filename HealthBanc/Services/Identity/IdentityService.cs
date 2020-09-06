@@ -82,7 +82,11 @@ namespace HealthBanc.Services.Identity
                         user.SuperAdminId = user.Id;
                         await _userManager.UpdateAsync(user);
                         await _userManager.AddToRoleAsync(user, "SuperAdmin");
-                        await SendUserEmailVerificationAsync(user);
+                        var confirmResult = await SendUserEmailVerificationAsync(user);
+                        if(confirmResult.Status != true)
+                        {
+                            return confirmResult;
+                        }
                         return new ResponseMessage
                         {
                             Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
@@ -116,6 +120,11 @@ namespace HealthBanc.Services.Identity
                 {
                     return new ResponseMessage { Status = true };
                 }
+                else if (!result.Succeeded && result.Errors.Any(x => x.Code == "InvalidToken"))
+                {
+                    return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
+                }
+                return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
             }
             catch (Exception ex)
             {
@@ -348,7 +357,11 @@ namespace HealthBanc.Services.Identity
                     {
                         return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                     }
-                    return new ResponseMessage { Message = "An error Occurred while trying to reset password", Data = userPassword.Errors };
+                    else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))
+                    {
+                        return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
+                    }
+                    return new ResponseMessage { Message = userPassword.Errors.FirstOrDefault().Description, Data = userPassword.Errors};
                 }
                 else
                 {
@@ -483,7 +496,7 @@ namespace HealthBanc.Services.Identity
             return new ResponseMessage { Message = "Error occured While Trying to Confirm User" };
         }
 
-        private async Task SendUserEmailVerificationAsync(ApplicationUser user)
+        public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user)
         {
             // Get the user details
             var userIdentity = await _userManager.FindByNameAsync(user.UserName);
@@ -502,12 +515,15 @@ namespace HealthBanc.Services.Identity
                 try
                 {
                     _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl,null);
+                    return new ResponseMessage { Status = true };
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Falied to send Email Verification Mail to user From Method SendUserEmailVerificationAsync()");
+                    return new ResponseMessage { Status = true, Message="An error occurred while trying to send email"};
                 }
             }
+            return new ResponseMessage { Status = true, Message = "User does not exist.coukd not fetch user" };
         }
 
         private async Task Welcome(ApplicationUser user)

@@ -75,6 +75,8 @@ namespace HealthBanc
             });
             //services.AddOData();
 
+            services.AddControllersWithViews();
+
             services.AddControllers();
 
             ///////////////Add Swagger Service/////////////////////////
@@ -162,7 +164,9 @@ namespace HealthBanc
 
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
-                options.TokenLifespan = TimeSpan.FromDays(2));
+                //options.TokenLifespan = TimeSpan.FromDays(2));
+                 options.TokenLifespan = TimeSpan.FromSeconds(10));
+
 
 
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")
