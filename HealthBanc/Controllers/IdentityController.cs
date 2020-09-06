@@ -380,7 +380,7 @@ namespace HealthBanc.Controllers
                 }
                 if(response.ResponseCode == 23)
                 {
-                    return View("ResetPassword");
+                    return RedirectToAction("ResetPasswordView");
                 }             
                 return BadRequest(response);
             }
@@ -395,6 +395,12 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(errors);
         }       
+
+        [HttpGet("[action]")]
+        public IActionResult ResetPasswordView()
+        {
+            return View("ResetPassword");
+        }
 
         //WORKING1
         /// <summary>
@@ -512,7 +518,7 @@ namespace HealthBanc.Controllers
                 }
                 if(response.ResponseCode == 23)
                 {
-                    return View("AdminReg");
+                    return RedirectToAction("AdminRegView");
                 }
                 return BadRequest(response);
             }
@@ -526,6 +532,12 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error });
             }
             return Unauthorized(errors);
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult AdminRegView()
+        {
+            return View("AdminReg");
         }
 
         [HttpGet("[action]")]
