@@ -115,7 +115,7 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
-        [HttpPost]
+        [HttpPost("[action]")]
         public async Task<IActionResult> ResendConfirmationLink(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -321,7 +321,7 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
-        [HttpPost]
+        [HttpPost("[action]")]
         public async Task<IActionResult> ResetPasswordLink(string email)
         {
             var model = new ForgotPasswordViewModel()
