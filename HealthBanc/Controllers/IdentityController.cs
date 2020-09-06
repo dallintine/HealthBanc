@@ -417,12 +417,20 @@ namespace HealthBanc.Controllers
 
                 if (user != null)
                 {
-                    var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
-                    if (userPassword.Succeeded)
+                    PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, changePassword.ConfirmPassword);
+                    if (passResult.Equals(PasswordVerificationResult.Failed))
                     {
-                        return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
+                        var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
+                        if (userPassword.Succeeded)
+                        {
+                            return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
+                        }
+                        return Unauthorized(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });
                     }
-                    return Unauthorized(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });
+                    else
+                    {
+                        return BadRequest(new ResponseMessage { Message = "New Password Cant Be similar with Old Password" });
+                    }
                 };
                 return BadRequest(new ResponseMessage { Message = "User does not exist" });
             }
