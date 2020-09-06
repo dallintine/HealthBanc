@@ -113,19 +113,19 @@
         }
 
         .warning {
-            font-size: 1.1em;
+            font-size: 1.0em;
             font-weight: 700;
-            color: red
+            color: sandybrown;
         }
 
         .success-alert {
-            background-color: rgb(159, 226, 159);
-            padding: 5px;
+            font-size: 1.2em;
+            color: green;
         }
 
         .error-alert {
-            background-color: rgb(241, 144, 144);
-            padding: 5px;
+            font-size: 1.2em;
+            color: red;
         }
 
         .text-center {
@@ -151,13 +151,13 @@
             @if (ViewBag.Success != null)
             {
                 <div class="text-center">
-                    <span class="success-alert">@ViewBag.Success</span>
+                    <span class="success-alert">** @ViewBag.Success</span>
                 </div>
             }
             @if (ViewBag.Error != null)
             {
                 <div class="text-center">
-                    <span class="error-alert"> @ViewBag.Error</span>
+                    <span class="error-alert">** @ViewBag.Error</span>
                 </div>
             }
 
@@ -167,7 +167,7 @@
                         <div class="formTitle">Resend Verification Email</div>
                         <div class="subTitle">Enter your email address to get a mail with a valid token</div>
                     </div>
-                    <form method="post" asp-action="ResendConfirmationLink" asp-controller="Identity">
+                    <form method="get" asp-action="ResendConfirmationLink" asp-controller="Identity">
                         <div class="sc-fzoyTs jZUSDr"><div><div for="email" class="sc-fzoNJl loPePV">Email Address</div></div><div class="input-div"><div class="d-flex flex-row"><input class="sc-fzoXWK hnKkAN formInput bord" required name="email" type="email" placeholder="Enter your email here" value="" style="background-color: rgb(255, 255, 255);"></div><div class="error-container"><div class="sc-fznxKY kfRyXm error p-0 m-0">*Required</div></div></div></div>
 
                         <button type="submit" class="sc-AxgMl cVmQYF">Submit</button>

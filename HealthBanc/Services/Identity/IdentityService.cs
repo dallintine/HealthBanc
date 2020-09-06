@@ -493,7 +493,11 @@ namespace HealthBanc.Services.Identity
                 }
                 return new ResponseMessage { Message = "Error occured While Trying to Create Admin Security Questions" };
             }
-            return new ResponseMessage { Message = "Error occured While Trying to Confirm User" };
+            else if (!result.Succeeded && result.Errors.Any(x => x.Code == "InvalidToken"))
+            {
+                return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
+            }
+            return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
         }
 
         public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user)

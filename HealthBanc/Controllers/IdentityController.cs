@@ -7,6 +7,7 @@ using System.Web;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.AuthenticationDTOs;
+using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
@@ -28,15 +29,17 @@ namespace HealthBanc.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IApplicationUserRepository _userRepository;
+        private readonly IEmailSender _emailSender;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
-            IApplicationUserRepository userRepository)
+            IApplicationUserRepository userRepository, IEmailSender emailSender)
         {
             _logger = logger;
             _identityService = identityService;
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
             _userRepository = userRepository;
+            _emailSender = emailSender;
         }
 
         ///<summary>
@@ -115,7 +118,7 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
-        [HttpPost("[action]")]
+        [HttpGet("[action]")]
         public async Task<IActionResult> ResendConfirmationLink(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -321,8 +324,8 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
-        [HttpPost("[action]")]
-        public async Task<IActionResult> ResetPasswordLink(string email)
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SendPasswordResetLink(string email)
         {
             var model = new ForgotPasswordViewModel()
             {
@@ -499,6 +502,10 @@ namespace HealthBanc.Controllers
                 {
                     return BadRequest(response);
                 }
+                if(response.ResponseCode == 23)
+                {
+                    return View("AdminReg");
+                }
                 return BadRequest(response);
             }
             //return validation errors
@@ -511,6 +518,43 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error });
             }
             return Unauthorized(errors);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SendAdminConfirmationEmail(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            var superAdmin = _userRepository.Find(x => x.SuperAdminId == user.SuperAdminId);   
+            if(superAdmin == null)
+            {
+                ViewBag.Error = "The superAdmin you registered under was not found. Kindly contact support";
+                return View("AdminReg");
+            }
+            if (user != null)
+            {
+                if(user.EmailConfirmed == true)
+                {
+                    ViewBag.Error = "Your email was confirmed previously, Kindly proceed to login";
+                    return View("AdminReg");
+                }
+                if(user.UniqueUsername == null)
+                {
+                    //Generate an email verification code
+                    var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+                    var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
+                    var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
+
+                    // TODO: Replace with APIRoutes that will contain the static routes to use
+
+                    var confirmationUrl = $"https://pharmmall.azurewebsites.net/set-new-password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}&destination=adminreg";
+                    _emailSender.SendEmail(user.UserName, "d-6035520c662a43fba6ad2718deaedf79", confirmationUrl, superAdmin.FirstName + " " + superAdmin.LastName);
+                    ViewBag.Success = "Link was sent successfully";
+                    return View("AdminReg");
+                }
+            }
+            ViewBag.Success = "User does not exist";
+            return View("AdminReg");
         }
 
         [HttpGet("[action]")]
