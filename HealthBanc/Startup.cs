@@ -165,7 +165,7 @@ namespace HealthBanc
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
                 //options.TokenLifespan = TimeSpan.FromDays(2));
-                 options.TokenLifespan = TimeSpan.FromSeconds(10));
+                 options.TokenLifespan = TimeSpan.FromMinutes(2));
 
 
 
