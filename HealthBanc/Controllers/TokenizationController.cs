@@ -6,6 +6,7 @@ using HealthBanc.Response;
 using HealthBanc.Services;
 using HealthBanc.Services.Tokenization;
 using HealthBanc.ViewModels;
+using HealthBanc.ViewModels.Tokenization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -115,7 +116,7 @@ namespace HealthBanc.Controllers
 
         [Authorize]
         [HttpPost("[action]")]
-        public async Task<IActionResult> SubmitOtp(string otp,string pin,string reference)
+        public async Task<IActionResult> SubmitOtp(SetOtpViewModel otpViewModel)
         {
             try
             {
@@ -125,7 +126,7 @@ namespace HealthBanc.Controllers
                 var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
                 if (userAxamansardProfile != null)
                 {
-                    var response = await _tokenizationService.SendOtp(otp, userAxamansardProfile, pin,reference);
+                    var response = await _tokenizationService.SendOtp(otpViewModel.otp, userAxamansardProfile, otpViewModel.pin, otpViewModel.reference);
                     if (response.Status) return Ok(response);
                     return BadRequest(response);
                 }

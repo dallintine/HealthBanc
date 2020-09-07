@@ -355,8 +355,6 @@ namespace HealthBanc.Services.Identity
                     var userPassword = await _userManager.ResetPasswordAsync(user, decryptedEmailToken, viewModel.Password);
                     if (userPassword.Succeeded)
                     {
-                        user.LockoutEnd = null;
-                        await _userManager.UpdateAsync(user);
                         return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                     }
                     else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))

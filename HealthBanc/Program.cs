@@ -71,8 +71,8 @@ namespace HealthBanc
                     var services = scope.ServiceProvider;
                     try
                     {
-                        //var context = services.GetRequiredService<ApplicationDbContext>();
-                        //context.Database.Migrate();
+                        var context = services.GetRequiredService<ApplicationDbContext>();
+                        context.Database.Migrate();
                     }
                     catch (Exception ex)
                     {

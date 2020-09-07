@@ -140,17 +140,17 @@ namespace HealthBanc.Controllers
                 var returnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
                 if(returnCode == "00")
                 {
-                    var premiumResult = _insuranceService.AxaMansardPremiumPlan(profile.PlanCode, token);
+                    //var premiumResult = _insuranceService.AxaMansardPremiumPlan(profile.PlanCode, token);
 
-                    if (premiumResult.Status == true)
+                    if (/*premiumResult.Status ==*/ true)
                     {
-                        XmlDocument xmlDoc2 = new XmlDocument();
-                        xmlDoc2.LoadXml(premiumResult.Data);
-                        var premiumResponse = xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
+                        //XmlDocument xmlDoc2 = new XmlDocument();
+                        //xmlDoc2.LoadXml(premiumResult.Data);
+                        //var premiumResponse = xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
 
                         profile.Premium = Decimal.Parse("5600");
 
-                        profile.Premium = Decimal.Parse(premiumResponse);
+                        //profile.Premium = Decimal.Parse(premiumResponse);
                         var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
                         if (result.Status == true)
                         {
@@ -182,7 +182,7 @@ namespace HealthBanc.Controllers
                         getResponse2.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
                         return BadRequest(new ResponseMessage { Message = getResponse2.Message,Data=getResponse2 });
                     }
-                    return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });
+                    //return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });
                 }
                 return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
             }

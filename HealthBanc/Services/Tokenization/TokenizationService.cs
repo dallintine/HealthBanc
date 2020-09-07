@@ -3,6 +3,7 @@ using HealthBanc.Domain.Models;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Response.Tokenize;
+using HealthBanc.ViewModels.Tokenization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -49,7 +50,11 @@ namespace HealthBanc.Services.Tokenization
                     {
                         var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
                         if (!validResponse.Contains(chargeCardResponse.data.status)) return new ResponseMessage { Message = chargeCardResponse.data.url };
-                        if (chargeCardResponse.data.status == "send_otp") return new ResponseMessage { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
+                        if (chargeCardResponse.data.status == "send_otp")
+                        {
+                            var otpViewModel = new SetOtpViewModel(null, chargeCard.pin, chargeCard.reference);
+                            return new ResponseMessage {Data = otpViewModel, Message = "Please enter your OTP code", Status = true, ResponseCode = 12, };
+                        }
                         if (chargeCardResponse.data.status == "send_pin")
                         {
                             var user = await _axaMansardUser.GetByAdminIdAsync(id);
