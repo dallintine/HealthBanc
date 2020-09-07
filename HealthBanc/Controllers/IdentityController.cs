@@ -205,7 +205,7 @@ namespace HealthBanc.Controllers
 
                 if (user.LockoutEnd != null)
                 {
-                    return Unauthorized(new ResponseMessage { Message = "Your Account Has Been Locked,Please Contact Support", Status = false });
+                    return Unauthorized(new ResponseMessage { Message = "Your Account Has Been Locked, try again after two minutes", Status = false });
                 }
 
                 //check that the user is not null and that his password is correct
