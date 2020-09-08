@@ -75,7 +75,7 @@ namespace HealthBanc.Controllers
                         card.email = userAxamansardProfile.Email; card.amount = userAxamansardProfile.Premium.ToString();
                         card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;card.card = chargeCardRequest;
                         var cardResponse = await _tokenizationService.ChargeCard(card, Id);
-                        if (cardResponse.Status == true)
+                        if (cardResponse.Status == true && cardResponse.ResponseCode == 0)
                         { 
                             var tokenizeReference = new TokenizationReference();
                             tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = card.reference;
@@ -88,6 +88,10 @@ namespace HealthBanc.Controllers
                                 _completionRepository.Update(checkprofileComplete);
                                 await _completionRepository.Save();
                             }
+                            return Ok(cardResponse);
+                        }
+                        if(cardResponse.Status == true && cardResponse.ResponseCode == 12)
+                        {
                             return Ok(cardResponse);
                         }
                         return BadRequest(cardResponse);
