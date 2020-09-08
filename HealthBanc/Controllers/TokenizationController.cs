@@ -68,7 +68,7 @@ namespace HealthBanc.Controllers
                     {
                         return BadRequest(new ResponseMessage {Message="This card has been tokenised previously", });
                     }
-                    if (userAxamansardProfile != null)
+                    if (userAxamansardProfile != null && checkprofileComplete.ProfileCompleted == true)
                     {
                         var card = new ChargeCard();
                         var chargeCardRequest = _mapper.Map<Request.Tokenize.Card>(chargeCard.card);
@@ -128,10 +128,26 @@ namespace HealthBanc.Controllers
                 int Id = int.Parse(userId);
 
                 var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
-                if (userAxamansardProfile != null)
+                var checkprofileComplete = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
+                if (userAxamansardProfile != null && checkprofileComplete.ProfileCompleted == true)
                 {
                     var response = await _tokenizationService.SendOtp(otpViewModel.otp, userAxamansardProfile, otpViewModel.pin, otpViewModel.reference);
-                    if (response.Status) return Ok(response);
+                    if (response.Status)
+                    {
+                        var tokenizeReference = new TokenizationReference();
+                        tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = otpViewModel.reference;
+                        _tokenizationReference.Create(tokenizeReference);
+                        await _tokenizationReference.Save();
+
+                        if (checkprofileComplete != null)
+                        {
+                            checkprofileComplete.TokenizationCompleted = true;
+                            _completionRepository.Update(checkprofileComplete);
+                            await _completionRepository.Save();
+                        }
+
+                        return Ok(response);
+                    } 
                     return BadRequest(response);
                 }
                 return BadRequest(new ResponseMessage { Message = "User has not been profiled", Status = false });               

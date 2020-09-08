@@ -435,13 +435,14 @@ namespace HealthBanc.Services.Identity
             }
             else
             {
-                if (checkIfAdminExist.ServiceUsed.Contains("Pharmmall"))
+                if (checkIfAdminExist.ServiceUsed.Contains("Pharmmall") && checkIfAdminExist.UniqueUsername == null)
                 {
                     return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
                 }
-                if (checkIfAdminExist.AdminId == null)
+                if (checkIfAdminExist.AdminId == null && checkIfAdminExist.UniqueUsername == null)
                 {
                     checkIfAdminExist.SuperAdminId = superAdminId;
+                    checkIfAdminExist.AdminId = checkIfAdminExist.Id;
                     await _userManager.UpdateAsync(checkIfAdminExist);
 
                     var role = await _classOrRole.GetRole(regViewModel.ClassOrRoleId);
