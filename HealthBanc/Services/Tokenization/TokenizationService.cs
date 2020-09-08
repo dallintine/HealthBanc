@@ -95,7 +95,7 @@ namespace HealthBanc.Services.Tokenization
         {
             try
             {
-                var otpRequest = new SendOtp(otp, "12345");
+                var otpRequest = new SendOtp(otp, reference);
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(otpRequest), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync("api/paystack/SubmitOTP", content);
