@@ -10,7 +10,7 @@ namespace HealthBanc.Request
         public PaginationQuery()
         {
             PageNumber = 1;
-            PageSize = 2;
+            PageSize = 5;
             SortBy = 1;
         }
         public PaginationQuery(int pageNumber,int pageSize,string searchText,int sortBy)
