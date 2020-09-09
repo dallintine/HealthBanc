@@ -435,10 +435,17 @@ namespace HealthBanc.Services.Identity
             }
             else
             {
-                if (checkIfAdminExist.ServiceUsed.Contains("Pharmmall") && checkIfAdminExist.UniqueUsername == null)
+                if(checkIfAdminExist.UniqueUsername != null)
                 {
-                    return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
+                    return new ResponseMessage { Message = "User exist with admin access, Kindly invite with another email" };
                 }
+                if(checkIfAdminExist.ServiceUsed != null)
+                {
+                    if (checkIfAdminExist.ServiceUsed.Contains("Pharmmall") && checkIfAdminExist.UniqueUsername == null)
+                    {
+                        return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
+                    }
+                }               
                 if (checkIfAdminExist.AdminId == null && checkIfAdminExist.UniqueUsername == null)
                 {
                     checkIfAdminExist.SuperAdminId = superAdminId;
