@@ -74,7 +74,7 @@ namespace HealthBanc.Services.Tokenization
                             }
                         }
                         if (chargeCardResponse.data.status == "send_phone") return new ResponseMessage { Message = "" };
-                        if (chargeCardResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true,ResponseCode = 0};
+                        if (chargeCardResponse.data.status == "success") return new ResponseMessage { AuthorizationCode = chargeCardResponse.data.authorization_code, Message = "Card was tokenize successfully", Status = true,ResponseCode = 0};
                         if (chargeCardResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
                     }
                     return new ResponseMessage { Message = chargeCardResponse.message,Status = false };
@@ -120,7 +120,7 @@ namespace HealthBanc.Services.Tokenization
                         {
                             var result = await SendPin(pin, user,reference);
                         }
-                        if (otpResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
+                        if (otpResponse.data.status == "success") return new ResponseMessage {AuthorizationCode =otpResponse.data.authorization_code, Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
                         if (otpResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
                     }
                     return new ResponseMessage { Message = otpResponse.message, Status = false };

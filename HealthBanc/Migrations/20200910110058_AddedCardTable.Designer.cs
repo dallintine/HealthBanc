@@ -4,14 +4,16 @@ using HealthBanc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HealthBanc.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200910110058_AddedCardTable")]
+    partial class AddedCardTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -373,6 +375,37 @@ namespace HealthBanc.Migrations
                     b.ToTable("BackendAdminUsers");
                 });
 
+            modelBuilder.Entity("HealthBanc.Domain.Models.Card", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("AxaMansardUserProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastFourDigit")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TokenizationReferenceId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AxaMansardUserProfileId");
+
+                    b.HasIndex("TokenizationReferenceId");
+
+                    b.ToTable("Cards");
+                });
+
             modelBuilder.Entity("HealthBanc.Domain.Models.ClassOrRole", b =>
                 {
                     b.Property<int>("Id")
@@ -433,37 +466,6 @@ namespace HealthBanc.Migrations
                             Id = 9,
                             Name = "Analyst"
                         });
-                });
-
-            modelBuilder.Entity("HealthBanc.Domain.Models.DebitCard", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int>("AxaMansardUserProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LastFourDigit")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TokenizationReferenceId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AxaMansardUserProfileId");
-
-                    b.HasIndex("TokenizationReferenceId");
-
-                    b.ToTable("Cards");
                 });
 
             modelBuilder.Entity("HealthBanc.Domain.Models.Notification", b =>
@@ -706,7 +708,7 @@ namespace HealthBanc.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("HealthBanc.Domain.Models.DebitCard", b =>
+            modelBuilder.Entity("HealthBanc.Domain.Models.Card", b =>
                 {
                     b.HasOne("HealthBanc.Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
                         .WithMany("Cards")

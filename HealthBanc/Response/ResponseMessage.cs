@@ -10,6 +10,7 @@ namespace HealthBanc.Response
         public bool Status { get; set; }
         public int ResponseCode { get; set; }
         public string Message { get; set; }
+        public string AuthorizationCode { get; set; }
         public object Data { get; set; }
     }
 

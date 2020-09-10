@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.DataAccess.Interfaces
 {
-    public interface ITokenizationReferenceRepository : IBaseRepository<TokenizationReference>
+    public interface ICardRepository : IBaseRepository<DebitCard>
     {
-        Task<TokenizationReference> GetBySuperAdminIdAsync(int superAdminId);
+        Task<TokenizationReference> GetPrimaryCard(int id);
     }
 }

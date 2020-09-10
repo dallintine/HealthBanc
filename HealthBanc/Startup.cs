@@ -144,6 +144,7 @@ namespace HealthBanc
             services.AddScoped<IAxaMansardCompletionRepository,AxaMansardCompletionRepository>();
             services.AddScoped<SendLogViaWhatApp>();
             services.AddScoped<ITokenizationReferenceRepository, TokenizationReferenceRepository>();
+            services.AddScoped<ICardRepository, CardRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

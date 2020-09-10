@@ -10,5 +10,6 @@ namespace HealthBanc.Domain.Models
         public int Id { get; set; }
         public int SuperAdminId { get; set; }
         public string TokenReference { get; set; }
+        public string Authorization_Code { get; set; }
     }
 }

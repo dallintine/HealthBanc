@@ -23,6 +23,7 @@ namespace HealthBanc.Data
         public DbSet<TestUserProfile> TestUserProfiles { get; set; }
         public DbSet<AxaMansardCompletionProfile> AxaMansardCompletionProfiles { get; set; }
         public DbSet<TokenizationReference> TokenizationReferences { get; set; }
+        public DbSet<DebitCard> Cards { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

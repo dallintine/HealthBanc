@@ -17,12 +17,12 @@ namespace HealthBanc.DataAccess.Implementation
 
         public async Task<AxaMansardUserProfile> GetByAdminIdAsync(int id)
         {
-            return await _context.AxaMansardUserProfile.FirstOrDefaultAsync(x => x.SuperAdminId == id);
+            return await _context.AxaMansardUserProfile.Include(x => x.Cards).FirstOrDefaultAsync(x => x.SuperAdminId == id);
         }
 
         public async Task<AxaMansardUserProfile> GetByIdAsync(int id)
         {
-            return await _context.AxaMansardUserProfile.FirstOrDefaultAsync(x => x.Id== id);
+            return await _context.AxaMansardUserProfile.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Id== id);
         }
     }
 }

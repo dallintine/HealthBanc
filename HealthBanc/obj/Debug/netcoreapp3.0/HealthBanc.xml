@@ -178,5 +178,11 @@
             <param name="chargeCard"></param>
             <returns></returns>
         </member>
+        <member name="M:HealthBanc.Controllers.TokenizationController.GetCards">
+            <summary>
+            Get subscriber cards
+            </summary>
+            <returns></returns>
+        </member>
     </members>
 </doc>
