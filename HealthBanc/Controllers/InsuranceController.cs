@@ -97,102 +97,115 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> AxaMansardCreateUserProfile([FromForm] UserProfileviewModel userProfile)
         {
-            try
+            if (ModelState.IsValid)
             {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-                var user = await _userRepository.FindByIdAsync(Id);
-
-                var checkIfUserHasBeenProfiled = await _axaMansard.GetByAdminIdAsync(Id);
-                if (checkIfUserHasBeenProfiled != null) return BadRequest(new ResponseMessage { Message = "User has a profile already" });
-
-
-                var supportedTypes = new[] { ".JPG", ".JPE", ".PNG", ".JPEG" };
-                var customerPhoto = System.IO.Path.GetExtension(userProfile.CustomerPhoto.FileName).ToUpperInvariant();
-                var identityPhoto = System.IO.Path.GetExtension(userProfile.IdentityPhoto.FileName).ToUpperInvariant();
-
-                if (!supportedTypes.Contains(customerPhoto) || !supportedTypes.Contains(identityPhoto))
+                try
                 {
-                    return BadRequest(new ResponseMessage { Message = "FIle extension is invalid - Only Upload PNG/JPEG/JPG/JPE" });
-                }
+                    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                    int Id = int.Parse(userId);
+                    var user = await _userRepository.FindByIdAsync(Id);
 
-                var customerPhotorSize = userProfile.CustomerPhoto.Length;
-                var identityPhotoSize = userProfile.IdentityPhoto.Length;
-                if ((customerPhotorSize / 1048576) > 4 || (identityPhotoSize / 1048576) > 4)
-                {
-                    return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" });
-                }
+                    var checkIfUserHasBeenProfiled = await _axaMansard.GetByAdminIdAsync(Id);
+                    if (checkIfUserHasBeenProfiled != null) return BadRequest(new ResponseMessage { Message = "User has a profile already" });
 
-                var tokenResult = _insuranceService.AxaMansardGetToken();
-            if (tokenResult.Status == true)
-            {
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.LoadXml(tokenResult.Data);
-                var profile = _mapper.Map<UserProfile>(userProfile);
-                profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
-                profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
 
-                var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
-                var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
-                profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
+                    var supportedTypes = new[] { ".JPG", ".JPE", ".PNG", ".JPEG" };
+                    var customerPhoto = System.IO.Path.GetExtension(userProfile.CustomerPhoto.FileName).ToUpperInvariant();
+                    var identityPhoto = System.IO.Path.GetExtension(userProfile.IdentityPhoto.FileName).ToUpperInvariant();
 
-                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-                var returnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
-                if(returnCode == "00")
-                {
-                    //var premiumResult = _insuranceService.AxaMansardPremiumPlan(profile.PlanCode, token);
-
-                    if (/*premiumResult.Status ==*/ true)
+                    if (!supportedTypes.Contains(customerPhoto) || !supportedTypes.Contains(identityPhoto))
                     {
-                        //XmlDocument xmlDoc2 = new XmlDocument();
-                        //xmlDoc2.LoadXml(premiumResult.Data);
-                        //var premiumResponse = xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
-
-                        profile.Premium = Decimal.Parse("5600");
-
-                        //profile.Premium = Decimal.Parse(premiumResponse);
-                        var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
-                        if (result.Status == true)
-                        {
-                            XmlDocument xmlDoc3 = new XmlDocument();
-                            xmlDoc3.LoadXml(result.Data);
-
-                            var getResponse = new AxaResponse();
-                            getResponse.IsSuccessful = xmlDoc3.GetElementsByTagName("IsSuccessful").Item(0).InnerText ?? "";
-                            getResponse.Message = xmlDoc3.GetElementsByTagName("message").Item(0).InnerText ?? "";
-
-                            var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
-                            axaInsuranceUser.SuperAdminId = Id;
-                            _axaMansard.Create(axaInsuranceUser);
-                            await _axaMansard.Save();
-
-                            var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
-                            _completionRepository.Create(completionProfile);
-                            await _completionRepository.Save();
-
-                            var newServiceString = user.ServiceUsed + "HealthInsured,";
-                            user.ServiceUsed = newServiceString;
-                            _userRepository.Update(user);
-                            await _userRepository.Save();
-
-                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
-                        }
-                        var getResponse2 = new AxaResponse();
-                        getResponse2.Message = token;
-                        getResponse2.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-                        return BadRequest(new ResponseMessage { Message = getResponse2.Message,Data=getResponse2 });
+                        return BadRequest(new ResponseMessage { Message = "FIle extension is invalid - Only Upload PNG/JPEG/JPG/JPE" });
                     }
-                    //return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });
+
+                    var customerPhotorSize = userProfile.CustomerPhoto.Length;
+                    var identityPhotoSize = userProfile.IdentityPhoto.Length;
+                    if ((customerPhotorSize / 1048576) > 4 || (identityPhotoSize / 1048576) > 4)
+                    {
+                        return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" });
+                    }
+
+                    var tokenResult = _insuranceService.AxaMansardGetToken();
+                    if (tokenResult.Status == true)
+                    {
+                        XmlDocument xmlDoc = new XmlDocument();
+                        xmlDoc.LoadXml(tokenResult.Data);
+                        var profile = _mapper.Map<UserProfile>(userProfile);
+                        profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
+                        profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
+
+                        var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
+                        var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
+                        profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
+
+                        var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
+                        var returnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
+                        if (returnCode == "00")
+                        {
+                            //var premiumResult = _insuranceService.AxaMansardPremiumPlan(profile.PlanCode, token);
+
+                            if (/*premiumResult.Status ==*/ true)
+                            {
+                                //XmlDocument xmlDoc2 = new XmlDocument();
+                                //xmlDoc2.LoadXml(premiumResult.Data);
+                                //var premiumResponse = xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
+
+                                profile.Premium = Decimal.Parse("5600");
+
+                                //profile.Premium = Decimal.Parse(premiumResponse);
+                                var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
+                                if (result.Status == true)
+                                {
+                                    XmlDocument xmlDoc3 = new XmlDocument();
+                                    xmlDoc3.LoadXml(result.Data);
+
+                                    var getResponse = new AxaResponse();
+                                    getResponse.IsSuccessful = xmlDoc3.GetElementsByTagName("IsSuccessful").Item(0).InnerText ?? "";
+                                    getResponse.Message = xmlDoc3.GetElementsByTagName("message").Item(0).InnerText ?? "";
+
+                                    var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
+                                    axaInsuranceUser.SuperAdminId = Id;
+                                    _axaMansard.Create(axaInsuranceUser);
+                                    //await _axaMansard.Save();
+
+                                    var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
+                                    _completionRepository.Create(completionProfile);
+                                    //await _completionRepository.Save();
+
+                                    var newServiceString = user.ServiceUsed + "HealthInsured,";
+                                    user.ServiceUsed = newServiceString;
+                                    _userRepository.Update(user);
+                                    await _userRepository.Save();
+
+                                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
+                                }
+                                var getResponse2 = new AxaResponse();
+                                getResponse2.Message = token;
+                                getResponse2.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+                                return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
+                            }
+                            //return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });
+                        }
+                        return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
+                    }
+                    return BadRequest(new ResponseMessage { Message = "Token could not be fetched,please try again later: Connection timeout", Status = false });
                 }
-                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
+                catch (Exception ex)
+                {
+                    _logger.LogCritical("An error occure when trying to create profile " + ex);
+                    return BadRequest();
+                }
             }
-            return BadRequest(new ResponseMessage { Message = "Token could not be fetched,please try again later: Connection timeout", Status = false });
-            }
-            catch(Exception ex)
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
             {
-                _logger.LogCritical("An error occure when trying to create profile "+ex);
-                return BadRequest();
-            }            
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });            
         }
 
         [Authorize]
@@ -226,6 +239,11 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetTowns(string state)
         {
+            if (ModelState.IsValid)
+            {
+
+            }
+
             var tokenResult = _insuranceService.AxaMansardGetToken();
             if (tokenResult.Status == true)
             {

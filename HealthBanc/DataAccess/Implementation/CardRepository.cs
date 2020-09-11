@@ -15,9 +15,29 @@ namespace HealthBanc.DataAccess.Implementation
         {
         }
 
-        public async Task<TokenizationReference> GetPrimaryCard(int id)
+        public async Task<DebitCard> GetCardByIdAsync(int id, int userId)
+        {
+            return  await _context.Cards.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
+        }
+
+        public async Task<int> GetUserCardCount(int userId)
+        {
+            return await _context.Cards.Where(x => x.UserId == userId).CountAsync();
+        }
+
+        public async Task<DebitCard> GetPrimaryCard(int userId)
+        {
+            return await _context.Cards.FirstOrDefaultAsync(x => x.UserId == userId && x.Status == 1);
+        }
+
+        public async Task<TokenizationReference> GetPrimaryCardReference(int id)
         {
             return await _context.Cards.Where(x => x.UserId == id && x.Status == 1).Include(x => x.TokenizationReference).Select(x => x.TokenizationReference).FirstOrDefaultAsync();
+        }
+
+        public async Task<DebitCard> CheckIfCardWasPreviouslyTokenized(int id ,string signature)
+        {
+            return await _context.Cards.FirstOrDefaultAsync(x => x.UserId == id && x.Signature == signature);
         }
     }
 }

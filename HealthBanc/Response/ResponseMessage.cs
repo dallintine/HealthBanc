@@ -29,4 +29,16 @@ namespace HealthBanc.Response
         public string Message { get; set; }
         public string Data { get; set; }
     }
+
+    public class TokenizationResponse
+    {
+        public bool Status { get; set; }
+        public int ResponseCode { get; set; }
+        public string Message { get; set; }
+        public string AuthorizationCode { get; set; }
+        public object Data { get; set; }
+        public string LastDigit { get; set; }
+        public string Signature { get; set; }
+        public string Type { get; set; }
+    }
 }

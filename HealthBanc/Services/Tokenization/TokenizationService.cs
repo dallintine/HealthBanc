@@ -34,7 +34,7 @@ namespace HealthBanc.Services.Tokenization
             _axaMansardUser = axaMansardUser;
         }
 
-        public async Task<ResponseMessage> ChargeCard(ChargeCard chargeCard,int id)
+        public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard,int id)
         {
             try
             {
@@ -49,20 +49,15 @@ namespace HealthBanc.Services.Tokenization
                     if(chargeCardResponse.status is true)
                     {
                         var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(chargeCardResponse.data.status)) return new ResponseMessage { Message = chargeCardResponse.data.url };
+                        if (!validResponse.Contains(chargeCardResponse.data.status)) return new TokenizationResponse { Message = chargeCardResponse.data.url };
                         if (chargeCardResponse.data.status == "send_otp")
                         {
                             var otpViewModel = new SetOtpViewModel(null, chargeCard.pin, chargeCard.reference);
-                            return new ResponseMessage {Data = otpViewModel, Message = "Please enter your OTP code", Status = true, ResponseCode = 12, };
+                            return new TokenizationResponse { Data = otpViewModel, Message = "Please enter your OTP code", Status = true, ResponseCode = 12, };
                         }
                         if (chargeCardResponse.data.status == "send_pin")
                         {
-                            var user = await _axaMansardUser.GetByAdminIdAsync(id);
-                            if (user != null)
-                            {
-                                var result = await SendPin(chargeCard.pin,user,chargeCard.reference);
-                                return result;
-                            }                            
+                            return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
                         }
                         if (chargeCardResponse.data.status == "send_birthday")
                         {
@@ -70,28 +65,30 @@ namespace HealthBanc.Services.Tokenization
                             if (user != null)
                             {
                                 var result = await SubmitBirthDay(user.DateOfBirth,user,chargeCard.pin,chargeCard.reference);
-                                return result;
+                                return new TokenizationResponse { Status = result.Status, Message = result.Message, ResponseCode = result.ResponseCode };
                             }
                         }
-                        if (chargeCardResponse.data.status == "send_phone") return new ResponseMessage { Message = "" };
-                        if (chargeCardResponse.data.status == "success") return new ResponseMessage { AuthorizationCode = chargeCardResponse.data.authorization_code, Message = "Card was tokenize successfully", Status = true,ResponseCode = 0};
-                        if (chargeCardResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
+                        if (chargeCardResponse.data.status == "send_phone") return new TokenizationResponse { Message = "" };
+                        if (chargeCardResponse.data.status == "success") return new TokenizationResponse {Type = chargeCardResponse.data.authorization.card_type, LastDigit = chargeCardResponse.data.authorization.last4, 
+                            AuthorizationCode = chargeCardResponse.data.authorization.authorization_code, Signature = chargeCardResponse.data.authorization.signature,
+                            Message = "Card was tokenize successfully", Status = true,ResponseCode = 0};
+                        if (chargeCardResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                     }
-                    return new ResponseMessage { Message = chargeCardResponse.message,Status = false };
+                    return new TokenizationResponse { Message = chargeCardResponse.message +" "+ chargeCardResponse.data.message,Status = false };
                 }
                 _logViaWhatApp.SendLog("Couldnt connect with payment service: ChargeCard Service:");
                 _logger.LogCritical("Couldnt connect with payment service: ChargeCard Service:");
-                return new ResponseMessage { Message = "Couldnt connect with payment service, please try again later", Status = false };
+                return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
             }
             catch(Exception ex)
             {
                 _logViaWhatApp.SendLog(ex.ToString());
                 _logger.LogCritical("An error occurred while trying to charge cards: " + ex);
-                return new ResponseMessage { Status = false };
+                return new TokenizationResponse { Status = false };
             }
         }
 
-        public async Task<ResponseMessage> SendOtp( string otp,AxaMansardUserProfile user,string pin,string reference)
+        public async Task<TokenizationResponse> SendOtp( string otp,AxaMansardUserProfile user,string pin,string reference)
         {
             try
             {
@@ -107,7 +104,7 @@ namespace HealthBanc.Services.Tokenization
                     if(otpResponse.status == true)
                     {
                         var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(otpResponse.data.status)) return new ResponseMessage { Message = otpResponse.data.url };
+                        if (!validResponse.Contains(otpResponse.data.status)) return new TokenizationResponse { Message = otpResponse.data.url };
                         if (otpResponse.data.status == "send_birthday")
                         {
                           var result = await SubmitBirthDay(user.DateOfBirth, user, pin,reference);
@@ -118,67 +115,27 @@ namespace HealthBanc.Services.Tokenization
                         }
                         if (otpResponse.data.status == "send_pin")
                         {
-                            var result = await SendPin(pin, user,reference);
+                            return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
                         }
-                        if (otpResponse.data.status == "success") return new ResponseMessage {AuthorizationCode =otpResponse.data.authorization_code, Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
-                        if (otpResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
+                        if (otpResponse.data.status == "success") return new TokenizationResponse {Type=otpResponse.data.authorization.card_type , LastDigit = otpResponse.data.authorization.last4,
+                            Signature = otpResponse.data.authorization.signature,AuthorizationCode =otpResponse.data.authorization.authorization_code,
+                            Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
+                        if (otpResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                     }
-                    return new ResponseMessage { Message = otpResponse.message, Status = false };
+                    return new TokenizationResponse { Message = otpResponse.message, Status = false };
                    
                 }
                 _logger.LogCritical("Couldnt connect with payment service: SendOtp Service:");
-                return new ResponseMessage{Message="Couldnt connect with payment service, please try again later", Status = false };
+                return new TokenizationResponse { Message="Couldnt connect with payment service, please try again later", Status = false };
             }
             catch(Exception ex)
             {
                 _logger.LogCritical("An error occurred while trying to send otp: " + ex);
-                return new ResponseMessage{ Status = false };
+                return new TokenizationResponse { Status = false };
             }
         }
 
-        private async Task<ResponseMessage> SendPin(string pin,AxaMansardUserProfile user, string reference)
-        {
-            try
-            {
-                var pinRequest = new SendPin(pin, reference);
-                var httpClient = _httpClientFactory.CreateClient("Paystack");
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(pinRequest), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/paystack/SubmitPIN", content);
-                if (response.IsSuccessStatusCode)
-                {
-                    var pinResponse = new ChargeCardResponse();
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    pinResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
-                    if(pinResponse.status == true)
-                    {
-                        var validResponse = new[] { "send_otp", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(pinResponse.data.status)) return new ResponseMessage() { Message = pinResponse.data.url };
-                        if (pinResponse.data.status == "send_otp") return new ResponseMessage { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };                       
-                        if (pinResponse.data.status == "send_birthday")
-                        {
-                                var result = await SubmitBirthDay(user.DateOfBirth,user,pin,reference);
-                        }
-                        if (pinResponse.data.status == "send_phone")
-                        {
-                            var result = await SubmitPhone(user.PhoneNumber,user,pin,reference);
-                        }
-                        if (pinResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
-                        if (pinResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
-                    }
-                    return new ResponseMessage() { Message = pinResponse.message };
-                }
-                _logger.LogCritical("Couldnt connect with payment service: SendPin Service:");
-                return new ResponseMessage{ Message = "Couldnt connect with payment service, please try again later", Status = false };
-            }
-            catch (Exception ex)
-            {
-                _logViaWhatApp.SendLog("An error occurred while trying to send pin: " + ex.ToString());
-                _logger.LogCritical("An error occurred while trying to send pin: " + ex);
-                return new ResponseMessage{ Status = false, Message="This on us. Can not tokenize card now, please try again later" };
-            }
-        }
-
-        private async Task<ResponseMessage> SubmitPhone(string phoneNumber, AxaMansardUserProfile user,string pin,string reference)
+        private async Task<TokenizationResponse> SubmitPhone(string phoneNumber, AxaMansardUserProfile user,string pin,string reference)
         {
             try
             {
@@ -194,34 +151,36 @@ namespace HealthBanc.Services.Tokenization
                     if(phoneResponse.status is true)
                     {
                         var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(phoneResponse.data.status)) return new ResponseMessage() { Message = phoneResponse.data.url };
-                        if (phoneResponse.data.status == "send_otp") return new ResponseMessage { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
+                        if (!validResponse.Contains(phoneResponse.data.status)) return new TokenizationResponse() { Message = phoneResponse.data.url };
+                        if (phoneResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
                         if (phoneResponse.data.status == "send_birthday")
                         {
                             var result = await SubmitBirthDay(user.DateOfBirth,user,pin,reference);
                         }
                         if (phoneResponse.data.status == "send_pin")
                         {
-                            var result = await SendPin(pin, user,reference);
+                            return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
                         }
-                        if (phoneResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
-                        if (phoneResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
+                        if (phoneResponse.data.status == "success") return new TokenizationResponse {Signature = phoneResponse.data.authorization.signature,
+                            Type = phoneResponse.data.authorization.card_type,LastDigit = phoneResponse.data.authorization.last4,
+                            AuthorizationCode = phoneResponse.data.authorization.authorization_code,Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
+                        if (phoneResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                     }
-                    return new ResponseMessage { Message = phoneResponse.message, Status = false };
+                    return new TokenizationResponse { Message = phoneResponse.message, Status = false };
                 }
                 _logViaWhatApp.SendLog("Couldnt connect with payment service: SubmitPhone Service:");
                 _logger.LogCritical("Couldnt connect with payment service: SubmitPhone Service:");
-                return new ResponseMessage { Message = "Couldnt connect with payment service, please try again later", Status = false };
+                return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
             }
             catch (Exception ex)
             {
                 _logViaWhatApp.SendLog("An error occurred while trying to SubmitPhone: " + ex.ToString());
                 _logger.LogCritical("An error occurred while trying to SubmitPhone: " + ex);
-                return new ResponseMessage { Status = false, Message = "This on us. Can not tokenize card now, please try again later" };
+                return new TokenizationResponse { Status = false, Message = "This on us. Can not tokenize card now, please try again later" };
             }
         }
 
-        private async Task<ResponseMessage> SubmitBirthDay(DateTime date, AxaMansardUserProfile user,string pin, string reference)
+        private async Task<TokenizationResponse> SubmitBirthDay(DateTime date, AxaMansardUserProfile user,string pin, string reference)
         {
             try
             {
@@ -237,30 +196,32 @@ namespace HealthBanc.Services.Tokenization
                     if(birthdayResponse.status == true)
                     {
                         var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(birthdayResponse.data.status)) return new ResponseMessage { Message = birthdayResponse.data.url };
-                        if (birthdayResponse.data.status == "send_otp") return new ResponseMessage { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
+                        if (!validResponse.Contains(birthdayResponse.data.status)) return new TokenizationResponse { Message = birthdayResponse.data.url };
+                        if (birthdayResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
                         if (birthdayResponse.data.status == "send_phone")
                         {
                             var result = await SubmitPhone(user.PhoneNumber, user, pin,reference);
                         }
                         if (birthdayResponse.data.status == "send_pin")
                         {
-                            var result = await SendPin(pin, user,reference);
+                            return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
                         }
-                        if (birthdayResponse.data.status == "success") return new ResponseMessage { Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
-                        if (birthdayResponse.data.status == "open_url") return new ResponseMessage { Message = "" };
+                        if (birthdayResponse.data.status == "success") return new TokenizationResponse {Signature = birthdayResponse.data.authorization.signature,
+                            Type = birthdayResponse.data.authorization.card_type, LastDigit = birthdayResponse.data.authorization.last4,
+                            AuthorizationCode = birthdayResponse.data.authorization.authorization_code, Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
+                        if (birthdayResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                     }
-                    return new ResponseMessage { Status = false, Message = birthdayResponse.message };                 
+                    return new TokenizationResponse { Status = false, Message = birthdayResponse.message };                 
                 }
                 _logViaWhatApp.SendLog("Couldnt connect with payment service: SubmitBirthDay Service:");
                 _logger.LogCritical("Couldnt connect with payment service: SubmitBirthDay Service:");
-                return new ResponseMessage{ Message = "Couldnt connect with payment service, please try again later", Status = false };
+                return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
             }
             catch (Exception ex)
             {
                 _logViaWhatApp.SendLog("An error occurred while trying to SubmitBirthDay: " + ex.ToString());
                 _logger.LogCritical("An error occurred while trying to SubmitBirthDay: " + ex);
-                return new ResponseMessage { Status = false , Message = "This on us. Can not tokenize card now, please try again later" };
+                return new TokenizationResponse { Status = false , Message = "This on us. Can not tokenize card now, please try again later" };
             }
         }
 
