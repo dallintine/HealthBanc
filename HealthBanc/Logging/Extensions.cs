@@ -42,7 +42,7 @@ namespace HealthBanc.Logging
 
             if (azureBlobOptions.Enabled)
             {
-                loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, Serilog.Events.LogEventLevel.Information, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName, azureBlobOptions.OutputTemplate);
+                loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, Serilog.Events.LogEventLevel.Warning, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName, azureBlobOptions.OutputTemplate);
             }
         }
     }

@@ -16,6 +16,8 @@
     <Compile Remove="Migrations\20200826154633_ModifiedTestUserTable.Designer.cs" />
     <Compile Remove="Migrations\20200826155150_ModifiedTestUserTable2.cs" />
     <Compile Remove="Migrations\20200826155150_ModifiedTestUserTable2.Designer.cs" />
+    <Compile Remove="Migrations\20200911135642_CheckForAddedTables.cs" />
+    <Compile Remove="Migrations\20200911135642_CheckForAddedTables.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
