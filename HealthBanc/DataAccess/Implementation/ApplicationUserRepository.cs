@@ -84,7 +84,7 @@ namespace HealthBanc.DataAccess.Implementation
 
         public async Task<ApplicationUser>  FindByIdAsync(int id)
         {
-            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
             return user;
         }
 
