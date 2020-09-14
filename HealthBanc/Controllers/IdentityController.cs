@@ -102,7 +102,8 @@ namespace HealthBanc.Controllers
                 }
                 if(response.ResponseCode  == 23)
                 {
-                    return View("ConfirmEmail");
+                    return Redirect("https://pharmmall.azurewebsites.net/resend_email_link");
+                    //return View("ConfirmEmail");
                 }
                 return BadRequest(response);
             }
