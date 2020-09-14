@@ -320,8 +320,12 @@ namespace HealthBanc.Services.Identity
         public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword)
         {
             var user = await _userManager.FindByNameAsync(forgotPassword.Username);
-            if (user != null && await _userManager.IsEmailConfirmedAsync(user))
+            if (user != null)
             {
+                if(!await _userManager.IsEmailConfirmedAsync(user))
+                {
+                    return new ResponseMessage { Message = "Kindly confirm your email address.", Status = false };
+                }
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
 
@@ -355,10 +359,13 @@ namespace HealthBanc.Services.Identity
                     var userPassword = await _userManager.ResetPasswordAsync(user, decryptedEmailToken, viewModel.Password);
                     if (userPassword.Succeeded)
                     {
+                        user.LockoutEnd = null;
+                        await _userManager.ResetAccessFailedCountAsync(user);
+                        await _userManager.UpdateAsync(user);
                         return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                     }
                     else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))
-                    {
+                    {                        
                         return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
                     }
                     return new ResponseMessage { Message = userPassword.Errors.FirstOrDefault().Description, Data = userPassword.Errors};

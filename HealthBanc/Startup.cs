@@ -149,9 +149,9 @@ namespace HealthBanc
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
                 options.SignIn.RequireConfirmedEmail = true;
-                options.Lockout.AllowedForNewUsers = false;
-                options.Lockout.MaxFailedAccessAttempts = 20;
-                //options.Lockout.DefaultLockoutTimeSpan = DateTime.Now.AddMinutes(2) - DateTime.Now;
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = 3;
+                options.Lockout.DefaultLockoutTimeSpan = DateTime.Now.AddYears(100) - DateTime.Now;
                 options.User.RequireUniqueEmail = true;
                 options.Password.RequireDigit = true;
                 options.Password.RequiredLength = 8;

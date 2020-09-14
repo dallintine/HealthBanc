@@ -142,6 +142,27 @@ namespace HealthBanc.Controllers
             return View("ConfirmEmail");
         }
 
+        [HttpGet("[action]")]
+        public async Task<IActionResult> ResendConfirmationLink2(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null || user.UniqueUsername != null)
+            {
+                return BadRequest(new ResponseMessage {Message = "User does not exist" , Status=false });
+            }
+            if (user.EmailConfirmed == true)
+            {
+                return BadRequest(new ResponseMessage { Message = "Your email address has previously been confirmed, kindly proceed to login", Status = false });
+            }
+            var confirmResult = await _identityService.SendUserEmailVerificationAsync(user);
+            if (confirmResult.Status == true)
+            {
+                ViewBag.Success = "Link was sent successfully, kindly check your email";
+                return Ok(new ResponseMessage { Message = "Link was sent successfully, kindly check your email", Status = true });
+            }
+            return BadRequest(new ResponseMessage { Message = confirmResult.Message, Status = false });
+        }
+
 
         //[ProducesResponseType(200, Type = typeof(ResponseMessage))]
         //[ProducesResponseType(401, Type = typeof(ResponseMessage))]
@@ -205,7 +226,7 @@ namespace HealthBanc.Controllers
 
                 if (user.LockoutEnd != null)
                 {
-                    return Unauthorized(new ResponseMessage { Message = "Your Account Has Been Locked, try again after two minutes", Status = false });
+                    return Unauthorized(new ResponseMessage { Message = "Your account has been locked. Kindly unlock your password by clicking on the reset password link", Status = false });
                 }
 
                 //check that the user is not null and that his password is correct
