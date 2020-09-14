@@ -103,7 +103,6 @@ namespace HealthBanc.Controllers
                 if(response.ResponseCode  == 23)
                 {
                     return Redirect("https://pharmmall.azurewebsites.net/resend_email_link");
-                    //return View("ConfirmEmail");
                 }
                 return BadRequest(response);
             }
@@ -227,7 +226,7 @@ namespace HealthBanc.Controllers
 
                 if (user.LockoutEnd != null)
                 {
-                    return Unauthorized(new ResponseMessage { Message = "Your account has been locked, it exceeded the maximum failed password attempt. Kindly unlock your account by clicking on the forgot password link", Status = false });
+                    return Unauthorized(new ResponseMessage { Message = "Your account has been locked, you exceeded the maximum failed password attempt. Kindly unlock your account by clicking on the forgot password link", Status = false });
                 }
 
                 //check that the user is not null and that his password is correct
@@ -534,14 +533,14 @@ namespace HealthBanc.Controllers
                 {
                     return Ok(response);
                 }
-                if (response.ResponseCode == 2)
-                {
-                    return BadRequest(response);
-                }
-                if(response.ResponseCode == 23)
-                {
-                    return RedirectToAction("AdminRegView");
-                }
+                //if (response.ResponseCode == 2)
+                //{
+                //    return BadRequest(response);
+                //}
+                //if(response.ResponseCode == 23)
+                //{
+                //    return RedirectToAction("AdminRegView");
+                //}
                 return BadRequest(response);
             }
             //return validation errors
