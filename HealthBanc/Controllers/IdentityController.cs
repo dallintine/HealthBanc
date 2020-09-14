@@ -119,32 +119,32 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
-        [HttpGet("[action]")]
-        public async Task<IActionResult> ResendConfirmationLink(string email)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-            if(user == null || user.UniqueUsername != null)
-            {
-                ViewBag.Error = "User does not exist";
-                return View("ConfirmEmail");
-            }
-            if(user.EmailConfirmed == true)
-            {
-                ViewBag.Error = "Your email address has previously been confirmed, kindly proceed to login";
-                return View("ConfirmEmail");
-            }
-            var confirmResult = await _identityService.SendUserEmailVerificationAsync(user);
-            if(confirmResult.Status == true)
-            {
-                ViewBag.Success = "Link was sent successfully, kindly check your email";
-                return View("ConfirmEmail");
-            }
-            ViewBag.Error = confirmResult.Message;
-            return View("ConfirmEmail");
-        }
+        //[HttpGet("[action]")]
+        //public async Task<IActionResult> ResendConfirmationLink(string email)
+        //{
+        //    var user = await _userManager.FindByEmailAsync(email);
+        //    if(user == null || user.UniqueUsername != null)
+        //    {
+        //        ViewBag.Error = "User does not exist";
+        //        return View("ConfirmEmail");
+        //    }
+        //    if(user.EmailConfirmed == true)
+        //    {
+        //        ViewBag.Error = "Your email address has previously been confirmed, kindly proceed to login";
+        //        return View("ConfirmEmail");
+        //    }
+        //    var confirmResult = await _identityService.SendUserEmailVerificationAsync(user);
+        //    if(confirmResult.Status == true)
+        //    {
+        //        ViewBag.Success = "Link was sent successfully, kindly check your email";
+        //        return View("ConfirmEmail");
+        //    }
+        //    ViewBag.Error = confirmResult.Message;
+        //    return View("ConfirmEmail");
+        //}
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> ResendConfirmationLink2(string email)
+        public async Task<IActionResult> ResendConfirmationLink(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null || user.UniqueUsername != null)
