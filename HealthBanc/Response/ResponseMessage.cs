@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,8 +11,12 @@ namespace HealthBanc.Response
         public bool Status { get; set; }
         public int ResponseCode { get; set; }
         public string Message { get; set; }
-        public string AuthorizationCode { get; set; }
         public object Data { get; set; }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
     }
 
     public class ResponseMessage<T>

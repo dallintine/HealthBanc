@@ -227,7 +227,7 @@ namespace HealthBanc.Controllers
 
                 if (user.LockoutEnd != null)
                 {
-                    return Unauthorized(new ResponseMessage { Message = "Your account has been locked. Kindly unlock your password by clicking on the reset password link", Status = false });
+                    return Unauthorized(new ResponseMessage { Message = "Your account has been locked, it exceeded the maximum failed password attempt. Kindly unlock your account by clicking on the forgot password link", Status = false });
                 }
 
                 //check that the user is not null and that his password is correct

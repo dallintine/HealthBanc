@@ -19,6 +19,7 @@ using HealthBanc.Messages.Events;
 using HealthBanc.RabbitMq;
 using HealthBanc.Services;
 using HealthBanc.Services.EncryptionService;
+using HealthBanc.Services.GlobalErrorHandling.Extensions;
 using HealthBanc.Services.Identity;
 using HealthBanc.Services.ImageService;
 using HealthBanc.Services.Insurance;
@@ -45,6 +46,7 @@ using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
 using OfficeOpenXml;
 using Polly;
+using Serilog;
 
 namespace HealthBanc
 {
@@ -291,7 +293,7 @@ namespace HealthBanc
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, UserManager<ApplicationUser> userManger,
-            IBackendAdminRepository backendAdminRepository)
+            IBackendAdminRepository backendAdminRepository, Serilog.ILogger logger)
         {
             if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
             {
@@ -322,6 +324,8 @@ namespace HealthBanc
                 }
             }
             app.UseCors("CorsPolicy");
+
+            app.ConfigureExceptionHandler(logger);
 
             app.UseHsts();
 
@@ -372,27 +376,5 @@ namespace HealthBanc
                 AutofacContainer.Dispose();
             });
         }
-
-        //IEdmModel GetEdmModel()
-        //{
-        //    var builder = new ODataConventionModelBuilder();
-        //    builder.EntitySet<WeatherForecast>("WeatherForecast");
-        //    return builder.GetEdmModel();
-        //}
-
-        //private static void SetOutputFormatters(IServiceCollection services)
-        //{
-        //    services.AddMvcCore(options =>
-        //    {
-        //        IEnumerable<ODataOutputFormatter> outputFormatters =
-        //            options.OutputFormatters.OfType<ODataOutputFormatter>()
-        //                .Where(foramtter => foramtter.SupportedMediaTypes.Count == 0);
-
-        //        foreach (var outputFormatter in outputFormatters)
-        //        {
-        //            outputFormatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("application/odata"));
-        //        }
-        //    });
-        //}
     }
 }
