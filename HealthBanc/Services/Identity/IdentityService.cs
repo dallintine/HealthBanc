@@ -204,22 +204,22 @@ namespace HealthBanc.Services.Identity
             return new ResponseMessage { Data = authResponse, Message = "Error occured please try again later"};
         }
 
-        public async Task<ResponseMessage> Refresh2(RefreshTokenViewModel refreshToken)
+        public async Task<ResponseMessage<LoggedInResponseDTO>> Refresh2(RefreshTokenViewModel refreshToken)
         {
             var principal = GetPrincipalFromExpiredToken(refreshToken.Token);
             var username = principal.Identity.Name; //this is mapped to the Name claim by default
             var user = await _userRepository.FindByIdAsync(int.Parse(username));
             if (user == null)
             {
-                return new ResponseMessage { Message = "User could not be fetched" };
+                return new ResponseMessage<LoggedInResponseDTO> { Message = "User could not be fetched" };
             }
             if(user.RefreshToken != refreshToken.RefreshToken)
             {
-                return new ResponseMessage { Message = "Invalid refresh token" };
+                return new ResponseMessage<LoggedInResponseDTO> { Message = "Invalid refresh token" };
             }
             if(user.RefreshTokenExpiryTime <= DateTime.Now)
             {
-                return new ResponseMessage { Message = "This refresh token has expired" };
+                return new ResponseMessage<LoggedInResponseDTO> { Message = "This refresh token has expired" };
             }
             var newRefreshToken = GenerateRefreshToken();
             user.RefreshToken = newRefreshToken;
@@ -227,9 +227,9 @@ namespace HealthBanc.Services.Identity
             await _userRepository.Save();
 
             var authResponse = await GetAuthenticationResultForUserAsync(user);
-            if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
+            if (authResponse.Success) return new ResponseMessage<LoggedInResponseDTO> { Data = authResponse, Status = true, Message = "User was logged in successfully" };
 
-            return new ResponseMessage { Data = authResponse, Message = "Error occured, please try again later" };
+            return new ResponseMessage<LoggedInResponseDTO> { Data = authResponse, Message = "Error occured, please try again later" };
         }
 
         private async Task<LoggedInResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)

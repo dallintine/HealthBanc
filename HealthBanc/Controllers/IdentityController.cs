@@ -213,6 +213,11 @@ namespace HealthBanc.Controllers
         //    return BadRequest(errors);
         //}
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="loginViewModel"></param>
+        /// <returns></returns>
         [HttpPost("[action]")]
         public async Task<ActionResult> Login([FromBody] LoginViewModel loginViewModel)
         {
@@ -303,6 +308,9 @@ namespace HealthBanc.Controllers
         //    return BadRequest(errors);
         //}
 
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
         [HttpPost("[action]")]
         public async Task<IActionResult> RefreshToken(RefreshTokenViewModel refreshModel)
         {
@@ -490,7 +498,7 @@ namespace HealthBanc.Controllers
                             await _userManager.UpdateAsync(user);
                             return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                         }
-                        return Unauthorized(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });
+                        return BadRequest(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });
                     }
                     else
                     {
