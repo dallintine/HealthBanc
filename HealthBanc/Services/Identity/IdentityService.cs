@@ -550,7 +550,7 @@ namespace HealthBanc.Services.Identity
                 {
                     _logger.LogError(ex, "Error occured While Trying to Create Admin Security Questions");
                 }
-                return new ResponseMessage { Message = "Error occured While Trying to Create Admin Security Questions" };
+                return new ResponseMessage { Message = "Error occured While Trying to Create Admin " };
             }
             else if (!result.Succeeded && result.Errors.Any(x => x.Code == "InvalidToken"))
             {

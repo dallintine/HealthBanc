@@ -332,6 +332,8 @@ namespace HealthBanc
             }
             app.UseCors("CorsPolicy");
 
+            app.UseHangfireDashboard("/hangfire");
+
             app.ConfigureExceptionHandler(logger);
 
             app.UseHsts();
@@ -347,8 +349,7 @@ namespace HealthBanc
                 await next();
             });
 
-            app.UseHttpsRedirection();
-            app.UseHangfireDashboard("/hangfire2");
+            app.UseHttpsRedirection();            
 
             var swaggerOptions = new Helpers.SwaggerOptions();
             Configuration.GetSection(nameof(Helpers.SwaggerOptions)).Bind(swaggerOptions);
