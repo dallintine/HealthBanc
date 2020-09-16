@@ -310,7 +310,6 @@ namespace HealthBanc.Controllers
 
         [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
-        [ProducesResponseType(404, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
         [HttpPost("[action]")]
         public async Task<IActionResult> RefreshToken(RefreshTokenViewModel refreshModel)
         {
