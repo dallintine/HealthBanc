@@ -9,6 +9,7 @@ using HealthBanc.Messages.Events;
 using HealthBanc.RabbitMq;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
+using HealthBanc.Services.PasswordManager;
 using HealthBanc.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -41,10 +42,11 @@ namespace HealthBanc.Services.Identity
         private readonly JwtSettings _jwtsettings;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly ApplicationDbContext _dbContext;
+        private readonly IPasswordHasher _passwordHasher;
 
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
              IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
-             IBusPublisher busPublisher, TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext)
+             IBusPublisher busPublisher, TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext, IPasswordHasher passwordHasher)
         {
             _logger = logger;
             _userManager = userManager;
@@ -57,6 +59,7 @@ namespace HealthBanc.Services.Identity
             _jwtsettings = jwtsettings.Value;
             _tokenValidationParameters = tokenValidationParameters;
             _dbContext = dbContext;
+            _passwordHasher = passwordHasher;
         }
 
         public async Task<ResponseMessage> RegisterSuperAdmin(RegistrationViewModel registrationViewModel)
@@ -87,6 +90,9 @@ namespace HealthBanc.Services.Identity
                         {
                             return confirmResult;
                         }
+                        var password = _passwordHasher.Hash(registrationViewModel.Password);
+                        user.HashedPasswordHistory = $"{password},";
+                        await _userManager.UpdateAsync(user);
                         return new ResponseMessage
                         {
                             Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
@@ -356,10 +362,48 @@ namespace HealthBanc.Services.Identity
                 PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, viewModel.ConfirmPassword);
                 if (passResult.Equals(PasswordVerificationResult.Failed))
                 {
+                    if (user.HashedPasswordHistory != null)
+                    {
+                        var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
+                        if (hashedPassword.LastOrDefault() == "")
+                        {
+                            hashedPassword.RemoveAt(hashedPassword.Count - 1);
+                        }
+                        foreach (var item in hashedPassword)
+                        {
+                            var checkForValidPassword = _passwordHasher.Check(item, viewModel.ConfirmPassword);
+                            if (checkForValidPassword.Verified == true)
+                            {
+                                return new ResponseMessage { Message = "The password you entered has been used before,please try another" };
+                            }
+                        }
+                    }
+
                     var userPassword = await _userManager.ResetPasswordAsync(user, decryptedEmailToken, viewModel.Password);
                     if (userPassword.Succeeded)
                     {
+                        var passwordHashed = _passwordHasher.Hash(viewModel.ConfirmPassword);
+                        if (user.HashedPasswordHistory != null)
+                        {
+                            var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
+                            if (hashedPassword.LastOrDefault() == "")
+                            {
+                                hashedPassword.RemoveAt(hashedPassword.Count - 1);
+                                if (hashedPassword.Count > 3)
+                                {
+                                    user.LockoutEnd = null;
+                                    await _userManager.ResetAccessFailedCountAsync(user);
+                                    hashedPassword.RemoveAt(0);
+                                    var newPaswordHash = string.Join(",", hashedPassword);
+                                    user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
+                                    await _userManager.UpdateAsync(user);
+                                    return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
+                                }
+                            }
+                        }
+
                         user.LockoutEnd = null;
+                        user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
                         await _userManager.ResetAccessFailedCountAsync(user);
                         await _userManager.UpdateAsync(user);
                         return new ResponseMessage { Message = "Password Changed Succefully", Status = true };

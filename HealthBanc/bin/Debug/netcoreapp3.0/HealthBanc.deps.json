@@ -29,6 +29,7 @@
           "Autofac": "4.9.2",
           "Autofac.Extensions.DependencyInjection": "4.4.0",
           "EPPlus": "4.5.3.2",
+          "Hangfire": "1.7.12",
           "Jaeger": "0.4.1",
           "MediatR": "8.0.1",
           "MediatR.Extensions.Microsoft.DependencyInjection": "8.0.0",
@@ -430,6 +431,85 @@
         },
         "compile": {
           "lib/netcoreapp2.1/EPPlus.dll": {}
+        }
+      },
+      "Hangfire/1.7.12": {
+        "dependencies": {
+          "Hangfire.AspNetCore": "1.7.12",
+          "Hangfire.Core": "1.7.12",
+          "Hangfire.SqlServer": "1.7.12"
+        }
+      },
+      "Hangfire.AspNetCore/1.7.12": {
+        "dependencies": {
+          "Hangfire.Core": "1.7.12"
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/Hangfire.AspNetCore.dll": {
+            "assemblyVersion": "1.7.12.0",
+            "fileVersion": "1.7.12.0"
+          }
+        },
+        "compile": {
+          "lib/netcoreapp3.0/Hangfire.AspNetCore.dll": {}
+        }
+      },
+      "Hangfire.Core/1.7.12": {
+        "dependencies": {
+          "Newtonsoft.Json": "12.0.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Hangfire.Core.dll": {
+            "assemblyVersion": "1.7.12.0",
+            "fileVersion": "1.7.12.0"
+          }
+        },
+        "resources": {
+          "lib/netstandard2.0/es/Hangfire.Core.resources.dll": {
+            "locale": "es"
+          },
+          "lib/netstandard2.0/fa/Hangfire.Core.resources.dll": {
+            "locale": "fa"
+          },
+          "lib/netstandard2.0/fr/Hangfire.Core.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/netstandard2.0/nl/Hangfire.Core.resources.dll": {
+            "locale": "nl"
+          },
+          "lib/netstandard2.0/pt-BR/Hangfire.Core.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/netstandard2.0/pt-PT/Hangfire.Core.resources.dll": {
+            "locale": "pt-PT"
+          },
+          "lib/netstandard2.0/pt/Hangfire.Core.resources.dll": {
+            "locale": "pt"
+          },
+          "lib/netstandard2.0/zh-TW/Hangfire.Core.resources.dll": {
+            "locale": "zh-TW"
+          },
+          "lib/netstandard2.0/zh/Hangfire.Core.resources.dll": {
+            "locale": "zh"
+          }
+        },
+        "compile": {
+          "lib/netstandard2.0/Hangfire.Core.dll": {}
+        }
+      },
+      "Hangfire.SqlServer/1.7.12": {
+        "dependencies": {
+          "Hangfire.Core": "1.7.12",
+          "System.Data.SqlClient": "4.4.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Hangfire.SqlServer.dll": {
+            "assemblyVersion": "1.7.12.0",
+            "fileVersion": "1.7.12.0"
+          }
+        },
+        "compile": {
+          "lib/netstandard2.0/Hangfire.SqlServer.dll": {}
         }
       },
       "Jaeger/0.4.1": {
@@ -2696,6 +2776,37 @@
           "System.IO": "4.3.0",
           "System.Runtime": "4.3.0",
           "System.Text.Encoding": "4.3.0"
+        }
+      },
+      "System.Data.SqlClient/4.4.0": {
+        "dependencies": {
+          "Microsoft.Win32.Registry": "4.5.0",
+          "System.Security.Principal.Windows": "4.5.0",
+          "System.Text.Encoding.CodePages": "4.5.1",
+          "runtime.native.System.Data.SqlClient.sni": "4.4.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/System.Data.SqlClient.dll": {
+            "assemblyVersion": "4.2.0.0",
+            "fileVersion": "4.6.25519.3"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/unix/lib/netstandard2.0/System.Data.SqlClient.dll": {
+            "rid": "unix",
+            "assetType": "runtime",
+            "assemblyVersion": "4.2.0.0",
+            "fileVersion": "4.6.25519.3"
+          },
+          "runtimes/win/lib/netstandard2.0/System.Data.SqlClient.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "4.2.0.0",
+            "fileVersion": "4.6.25519.3"
+          }
+        },
+        "compile": {
+          "ref/netstandard2.0/System.Data.SqlClient.dll": {}
         }
       },
       "System.Diagnostics.Debug/4.3.0": {
@@ -5253,6 +5364,34 @@
       "path": "epplus/4.5.3.2",
       "hashPath": "epplus.4.5.3.2.nupkg.sha512"
     },
+    "Hangfire/1.7.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tnR3EmsMgoWfKyUdaWG2ArKCCc4KwaWpcP4TZRPDWkr5Ef9fGkwDgzBMyOLhYGtsw+tgzGNC/V1vDuOpcuO/Rw==",
+      "path": "hangfire/1.7.12",
+      "hashPath": "hangfire.1.7.12.nupkg.sha512"
+    },
+    "Hangfire.AspNetCore/1.7.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ios/XlgILzLUQEVXa8tNTEGpDCdJxP5mdLk93pYl9z5zjotTfgopWmDZEnH7Y55YP9dWorv8UN4NXxGbwhiQ7w==",
+      "path": "hangfire.aspnetcore/1.7.12",
+      "hashPath": "hangfire.aspnetcore.1.7.12.nupkg.sha512"
+    },
+    "Hangfire.Core/1.7.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-xVpgaVt4IrNpWgd301FBa8RTcV0bDtZvdY7JzbGYcYTDnobYbMVFQCyXI9OYZ3g+hv9mD5IlRpmBPtPzKsaR+Q==",
+      "path": "hangfire.core/1.7.12",
+      "hashPath": "hangfire.core.1.7.12.nupkg.sha512"
+    },
+    "Hangfire.SqlServer/1.7.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-9zlA/oW9aOsafKU0Yoce68tCR5Q88kKGccRJ0uoxUN4rsQEjA1KLfsc3/MlF1T5QJ6EcY+G48jkTMJUIWg8r8w==",
+      "path": "hangfire.sqlserver/1.7.12",
+      "hashPath": "hangfire.sqlserver.1.7.12.nupkg.sha512"
+    },
     "Jaeger/0.4.1": {
       "type": "package",
       "serviceable": true,
@@ -6540,6 +6679,13 @@
       "sha512": "sha512-DHDrIxiqk1h03m6khKWV2X8p/uvN79rgSqpilL6uzpmSfxfU5ng8VcPtW4qsDsQDHiTv6IPV9TmD5M/vElPNLg==",
       "path": "system.console/4.3.0",
       "hashPath": "system.console.4.3.0.nupkg.sha512"
+    },
+    "System.Data.SqlClient/4.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-fxb9ghn1k1Ua7FFdlvtiBOD4/PsQvD/fk2KnhS+FK7VC6OggEx6P+lP1P0+KMb5V2dqS1+FbR7HCenoqzJMNIA==",
+      "path": "system.data.sqlclient/4.4.0",
+      "hashPath": "system.data.sqlclient.4.4.0.nupkg.sha512"
     },
     "System.Diagnostics.Debug/4.3.0": {
       "type": "package",

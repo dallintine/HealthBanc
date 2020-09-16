@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using Hangfire;
 using HealthBanc.Data;
 using HealthBanc.DataAccess.Implementation;
 using HealthBanc.DataAccess.Interfaces;
@@ -23,7 +24,9 @@ using HealthBanc.Services.GlobalErrorHandling.Extensions;
 using HealthBanc.Services.Identity;
 using HealthBanc.Services.ImageService;
 using HealthBanc.Services.Insurance;
+using HealthBanc.Services.PasswordManager;
 using HealthBanc.Services.Tokenization;
+using HealthBanc.ViewModels;
 using MediatR;
 using Microsoft.AspNet.OData.Builder;
 using Microsoft.AspNet.OData.Extensions;
@@ -70,6 +73,9 @@ namespace HealthBanc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddHangfireServer();
+
             services.AddHsts(options =>
             {
                 //options.IncludeSubDomains = true;
@@ -147,6 +153,7 @@ namespace HealthBanc
             services.AddScoped<SendLogViaWhatApp>();
             services.AddScoped<ITokenizationReferenceRepository, TokenizationReferenceRepository>();
             services.AddScoped<ICardRepository, CardRepository>();
+            services.AddScoped<IPasswordHasher, PasswordHasher>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -341,6 +348,7 @@ namespace HealthBanc
             });
 
             app.UseHttpsRedirection();
+            app.UseHangfireDashboard("/hangfire2");
 
             var swaggerOptions = new Helpers.SwaggerOptions();
             Configuration.GetSection(nameof(Helpers.SwaggerOptions)).Bind(swaggerOptions);

@@ -11,6 +11,7 @@ using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.Identity;
+using HealthBanc.Services.PasswordManager;
 using HealthBanc.ViewModels;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
@@ -30,9 +31,10 @@ namespace HealthBanc.Controllers
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IEmailSender _emailSender;
+        private readonly IPasswordHasher _passwordHasher;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
-            IApplicationUserRepository userRepository, IEmailSender emailSender)
+            IApplicationUserRepository userRepository, IEmailSender emailSender,IPasswordHasher passwordHasher)
         {
             _logger = logger;
             _identityService = identityService;
@@ -40,7 +42,7 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
             _userRepository = userRepository;
             _emailSender = emailSender;
-        }
+            _passwordHasher = passwordHasher;        }
 
         ///<summary>
         ///This Creates The User
@@ -447,9 +449,45 @@ namespace HealthBanc.Controllers
                     PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, changePassword.ConfirmPassword);
                     if (passResult.Equals(PasswordVerificationResult.Failed))
                     {
+                        if(user.HashedPasswordHistory != null)
+                        {
+                            var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
+                            if (hashedPassword.LastOrDefault() == "")
+                            {
+                                hashedPassword.RemoveAt(hashedPassword.Count - 1);
+                            }
+                            foreach (var item in hashedPassword)
+                            {
+                                var checkForValidPassword = _passwordHasher.Check(item, changePassword.ConfirmPassword);
+                                if (checkForValidPassword.Verified == true)
+                                {
+                                    return BadRequest(new ResponseMessage { Message = "The password you entered has been used before,please try another" });
+                                }
+                            }
+                        }                      
+                        
                         var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
                         if (userPassword.Succeeded)
                         {
+                            var passwordHashed = _passwordHasher.Hash(changePassword.NewPassword);
+                            if (user.HashedPasswordHistory != null)
+                            {
+                                var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();                                
+                                if (hashedPassword.LastOrDefault() == "")
+                                {
+                                    hashedPassword.RemoveAt(hashedPassword.Count - 1);
+                                    if(hashedPassword.Count >3)
+                                    {
+                                        hashedPassword.RemoveAt(0);                                       
+                                        var newPaswordHash = string.Join(",", hashedPassword);
+                                        user.HashedPasswordHistory =  $"{newPaswordHash},{passwordHashed},";
+                                        await _userManager.UpdateAsync(user);
+                                        return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
+                                    }
+                                }                                
+                            }
+                            user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
+                            await _userManager.UpdateAsync(user);
                             return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                         }
                         return Unauthorized(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });

@@ -13,6 +13,7 @@ namespace HealthBanc.Domain.Models
         public string FirstName { get; set; }
         [Required]
         public string LastName { get; set; }
+        public string HashedPasswordHistory { get; set; }
         [Required]
         public DateTime DateOfRegistration { get; set; }
         public bool IsDeleted { get; set; }

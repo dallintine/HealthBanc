@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Hangfire;
 using HealthBanc.DataAccess.Implementation;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
@@ -199,9 +200,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });            
         }
 
-        [Authorize]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> InsertSubscription()
+        private async Task<IActionResult> InsertSubscription()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
@@ -223,7 +222,7 @@ namespace HealthBanc.Controllers
                 }
                 return BadRequest(response);
             }
-            _logger.LogCritical("An error occurrred. user wants to subscribe with no profile or tokenozation of cards");
+            _logger.LogCritical("An error occurrred. user wants to subscribe with no profile or tokenization of cards");
             return BadRequest(new ResponseMessage { Message = "User cant subscribe unless card has been tokenize and user has a profile" });
         }
 
@@ -329,5 +328,13 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
+
+        //[HttpPost("[action]")]
+        //public async Task<IActionResult> RecurJobs()
+        //{
+        //    RecurringJob.AddOrUpdate(() => Console.WriteLine("Test succeded"),Cron.Minutely);
+        //    return Ok("Intiated");
+
+        //}
     }
 }
