@@ -329,7 +329,13 @@ namespace HealthBanc
                     backendAdminRepository.Save().Wait();
                 }
             }
-            app.UseHangfireDashboard();
+
+
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization = new[] { new MyAuthorizationFilter() }
+            });
+
 
             app.UseCors("CorsPolicy");
             
@@ -369,9 +375,6 @@ namespace HealthBanc
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                //endpoints.EnableDependencyInjection(); 
-                //endpoints.Select().OrderBy().Filter().SkipToken().MaxTop(4).Expand().Count();
-                //endpoints.MapODataRoute("odata", "odata", GetEdmModel());
             });
 
             app.UseRabbitMq()
