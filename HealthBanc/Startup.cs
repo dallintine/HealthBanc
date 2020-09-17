@@ -81,7 +81,6 @@ namespace HealthBanc
                 //options.IncludeSubDomains = true;
                 //options.MaxAge = TimeSpan.FromDays(365);
             });
-            //services.AddOData();
 
             services.AddControllersWithViews();
 
@@ -330,10 +329,10 @@ namespace HealthBanc
                     backendAdminRepository.Save().Wait();
                 }
             }
+            app.UseHangfireDashboard();
+
             app.UseCors("CorsPolicy");
-
-            app.UseHangfireDashboard("/hangfire");
-
+            
             app.ConfigureExceptionHandler(logger);
 
             app.UseHsts();

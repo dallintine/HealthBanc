@@ -274,6 +274,7 @@ namespace HealthBanc.Controllers
                 if (presentPrimaryCard == null) return BadRequest(new ResponseMessage { Message = "You dont have a card, Kindly tokenize a card" });
                 var newPrimaryCard = await _cardRepository.GetCardByIdAsync(cardId, Id);
                 if (newPrimaryCard == null) return NotFound(new ResponseMessage { Message = "No secondary card tied to you was found" });
+                if (newPrimaryCard.Status == 1) return BadRequest(new ResponseMessage { Message = "This card is presenlty the primary card" });
                 if (presentPrimaryCard != null && newPrimaryCard != null)
                 {
                     presentPrimaryCard.Status = 0;
