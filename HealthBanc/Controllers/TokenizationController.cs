@@ -330,12 +330,12 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
-        //[HttpPost("[action]")]
-        //public async Task<IActionResult> RecurJobs()
-        //{
-        //    RecurringJob.AddOrUpdate(() => Console.WriteLine("Test succeded"), Cron.Minutely);
-        //    return Ok("Intiated");
+        [HttpPost("[action]")]
+        public async Task<IActionResult> RecurJobs()
+        {
+            RecurringJob.AddOrUpdate(() => Console.WriteLine("Test succeded"), Cron.Minutely);
+            return Ok("Intiated");
 
-        //}
+        }
     }
 }
