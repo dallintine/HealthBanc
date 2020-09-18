@@ -333,7 +333,7 @@ namespace HealthBanc.Controllers
         //[HttpPost("[action]")]
         //public async Task<IActionResult> RecurJobs()
         //{
-        //    RecurringJob.AddOrUpdate(() => Console.WriteLine("Test succeded"),Cron.Minutely);
+        //    RecurringJob.AddOrUpdate(() => Console.WriteLine("Test succeded"), Cron.Minutely);
         //    return Ok("Intiated");
 
         //}
