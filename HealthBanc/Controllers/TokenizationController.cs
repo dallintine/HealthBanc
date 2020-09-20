@@ -228,7 +228,7 @@ namespace HealthBanc.Controllers
 
         [Authorize]
         [HttpGet("[action]")]
-        public async Task<IActionResult> CancelSubscription()
+        public async Task<IActionResult> CancelSubscription(string reason)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
