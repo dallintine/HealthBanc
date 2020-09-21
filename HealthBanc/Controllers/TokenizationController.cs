@@ -101,6 +101,10 @@ namespace HealthBanc.Controllers
                                 _completionRepository.Update(checkprofileComplete);
                                 await _completionRepository.Save();
 
+                                userAxamansardProfile.SubscriptionStatus = true;
+                                _mansardUserProfileRepository.Update(userAxamansardProfile);
+                                await _mansardUserProfileRepository.Save();
+
                                 return Ok(new ResponseMessage { Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
                             }
                             if (cardResponse.Status == true && cardResponse.ResponseCode == 12)
@@ -173,6 +177,10 @@ namespace HealthBanc.Controllers
                                 _completionRepository.Update(checkprofileComplete);
                                 await _completionRepository.Save();
 
+                                userAxamansardProfile.SubscriptionStatus = true;
+                                _mansardUserProfileRepository.Update(userAxamansardProfile);
+                                await _mansardUserProfileRepository.Save();
+
                                 return Ok(new ResponseMessage { Data = response.Data, Message = response.Message, Status = response.Status, ResponseCode = response.ResponseCode });
                             }
                             return BadRequest(new ResponseMessage { Data = response.Data, Message = response.Message, Status = response.Status, ResponseCode = response.ResponseCode });
@@ -235,7 +243,15 @@ namespace HealthBanc.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            return Ok(new ResponseMessage { Message="Subscription was cancelled successfully"});
+            var axamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
+            if(axamansardProfile.SubscriptionStatus == false)
+            {
+                return BadRequest(new ResponseMessage { Message = "Subscription was previously canceled", Status = false });
+            }
+            axamansardProfile.SubscriptionStatus = false;
+            _mansardUserProfileRepository.Update(axamansardProfile);
+            await _mansardUserProfileRepository.Save();
+            return Ok(new ResponseMessage { Message="Subscription was cancelled successfully",Status=true});
         }
 
         /// <summary>
