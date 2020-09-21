@@ -17,7 +17,7 @@ namespace HealthBanc.DataAccess.Implementation
 
         public async Task<DebitCard> GetCardByIdAsync(int id, int userId)
         {
-            return  await _context.Cards.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
+            return  await _context.Cards.Include(x => x.TokenizationReference).FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
         }
 
         public async Task<int> GetUserCardCount(int userId)

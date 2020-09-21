@@ -95,7 +95,7 @@ namespace HealthBanc.Controllers
 
                                 var debitCard = new Domain.Models.DebitCard(Id, userAxamansardProfile.Id, cardStatus, cardResponse.LastDigit, cardResponse.Signature, cardResponse.Type, tokenizeReference.Id);
                                 _cardRepository.Create(debitCard);
-                                //await _cardRepository.Save();
+                                await _cardRepository.Save();
 
                                 checkprofileComplete.TokenizationCompleted = true;
                                 _completionRepository.Update(checkprofileComplete);
@@ -218,6 +218,9 @@ namespace HealthBanc.Controllers
                 var response = await _tokenizationService.InsertSubscription(subscribe);
                 if (response.Status)
                 {
+                    userAxamansardProfile.SubscriptionStatus = true;
+                    _mansardUserProfileRepository.Update(userAxamansardProfile);
+                    await _mansardUserProfileRepository.Save();
                     return Ok(response);
                 }
                 return BadRequest(response);
@@ -306,13 +309,12 @@ namespace HealthBanc.Controllers
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
                 var card = await _cardRepository.GetCardByIdAsync(cardId, Id);
-                var tokenizationReference = await _tokenizationReference.GetBySuperAdminIdAsync(Id);
                 var userCardCount = await _cardRepository.GetUserCardCount(Id);
                 if (card == null) return NotFound(new ResponseMessage { Message = "No card tied to you was found" });
                 if (card.Status == 1 && userCardCount > 1) return BadRequest(new ResponseMessage { Message = "Set new primary card before you delete this card" });
-                if(tokenizationReference != null)
+                if(card.TokenizationReference != null)
                 {
-                    _tokenizationReference.Delete(tokenizationReference);
+                    _tokenizationReference.Delete(card.TokenizationReference);
                 }
                 _cardRepository.Delete(card);
                 await _cardRepository.Save();
