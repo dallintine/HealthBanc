@@ -166,11 +166,11 @@ namespace HealthBanc.Controllers
                                     var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
                                     axaInsuranceUser.SuperAdminId = Id;
                                     _axaMansard.Create(axaInsuranceUser);
-                                    //await _axaMansard.Save();
+                                    await _axaMansard.Save();
 
                                     var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
                                     _completionRepository.Create(completionProfile);
-                                    //await _completionRepository.Save();
+                                    await _completionRepository.Save();
 
                                     var newServiceString = user.ServiceUsed + "HealthInsured,";
                                     user.ServiceUsed = newServiceString;
