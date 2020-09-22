@@ -1,7 +1,5 @@
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.AssemblyInfoInputs.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.AssemblyInfo.cs
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.RazorAssemblyInfo.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.RazorAssemblyInfo.cs
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\appsettings.Development.json
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\appsettings.json
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Properties\launchSettings.json
@@ -13,7 +11,6 @@ C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netc
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.pdb
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.xml
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.Views.dll
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.Views.pdb
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Thrift.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Autofac.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Autofac.Extensions.DependencyInjection.dll
@@ -203,15 +200,7 @@ C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netc
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\win\lib\netcoreapp2.0\System.Runtime.Caching.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\win\lib\netcoreapp2.1\System.Security.Cryptography.Pkcs.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\win\lib\netstandard2.0\System.Security.Cryptography.ProtectedData.dll
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.TagHelpers.input.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.TagHelpers.output.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.RazorCoreGenerate.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\Razor\Views\Identity\AdminReg.cshtml.g.cs
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\Razor\Views\Identity\ConfirmEmail.cshtml.g.cs
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\Razor\Views\Identity\ResetPassword.cshtml.g.cs
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.RazorTargetAssemblyInfo.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.RazorTargetAssemblyInfo.cs
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.Views.pdb
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csproj.CopyComplete
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\staticwebassets\HealthBanc.StaticWebAssets.Manifest.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\staticwebassets\HealthBanc.StaticWebAssets.xml
@@ -239,4 +228,4 @@ C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netc
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csproj.CoreCompileInputs.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csprojAssemblyReference.cache
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\web.config

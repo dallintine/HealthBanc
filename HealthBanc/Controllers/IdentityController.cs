@@ -23,7 +23,7 @@ namespace HealthBanc.Controllers
 {
     [Route("v1/api/[controller]")]
     [ApiController]
-    public class IdentityController : Controller
+    public class IdentityController : ControllerBase
     {
         private readonly ILogger<IdentityController> _logger;
         private readonly IdentityService _identityService;
@@ -159,7 +159,6 @@ namespace HealthBanc.Controllers
             var confirmResult = await _identityService.SendUserEmailVerificationAsync(user);
             if (confirmResult.Status == true)
             {
-                ViewBag.Success = "Link was sent successfully, kindly check your email";
                 return Ok(new ResponseMessage { Message = "Link was sent successfully, kindly check your email", Status = true });
             }
             return BadRequest(new ResponseMessage { Message = confirmResult.Message, Status = false });
@@ -354,23 +353,7 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
-        [HttpGet("[action]")]
-        public async Task<IActionResult> SendPasswordResetLink(string email)
-        {
-            var model = new ForgotPasswordViewModel()
-            {
-                Username = email
-            };
-            var response = await _identityService.ForgotPassword(model);
-            if (response.Status == true)
-            {
-                ViewBag.Success = response.Message;
-                return View("ResetPassword");
-            }
-            ViewBag.Error = response.Message;
-            return View("ResetPassword");
-        }
-
+      
         //WORKING1
         /// <summary>
         /// Resets the user Password
@@ -410,7 +393,7 @@ namespace HealthBanc.Controllers
                 }
                 if(response.ResponseCode == 23)
                 {
-                    return RedirectToAction("ResetPasswordView");
+                    return BadRequest(response);
                 }             
                 return BadRequest(response);
             }
@@ -425,13 +408,8 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(errors);
         }       
-
-        [HttpGet("[action]")]
-        public IActionResult ResetPasswordView()
-        {
-            return View("ResetPassword");
-        }
-
+        
+        
         //WORKING1
         /// <summary>
         /// Changes the user password
@@ -578,14 +556,14 @@ namespace HealthBanc.Controllers
                 {
                     return Ok(response);
                 }
-                //if (response.ResponseCode == 2)
-                //{
-                //    return BadRequest(response);
-                //}
-                //if(response.ResponseCode == 23)
-                //{
-                //    return RedirectToAction("AdminRegView");
-                //}
+                if (response.ResponseCode == 2)
+                {
+                    return BadRequest(response);
+                }
+                if (response.ResponseCode == 23)
+                {
+                    return BadRequest(response);
+                }
                 return BadRequest(response);
             }
             //return validation errors
@@ -598,49 +576,6 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error });
             }
             return Unauthorized(errors);
-        }
-
-        [HttpGet("[action]")]
-        public IActionResult AdminRegView()
-        {
-            return View("AdminReg");
-        }
-
-        [HttpGet("[action]")]
-        public async Task<IActionResult> SendAdminConfirmationEmail(string email)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
-            var superAdmin = _userRepository.Find(x => x.SuperAdminId == user.SuperAdminId);   
-            if(superAdmin == null)
-            {
-                ViewBag.Error = "The superAdmin you registered under was not found. Kindly contact support";
-                return View("AdminReg");
-            }
-            if (user != null)
-            {
-                if(user.EmailConfirmed == true)
-                {
-                    ViewBag.Error = "Your email was confirmed previously, Kindly proceed to login";
-                    return View("AdminReg");
-                }
-                if(user.UniqueUsername == null)
-                {
-                    //Generate an email verification code
-                    var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-
-                    var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
-                    var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
-
-                    // TODO: Replace with APIRoutes that will contain the static routes to use
-
-                    var confirmationUrl = $"https://pharmmall.azurewebsites.net/set-new-password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}&destination=adminreg";
-                    _emailSender.SendEmail(user.UserName, "d-6035520c662a43fba6ad2718deaedf79", confirmationUrl, superAdmin.FirstName + " " + superAdmin.LastName);
-                    ViewBag.Success = "Link was sent successfully";
-                    return View("AdminReg");
-                }
-            }
-            ViewBag.Success = "User does not exist";
-            return View("AdminReg");
         }
 
         [HttpGet("[action]")]

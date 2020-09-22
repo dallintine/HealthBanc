@@ -548,7 +548,7 @@ namespace HealthBanc.Services.Identity
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error occured While Trying to Create Admin Security Questions");
+                    _logger.LogError(ex, "Error occured While Trying to create admin");
                 }
                 return new ResponseMessage { Message = "Error occured While Trying to Create Admin " };
             }
