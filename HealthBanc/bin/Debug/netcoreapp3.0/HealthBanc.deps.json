@@ -30,6 +30,7 @@
           "Autofac.Extensions.DependencyInjection": "4.4.0",
           "EPPlus": "4.5.3.2",
           "Hangfire": "1.7.12",
+          "Hangfire.Dashboard.Authorization": "3.0.0",
           "Jaeger": "0.4.1",
           "MediatR": "8.0.1",
           "MediatR.Extensions.Microsoft.DependencyInjection": "8.0.0",
@@ -495,6 +496,21 @@
         },
         "compile": {
           "lib/netstandard2.0/Hangfire.Core.dll": {}
+        }
+      },
+      "Hangfire.Dashboard.Authorization/3.0.0": {
+        "dependencies": {
+          "Hangfire.Core": "1.7.12",
+          "Owin": "1.0.0"
+        },
+        "runtime": {
+          "lib/net45/Hangfire.Dashboard.Authorization.dll": {
+            "assemblyVersion": "3.0.0.0",
+            "fileVersion": "3.0.0.0"
+          }
+        },
+        "compile": {
+          "lib/net45/Hangfire.Dashboard.Authorization.dll": {}
         }
       },
       "Hangfire.SqlServer/1.7.12": {
@@ -1948,6 +1964,17 @@
         },
         "compile": {
           "lib/netstandard2.0/OpenTracing.dll": {}
+        }
+      },
+      "Owin/1.0.0": {
+        "runtime": {
+          "lib/net40/Owin.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        },
+        "compile": {
+          "lib/net40/Owin.dll": {}
         }
       },
       "Polly/7.1.0": {
@@ -5385,6 +5412,13 @@
       "path": "hangfire.core/1.7.12",
       "hashPath": "hangfire.core.1.7.12.nupkg.sha512"
     },
+    "Hangfire.Dashboard.Authorization/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-H/ngumrBNsQ1U1BndcFKNL9O9D/OlKiUhBGC46Wds6Jzz0ScwRtuumPLE8mjf+3YxUvjRHHErQYflnY/o10qhA==",
+      "path": "hangfire.dashboard.authorization/3.0.0",
+      "hashPath": "hangfire.dashboard.authorization.3.0.0.nupkg.sha512"
+    },
     "Hangfire.SqlServer/1.7.12": {
       "type": "package",
       "serviceable": true,
@@ -6175,6 +6209,13 @@
       "sha512": "sha512-8i/Vnx/lbWzqqJ6J5lofguT4wBS99rfqKujWrFrTGAclQBZ5h1CgBlzGOTqsNjmMsxSTLpC+Ns6/f1RB0c4O/g==",
       "path": "opentracing/0.12.1",
       "hashPath": "opentracing.0.12.1.nupkg.sha512"
+    },
+    "Owin/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OseTFniKmyp76mEzOBwIKGBRS5eMoYNkMKaMXOpxx9jv88+b6mh1rSaw43vjBOItNhaLFG3d0a20PfHyibH5sw==",
+      "path": "owin/1.0.0",
+      "hashPath": "owin.1.0.0.nupkg.sha512"
     },
     "Polly/7.1.0": {
       "type": "package",

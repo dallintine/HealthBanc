@@ -150,9 +150,15 @@ namespace HealthBanc.Controllers
                                 //xmlDoc2.LoadXml(premiumResult.Data);
                                 //var premiumResponse = xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
 
-                                profile.Premium = Decimal.Parse("5600");
+                                if(profile.PlanCode == "Sterling Basic")
+                                {
+                                    profile.Premium = Decimal.Parse("1020");
+                                }
+                                else if(profile.PlanCode == "Sterling Silver")
+                                {
+                                    profile.Premium = Decimal.Parse("2050");
+                                }
 
-                                //profile.Premium = Decimal.Parse(premiumResponse);
                                 var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
                                 if (result.Status == true)
                                 {

@@ -126,6 +126,13 @@
              <response code="200">Success : Redirect to Login</response>
             <reponse code="400">Error : List of Input Validation Errors</reponse>
         </member>
+        <member name="M:HealthBanc.Controllers.IdentityController.Login(HealthBanc.ViewModels.LoginViewModel)">
+            <summary>
+            
+            </summary>
+            <param name="loginViewModel"></param>
+            <returns></returns>
+        </member>
         <member name="M:HealthBanc.Controllers.IdentityController.ForgotPassword(HealthBanc.ViewModels.ForgotPasswordViewModel)">
             <summary>
             Request user email to reset his password

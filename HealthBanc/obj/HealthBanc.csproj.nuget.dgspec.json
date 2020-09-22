@@ -65,6 +65,10 @@
               "target": "Package",
               "version": "[1.7.12, )"
             },
+            "Hangfire.Dashboard.Authorization": {
+              "target": "Package",
+              "version": "[3.0.0, )"
+            },
             "Jaeger": {
               "target": "Package",
               "version": "[0.4.1, )"
