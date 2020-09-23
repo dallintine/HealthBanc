@@ -3,6 +3,7 @@ using Hangfire;
 using HealthBanc.DataAccess.Implementation;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.DTO.ApplicationUserDTOs;
 using HealthBanc.DTO.TokenizationDTO;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
@@ -254,7 +255,9 @@ namespace HealthBanc.Controllers
             axamansardProfile.SubscriptionStatus = false;
             _mansardUserProfileRepository.Update(axamansardProfile);
             await _mansardUserProfileRepository.Save();
-            return Ok(new ResponseMessage { Message="Subscription was cancelled successfully",Status=true});
+
+            var profileDTO = _mapper.Map<AxaMansardUserDTO>(axamansardProfile);
+            return Ok(new ResponseMessage {Data= profileDTO, Message ="Subscription was cancelled successfully",Status=true});
         }
 
         /// <summary>
