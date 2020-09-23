@@ -279,7 +279,8 @@ namespace HealthBanc.Controllers
                     var cardDTO = _mapper.Map<List<DebitCard>, List<CardDTO>>(cards.Cards);
                     return Ok(new ResponseMessage<List<CardDTO>> { Data = cardDTO, Status = true, Message = "Cards was fetchd successfully" });
                 }
-                return BadRequest(new ResponseMessage<List<CardDTO>> { Message = "User has no card, Kindly add a card", Status = true });
+                var emptyCardDTO = new List<CardDTO>();
+                return Ok(new ResponseMessage<List<CardDTO>> {Data = emptyCardDTO, Message = "User has no card, Kindly add a card", Status = true });
             }
             return NotFound(new ResponseMessage<List<DebitCard>> { Status = false, Message = "User was not found" });
         }
