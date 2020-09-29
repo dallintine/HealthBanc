@@ -170,15 +170,15 @@ namespace HealthBanc.Services.Insurance
             }
         }
 
-        public ResponseInsure AxaMansardGetReligion(string token)
+        public ResponseInsure AxaMansardGetHealthProvider(string token,string state,string healthPlan)
         {
             var responseMessage = new ResponseInsure();
             try
             {
                 const string url = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
-                const string action = "http://tempuri.org/GetReligion";
+                const string action = "http://tempuri.org/GetHealthProviders";
 
-                XmlDocument soapEnvelopXml = CreateReligionEnvelope(token);
+                XmlDocument soapEnvelopXml = CreateHealthProvider(healthPlan,state,token);
                 HttpWebRequest webRequest = CreateWebRequest(url, action);
 
                 using (Stream stream = webRequest.GetRequestStream())
@@ -515,20 +515,6 @@ namespace HealthBanc.Services.Insurance
             return soapEnvelopeXml;
         }
 
-        private static XmlDocument CreateReligionEnvelope(string token)
-        {
-            XmlDocument soapEnvelopeXml = new XmlDocument();
-            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
-            <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"">
-                <soap:Body>
-                    <GetReligion xmlns=""http://tempuri.org/"">
-                    <token>{token}</token>
-                    </GetReligion>
-                </soap:Body>
-            </soap:Envelope>");
-            return soapEnvelopeXml;
-        }
-
         private static XmlDocument CreateTownEnvelope(string state,string token)
         {
             XmlDocument soapEnvelopeXml = new XmlDocument();
@@ -610,6 +596,22 @@ namespace HealthBanc.Services.Insurance
                 <soap:Body>
                   <GetBanks xmlns=""http://tempuri.org/""/>
                 </soap:Body>
+            </soap:Envelope>");
+            return soapEnvelopeXml;
+        }
+
+        private static XmlDocument CreateHealthProvider(string healthPlan,string state,string token)
+        {
+            XmlDocument soapEnvelopeXml = new XmlDocument();
+            soapEnvelopeXml.LoadXml($@"<?xml version=""1.0"" encoding=""utf-8""?>
+            <soap:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" >
+              <soap:Body>
+                <GetHealthProviders xmlns = ""http://tempuri.org/"">
+                  <HealthPlan>{healthPlan}</HealthPlan>
+                  <State>{state}</State>
+                  <Token>{token}</Token>
+                </GetHealthProviders>
+              </soap:Body>
             </soap:Envelope>");
             return soapEnvelopeXml;
         }

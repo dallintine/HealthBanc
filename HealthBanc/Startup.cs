@@ -14,6 +14,7 @@ using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Dispatchers;
 using HealthBanc.Domain.Models;
 using HealthBanc.Handlers.HealthMallAdmin;
+using HealthBanc.Helpers;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Messages.Events;
@@ -62,6 +63,7 @@ namespace HealthBanc
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                .AddJsonFile("town.json", false, true)
                 .AddEnvironmentVariables();
             this.Configuration = builder.Build();
         }
@@ -139,10 +141,12 @@ namespace HealthBanc
             services.AddScoped<IImageService, ImageService>();
             services.AddScoped<IApplicationUserRepository,ApplicationUserRepository>();
             services.Configure<AuthMessageSenderOption>(Configuration);
+            services.Configure<Towns>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
             services.AddScoped<InsuranceService>();
+            services.AddScoped<IAxaMansardSoap, HealthBanc.Services.Insurance.AxaMansardSoap>();
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
