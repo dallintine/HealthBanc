@@ -263,7 +263,7 @@ namespace HealthBanc.Controllers
             if (towns != null)
             {
                 var town = towns.Where(x => x.State == state).ToList();
-                return Ok(new ResponseMessage { Data = towns, Message = "Towns was fetched successfully", Status = true });
+                return Ok(new ResponseMessage { Data = town, Message = "Towns was fetched successfully", Status = true });
             }
             return BadRequest(new ResponseMessage { Message = "Towns could not  be fetched,please try again later", Status = false });
         }
