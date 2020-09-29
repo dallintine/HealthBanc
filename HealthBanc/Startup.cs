@@ -284,7 +284,7 @@ namespace HealthBanc
             // Register your own things directly with Autofac, like:
             builder.RegisterAssemblyTypes(Assembly.GetEntryAssembly())
                    .AsImplementedInterfaces();
-            //builder.AddRabbitMq();
+            builder.AddRabbitMq();
             builder.AddDispatchers();
         }
 
@@ -381,9 +381,9 @@ namespace HealthBanc
                 endpoints.MapControllers();
             });
 
-            //app.UseRabbitMq()
-            //    .SubscribeEvent<ServiceUsedCreated>()
-            //    .SubscribeEvent<AdminDeletedCreated>();
+            app.UseRabbitMq()
+                .SubscribeEvent<ServiceUsedCreated>()
+                .SubscribeEvent<AdminDeletedCreated>();
 
             applicationLifetime.ApplicationStopped.Register(() =>
             {
