@@ -58,5 +58,26 @@ namespace HealthBanc.Services.Insurance
             var response = await client.SaveHealthAsync(health, token);
             return response;
         }
+
+        public async Task<GetHealthPlansResponse> GetHealthPlansAsync(string token)
+        {
+            var client = await GetInstanceAsync();
+            var response = await client.GetHealthPlansAsync(token);
+            return response;
+        }
+
+        public async Task<GetHealthPremiumResponse> GetHealthPremiumAsync(string token,string planCode)
+        {
+            var client = await GetInstanceAsync();
+            var response = await client.GetHealthPremiumAsync(planCode, token);
+            return response;
+        }
+
+        public async Task<GetIdentificationTypesResponse> GetIdentificaionTypesAsync(string token)
+        {
+            var client = await GetInstanceAsync();
+            var response = await client.GetIdentificationTypesAsync(token);
+            return response;
+        }
     }
 }

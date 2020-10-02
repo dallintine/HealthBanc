@@ -25,6 +25,7 @@ using HealthBanc.Services.GlobalErrorHandling.Extensions;
 using HealthBanc.Services.Identity;
 using HealthBanc.Services.ImageService;
 using HealthBanc.Services.Insurance;
+using HealthBanc.Services.InsuredCancelLiveSheet;
 using HealthBanc.Services.PasswordManager;
 using HealthBanc.Services.Tokenization;
 using HealthBanc.ViewModels;
@@ -75,8 +76,8 @@ namespace HealthBanc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
-            //services.AddHangfireServer();
+            services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddHangfireServer();
 
             services.AddHsts(options =>
             {
@@ -157,6 +158,8 @@ namespace HealthBanc
             services.AddScoped<ITokenizationReferenceRepository, TokenizationReferenceRepository>();
             services.AddScoped<ICardRepository, CardRepository>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
+            services.AddScoped<LiveExcelList>();
+            services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -335,10 +338,10 @@ namespace HealthBanc
             }
 
 
-            //app.UseHangfireDashboard("/hangfire", new DashboardOptions
-            //{
-            //    Authorization = new[] { new MyAuthorizationFilter() }
-            //});
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization = new[] { new MyAuthorizationFilter() }
+            });
 
 
             app.UseCors("CorsPolicy");

@@ -225,7 +225,22 @@ C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netc
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\win\lib\netstandard2.0\System.Data.SqlClient.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Hangfire.Dashboard.Authorization.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Owin.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\web.config
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Connected Services\AxaMansardSoap\ConnectedService.json
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\town.json
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Google.Apis.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Google.Apis.Auth.PlatformServices.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Google.Apis.Auth.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Google.Apis.Core.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Google.Apis.Sheets.v4.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.ServiceModel.Duplex.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.ServiceModel.Http.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.ServiceModel.NetTcp.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.ServiceModel.Primitives.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.ServiceModel.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.ServiceModel.Security.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\unix\lib\netstandard2.0\System.Private.ServiceModel.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\runtimes\win7\lib\netstandard2.0\System.Private.ServiceModel.dll
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csproj.CoreCompileInputs.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\web.config

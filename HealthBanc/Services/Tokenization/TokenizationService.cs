@@ -1,4 +1,5 @@
-﻿using HealthBanc.DataAccess.Interfaces;
+﻿using AutoMapper;
+using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
@@ -23,15 +24,19 @@ namespace HealthBanc.Services.Tokenization
         private readonly ILogger<TokenizationService> _logger;
         private readonly SendLogViaWhatApp _logViaWhatApp;
         private readonly IAxaMansardUserProfileRepository _axaMansardUser;
+        private readonly IMapper _mapper;
+        private readonly IPaymentReferenceRepository _paymentReference;
 
         public TokenizationService(IWebHostEnvironment environment, IHttpClientFactory httpClientFactory,ILogger<TokenizationService> logger, SendLogViaWhatApp logViaWhatApp,
-            IAxaMansardUserProfileRepository axaMansardUser)
+            IAxaMansardUserProfileRepository axaMansardUser,IMapper mapper,IPaymentReferenceRepository paymentReference)
         {
             _environment = environment;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _logViaWhatApp = logViaWhatApp;
             _axaMansardUser = axaMansardUser;
+            _mapper = mapper;
+            _paymentReference = paymentReference;
         }
 
         public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard,int id)
@@ -74,7 +79,7 @@ namespace HealthBanc.Services.Tokenization
                             Message = "Card was tokenize successfully", Status = true,ResponseCode = 0};
                         if (chargeCardResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                     }
-                    return new TokenizationResponse { Message = chargeCardResponse.message +" "+ chargeCardResponse.data.message,Status = false };
+                    return new TokenizationResponse { Message = chargeCardResponse.message,Status = false };
                 }
                 _logViaWhatApp.SendLog("Couldnt connect with payment service: ChargeCard Service:");
                 _logger.LogCritical("Couldnt connect with payment service: ChargeCard Service:");
@@ -225,10 +230,15 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        public async Task<ResponseMessage> InsertSubscription(SubscribePayment subscribePayment)
+        public async Task<ResponseMessage> InsertSubscription(AxaMansardUserProfile userAxamansardProfile,TokenizationReference tokenization)
         {
             try
             {
+                var requestId = Guid.NewGuid().ToString();
+                var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
+                subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = requestId;
+                subscribePayment.Fees = 0;
+
                 var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync("api/Subscription/InsertSubscription", content);
@@ -239,6 +249,17 @@ namespace HealthBanc.Services.Tokenization
                     subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
                     if (subscribePaymentResponse.status == true)
                     {
+                        var payment = new PaymentReference()
+                        {
+                            Date = DateTime.Now,
+                            AxaMansardUserProfileId = userAxamansardProfile.Id,
+                            UserId = userAxamansardProfile.UserId,
+                            Amount = userAxamansardProfile.Premium,
+                            RequestId = requestId,
+                            Active = true,
+                        };
+                        _paymentReference.Create(payment);
+                        await _paymentReference.Save();
                         return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
                     }
                     return new ResponseMessage { Message = subscribePaymentResponse.message, Status = false };
@@ -253,10 +274,15 @@ namespace HealthBanc.Services.Tokenization
             }            
         }
 
-        public async Task<ResponseMessage> UpdateSubscription(SubscribePayment subscribePayment)
+        public async Task<ResponseMessage> UpdateSubscription(AxaMansardUserProfile userAxamansardProfile, TokenizationReference tokenization)
         {
             try
             {
+                var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
+                subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = tokenization.TokenReference;
+                var fee = subscribePayment.RepaymentAmount == 1000 ? 20 : 50;
+                subscribePayment.Fees = fee;
+
                 var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync("api/Subscription/UpdateSubscription", content);
@@ -279,6 +305,51 @@ namespace HealthBanc.Services.Tokenization
                 _logger.LogCritical("An error occurred while trying to InsertSubscription: " + ex);
                 return new ResponseMessage { Status = false, Message = "This on us. Can not insert subscription" };
             }
+        }
+
+        public async Task<ResponseMessage> CancelSubscription(AxaMansardUserProfile userAxamansardProfile)
+        {
+            try
+            {
+                var paymentReference = await _axaMansardUser.ActivePaymentReference(userAxamansardProfile.UserId);
+                if(paymentReference == null)
+                {
+                    userAxamansardProfile.SubscriptionStatus = false;
+                    _axaMansardUser.Update(userAxamansardProfile);
+                    await _axaMansardUser.Save();
+                }
+                var subscribePayment = new SubscribePayment()
+                {
+                    Channel = paymentReference.Channel,
+                    RequestId = paymentReference.RequestId
+                };
+                var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+                HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync("api/Subscription/CancelSubscription", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    var subscribePaymentResponse = new SubscribePaymentResponse();
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
+                    if (subscribePaymentResponse.status == true)
+                    {
+                        userAxamansardProfile.SubscriptionStatus = false;
+                        _axaMansardUser.Update(userAxamansardProfile);
+                        await _axaMansardUser.Save();
+
+                        return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
+                    }
+                    return new ResponseMessage { Message = subscribePaymentResponse.message, Status = false };
+                }
+                return new ResponseMessage { Message = "Could not connect to paystack payment service" };
+            }
+            catch (Exception ex)
+            {
+                _logViaWhatApp.SendLog("An error occurred while trying to InsertSubscription: " + ex.ToString());
+                _logger.LogCritical("An error occurred while trying to InsertSubscription: " + ex);
+                return new ResponseMessage { Status = false, Message = "Can not cancel subscrption now, please try again later" };
+            }
+
         }
 
         public async Task<ResponseMessage<ChargeCardResponse>> ValidateCharge (string reference)
@@ -306,5 +377,6 @@ namespace HealthBanc.Services.Tokenization
                 return new ResponseMessage<ChargeCardResponse> { Status = false };
             }
         }
+
     }
 }

@@ -3,11 +3,13 @@ using Hangfire;
 using HealthBanc.DataAccess.Implementation;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.DTO;
 using HealthBanc.DTO.ApplicationUserDTOs;
 using HealthBanc.DTO.TokenizationDTO;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Services;
+using HealthBanc.Services.InsuredCancelLiveSheet;
 using HealthBanc.Services.Tokenization;
 using HealthBanc.ViewModels;
 using HealthBanc.ViewModels.Tokenization;
@@ -35,10 +37,11 @@ namespace HealthBanc.Controllers
         private readonly ILogger<TokenizationController> _logger;
         private readonly ITokenizationReferenceRepository _tokenizationReference;
         private readonly ICardRepository _cardRepository;
+        private readonly LiveExcelList _liveExcelList;
 
         public TokenizationController(TokenizationService tokenizationService,IMapper mapper, IAxaMansardUserProfileRepository mansardUserProfileRepository,
             IAxaMansardCompletionRepository completionRepository,SendLogViaWhatApp logViaWhatApp,ILogger<TokenizationController> logger,
-            ITokenizationReferenceRepository tokenizationReference,ICardRepository cardRepository)
+            ITokenizationReferenceRepository tokenizationReference,ICardRepository cardRepository, LiveExcelList liveExcelList)
         {
             _tokenizationService = tokenizationService;
             _mapper = mapper;
@@ -48,6 +51,7 @@ namespace HealthBanc.Controllers
             _logger = logger;
             _tokenizationReference = tokenizationReference;
             _cardRepository = cardRepository;
+            _liveExcelList = liveExcelList;
         }
 
         /// <summary>
@@ -107,7 +111,8 @@ namespace HealthBanc.Controllers
                                 _mansardUserProfileRepository.Update(userAxamansardProfile);
                                 await _mansardUserProfileRepository.Save();
 
-                                RecurringJob.AddOrUpdate(() => Console.WriteLine("Test succeded"), Cron.Minutely);
+                                //var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(userAxamansardProfile,
+                                //   tokenizeReference),DateTime.Now.AddMinutes(2));
 
                                 return Ok(new ResponseMessage { Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
                             }
@@ -134,7 +139,7 @@ namespace HealthBanc.Controllers
             }
             catch(Exception ex)
             {
-                _logViaWhatApp.SendLog("An error occurred while trying to charge card:" + ex.ToString());
+                _logViaWhatApp.SendLog("An error occurred while trying to charge card:" + ex.Message.ToString());
                 _logger.LogCritical("An error occurred while trying to submit user otp:" + ex);
                 return BadRequest("An error occurred while trying to charge card:");                
             }
@@ -212,35 +217,6 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });            
         }
 
-        private async Task<IActionResult> InsertSubscription()
-        {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int Id = int.Parse(userId);
-
-            var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
-            var tokenization = await _cardRepository.GetPrimaryCardReference(Id);
-
-            if(userAxamansardProfile != null && tokenization != null)
-            {
-                var subscribe = _mapper.Map<SubscribePayment>(userAxamansardProfile);
-                subscribe.Token = tokenization.Authorization_Code; subscribe.RequestId = tokenization.TokenReference;
-                var fee = subscribe.RepaymentAmount == 1000 ? 20 : 50;
-                subscribe.Fees = fee;
-
-                var response = await _tokenizationService.InsertSubscription(subscribe);
-                if (response.Status)
-                {
-                    userAxamansardProfile.SubscriptionStatus = true;
-                    _mansardUserProfileRepository.Update(userAxamansardProfile);
-                    await _mansardUserProfileRepository.Save();
-                    return Ok(response);
-                }
-                return BadRequest(response);
-            }
-            _logger.LogCritical("An error occurrred. user wants to subscribe with no profile or tokenization of cards");
-            return BadRequest(new ResponseMessage { Message = "User cant subscribe unless card has been tokenize and user has a profile" });
-        }
-
         [Authorize]
         [HttpGet("[action]")]
         public async Task<IActionResult> CancelSubscription(string reason)
@@ -250,14 +226,18 @@ namespace HealthBanc.Controllers
             var axamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
             if(axamansardProfile.SubscriptionStatus == false)
             {
-                return BadRequest(new ResponseMessage { Message = "Subscription was previously canceled", Status = false });
+                return BadRequest(new ResponseMessage { Message = "You have no active subscription", Status = false });
             }
-            axamansardProfile.SubscriptionStatus = false;
-            _mansardUserProfileRepository.Update(axamansardProfile);
-            await _mansardUserProfileRepository.Save();
+            var cancelationResult = await _tokenizationService.CancelSubscription(axamansardProfile);
+            if(cancelationResult.Status == true)
+            {
+                var listDTO = _mapper.Map<InactiveUsersDTO>(axamansardProfile);
+                await _liveExcelList.WriteAsync(listDTO);
 
-            var profileDTO = _mapper.Map<AxaMansardUserDTO>(axamansardProfile);
-            return Ok(new ResponseMessage {Data= profileDTO, Message ="Subscription was cancelled successfully",Status=true});
+                var profileDTO = _mapper.Map<AxaMansardUserDTO>(axamansardProfile);
+                return Ok(new ResponseMessage { Data = profileDTO, Message = "Subscription was cancelled successfully", Status = true });
+            }
+            return BadRequest(cancelationResult);            
         }
 
         /// <summary>

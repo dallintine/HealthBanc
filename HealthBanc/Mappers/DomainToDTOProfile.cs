@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HealthBanc.Domain.Models;
+using HealthBanc.DTO;
 using HealthBanc.DTO.ApplicationUserDTOs;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using HealthBanc.DTO.TokenizationDTO;
@@ -28,6 +29,9 @@ namespace HealthBanc.Mappers
                 .ForMember(dest => dest.NextRepaymentDate, opt => opt.MapFrom(x => DateTime.Now.AddMonths(1)));
 
             CreateMap<DebitCard, CardDTO>();
+            CreateMap<AxaMansardUserProfile, InactiveUsersDTO>()
+                .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.Premium.ToString()))
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(x => x.DateOfBirth.ToString()));
         }
     }
 }
