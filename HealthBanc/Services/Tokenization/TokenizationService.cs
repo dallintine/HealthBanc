@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.DTO.TokenizationDTO;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Response.Tokenize;
@@ -230,48 +231,39 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        public async Task<ResponseMessage> InsertSubscription(AxaMansardUserProfile userAxamansardProfile,TokenizationReference tokenization)
+        public async Task<ResponseMessage> InsertSubscription(AxaMansardBackgroundDTO userAxamansardProfile,TokenizationReference tokenization)
         {
-            try
-            {
-                var requestId = Guid.NewGuid().ToString();
-                var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
-                subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = requestId;
-                subscribePayment.Fees = 0;
+            var requestId = Guid.NewGuid().ToString();
+            var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
+            subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = requestId;
+            subscribePayment.Fees = 0;
 
-                var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/Subscription/InsertSubscription", content);
-                if (response.IsSuccessStatusCode)
-                {
-                    var subscribePaymentResponse = new SubscribePaymentResponse();
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
-                    if (subscribePaymentResponse.status == true)
-                    {
-                        var payment = new PaymentReference()
-                        {
-                            Date = DateTime.Now,
-                            AxaMansardUserProfileId = userAxamansardProfile.Id,
-                            UserId = userAxamansardProfile.UserId,
-                            Amount = userAxamansardProfile.Premium,
-                            RequestId = requestId,
-                            Active = true,
-                        };
-                        _paymentReference.Create(payment);
-                        await _paymentReference.Save();
-                        return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
-                    }
-                    return new ResponseMessage { Message = subscribePaymentResponse.message, Status = false };
-                }
-                return new ResponseMessage { Message = "Could not connect to paystack payment service" };
-            }
-            catch(Exception ex)
+            var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync("api/Subscription/InsertSubscription", content);
+            if (response.IsSuccessStatusCode)
             {
-                _logViaWhatApp.SendLog("An error occurred while trying to InsertSubscription: " + ex.ToString());
-                _logger.LogCritical("An error occurred while trying to InsertSubscription: " + ex);
-                return new ResponseMessage { Status = false, Message = "This on us. Can not insert subscription" };
-            }            
+                var subscribePaymentResponse = new SubscribePaymentResponse();
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
+                if (subscribePaymentResponse.status == true)
+                {
+                    var payment = new PaymentReference()
+                    {
+                        Date = DateTime.Now,
+                        AxaMansardUserProfileId = userAxamansardProfile.Id,
+                        UserId = userAxamansardProfile.UserId,
+                        Amount = userAxamansardProfile.Premium,
+                        RequestId = requestId,
+                        Active = true,
+                    };
+                    _paymentReference.Create(payment);
+                    await _paymentReference.Save();
+                    return new ResponseMessage { Status = true, Message = subscribePaymentResponse.message };
+                }
+                return new ResponseMessage { Status = false, Message = subscribePaymentResponse.message };
+            }
+            return new ResponseMessage { Status = false, Message = "Couldnt connect to payment service" };
         }
 
         public async Task<ResponseMessage> UpdateSubscription(AxaMansardUserProfile userAxamansardProfile, TokenizationReference tokenization)

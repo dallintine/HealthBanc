@@ -19,7 +19,7 @@ namespace HealthBanc.Mappers
             CreateMap<Service, ServiceBreakdown>();
             CreateMap<ApplicationUser, ApplicationUserDTO>();
             CreateMap<AxaMansardUserProfile, AxaMansardUserDTO>();
-            CreateMap<AxaMansardUserProfile, SubscribePayment>()
+            CreateMap<AxaMansardBackgroundDTO, SubscribePayment>()
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(x => x.Othernames))
                 .ForMember(dest => dest.LastName, opt => opt.MapFrom(x => x.Surname))
                 .ForMember(dest => dest.EmailAddress, opt => opt.MapFrom(x => x.Email))
@@ -32,6 +32,8 @@ namespace HealthBanc.Mappers
             CreateMap<AxaMansardUserProfile, InactiveUsersDTO>()
                 .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.Premium.ToString()))
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(x => x.DateOfBirth.ToString()));
+
+            CreateMap<AxaMansardUserProfile, AxaMansardBackgroundDTO>();
         }
     }
 }

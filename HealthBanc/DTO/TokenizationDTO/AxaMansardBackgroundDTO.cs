@@ -8,7 +8,7 @@ namespace HealthBanc.DTO.TokenizationDTO
     public class AxaMansardBackgroundDTO
     {
         public int Id { get; set; }
-        public int SuperAdminId { get; set; }
+        public int UserId { get; set; }
         public string TransId { get; set; }
         public string Surname { get; set; }
         public string Othernames { get; set; }

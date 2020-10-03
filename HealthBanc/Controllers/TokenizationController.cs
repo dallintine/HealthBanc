@@ -38,10 +38,11 @@ namespace HealthBanc.Controllers
         private readonly ITokenizationReferenceRepository _tokenizationReference;
         private readonly ICardRepository _cardRepository;
         private readonly LiveExcelList _liveExcelList;
+        private readonly IPaymentReferenceRepository _paymentReference;
 
         public TokenizationController(TokenizationService tokenizationService,IMapper mapper, IAxaMansardUserProfileRepository mansardUserProfileRepository,
             IAxaMansardCompletionRepository completionRepository,SendLogViaWhatApp logViaWhatApp,ILogger<TokenizationController> logger,
-            ITokenizationReferenceRepository tokenizationReference,ICardRepository cardRepository, LiveExcelList liveExcelList)
+            ITokenizationReferenceRepository tokenizationReference,ICardRepository cardRepository, LiveExcelList liveExcelList,IPaymentReferenceRepository paymentReference)
         {
             _tokenizationService = tokenizationService;
             _mapper = mapper;
@@ -52,6 +53,7 @@ namespace HealthBanc.Controllers
             _tokenizationReference = tokenizationReference;
             _cardRepository = cardRepository;
             _liveExcelList = liveExcelList;
+            _paymentReference = paymentReference;
         }
 
         /// <summary>
@@ -92,7 +94,7 @@ namespace HealthBanc.Controllers
                                 var tokenizeReference = new TokenizationReference();
                                 tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = card.reference; tokenizeReference.Authorization_Code = cardResponse.AuthorizationCode;
                                 _tokenizationReference.Create(tokenizeReference);
-                                await _tokenizationReference.Save();
+                                await _tokenizationReference.Save();                                
 
                                 //If card count is 0. it means there is no card available, so the card tokenised will
                                 //be the primary card so primary card status is set to 1 
@@ -101,18 +103,18 @@ namespace HealthBanc.Controllers
 
                                 var debitCard = new Domain.Models.DebitCard(Id, userAxamansardProfile.Id, cardStatus, cardResponse.LastDigit, cardResponse.Signature, cardResponse.Type, tokenizeReference.Id);
                                 _cardRepository.Create(debitCard);
-                                await _cardRepository.Save();
 
                                 checkprofileComplete.TokenizationCompleted = true;
                                 _completionRepository.Update(checkprofileComplete);
-                                await _completionRepository.Save();
 
                                 userAxamansardProfile.SubscriptionStatus = true;
                                 _mansardUserProfileRepository.Update(userAxamansardProfile);
                                 await _mansardUserProfileRepository.Save();
 
-                                //var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(userAxamansardProfile,
-                                //   tokenizeReference),DateTime.Now.AddMinutes(2));
+                                //var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
+
+                                //var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                //   tokenizeReference), DateTime.Now.AddMinutes(2));
 
                                 return Ok(new ResponseMessage { Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
                             }
@@ -332,6 +334,30 @@ namespace HealthBanc.Controllers
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> ReactivateWithPresentPrimaryCard()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
+            var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
+
+            var tokenizationReference = await _cardRepository.GetPrimaryCardReference(Id);
+
+
+            var result = await _tokenizationService.InsertSubscription(use, tokenizationReference);
+            if (result.Status == true)
+            {
+                userAxamansardProfile.SubscriptionStatus = true;
+                _mansardUserProfileRepository.Update(userAxamansardProfile);
+
+                await _mansardUserProfileRepository.Save();
+                return Ok(result);
+            } 
+            return BadRequest(result);
         }
 
         //[HttpPost("[action]")]
