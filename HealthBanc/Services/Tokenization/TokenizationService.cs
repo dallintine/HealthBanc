@@ -313,11 +313,9 @@ namespace HealthBanc.Services.Tokenization
                     _axaMansardUser.Update(userAxamansardProfile);
                     await _axaMansardUser.Save();
                 }
-                var subscribePayment = new SubscribePayment()
-                {
-                    Channel = paymentReference.Channel,
-                    RequestId = paymentReference.RequestId
-                };
+                var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
+                subscribePayment.RequestId = paymentReference.RequestId; subscribePayment.Fees = 0;
+
                 var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync("api/Subscription/CancelSubscription", content);
