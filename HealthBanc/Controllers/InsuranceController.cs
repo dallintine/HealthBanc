@@ -391,7 +391,6 @@ namespace HealthBanc.Controllers
 
                             var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
                             axaInsuranceUser.UserId = Id;
-                            axaInsuranceUser.DateOfBirth = profile.DateOfBirth.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture);
                             _axaMansard.Create(axaInsuranceUser);
                             await _axaMansard.Save();
 
