@@ -364,7 +364,7 @@ namespace HealthBanc.Controllers
                         var profile = _mapper.Map<iHealth>(userProfile);
                         profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
                         profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value; profile.CPPhone = "Not Available"; profile.CPEmail = "Not Available";
-                        profile.DateOfBirth = userProfile.DateOfBirth;
+                        profile.DateOfBirth = userProfile.DateOfBirth; profile.CPAddress = "Lag"; profile.CPCity = "Lagos";
 
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
