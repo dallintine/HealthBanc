@@ -111,10 +111,10 @@ namespace HealthBanc.Controllers
                                 _mansardUserProfileRepository.Update(userAxamansardProfile);
                                 await _mansardUserProfileRepository.Save();
 
-                                //var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
+                                var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 
-                                //var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                //   tokenizeReference), DateTime.Now.AddMinutes(2));
+                                var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                   tokenizeReference), DateTime.Now.AddMinutes(2));
 
                                 return Ok(new ResponseMessage { Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
                             }
@@ -348,16 +348,16 @@ namespace HealthBanc.Controllers
             var tokenizationReference = await _cardRepository.GetPrimaryCardReference(Id);
 
 
-            var result = await _tokenizationService.InsertSubscription(use, tokenizationReference);
-            if (result.Status == true)
-            {
-                userAxamansardProfile.SubscriptionStatus = true;
-                _mansardUserProfileRepository.Update(userAxamansardProfile);
+            await _tokenizationService.InsertSubscription(use, tokenizationReference);
+            //if (result.Status == true)
+            //{
+            //    userAxamansardProfile.SubscriptionStatus = true;
+            //    _mansardUserProfileRepository.Update(userAxamansardProfile);
 
-                await _mansardUserProfileRepository.Save();
-                return Ok(result);
-            } 
-            return BadRequest(result);
+            //    await _mansardUserProfileRepository.Save();
+                return Ok(new ResponseMessage {Message="Reactivation was successful",Status=true });
+            //} 
+            //return BadRequest(result);
         }
 
         //[HttpPost("[action]")]

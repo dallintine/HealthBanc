@@ -231,7 +231,7 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        public async Task<ResponseMessage> InsertSubscription(AxaMansardBackgroundDTO userAxamansardProfile,TokenizationReference tokenization)
+        public async Task InsertSubscription(AxaMansardBackgroundDTO userAxamansardProfile,TokenizationReference tokenization)
         {
             var requestId = Guid.NewGuid().ToString();
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
@@ -259,11 +259,14 @@ namespace HealthBanc.Services.Tokenization
                     };
                     _paymentReference.Create(payment);
                     await _paymentReference.Save();
-                    return new ResponseMessage { Status = true, Message = subscribePaymentResponse.message };
+                    //return new ResponseMessage { Status = true, Message = subscribePaymentResponse.message };
+                    await Task.CompletedTask;
                 }
-                return new ResponseMessage { Status = false, Message = subscribePaymentResponse.message };
+                //return new ResponseMessage { Status = false, Message = subscribePaymentResponse.message };
+                await Task.CompletedTask;
             }
-            return new ResponseMessage { Status = false, Message = "Couldnt connect to payment service" };
+            //return new ResponseMessage { Status = false, Message = "Couldnt connect to payment service" };
+            await Task.CompletedTask;
         }
 
         public async Task<ResponseMessage> UpdateSubscription(AxaMansardUserProfile userAxamansardProfile, TokenizationReference tokenization)
