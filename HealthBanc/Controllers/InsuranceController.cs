@@ -129,7 +129,7 @@ namespace HealthBanc.Controllers
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
                         profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;profile.CPPhone = "Not Available";
-                        profile.CPEmail = "Not Available";
+                        profile.CPEmail = "Not Available";profile.CPAddress = "Lag";profile.CPCity = "Lagos";
 
                         var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
                         var returnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
