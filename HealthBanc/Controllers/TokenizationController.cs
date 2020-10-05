@@ -316,13 +316,14 @@ namespace HealthBanc.Controllers
                 var card = await _cardRepository.GetCardByIdAsync(cardId, Id);
                 var userCardCount = await _cardRepository.GetUserCardCount(Id);
                 if (card == null) return NotFound(new ResponseMessage { Message = "No card tied to you was found" });
+                if (userCardCount == 1) return BadRequest(new ResponseMessage { Message = "Kindly add a new card and set primary card before deleting primary card" });
                 if(card.TokenizationReference != null)
                 {
                     _tokenizationReference.Delete(card.TokenizationReference);
                 }
                 _cardRepository.Delete(card);
                 await _cardRepository.Save();
-                return Ok(new ResponseMessage { Message = "Card was deleted successfully" });
+                return Ok(new ResponseMessage { Message = "Card was deleted successfully",Status=true });
             }
             //return validation errors
             var errors = new List<string>();
