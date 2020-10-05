@@ -18,6 +18,7 @@ namespace HealthBanc.Mappers
             CreateMap<NotificationViewModel, Notification>();
             CreateMap<UserProfile, AxaMansardUserProfile>();
             CreateMap<UserProfileviewModel, iHealth>();
+            CreateMap<iHealth, AxaMansardUserProfile>();
             CreateMap<UpdateProfileViewModel, AxaMansardUserProfile>();
         }
     }
