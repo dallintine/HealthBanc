@@ -33,6 +33,7 @@ using HealthBanc.Helpers;
 using Microsoft.Extensions.Options;
 using HealthBanc.Services.InsuredCancelLiveSheet;
 using HealthBanc.DTO;
+using System.Globalization;
 
 namespace HealthBanc.Controllers
 {
@@ -129,6 +130,8 @@ namespace HealthBanc.Controllers
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
                         profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;profile.CPPhone = "Not Available";
+                        profile.TransId = _insuranceService.GetUniqueCode(12);
+                        profile.DateOfBirth = userProfile.DateOfBirth.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture);
                         profile.CPEmail = "Not Available";profile.CPAddress = "Lag";profile.CPCity = "Lagos";
 
                         var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
