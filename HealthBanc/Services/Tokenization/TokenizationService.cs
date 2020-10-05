@@ -70,7 +70,7 @@ namespace HealthBanc.Services.Tokenization
                             var user = await _axaMansardUser.GetByAdminIdAsync(id);
                             if (user != null)
                             {
-                                var result = await SubmitBirthDay(user.DateOfBirth,user,chargeCard.pin,chargeCard.reference);
+                                var result = await SubmitBirthDay(DateTime.Parse(user.DateOfBirth),user,chargeCard.pin,chargeCard.reference);
                                 return new TokenizationResponse { Status = result.Status, Message = result.Message, ResponseCode = result.ResponseCode };
                             }
                         }
@@ -113,7 +113,7 @@ namespace HealthBanc.Services.Tokenization
                         if (!validResponse.Contains(otpResponse.data.status)) return new TokenizationResponse { Message = otpResponse.data.url };
                         if (otpResponse.data.status == "send_birthday")
                         {
-                          var result = await SubmitBirthDay(user.DateOfBirth, user, pin,reference);
+                          var result = await SubmitBirthDay(DateTime.Parse(user.DateOfBirth), user, pin,reference);
                         }
                         if (otpResponse.data.status == "send_phone")
                         {
@@ -161,7 +161,7 @@ namespace HealthBanc.Services.Tokenization
                         if (phoneResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
                         if (phoneResponse.data.status == "send_birthday")
                         {
-                            var result = await SubmitBirthDay(user.DateOfBirth,user,pin,reference);
+                            var result = await SubmitBirthDay(DateTime.Parse(user.DateOfBirth),user,pin,reference);
                         }
                         if (phoneResponse.data.status == "send_pin")
                         {
