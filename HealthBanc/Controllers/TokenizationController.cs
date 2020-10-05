@@ -316,7 +316,7 @@ namespace HealthBanc.Controllers
                 var card = await _cardRepository.GetCardByIdAsync(cardId, Id);
                 var userCardCount = await _cardRepository.GetUserCardCount(Id);
                 if (card == null) return NotFound(new ResponseMessage { Message = "No card tied to you was found" });
-                if (userCardCount == 1) return BadRequest(new ResponseMessage { Message = "Kindly add a new card and set primary card before deleting primary card" });
+                if (card.Status == 1) return BadRequest(new ResponseMessage { Message = "Kindly change primary card,add a new card or cancel subscription to delete present primary card" });
                 if(card.TokenizationReference != null)
                 {
                     _tokenizationReference.Delete(card.TokenizationReference);
