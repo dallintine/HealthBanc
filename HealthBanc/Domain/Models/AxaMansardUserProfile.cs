@@ -15,7 +15,7 @@ namespace HealthBanc.Domain.Models
         public string Surname { get; set; }
         public string Othernames { get; set; }
         public string MaidenName { get; set; }
-        public string DateOfBirth { get; set; }
+        public DateTime DateOfBirth { get; set; }
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
         public string ContactAddress { get; set; }

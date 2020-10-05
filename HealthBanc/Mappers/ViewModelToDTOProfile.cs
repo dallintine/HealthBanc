@@ -17,8 +17,7 @@ namespace HealthBanc.Mappers
         {
             CreateMap<HeliumHealthCollectionViewModel, HelloEmail>();
 
-            CreateMap<UserProfileviewModel, UserProfile>()
-                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(x => x.DateOfBirth.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture)));
+            CreateMap<UserProfileviewModel, UserProfile>();
 
             CreateMap<Card, HealthBanc.Request.Tokenize.Card>();
         }
