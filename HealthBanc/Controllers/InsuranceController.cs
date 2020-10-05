@@ -128,7 +128,8 @@ namespace HealthBanc.Controllers
 
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
-                        profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
+                        profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;profile.CPPhone = "Not Available";
+                        profile.CPEmail = "Not Available";
 
                         var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
                         var returnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
@@ -178,7 +179,7 @@ namespace HealthBanc.Controllers
                             getResponse2.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
                             return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
                         }
-                        return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
+                        return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token from  axa mansard: Connection timeout", Status = false });
                     }
                     return BadRequest(new ResponseMessage { Message = "Token could not be fetched,please try again later: Connection timeout", Status = false });
                 }
