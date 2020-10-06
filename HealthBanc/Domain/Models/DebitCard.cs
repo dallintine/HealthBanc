@@ -12,13 +12,12 @@ namespace HealthBanc.Domain.Models
         {
 
         }
-        public DebitCard(int userId, int axaMansardUserProfileId, int status, string lastFourDigit,string signature,string type, int tokenizationReferenceId)
+        public DebitCard(int userId, int axaMansardUserProfileId, int status, string lastFourDigit,string type, int tokenizationReferenceId)
         {
             UserId = userId;
             AxaMansardUserProfileId = axaMansardUserProfileId;
             Status = status;
             LastFourDigit = lastFourDigit;
-            Signature = signature;
             Type = type;
             TokenizationReferenceId = tokenizationReferenceId;
         }
@@ -30,7 +29,6 @@ namespace HealthBanc.Domain.Models
         [JsonIgnore]
         public AxaMansardUserProfile AxaMansardUserProfile {get;set;}
         public string LastFourDigit { get; set; }
-        public string Signature { get; set; }
         public string Type { get; set; }
         public int TokenizationReferenceId { get; set; }
         public TokenizationReference TokenizationReference { get; set; }

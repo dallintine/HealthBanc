@@ -9,7 +9,7 @@ namespace HealthBanc.DataAccess.Interfaces
 {
     public interface ICardRepository : IBaseRepository<DebitCard>
     {
-        Task<DebitCard> CheckIfCardWasPreviouslyTokenized(int id, string signature);
+        Task<DebitCard> CheckIfCardWasPreviouslyTokenized(int id, string lastFourDigit);
         Task<DebitCard> GetCardByIdAsync(int id, int userId);
         Task<DebitCard> GetPrimaryCard(int userId);
         Task<TokenizationReference> GetPrimaryCardReference(int id);
