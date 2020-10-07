@@ -2,12 +2,14 @@
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.TokenizationDTO;
+using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Response.Tokenize;
 using HealthBanc.ViewModels.Tokenization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -27,10 +29,12 @@ namespace HealthBanc.Services.Tokenization
         private readonly IAxaMansardUserProfileRepository _axaMansardUser;
         private readonly IMapper _mapper;
         private readonly IPaymentReferenceRepository _paymentReference;
+        private AppEndpoint Options { get; }
 
         public TokenizationService(IWebHostEnvironment environment, IHttpClientFactory httpClientFactory,ILogger<TokenizationService> logger, SendLogViaWhatApp logViaWhatApp,
-            IAxaMansardUserProfileRepository axaMansardUser,IMapper mapper,IPaymentReferenceRepository paymentReference)
+            IAxaMansardUserProfileRepository axaMansardUser,IMapper mapper,IPaymentReferenceRepository paymentReference, IOptions<AppEndpoint> optionAccessor)
         {
+            Options = optionAccessor.Value;
             _environment = environment;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
@@ -46,7 +50,7 @@ namespace HealthBanc.Services.Tokenization
             {
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(chargeCard), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/paystack/ChargeCard", content);
+                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationChargeCard, content);
                 if (response.IsSuccessStatusCode)
                 {
                     var chargeCardResponse = new ChargeCardResponse();
@@ -80,7 +84,8 @@ namespace HealthBanc.Services.Tokenization
                             Message = "Card was tokenize successfully", Status = true,ResponseCode = 0};
                         if (chargeCardResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                     }
-                    return new TokenizationResponse { Message = chargeCardResponse.message,Status = false };
+                    var message = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
+                    return new TokenizationResponse { Message = chargeCardResponse.message+", "+message,Status = false };
                 }
                 _logViaWhatApp.SendLog("Couldnt connect with payment service: ChargeCard Service:");
                 _logger.LogCritical("Couldnt connect with payment service: ChargeCard Service:");
@@ -101,7 +106,7 @@ namespace HealthBanc.Services.Tokenization
                 var otpRequest = new SendOtp(otp, reference);
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(otpRequest), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/paystack/SubmitOTP", content);
+                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationSendOtp, content);
                 if (response.IsSuccessStatusCode)
                 {
                     var otpResponse = new ChargeCardResponse();
@@ -148,7 +153,7 @@ namespace HealthBanc.Services.Tokenization
                 var phoneRequest = new SubmitPhoneNumber(phoneNumber, reference);
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneRequest), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/paystack/SubmitPhone", content);
+                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationSubmitPhone, content);
                 if (response.IsSuccessStatusCode)
                 {
                     var phoneResponse = new ChargeCardResponse();
@@ -193,7 +198,7 @@ namespace HealthBanc.Services.Tokenization
                 var birthRequest = new SubmitBirthday(date, reference);
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(birthRequest), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/paystack/SubmitBirthDay", content);
+                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationaSubmitBirthDay, content);
                 if (response.IsSuccessStatusCode)
                 {
                     var birthdayResponse = new ChargeCardResponse();
@@ -240,7 +245,7 @@ namespace HealthBanc.Services.Tokenization
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync("api/Subscription/InsertSubscription", content);
+            var response = await httpClient.PostAsync(Options.APIUri.PaystackPaymentInsertSubscription, content);
             if (response.IsSuccessStatusCode)
             {
                 var subscribePaymentResponse = new SubscribePaymentResponse();
@@ -280,7 +285,7 @@ namespace HealthBanc.Services.Tokenization
 
                 var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/Subscription/UpdateSubscription", content);
+                var response = await httpClient.PostAsync(Options.APIUri.PaystackPaymentUpdateSubscription, content);
                 if (response.IsSuccessStatusCode)
                 {
                     var updatePaymentResponse = new SubscribePaymentResponse();
@@ -318,7 +323,7 @@ namespace HealthBanc.Services.Tokenization
 
                 var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/Subscription/CancelSubscription", content);
+                var response = await httpClient.PostAsync(Options.APIUri.PaystackPaymentCancelSubscription, content);
                 if (response.IsSuccessStatusCode)
                 {
                     var subscribePaymentResponse = new SubscribePaymentResponse();
@@ -352,7 +357,7 @@ namespace HealthBanc.Services.Tokenization
                 var validateChargeRequest = new ValidateCharge(reference);
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(validateChargeRequest), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync("api/paystack/ValidateCharge", content);
+                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationValidateCharge, content);
                 if (response.IsSuccessStatusCode)
                 {
                     var birthdayResponse = new ChargeCardResponse();
@@ -370,6 +375,5 @@ namespace HealthBanc.Services.Tokenization
                 return new ResponseMessage<ChargeCardResponse> { Status = false };
             }
         }
-
     }
 }

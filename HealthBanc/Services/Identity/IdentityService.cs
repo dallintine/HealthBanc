@@ -5,8 +5,6 @@ using HealthBanc.Domain.Models;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
-using HealthBanc.Messages.Events;
-using HealthBanc.RabbitMq;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.PasswordManager;
@@ -38,7 +36,6 @@ namespace HealthBanc.Services.Identity
         private readonly IApplicationUserRepository _userRepository;
         private readonly IClassOrRoleRepository _classOrRole;
         private readonly IMapper _mapper;
-        private readonly IBusPublisher _busPublisher;
         private readonly JwtSettings _jwtsettings;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly ApplicationDbContext _dbContext;
@@ -46,7 +43,7 @@ namespace HealthBanc.Services.Identity
 
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
              IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
-             IBusPublisher busPublisher, TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext, IPasswordHasher passwordHasher)
+              TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext, IPasswordHasher passwordHasher)
         {
             _logger = logger;
             _userManager = userManager;
@@ -55,7 +52,6 @@ namespace HealthBanc.Services.Identity
             _userRepository = userRepository;
             _classOrRole = classOrRole;
             _mapper = mapper;
-            _busPublisher = busPublisher;
             _jwtsettings = jwtsettings.Value;
             _tokenValidationParameters = tokenValidationParameters;
             _dbContext = dbContext;
@@ -468,9 +464,6 @@ namespace HealthBanc.Services.Identity
                         _emailSender.SendEmail(user.UserName, "d-6035520c662a43fba6ad2718deaedf79", confirmationUrl, superAdmin.FirstName + " " + superAdmin.LastName);
 
 
-                        await _busPublisher.PublishAsync( new AdminCreated(user.Id,regViewModel.StockOrderLimit, regViewModel.FirstName, regViewModel.LastName, regViewModel.Email, regViewModel.PhoneNumber,
-                            superAdminId, superAdminEmail, regViewModel.ClassOrRoleId), null);
-
                         return new ResponseMessage
                         {
                             Message = "Admin was invited successfully. Admin should check email for invite",
@@ -508,9 +501,6 @@ namespace HealthBanc.Services.Identity
 
                     var loginPage = $"https://pharmmall.azurewebsites.net/signin";
                     _emailSender.SendEmail(checkIfAdminExist.Email, "d-bb5d5f1175764248be51f9c1bdaf533e", loginPage, superAdmin.FirstName +" "+superAdmin.LastName);
-
-                    await _busPublisher.PublishAsync(new AdminCreated(checkIfAdminExist.Id, regViewModel.StockOrderLimit, checkIfAdminExist.FirstName, checkIfAdminExist.LastName,
-                        checkIfAdminExist.Email, checkIfAdminExist.PhoneNumber,superAdminId, superAdminEmail, regViewModel.ClassOrRoleId), null);
 
                     return new ResponseMessage
                     {

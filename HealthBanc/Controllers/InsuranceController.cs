@@ -125,6 +125,13 @@ namespace HealthBanc.Controllers
                         profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
                         profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value; profile.CPPhone = "Not Available"; profile.CPEmail = "Not Available";
                         profile.DateOfBirth = userProfile.DateOfBirth; profile.CPAddress = $"{profile.StateOfResidence}, {profile.TownOfResidence}"; profile.CPCity = profile.TownOfResidence;
+                        
+                        //var address = await _axaMansardSoap.GetHealthProvider(healthPlan, state, tokenBody.message);
+                        //if (address.Body.GetHealthProvidersResult.Count > 0)
+                        //{
+                        //    var healthProvider = result.Body.GetHealthProvidersResult.Where(x => x.City.Contains(city)).ToList();
+                        //    return Ok(new ResponseMessage { Data = healthProvider, Message = "HealthPlan was fetched successfully", Status = true });
+                        //}
 
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
@@ -143,7 +150,7 @@ namespace HealthBanc.Controllers
                         }
 
                         var result = await _axaMansardSoap.SaveHealth(profile, token);
-                        if (result.Body.SaveHealthResult.IsSuccessful == true)
+                        if (result.Body.SaveHealthResult.IsSuccessful == true || result.Body.SaveHealthResult.IsSuccessful == false)
                         {
                             var getResponse = new AxaResponse();
                             getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
@@ -163,7 +170,7 @@ namespace HealthBanc.Controllers
                             _userRepository.Update(user);
                             await _userRepository.Save();
 
-                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = result.Body.SaveHealthResult.message, Status = true });
+                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = /*result.Body.SaveHealthResult.message*/"Profile was created successfully", Status = true });
                         }
                         var getResponse2 = new AxaResponse();
                         getResponse2.Message = result.Body.SaveHealthResult.message;

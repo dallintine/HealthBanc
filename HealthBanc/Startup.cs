@@ -11,14 +11,11 @@ using Hangfire;
 using HealthBanc.Data;
 using HealthBanc.DataAccess.Implementation;
 using HealthBanc.DataAccess.Interfaces;
-using HealthBanc.Dispatchers;
 using HealthBanc.Domain.Models;
-using HealthBanc.Handlers.HealthMallAdmin;
 using HealthBanc.Helpers;
 using HealthBanc.Helpers.Jwt_Authorization;
+using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Infrastructure.Mail;
-using HealthBanc.Messages.Events;
-using HealthBanc.RabbitMq;
 using HealthBanc.Services;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.GlobalErrorHandling.Extensions;
@@ -127,12 +124,7 @@ namespace HealthBanc
                 x.IncludeXmlComments(xmlPath);
             });
 
-            ///////////////Add Swagger Service/////////////////////////
-            //
-
-            //SetOutputFormatters(services);
-
-
+            
             /////////////////////////////////////Register Services//////////////////////////////
 
             services.AddAutoMapper(typeof(Startup));
@@ -143,6 +135,8 @@ namespace HealthBanc
             services.AddScoped<IApplicationUserRepository,ApplicationUserRepository>();
             services.Configure<AuthMessageSenderOption>(Configuration);
             services.Configure<Towns>(Configuration);
+            services.Configure<AxaMansard>(Configuration);
+            services.Configure<AppEndpoint>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
@@ -160,6 +154,7 @@ namespace HealthBanc
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<LiveExcelList>();
             services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
+            services.Configure<Image>(Configuration);
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -180,7 +175,6 @@ namespace HealthBanc
 
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
-                //options.TokenLifespan = TimeSpan.FromDays(2));
                  options.TokenLifespan = TimeSpan.FromDays(5));
 
 
@@ -193,25 +187,29 @@ namespace HealthBanc
 
 
 
-            ///////Add http client
+            /////////////////////////////////////////Add http client//////////////////////////////////////////////
+            
+            var baseUrl = Configuration.GetSection("APIUri");
+            services.Configure<APIUri>(baseUrl);
+            var baseUrlValues = baseUrl.Get<APIUri>();
 
             services.AddHttpClient("Fiorano", client =>
             {
-                client.BaseAddress = new Uri("http://172.18.4.77:1880/restgateway/services/");
+                client.BaseAddress = new Uri(baseUrlValues.FiorianoBaseAddress);
             })
                 .AddTransientHttpErrorPolicy(x =>
                 x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
             services.AddHttpClient("Paystack", client =>
             {
-                client.BaseAddress = new Uri("http://flutterapi.sterlingapps.p.azurewebsites.net/");
+                client.BaseAddress = new Uri(baseUrlValues.PayStackTokenisationBaseAddress);
             })
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
             services.AddHttpClient("PaystackPayment", client =>
             {
-                client.BaseAddress = new Uri("https://dfs.sterlingapps.p.azurewebsites.net/");
+                client.BaseAddress = new Uri(baseUrlValues.PaystackPaymentBaseAddress);
             })
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
@@ -286,9 +284,7 @@ namespace HealthBanc
         {
             // Register your own things directly with Autofac, like:
             builder.RegisterAssemblyTypes(Assembly.GetEntryAssembly())
-                   .AsImplementedInterfaces();
-            builder.AddRabbitMq();
-            builder.AddDispatchers();
+                   .AsImplementedInterfaces();           
         }
 
         public static class TokenLifetimeValidator
@@ -383,10 +379,6 @@ namespace HealthBanc
             {
                 endpoints.MapControllers();
             });
-
-            app.UseRabbitMq()
-                .SubscribeEvent<ServiceUsedCreated>()
-                .SubscribeEvent<AdminDeletedCreated>();
 
             applicationLifetime.ApplicationStopped.Register(() =>
             {

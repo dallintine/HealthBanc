@@ -2,6 +2,7 @@
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Helpers.Jwt_Authorization;
+using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Response;
 using HealthBanc.ViewModels;
 using Microsoft.AspNet.OData;
@@ -37,11 +38,13 @@ namespace HealthBanc.Controllers
         private readonly IBackendAdminRepository _adminRepository;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly JwtSettings _jwtsettings;
+        private readonly AppEndpoint _appEndpoint;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
             ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
-            TokenValidationParameters tokenValidationParameters)
+            TokenValidationParameters tokenValidationParameters, IOptions<AppEndpoint> optionAccessor)
         {
+            _appEndpoint = optionAccessor.Value;
             _userManager = userManager;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
@@ -79,7 +82,7 @@ namespace HealthBanc.Controllers
                         var loginCredentials = new ADCredentialsRoot();
                         loginCredentials.AD_Credentials = aDCredentials;
                         HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
-                        var authentication = await httpClient.PostAsync("AD/ADAuthentication", content);
+                        var authentication = await httpClient.PostAsync(_appEndpoint.APIUri.FiorianoADAuthentication, content);
                         if (authentication.IsSuccessStatusCode)
                         {
                             string apiResponse = await authentication.Content.ReadAsStringAsync();
