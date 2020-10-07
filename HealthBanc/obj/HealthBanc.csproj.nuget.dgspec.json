@@ -1,24 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {}
+    "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {}
   },
   "projects": {
-    "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {
+    "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
+        "projectUniqueName": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
         "projectName": "HealthBanc",
-        "projectPath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
-        "packagesPath": "C:\\Users\\HASSAN\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\obj\\",
+        "projectPath": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
+        "packagesPath": "C:\\Users\\Okosodoec\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Microsoft\\Xamarin\\NuGet\\"
         ],
         "configFilePaths": [
-          "C:\\Users\\HASSAN\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Okosodoec\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
         ],
         "originalTargetFrameworks": [
           "netcoreapp3.0"
@@ -247,7 +248,7 @@
             },
             {
               "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[3.0.3, 3.0.3]"
+              "version": "[3.0.2, 3.0.2]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
@@ -266,7 +267,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.302\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.101\\RuntimeIdentifierGraph.json"
         }
       }
     }
