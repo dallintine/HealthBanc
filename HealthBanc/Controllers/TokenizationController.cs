@@ -113,7 +113,7 @@ namespace HealthBanc.Controllers
                                 _mansardUserProfileRepository.Update(userAxamansardProfile);
                                 await _mansardUserProfileRepository.Save();
 
-                                if(userAxamansardProfile.Cards.Count == 0)
+                                if(userAxamansardProfile.Cards.Count == 1)
                                 {
                                     var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 
@@ -194,7 +194,7 @@ namespace HealthBanc.Controllers
                                 _mansardUserProfileRepository.Update(userAxamansardProfile);
                                 await _mansardUserProfileRepository.Save();
 
-                                if (userAxamansardProfile.Cards.Count == 0)
+                                if (userAxamansardProfile.Cards.Count == 1)
                                 {
                                     var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 

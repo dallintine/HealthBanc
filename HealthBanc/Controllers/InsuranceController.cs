@@ -128,15 +128,15 @@ namespace HealthBanc.Controllers
                         profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value; profile.CPPhone = "Not Available"; profile.CPEmail = "Not Available";
                         profile.DateOfBirth = userProfile.DateOfBirth; profile.CPCity = profile.TownOfResidence;
 
-                        //profile.CPAddress = $"{profile.StateOfResidence}, {profile.TownOfResidence}";
+                        profile.CPAddress = $"{profile.StateOfResidence}, {profile.TownOfResidence}";
 
-                        var address = await _axaMansardSoap.GetHealthProvider(profile.PlanCode, profile.StateOfResidence, token);
-                        if (address.Body.GetHealthProvidersResult.Count > 0)
-                        {
-                            var primaryHealthAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.HospitalName.Contains(profile.CareProviderName)).FirstOrDefault();
-                            profile.CPAddress = primaryHealthAddress.Address;
-                            //var primarySecondaryAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.Address.Contains(profile.AlternateHospital)).ToList();                            
-                        }
+                        //var address = await _axaMansardSoap.GetHealthProvider(profile.PlanCode, profile.StateOfResidence, token);
+                        //if (address.Body.GetHealthProvidersResult.Count > 0)
+                        //{
+                        //    var primaryHealthAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.HospitalName.Contains(profile.CareProviderName)).FirstOrDefault();
+                        //    profile.CPAddress = primaryHealthAddress.Address;
+                        //    //var primarySecondaryAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.Address.Contains(profile.AlternateHospital)).ToList();                            
+                        //}
 
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
