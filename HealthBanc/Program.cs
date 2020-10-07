@@ -25,11 +25,8 @@ namespace HealthBanc
         {
             public ApplicationDbContext CreateDbContext(string[] args)
             {
-                                    Server
                 var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-                optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
-
-                                   
+                optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");                                  
 
                 return new ApplicationDbContext(optionsBuilder.Options);
             }
