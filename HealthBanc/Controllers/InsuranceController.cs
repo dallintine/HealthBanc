@@ -121,24 +121,29 @@ namespace HealthBanc.Controllers
                     var tokenResult = await _axaMansardSoap.GetTokenRequest();
                     if (tokenResult.Body.getTokenResult.IsSuccessful == true)
                     {
+                        var token = tokenResult.Body.getTokenResult.message;
+
                         var profile = _mapper.Map<iHealth>(userProfile);
                         profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
                         profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value; profile.CPPhone = "Not Available"; profile.CPEmail = "Not Available";
-                        profile.DateOfBirth = userProfile.DateOfBirth; profile.CPAddress = $"{profile.StateOfResidence}, {profile.TownOfResidence}"; profile.CPCity = profile.TownOfResidence;
-                        
-                        //var address = await _axaMansardSoap.GetHealthProvider(healthPlan, state, tokenBody.message);
-                        //if (address.Body.GetHealthProvidersResult.Count > 0)
-                        //{
-                        //    var healthProvider = result.Body.GetHealthProvidersResult.Where(x => x.City.Contains(city)).ToList();
-                        //    return Ok(new ResponseMessage { Data = healthProvider, Message = "HealthPlan was fetched successfully", Status = true });
-                        //}
+                        profile.DateOfBirth = userProfile.DateOfBirth; profile.CPCity = profile.TownOfResidence;
+
+                        //profile.CPAddress = $"{profile.StateOfResidence}, {profile.TownOfResidence}";
+
+                        var address = await _axaMansardSoap.GetHealthProvider(profile.PlanCode, profile.StateOfResidence, token);
+                        if (address.Body.GetHealthProvidersResult.Count > 0)
+                        {
+                            var primaryHealthAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.Address.Contains(profile.CPAddress)).FirstOrDefault();
+                            profile.CPAddress = primaryHealthAddress.Address;
+                            //var primarySecondaryAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.Address.Contains(profile.AlternateHospital)).ToList();                            
+                        }
 
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
                         profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
                         profile.TransId = _insuranceService.GetUniqueCode(12);
 
-                        var token = tokenResult.Body.getTokenResult.message;
+                      
 
                         if (profile.PlanCode == "7")
                         {
