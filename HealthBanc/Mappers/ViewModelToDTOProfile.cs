@@ -4,6 +4,7 @@ using HealthBanc.ViewModels;
 using HealthBanc.ViewModels.AxaMansard;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using static HealthBanc.Infrastructure.Mail.EmailSender;

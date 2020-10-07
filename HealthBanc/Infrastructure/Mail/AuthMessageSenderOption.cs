@@ -9,6 +9,5 @@ namespace HealthBanc.Infrastructure.Mail
     {
         public string SendGriduser { get; set; }
         public string SendGridApiKey { get; set; }
-        public string AzureConnectionString { get; set; }
     }
 }

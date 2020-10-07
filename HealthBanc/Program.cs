@@ -20,19 +20,7 @@ using Twilio;
 namespace HealthBanc
 {
     public class Program
-    {      
-
-        //public class BackendDbContextFactory : IDesignTimeDbContextFactory<BackendDbContext>
-        //{
-        //    public BackendDbContext CreateDbContext(string[] args)
-        //    {
-        //        var optionsBuilder = new DbContextOptionsBuilder<BackendDbContext>();
-        //        optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBancBackend; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
-
-        //        return new BackendDbContext(optionsBuilder.Options);
-        //    }
-        //}
-
+    {   
         public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
         {
             public ApplicationDbContext CreateDbContext(string[] args)

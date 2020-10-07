@@ -8,7 +8,7 @@ namespace HealthBanc.Domain.Models
     public class AxaMansardUserProfile
     {
         public int Id { get; set; }
-        public int SuperAdminId { get; set; }
+        public int UserId { get; set; }
         public string TransId { get; set; }
         public string Gender { get; set; }
         public string CustomerNo { get; set; }
@@ -46,5 +46,6 @@ namespace HealthBanc.Domain.Models
         public string TownOfResidence { get; set; }
         public bool SubscriptionStatus { get; set; }
         public List<DebitCard> Cards { get; set; }
+        public List<PaymentReference> PaymentReferences { get; set; }
     }
 }

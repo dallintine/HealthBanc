@@ -333,9 +333,6 @@ namespace HealthBanc.Migrations
                     b.Property<bool>("SubscriptionStatus")
                         .HasColumnType("bit");
 
-                    b.Property<int>("SuperAdminId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Surname")
                         .HasColumnType("nvarchar(max)");
 
@@ -344,6 +341,9 @@ namespace HealthBanc.Migrations
 
                     b.Property<string>("TransId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.Property<decimal?>("Weight")
                         .HasColumnType("decimal(18,2)");
@@ -454,9 +454,6 @@ namespace HealthBanc.Migrations
                     b.Property<string>("LastFourDigit")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Signature")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -513,6 +510,44 @@ namespace HealthBanc.Migrations
                     b.HasIndex("ServiceId");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("HealthBanc.Domain.Models.PaymentReference", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("AxaMansardUserProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Channel")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateCanceled")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RequestId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AxaMansardUserProfileId");
+
+                    b.ToTable("PaymentReferences");
                 });
 
             modelBuilder.Entity("HealthBanc.Domain.Models.Service", b =>
@@ -738,6 +773,15 @@ namespace HealthBanc.Migrations
                     b.HasOne("HealthBanc.Domain.Models.Service", "Service")
                         .WithMany("Notifications")
                         .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthBanc.Domain.Models.PaymentReference", b =>
+                {
+                    b.HasOne("HealthBanc.Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
+                        .WithMany("PaymentReferences")
+                        .HasForeignKey("AxaMansardUserProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

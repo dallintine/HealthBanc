@@ -24,7 +24,6 @@ namespace HealthBanc.Infrastructure.Mail
 
         public void SendEmail(string email,string templateId, string url,string companyName)
         {
-            var has = Options.SendGridApiKey;
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
 
             var sendGridMessage = new SendGridMessage();
@@ -42,7 +41,6 @@ namespace HealthBanc.Infrastructure.Mail
 
         public void SendEmailWithObject(string email, string templateId, HelloEmail helloEmail)
         {
-            var has = Options.SendGridApiKey;
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
 
             var sendGridMessage = new SendGridMessage();

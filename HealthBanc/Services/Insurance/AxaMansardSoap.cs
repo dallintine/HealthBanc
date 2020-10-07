@@ -1,4 +1,6 @@
 ﻿using AxaMansardSoap;
+using HealthBanc.Helpers;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,8 +14,10 @@ namespace HealthBanc.Services.Insurance
         public readonly string serviceUrl = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
         public readonly EndpointAddress endpointAddress;
         public readonly BasicHttpBinding basicHttpBinding;
-        public AxaMansardSoap()
+        private AxaMansard Options { get; }
+        public AxaMansardSoap(IOptions<AxaMansard> optionAccessor)
         {
+            Options = optionAccessor.Value;
             endpointAddress = new EndpointAddress(serviceUrl);
 
             basicHttpBinding =
@@ -34,7 +38,7 @@ namespace HealthBanc.Services.Insurance
         public async Task<getTokenResponse> GetTokenRequest()
         {
             var client = await GetInstanceAsync();
-            var response = await client.getTokenAsync("STBANK01", "STBank@01-234");
+            var response = await client.getTokenAsync(Options.AxaMansardConfiguration.Username, Options.AxaMansardConfiguration.Password);
             return response;
         }
 
@@ -56,6 +60,27 @@ namespace HealthBanc.Services.Insurance
         {
             var client = await GetInstanceAsync();
             var response = await client.SaveHealthAsync(health, token);
+            return response;
+        }
+
+        public async Task<GetHealthPlansResponse> GetHealthPlansAsync(string token)
+        {
+            var client = await GetInstanceAsync();
+            var response = await client.GetHealthPlansAsync(token);
+            return response;
+        }
+
+        public async Task<GetHealthPremiumResponse> GetHealthPremiumAsync(string token,string planCode)
+        {
+            var client = await GetInstanceAsync();
+            var response = await client.GetHealthPremiumAsync(planCode, token);
+            return response;
+        }
+
+        public async Task<GetIdentificationTypesResponse> GetIdentificaionTypesAsync(string token)
+        {
+            var client = await GetInstanceAsync();
+            var response = await client.GetIdentificationTypesAsync(token);
             return response;
         }
     }

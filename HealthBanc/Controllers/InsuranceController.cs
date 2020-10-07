@@ -31,6 +31,9 @@ using AxaMansardSoap;
 using Microsoft.Extensions.Configuration;
 using HealthBanc.Helpers;
 using Microsoft.Extensions.Options;
+using HealthBanc.Services.InsuredCancelLiveSheet;
+using HealthBanc.DTO;
+using System.Globalization;
 
 namespace HealthBanc.Controllers
 {
@@ -42,25 +45,26 @@ namespace HealthBanc.Controllers
         private readonly IMapper _mapper;
         private readonly IAxaMansardUserProfileRepository _axaMansard;
         private readonly ILogger<InsuranceController> _logger;
-        private readonly ApplicationDbContext _dbContext;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IAxaMansardCompletionRepository _completionRepository;
         private readonly IAxaMansardSoap _axaMansardSoap;
-        public Towns Options { get; }
+        private readonly LiveExcelList _liveExcelList;
+
+        private Towns Options { get; }
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger,
-            ApplicationDbContext dbContext, IApplicationUserRepository userRepository, IAxaMansardCompletionRepository completionRepository,
-            IAxaMansardSoap axaMansardSoap, IOptions<Towns> optionAccessor)
+            IApplicationUserRepository userRepository, IAxaMansardCompletionRepository completionRepository,
+            IAxaMansardSoap axaMansardSoap, IOptions<Towns> optionAccessor, LiveExcelList liveExcelList)
         {
             Options = optionAccessor.Value;
             _insuranceService = insuranceService;
             _mapper = mapper;
             _axaMansard = axaMansard;
             _logger = logger;
-            _dbContext = dbContext;
             _userRepository = userRepository;
             _completionRepository = completionRepository;
             _axaMansardSoap = axaMansardSoap;
+            _liveExcelList = liveExcelList;
         }
 
         [HttpGet("[action]")]
@@ -75,31 +79,11 @@ namespace HealthBanc.Controllers
             return stateList;
         }
 
-
         [HttpGet("[action]")]
-        public IActionResult AxaMansardGetToken()
+        public async Task<IActionResult> AxaMansardGetToken()
         {
-            try
-            {               
-                var result = _insuranceService.AxaMansardGetToken();
-                if (result.Status != false)
-                {
-                    XmlDocument xmlDoc2 = new XmlDocument();
-                    xmlDoc2.LoadXml(result.Data);
-
-                    var getResponse = new AxaResponse();
-                    getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
-
-                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
-
-                }
-                return BadRequest(new ResponseMessage { Message = "An error occurred while connecting to aza mansard. Time Out" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ResponseMessage { Message = "An error occurred while connecting to aza mansard" });
-            }
+            var result = await _axaMansardSoap.GetTokenRequest();
+            return Ok(result.Body.getTokenResult);
         }
 
         [Authorize]
@@ -134,81 +118,72 @@ namespace HealthBanc.Controllers
                         return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" });
                     }
 
-                    var tokenResult = _insuranceService.AxaMansardGetToken();
-                    if (tokenResult.Status == true)
+                    var tokenResult = await _axaMansardSoap.GetTokenRequest();
+                    if (tokenResult.Body.getTokenResult.IsSuccessful == true)
                     {
-                        XmlDocument xmlDoc = new XmlDocument();
-                        xmlDoc.LoadXml(tokenResult.Data);
-                        var profile = _mapper.Map<UserProfile>(userProfile);
+                        var profile = _mapper.Map<iHealth>(userProfile);
                         profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
-                        profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
+                        profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value; profile.CPPhone = "Not Available"; profile.CPEmail = "Not Available";
+                        profile.DateOfBirth = userProfile.DateOfBirth; profile.CPAddress = $"{profile.StateOfResidence}, {profile.TownOfResidence}"; profile.CPCity = profile.TownOfResidence;
+                        
+                        //var address = await _axaMansardSoap.GetHealthProvider(healthPlan, state, tokenBody.message);
+                        //if (address.Body.GetHealthProvidersResult.Count > 0)
+                        //{
+                        //    var healthProvider = result.Body.GetHealthProvidersResult.Where(x => x.City.Contains(city)).ToList();
+                        //    return Ok(new ResponseMessage { Data = healthProvider, Message = "HealthPlan was fetched successfully", Status = true });
+                        //}
 
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
                         profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
+                        profile.TransId = _insuranceService.GetUniqueCode(12);
 
-                        var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-                        var returnCode = xmlDoc.GetElementsByTagName("ReturnCode").Item(0).InnerText;
-                        if (returnCode == "00")
+                        var token = tokenResult.Body.getTokenResult.message;
+
+                        if (profile.PlanCode == "7")
                         {
-                            //var premiumResult = _insuranceService.AxaMansardPremiumPlan(profile.PlanCode, token);
-
-                            if (/*premiumResult.Status ==*/ true)
-                            {
-                                //XmlDocument xmlDoc2 = new XmlDocument();
-                                //xmlDoc2.LoadXml(premiumResult.Data);
-                                //var premiumResponse = xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
-
-                                if(profile.PlanCode == "Sterling Basic")
-                                {
-                                    profile.Premium = Decimal.Parse("1020");
-                                }
-                                else if(profile.PlanCode == "Sterling Silver")
-                                {
-                                    profile.Premium = Decimal.Parse("2050");
-                                }
-
-                                var result = _insuranceService.AxaMansardCreateUserProfile(profile, token);
-                                if (result.Status == true)
-                                {
-                                    XmlDocument xmlDoc3 = new XmlDocument();
-                                    xmlDoc3.LoadXml(result.Data);
-
-                                    var getResponse = new AxaResponse();
-                                    getResponse.IsSuccessful = xmlDoc3.GetElementsByTagName("IsSuccessful").Item(0).InnerText ?? "";
-                                    getResponse.Message = xmlDoc3.GetElementsByTagName("message").Item(0).InnerText ?? "";
-
-                                    var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
-                                    axaInsuranceUser.SuperAdminId = Id;
-                                    _axaMansard.Create(axaInsuranceUser);
-                                    await _axaMansard.Save();
-
-                                    var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
-                                    _completionRepository.Create(completionProfile);
-                                    await _completionRepository.Save();
-
-                                    var newServiceString = user.ServiceUsed + "HealthInsured,";
-                                    user.ServiceUsed = newServiceString;
-                                    _userRepository.Update(user);
-                                    await _userRepository.Save();
-
-                                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
-                                }
-                                var getResponse2 = new AxaResponse();
-                                getResponse2.Message = token;
-                                getResponse2.IsSuccessful = xmlDoc.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-                                return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
-                            }
-                            //return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });
+                            profile.Premium = Decimal.Parse("1020");
                         }
-                        return BadRequest(new ResponseMessage { Message = "An error occurred while fetching token fro  axa mansard: Connection timeout", Status = false });
+                        else if (profile.PlanCode == "8")
+                        {
+                            profile.Premium = Decimal.Parse("2050");
+                        }
+
+                        var result = await _axaMansardSoap.SaveHealth(profile, token);
+                        if (result.Body.SaveHealthResult.IsSuccessful == true || result.Body.SaveHealthResult.IsSuccessful == false)
+                        {
+                            var getResponse = new AxaResponse();
+                            getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
+                            getResponse.Message = result.Body.SaveHealthResult.message;
+
+                            var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
+                            axaInsuranceUser.UserId = Id;
+                            _axaMansard.Create(axaInsuranceUser);
+                            await _axaMansard.Save();
+
+                            var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
+                            _completionRepository.Create(completionProfile);
+                            await _completionRepository.Save();
+
+                            var newServiceString = user.ServiceUsed + "HealthInsured,";
+                            user.ServiceUsed = newServiceString;
+                            _userRepository.Update(user);
+                            await _userRepository.Save();
+
+                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = /*result.Body.SaveHealthResult.message*/"Profile was created successfully", Status = true });
+                        }
+                        var getResponse2 = new AxaResponse();
+                        getResponse2.Message = result.Body.SaveHealthResult.message;
+                        getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
+                        return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
                     }
-                    return BadRequest(new ResponseMessage { Message = "Token could not be fetched,please try again later: Connection timeout", Status = false });
+                    return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message, Status = false });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogCritical("An error occure when trying to create profile " + ex);
-                    return BadRequest();
+                    _logger.LogCritical("An error occurred when trying to create profile " + ex);
+                    return BadRequest("This on us.. An error occure when trying to create profile, kindly " +
+                        "try again later ");
                 }
             }
             //return validation errors
@@ -220,38 +195,9 @@ namespace HealthBanc.Controllers
             {
                 errors.Add(error);
             }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });            
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
-       
-
-        [Authorize]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
-        [HttpGet("[action]")]
-        public IActionResult AxaMansardGetStates()
-        {
-            var tokenResult = _insuranceService.AxaMansardGetToken();
-            if (tokenResult.Status == true)
-            {
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.LoadXml(tokenResult.Data);
-                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-                var result = _insuranceService.AxaMansardGetStates(token);
-                if (result.Status == true)
-                {
-
-                    XmlDocument xmlDoc2 = new XmlDocument();
-                    xmlDoc2.LoadXml(result.Data);
-
-                    var response = xmlDoc2.GetElementsByTagName("GetStatesResult").Item(0).InnerText;
-                    var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
-                    return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "State was fetched successfully", Status = true });
-                }
-                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching State from  axa mansard: Connection timeout", Status = false });
-            }
-            return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
-        }
 
         [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
@@ -272,53 +218,40 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
-        public IActionResult AxaMansardGetHealthPlans()
+        public async Task<IActionResult> AxaMansardGetHealthPlans()
         {
-            var tokenResult = _insuranceService.AxaMansardGetToken();
-            if (tokenResult.Status == true)
+            var tokenResult = await _axaMansardSoap.GetTokenRequest();
+            if (tokenResult.Body.getTokenResult.IsSuccessful == true)
             {
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.LoadXml(tokenResult.Data);
-                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-                var result = _insuranceService.AxaMansardGetHealthPlans(token);
-                if (result.Status == true)
+                var result =await _axaMansardSoap.GetHealthPlansAsync(tokenResult.Body.getTokenResult.message);
+                if (result.Body.GetHealthPlansResult != null)
                 {
-                    XmlDocument xmlDoc2 = new XmlDocument();
-                    xmlDoc2.LoadXml(result.Data);
-
-                    var response = xmlDoc2.GetElementsByTagName("GetHealthPlansResult").Item(0).InnerText;
+                    var response = result.Body.GetHealthPlansResult;
                     var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
                     return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "HealthPan was fetched successfully", Status = true });
                 }
-                return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "An error occurred while fetching healthplan from  axa mansard: Connection timeout", Status = false });
+                return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "Could not fetch healthplan from  axa mansard: Connection timeout", Status = false });
             }
-            return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "And error occurred while trying to get token from axa mansard" });
+            return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = tokenResult.Body.getTokenResult.message });
         }
 
         [Authorize]
         [HttpGet("[action]")]
-        public IActionResult AxaMansardGetHealthPremium(string planCode)
+        public async Task<IActionResult> AxaMansardGetHealthPremium(string planCode)
         {
-            var tokenResult = _insuranceService.AxaMansardGetToken();
-            if (tokenResult.Status == true)
+            var tokenResult = await _axaMansardSoap.GetTokenRequest();
+            if (tokenResult.Body.getTokenResult.IsSuccessful == true)
             {
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.LoadXml(tokenResult.Data);
-                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-                var result = _insuranceService.AxaMansardPremiumPlan(planCode, token);
-                if (result.Status == true)
+                var result =await _axaMansardSoap.GetHealthPremiumAsync(tokenResult.Body.getTokenResult.message, planCode);
+                if (result.Body.GetHealthPremiumResult > 0)
                 {
-
-                    XmlDocument xmlDoc2 = new XmlDocument();
-                    xmlDoc2.LoadXml(result.Data);
-
                     var getResponse = new AxaResponse();
-                    getResponse.Message = xmlDoc2.GetElementsByTagName("GetHealthPremiumResult").Item(0).InnerText;
+                    getResponse.Message = result.Body.GetHealthPremiumResult.ToString();
                     return Ok(new ResponseMessage { Data = getResponse, Message = "HealthPremium was fetched successfully", Status = true });
                 }
-                return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPremium from  axa mansard: Connection timeout", Status = false });
+                return BadRequest(new ResponseMessage { Message = "Could not fetch HealthPremium from  axa mansard", Status = false });
             }
-            return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
+            return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message });
         }
 
         [Authorize]
@@ -340,70 +273,6 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = tokenBody.message });
         }
 
-        //[HttpGet("[action]")]
-        //public async Task<IActionResult> AxaMansardGetTown(string token,string state)
-        //{
-        //    var tokenResult = await _axaMansardSoap.GetTokenRequest();
-        //    var tokenBody = tokenResult.Body.getTokenResult;
-        //    if (/*tokenBody.IsSuccessful == */true)
-        //    {
-        //        var result = await _axaMansardSoap.GetTown(state, token);
-        //        if (result.Body.GetTownsResult != null)
-        //        {
-        //            return Ok(new ResponseMessage { Data = result.Body.GetTownsResult, Message = "HealthPlan was fetched successfully", Status = true });
-        //        }
-        //        return BadRequest(new ResponseMessage { Message = "An error occurred while fetching HealthPlan from  axa mansard: Connection timeout", Status = false });
-        //    }
-        //    return BadRequest(new ResponseMessage { Message = "And error occurred while trying to get token from axa mansard" });
-        //}
-
-        
-        [Authorize]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
-        [HttpGet("[action]")]
-        public IActionResult AxaMansardGetIdentificationType()
-        {
-            var tokenResult = _insuranceService.AxaMansardGetToken();
-            if (tokenResult.Status == true)
-            {
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.LoadXml(tokenResult.Data);
-                var token = xmlDoc.GetElementsByTagName("message").Item(0).InnerText;
-                var result = _insuranceService.AxaMansardGetIdentification(token);
-                if (result.Status == true)
-                {
-                    XmlDocument xmlDoc2 = new XmlDocument();
-                    xmlDoc2.LoadXml(result.Data);
-
-                    var response = xmlDoc2.GetElementsByTagName("GetIdentificationTypesResult").Item(0).InnerText;
-                    var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
-                    return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Identification was fetched successfully", Status = true });
-                }
-                return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "An error occurred while fetching identification from  axa mansard: Connection timeout", Status = false });
-            }
-            return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "And error occurred while trying to get token from axa mansard" });
-        }
-
-        [Authorize]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
-        [HttpGet("[action]")]
-        public IActionResult AxaMansardGetBanks()
-        {            
-            var result = _insuranceService.AxaMansardGetBanks();
-            if (result.Status == true)
-            {
-                XmlDocument xmlDoc2 = new XmlDocument();
-                xmlDoc2.LoadXml(result.Data);
-
-                var response = xmlDoc2.GetElementsByTagName("GetBanksResult").Item(0).InnerText;
-                var responseResult = JsonConvert.DeserializeObject<List<AxaListResponse>>(response);
-                return Ok(new ResponseMessage<List<AxaListResponse>> { Data = responseResult, Message = "Identification was fetched successfully", Status = true });
-            }
-            return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = "An error occurred while fetching identification from  axa mansard: Connection timeout", Status = false });            
-        }
-
         [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
@@ -421,112 +290,7 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(new ResponseMessage<AxaMansardUserDTO> { Message = "Profile was not found" });
         }
-
-        [HttpGet("[action]")]
-        public async Task<IActionResult> Delete()
-        {
-            var test = await _dbContext.TestUserProfiles.ToListAsync();
-            _dbContext.TestUserProfiles.RemoveRange(test);
-            await _dbContext.SaveChangesAsync();
-            return Ok();
-        }
-
-        [HttpPost("[action]")]
-        public async Task<IActionResult> UploadFile(IFormFile file)
-        {
-            var result = await _insuranceService.CBNList(file);
-            await _dbContext.TestUserProfiles.AddRangeAsync(result);
-            await _dbContext.SaveChangesAsync();
-            return Ok();
-        }
-
-        [HttpGet("[action]")]
-        public async Task<IActionResult> GetExcelFromDB()
-        {
-            try
-            {
-                //step1: create array to holder header labels
-                string[] col_names = new string[]{
-                "S/N",
-                "TRANSID",
-                "FIRSTNAME",
-                "SURNAME",
-                "OTHER NAMES",
-                "MARITAL STATUS",
-                "ADDRESS",
-                "DATE OF BIRTH",
-                "NEXT OF KIN",
-                "PHONE NUMBER",
-                "PLAN",
-                "SEX"
-            };
-
-                var userList = await _dbContext.TestUserProfiles.ToListAsync();
-                //step2: create result byte array
-                byte[] result;
-
-                //ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-                //step3: create a new package using memory safe structure
-                using (var package = new ExcelPackage())
-                {
-                    //step4: create a new worksheet
-                    var worksheet = package.Workbook.Worksheets.Add("AXA MANSARD USERS");
-
-                    //step5: fill in header row
-                    //worksheet.Cells[row,col].  {Style, Value}
-                    for (int i = 0; i < col_names.Length; i++)
-                    {
-                        worksheet.Cells[1, i + 1].Style.Font.Size = 14;  //font
-                        worksheet.Cells[1, i + 1].Value = col_names[i];  //value
-                        worksheet.Cells[1, i + 1].Style.Font.Bold = true; //bold  
-                    }
-
-                    int row = 2;
-                    int count = 1;
-                    //step6: loop through query result and fill in cells
-                    foreach (var item in userList)
-                    {
-                        for (int col = 1; col <= 2; col++)
-                        {
-                            worksheet.Cells[row, col].Style.Font.Size = 12;
-                        }
-                        //set row,column data
-                        worksheet.Cells[row, 1].Value = count;
-                        worksheet.Cells[row, 2].Value = item.TransId;
-                        worksheet.Cells[row, 3].Value = item.FirstName;
-                        worksheet.Cells[row, 4].Value = item.SurnName;
-                        worksheet.Cells[row, 5].Value = item.OtherName;
-                        worksheet.Cells[row, 6].Value = item.MaritalStatus;
-                        worksheet.Cells[row, 7].Value = item.Address;
-                        worksheet.Cells[row, 8].Value = item.DateOfBirth;
-                        worksheet.Cells[row, 9].Value = item.NextofKin;
-                        worksheet.Cells[row, 10].Value = item.PhoneNumber;
-                        worksheet.Cells[row, 11].Value = item.Plan;
-                        worksheet.Cells[row, 12].Value = item.Sex;
-
-                        if (row == 170)
-                        {
-                            row += 2;
-                        }
-
-                        row++;
-                        count++;
-                    }
-                    //step7: auto fit columns
-                    worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
-
-                    //step8: convert the package as byte array
-                    result = package.GetAsByteArray();
-                }//end using
-                //step9: return byte array as a file   
-                return File(result, "application/vnd.ms-excel", "Users.xlsx");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to generate user excel file: " + ex);
-                return BadRequest();
-            }
-        }
+        
 
         [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
@@ -553,119 +317,168 @@ namespace HealthBanc.Controllers
                 _logger.LogCritical("An error occurred while trying to get user profile completion: " + ex);
                 return BadRequest(new ResponseMessage<HealthInsuredProfileStateDTO> { Message = "An error occurred while trying to get user profile information.Please try again later" });
             }
-        }
+        }        
 
-        //[HttpGet("[action]")]
-        //public async Task<IActionResult> GetTokenAsync()
-        //{
-        //    var result = await _axaMansardSoap.GetTokenRequest();
-        //    return Ok(result.Body.getTokenResult);
-        //}
+        [Authorize]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var checkIfUserHasBeenProfiled = await _axaMansard.GetByAdminIdAsync(Id);
+                if (checkIfUserHasBeenProfiled == null) return BadRequest(new ResponseMessage { Message = "User does not have a profile" });
 
-        //[Authorize]
-        //[HttpPost("[action]")]
-        //public async Task<IActionResult> NewAxaMansardCreateUserProfile([FromForm] UserProfileviewModel userProfile)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        try
-        //        {
-        //            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-        //            int Id = int.Parse(userId);
-        //            var user = await _userRepository.FindByIdAsync(Id);
+                var updatedProfile = _mapper.Map<UpdateProfileViewModel, AxaMansardUserProfile>(updateProfileViewModel, checkIfUserHasBeenProfiled);
+                if (updatedProfile != null)
+                {
+                    _axaMansard.Update(updatedProfile);
+                    await _axaMansard.Save();
+                    return Ok(new ResponseMessage { Status = true, Message = "Profile was updated successfully" });
+                }
+                return BadRequest(new ResponseMessage { Status = false, Message = "This on us...Error occurred while updating profile" });
 
-        //            var checkIfUserHasBeenProfiled = await _axaMansard.GetByAdminIdAsync(Id);
-        //            if (checkIfUserHasBeenProfiled != null) return BadRequest(new ResponseMessage { Message = "User has a profile already" });
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }     
 
-
-        //            var supportedTypes = new[] { ".JPG", ".JPE", ".PNG", ".JPEG" };
-        //            var customerPhoto = System.IO.Path.GetExtension(userProfile.CustomerPhoto.FileName).ToUpperInvariant();
-        //            var identityPhoto = System.IO.Path.GetExtension(userProfile.IdentityPhoto.FileName).ToUpperInvariant();
-
-        //            if (!supportedTypes.Contains(customerPhoto) || !supportedTypes.Contains(identityPhoto))
-        //            {
-        //                return BadRequest(new ResponseMessage { Message = "FIle extension is invalid - Only Upload PNG/JPEG/JPG/JPE" });
-        //            }
-
-        //            var customerPhotorSize = userProfile.CustomerPhoto.Length;
-        //            var identityPhotoSize = userProfile.IdentityPhoto.Length;
-        //            if ((customerPhotorSize / 1048576) > 4 || (identityPhotoSize / 1048576) > 4)
-        //            {
-        //                return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" });
-        //            }
-
-        //            var tokenResult = await _axaMansardSoap.GetTokenRequest();
-        //            if (tokenResult.Body.getTokenResult.IsSuccessful == true)
-        //            {
-        //                var profile = _mapper.Map<iHealth>(userProfile);
-        //                profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
-        //                profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
-
-        //                var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
-        //                var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
-        //                profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
-
-        //                var token = tokenResult.Body.getTokenResult.message;
-
-        //                if (profile.PlanCode == "Sterling Basic")
-        //                {
-        //                    profile.Premium = Decimal.Parse("1020");
-        //                }
-        //                else if (profile.PlanCode == "Sterling Silver")
-        //                {
-        //                    profile.Premium = Decimal.Parse("2050");
-        //                }
-
-
-        //                var result =await _axaMansardSoap.SaveHealth(profile, token);
-        //                if (result.Body.SaveHealthResult.IsSuccessful == true)
-        //                {
-        //                    var getResponse = new AxaResponse();
-        //                    getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-        //                    getResponse.Message = result.Body.SaveHealthResult.message;
-
-        //                    var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
-        //                    axaInsuranceUser.SuperAdminId = Id;
-        //                    _axaMansard.Create(axaInsuranceUser);
-        //                    await _axaMansard.Save();
-
-        //                    var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
-        //                    _completionRepository.Create(completionProfile);
-        //                    await _completionRepository.Save();
-
-        //                    var newServiceString = user.ServiceUsed + "HealthInsured,";
-        //                    user.ServiceUsed = newServiceString;
-        //                    _userRepository.Update(user);
-        //                    await _userRepository.Save();
-
-        //                    return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = result.Body.SaveHealthResult.message, Status = true });
-        //                }
-        //                var getResponse2 = new AxaResponse();
-        //                getResponse2.Message = result.Body.SaveHealthResult.message;
-        //                getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-        //                return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
-        //            }
-        //            return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message, Status = false });
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogCritical("An error occure when trying to create profile " + ex);
-        //            return BadRequest("This on us.. An error occure when trying to create profile, kindly " +
-        //                "try again later ");
-        //        }
-        //    }
-        //    //return validation errors
-        //    var errors = new List<string>();
-        //    var errorList = ModelState.Values.SelectMany(m => m.Errors)
-        //        .Select(e => e.ErrorMessage)
-        //        .ToList();
-        //    foreach (var error in errorList)
-        //    {
-        //        errors.Add(error);
-        //    }
-        //    return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        //}
-
-        
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//[HttpGet("[action]")]
+//public async Task<IActionResult> Test()
+//{
+//    var axamansardProfile = new AxaMansardUserProfile()
+//    {
+//        TransId = "123456712345",
+//        SubscriptionStatus = false,
+//        TownOfResidence = "Lag",
+//        StateOfResidence = "Lag",
+//        IdentityPhoto = "Lag",
+//        CustomerPhoto = "Lag",
+//        Premium = Decimal.Parse("1000"),
+//        PlanCode = "Lag",
+//        AlternateHospital = "Lag",
+//        CPEmail = "Lag",
+//        CPCity = "Lag",
+//        CPAddress = "Lag",
+//        CPPhone = "Lag",
+//        CareProviderName = "Lag",
+//        Identification = "ID",
+//        MaritalStatus = "Single",
+//        Occupation = "Lag",
+//        ContactAddress = "Lag",
+//        Email = "Lag@gmail.com",
+//        PhoneNumber = "07034770338",
+//        DateOfBirth = DateTime.Now,
+//        Othernames = "Lag",
+//        Surname = "Lag",
+//        Gender = "Male",
+//    };
+//    var listDTO = _mapper.Map<InactiveUsersDTO>(axamansardProfile);
+//    await _liveExcelList.WriteAsync(listDTO);
+//    return Ok();
+//}
+
+
+//[HttpGet("[action]")]
+//public IActionResult AxaMansardGetToken()
+//{
+//    try
+//    {               
+//        var result = _insuranceService.AxaMansardGetToken();
+//        if (result.Status != false)
+//        {
+//            XmlDocument xmlDoc2 = new XmlDocument();
+//            xmlDoc2.LoadXml(result.Data);
+
+//            var getResponse = new AxaResponse();
+//            getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
+//            getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
+
+//            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
+
+//        }
+//        return BadRequest(new ResponseMessage { Message = "An error occurred while connecting to aza mansard. Time Out" });
+//    }
+//    catch (Exception ex)
+//    {
+//        return BadRequest(new ResponseMessage { Message = "An error occurred while connecting to aza mansard" });
+//    }
+//}

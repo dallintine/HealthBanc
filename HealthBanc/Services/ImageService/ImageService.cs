@@ -1,4 +1,5 @@
-﻿using HealthBanc.Infrastructure.Mail;
+﻿using HealthBanc.Helpers;
+using HealthBanc.Infrastructure.Mail;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
@@ -14,21 +15,20 @@ namespace HealthBanc.Services.ImageService
 {
     public class ImageService : IImageService
     {
-        private readonly IConfiguration _config;
         public AuthMessageSenderOption Options { get; }
+        public Image ImageAzureConnectionString { get; }
         private string AzureConnectionString { get; set; }
 
 
-        public ImageService(IConfiguration config, IOptions<AuthMessageSenderOption> optionAccessor)
+        public ImageService(IOptions<AuthMessageSenderOption> optionAccessor , IOptions<Image> imageAccessor)
         {
             Options = optionAccessor.Value;
-            _config = config;
-            AzureConnectionString = _config["AzureConnectionString"];
+            ImageAzureConnectionString = imageAccessor.Value;
         }
 
         public async Task<string> UploadPics(string containerName, IFormFile file)
         {
-            var storageAccount = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=pharmhallstracct;AccountKey=6L23/VXGOIk8QDo87OzGTs0wXbp7Vra2DPPWZ34AUGheDYtpNyCffJDW1oZZNvibJzfaYYLE+3ESaqwRryaM+g==;EndpointSuffix=core.windows.net");
+            var storageAccount = CloudStorageAccount.Parse(ImageAzureConnectionString.ImageStorage.AzureConnectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
             var container = blobClient.GetContainerReference(containerName);
             if (await container.ExistsAsync() == false)
@@ -48,7 +48,7 @@ namespace HealthBanc.Services.ImageService
 
         public async void DeleteImage(string containerName, string picturePath)
         {
-            CloudStorageAccount cloudStorageAccount = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=pharmhallstracct;AccountKey=6L23/VXGOIk8QDo87OzGTs0wXbp7Vra2DPPWZ34AUGheDYtpNyCffJDW1oZZNvibJzfaYYLE+3ESaqwRryaM+g==;EndpointSuffix=core.windows.net");
+            CloudStorageAccount cloudStorageAccount = CloudStorageAccount.Parse(ImageAzureConnectionString.ImageStorage.AzureConnectionString);
             CloudBlobClient _blobClient = cloudStorageAccount.CreateCloudBlobClient();
             CloudBlobContainer _cloudBlobContainer = _blobClient.GetContainerReference(containerName);
             var fileName = picturePath.Split('/');

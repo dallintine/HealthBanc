@@ -35,9 +35,9 @@ namespace HealthBanc.DataAccess.Implementation
             return await _context.Cards.Where(x => x.UserId == id && x.Status == 1).Include(x => x.TokenizationReference).Select(x => x.TokenizationReference).FirstOrDefaultAsync();
         }
 
-        public async Task<DebitCard> CheckIfCardWasPreviouslyTokenized(int id ,string signature)
+        public async Task<DebitCard> CheckIfCardWasPreviouslyTokenized(int id ,string lastFourDigit)
         {
-            return await _context.Cards.FirstOrDefaultAsync(x => x.UserId == id && x.Signature == signature);
+            return await _context.Cards.FirstOrDefaultAsync(x => x.UserId == id && x.LastFourDigit == lastFourDigit);
         }
     }
 }

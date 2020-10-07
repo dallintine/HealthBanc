@@ -22,9 +22,7 @@ namespace HealthBanc.ViewModels.AxaMansard
         public string Occupation { get; set; }
         [Required]
         public string MaritalStatus { get; set; }
-        //[Required]
         public string BankName { get; set; }
-        //[Required]
         public string AccountNo { get; set; }
         public string BVN { get; set; }
         public string BloodGroup { get; set; }
@@ -34,13 +32,9 @@ namespace HealthBanc.ViewModels.AxaMansard
         public string Hobbies { get; set; }
         [Required]
         public string CareProviderName { get; set; }
-        [Required]
         public string CPPhone { get; set; }
-        [Required]
         public string CPAddress { get; set; }
-        [Required]
         public string CPCity { get; set; }
-        [Required]
         public string CPEmail { get; set; }
         [Required]
         public string AlternateHospital { get; set; }
