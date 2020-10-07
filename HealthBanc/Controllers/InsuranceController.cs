@@ -133,7 +133,7 @@ namespace HealthBanc.Controllers
                         var address = await _axaMansardSoap.GetHealthProvider(profile.PlanCode, profile.StateOfResidence, token);
                         if (address.Body.GetHealthProvidersResult.Count > 0)
                         {
-                            var primaryHealthAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.Address.Contains(profile.CPAddress)).FirstOrDefault();
+                            var primaryHealthAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.HospitalName.Contains(profile.CareProviderName)).FirstOrDefault();
                             profile.CPAddress = primaryHealthAddress.Address;
                             //var primarySecondaryAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.Address.Contains(profile.AlternateHospital)).ToList();                            
                         }
@@ -155,7 +155,7 @@ namespace HealthBanc.Controllers
                         }
 
                         var result = await _axaMansardSoap.SaveHealth(profile, token);
-                        if (result.Body.SaveHealthResult.IsSuccessful == true || result.Body.SaveHealthResult.IsSuccessful == false)
+                        if (/*result.Body.SaveHealthResult.IsSuccessful ==*/ true )
                         {
                             var getResponse = new AxaResponse();
                             getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
@@ -175,7 +175,7 @@ namespace HealthBanc.Controllers
                             _userRepository.Update(user);
                             await _userRepository.Save();
 
-                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = /*result.Body.SaveHealthResult.message*/"Profile was created successfully", Status = true });
+                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
                         }
                         var getResponse2 = new AxaResponse();
                         getResponse2.Message = result.Body.SaveHealthResult.message;
