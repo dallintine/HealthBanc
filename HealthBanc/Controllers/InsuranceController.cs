@@ -144,12 +144,16 @@ namespace HealthBanc.Controllers
                             profile.Premium = Decimal.Parse("2050");
                         }
 
-                        var result = await _axaMansardSoap.SaveHealth(profile, token);
+                        //var result = await _axaMansardSoap.SaveHealth(profile, token);
                         if (/*result.Body.SaveHealthResult.IsSuccessful ==*/ true )
                         {
+                            //var getResponse = new AxaResponse();
+                            //getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
+                            //getResponse.Message = result.Body.SaveHealthResult.message;
+
                             var getResponse = new AxaResponse();
-                            getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-                            getResponse.Message = result.Body.SaveHealthResult.message;
+                            getResponse.IsSuccessful = "True";
+                            getResponse.Message = "Profile was created successfully";
 
                             var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
                             axaInsuranceUser.UserId = Id;
@@ -168,10 +172,10 @@ namespace HealthBanc.Controllers
 
                             return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
                         }
-                        var getResponse2 = new AxaResponse();
-                        getResponse2.Message = result.Body.SaveHealthResult.message;
-                        getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-                        return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
+                        //var getResponse2 = new AxaResponse();
+                        //getResponse2.Message = result.Body.SaveHealthResult.message;
+                        //getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
+                        //return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
                     }
                     return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message, Status = false });
                 }
