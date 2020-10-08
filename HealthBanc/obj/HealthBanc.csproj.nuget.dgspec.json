@@ -1,25 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {}
+    "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {
+    "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
+        "projectUniqueName": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
         "projectName": "HealthBanc",
-        "projectPath": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
-        "packagesPath": "C:\\Users\\Okosodoec\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\obj\\",
+        "projectPath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
+        "packagesPath": "C:\\Users\\HASSAN\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Microsoft\\Xamarin\\NuGet\\"
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\Okosodoec\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
+          "C:\\Users\\HASSAN\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "netcoreapp3.0"
@@ -229,6 +228,14 @@
             "Twilio": {
               "target": "Package",
               "version": "[5.46.0, )"
+            },
+            "UAParser": {
+              "target": "Package",
+              "version": "[3.1.43, )"
+            },
+            "Wangkanai.Detection": {
+              "target": "Package",
+              "version": "[3.0.0-alpha05, )"
             }
           },
           "imports": [
@@ -248,7 +255,7 @@
             },
             {
               "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[3.0.2, 3.0.2]"
+              "version": "[3.0.3, 3.0.3]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
@@ -267,7 +274,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.101\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.302\\RuntimeIdentifierGraph.json"
         }
       }
     }

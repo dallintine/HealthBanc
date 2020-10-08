@@ -1,4 +1,6 @@
 ﻿using HealthBanc.Domain.Models;
+using HealthBanc.Domain.Models.ExceptionLog;
+using HealthBanc.Domain.Models.ReportAndLogs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +27,9 @@ namespace HealthBanc.Data
         public DbSet<TokenizationReference> TokenizationReferences { get; set; }
         public DbSet<DebitCard> Cards { get; set; }
         public DbSet<PaymentReference> PaymentReferences { get; set; }
+        public DbSet<UserAuditLog> AuditLogs { get; set; }
+        public DbSet<ExceptionLog> ExceptionLogs { get; set; }
+        public DbSet<AuditLogin_LogoutLog> AuditLogin_LogoutLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

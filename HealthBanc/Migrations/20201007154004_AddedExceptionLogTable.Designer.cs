@@ -4,14 +4,16 @@ using HealthBanc.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HealthBanc.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20201007154004_AddedExceptionLogTable")]
+    partial class AddedExceptionLogTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -241,9 +243,6 @@ namespace HealthBanc.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("AlternateHospital")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AlternateHospitalAddress")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("BVN")
@@ -497,9 +496,6 @@ namespace HealthBanc.Migrations
                     b.Property<string>("Link")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Path")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Source")
                         .HasColumnType("nvarchar(max)");
 
@@ -586,42 +582,7 @@ namespace HealthBanc.Migrations
                     b.ToTable("PaymentReferences");
                 });
 
-            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.AuditLogin_LogoutLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("ApplicationUserid")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("LogOutFailure")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("LoginFailure")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("LoginOutHours")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("SignOut")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Signin")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AuditLogin_LogoutLogs");
-                });
-
-            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.UserAuditLog", b =>
+            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()

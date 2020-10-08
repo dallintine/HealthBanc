@@ -488,3 +488,6 @@ C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\obj
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.dll
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.xml
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.pdb
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\UAParser.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Wangkanai.Detection.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csprojAssemblyReference.cache

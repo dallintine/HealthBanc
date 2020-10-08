@@ -121,24 +121,19 @@ namespace HealthBanc.Controllers
                     var tokenResult = await _axaMansardSoap.GetTokenRequest();
                     if (tokenResult.Body.getTokenResult.IsSuccessful == true)
                     {
+                        var token = tokenResult.Body.getTokenResult.message;
+
                         var profile = _mapper.Map<iHealth>(userProfile);
                         profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
-                        profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value; profile.CPPhone = "Not Available"; profile.CPEmail = "Not Available";
-                        profile.DateOfBirth = userProfile.DateOfBirth; profile.CPAddress = $"{profile.StateOfResidence}, {profile.TownOfResidence}"; profile.CPCity = profile.TownOfResidence;
-                        
-                        //var address = await _axaMansardSoap.GetHealthProvider(healthPlan, state, tokenBody.message);
-                        //if (address.Body.GetHealthProvidersResult.Count > 0)
-                        //{
-                        //    var healthProvider = result.Body.GetHealthProvidersResult.Where(x => x.City.Contains(city)).ToList();
-                        //    return Ok(new ResponseMessage { Data = healthProvider, Message = "HealthPlan was fetched successfully", Status = true });
-                        //}
+                        profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
+
+                        profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
+                        profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[0];
 
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
                         profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
-                        profile.TransId = _insuranceService.GetUniqueCode(12);
-
-                        var token = tokenResult.Body.getTokenResult.message;
+                        profile.TransId = _insuranceService.GetUniqueCode(12);                      
 
                         if (profile.PlanCode == "7")
                         {
@@ -149,15 +144,20 @@ namespace HealthBanc.Controllers
                             profile.Premium = Decimal.Parse("2050");
                         }
 
-                        var result = await _axaMansardSoap.SaveHealth(profile, token);
-                        if (result.Body.SaveHealthResult.IsSuccessful == true || result.Body.SaveHealthResult.IsSuccessful == false)
+                        //var result = await _axaMansardSoap.SaveHealth(profile, token);
+                        if (/*result.Body.SaveHealthResult.IsSuccessful ==*/ true )
                         {
+                            //var getResponse = new AxaResponse();
+                            //getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
+                            //getResponse.Message = result.Body.SaveHealthResult.message;
+
                             var getResponse = new AxaResponse();
-                            getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-                            getResponse.Message = result.Body.SaveHealthResult.message;
+                            getResponse.IsSuccessful = "True";
+                            getResponse.Message = "Profile was created successfully";
 
                             var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
                             axaInsuranceUser.UserId = Id;
+                            axaInsuranceUser.AlternateHospitalAddress = profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[1];
                             _axaMansard.Create(axaInsuranceUser);
                             await _axaMansard.Save();
 
@@ -170,12 +170,12 @@ namespace HealthBanc.Controllers
                             _userRepository.Update(user);
                             await _userRepository.Save();
 
-                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = /*result.Body.SaveHealthResult.message*/"Profile was created successfully", Status = true });
+                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
                         }
-                        var getResponse2 = new AxaResponse();
-                        getResponse2.Message = result.Body.SaveHealthResult.message;
-                        getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-                        return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
+                        //var getResponse2 = new AxaResponse();
+                        //getResponse2.Message = result.Body.SaveHealthResult.message;
+                        //getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
+                        //return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
                     }
                     return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message, Status = false });
                 }

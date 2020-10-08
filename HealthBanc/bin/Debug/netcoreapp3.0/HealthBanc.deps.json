@@ -71,6 +71,8 @@
           "System.ServiceModel.NetTcp": "4.4.4",
           "System.ServiceModel.Security": "4.4.4",
           "Twilio": "5.46.0",
+          "UAParser": "3.1.43",
+          "Wangkanai.Detection": "3.0.0-alpha05",
           "Microsoft.AspNetCore.Antiforgery": "3.0.0.0",
           "Microsoft.AspNetCore.Authentication.Abstractions.Reference": "3.0.0.0",
           "Microsoft.AspNetCore.Authentication.Cookies": "3.0.0.0",
@@ -3939,6 +3941,28 @@
           "lib/netstandard2.0/Twilio.dll": {}
         }
       },
+      "UAParser/3.1.43": {
+        "runtime": {
+          "lib/netcoreapp2.0/UAParser.dll": {
+            "assemblyVersion": "3.1.43.0",
+            "fileVersion": "3.1.43.0"
+          }
+        },
+        "compile": {
+          "lib/netcoreapp2.0/UAParser.dll": {}
+        }
+      },
+      "Wangkanai.Detection/3.0.0-alpha05": {
+        "runtime": {
+          "lib/netcoreapp3.0/Wangkanai.Detection.dll": {
+            "assemblyVersion": "3.0.0.0",
+            "fileVersion": "3.0.0.0"
+          }
+        },
+        "compile": {
+          "lib/netcoreapp3.0/Wangkanai.Detection.dll": {}
+        }
+      },
       "Microsoft.AspNetCore.Antiforgery/3.0.0.0": {
         "compile": {
           "Microsoft.AspNetCore.Antiforgery.dll": {}
@@ -7541,6 +7565,20 @@
       "sha512": "sha512-fqGGntBR/7BE9iEtohOd+tj8BLul7v/uIGMGOu9Id4oWvnpJD+r/+YVV9zdqDTp5+Q6nu9S8o99KBfCmrzM96A==",
       "path": "twilio/5.46.0",
       "hashPath": "twilio.5.46.0.nupkg.sha512"
+    },
+    "UAParser/3.1.43": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3sOOG6AGt+B4CEqjXsLt7MSrNu8OeKRhugDJHMTfOOMgvIT/qBigO31lXqUFmb9mEhxfRUZMVwURTDZ9xU2HSA==",
+      "path": "uaparser/3.1.43",
+      "hashPath": "uaparser.3.1.43.nupkg.sha512"
+    },
+    "Wangkanai.Detection/3.0.0-alpha05": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-J6q28lplOrMwJTBtyuQ1BRZeqKBVPuP7R+q1Xu8wjMQ17nTibHsE5yeVQSV5uxHaTMoZrJIRkyymo9FoWwW76Q==",
+      "path": "wangkanai.detection/3.0.0-alpha05",
+      "hashPath": "wangkanai.detection.3.0.0-alpha05.nupkg.sha512"
     },
     "Microsoft.AspNetCore.Antiforgery/3.0.0.0": {
       "type": "referenceassembly",

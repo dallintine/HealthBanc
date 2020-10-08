@@ -4428,6 +4428,27 @@
         "runtime": {
           "lib/netstandard2.0/Twilio.dll": {}
         }
+      },
+      "UAParser/3.1.43": {
+        "type": "package",
+        "compile": {
+          "lib/netcoreapp2.0/UAParser.dll": {}
+        },
+        "runtime": {
+          "lib/netcoreapp2.0/UAParser.dll": {}
+        }
+      },
+      "Wangkanai.Detection/3.0.0-alpha05": {
+        "type": "package",
+        "compile": {
+          "lib/netcoreapp3.0/Wangkanai.Detection.dll": {}
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/Wangkanai.Detection.dll": {}
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },
@@ -12928,6 +12949,45 @@
         "twilio.5.46.0.nupkg.sha512",
         "twilio.nuspec"
       ]
+    },
+    "UAParser/3.1.43": {
+      "sha512": "3sOOG6AGt+B4CEqjXsLt7MSrNu8OeKRhugDJHMTfOOMgvIT/qBigO31lXqUFmb9mEhxfRUZMVwURTDZ9xU2HSA==",
+      "type": "package",
+      "path": "uaparser/3.1.43",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net20/UAParser.dll",
+        "lib/net20/UAParser.xml",
+        "lib/net35/UAParser.dll",
+        "lib/net35/UAParser.xml",
+        "lib/net40/UAParser.dll",
+        "lib/net40/UAParser.xml",
+        "lib/net45/UAParser.dll",
+        "lib/net45/UAParser.xml",
+        "lib/netcoreapp2.0/UAParser.dll",
+        "lib/netcoreapp2.0/UAParser.xml",
+        "lib/netstandard1.0/UAParser.dll",
+        "lib/netstandard1.0/UAParser.xml",
+        "lib/netstandard1.3/UAParser.dll",
+        "lib/netstandard1.3/UAParser.xml",
+        "lib/netstandard1.6/UAParser.dll",
+        "lib/netstandard1.6/UAParser.xml",
+        "uaparser.3.1.43.nupkg.sha512",
+        "uaparser.nuspec"
+      ]
+    },
+    "Wangkanai.Detection/3.0.0-alpha05": {
+      "sha512": "J6q28lplOrMwJTBtyuQ1BRZeqKBVPuP7R+q1Xu8wjMQ17nTibHsE5yeVQSV5uxHaTMoZrJIRkyymo9FoWwW76Q==",
+      "type": "package",
+      "path": "wangkanai.detection/3.0.0-alpha05",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netcoreapp3.0/Wangkanai.Detection.dll",
+        "wangkanai.detection.3.0.0-alpha05.nupkg.sha512",
+        "wangkanai.detection.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -12978,29 +13038,30 @@
       "System.ServiceModel.Http >= 4.4.*",
       "System.ServiceModel.NetTcp >= 4.4.*",
       "System.ServiceModel.Security >= 4.4.*",
-      "Twilio >= 5.46.0"
+      "Twilio >= 5.46.0",
+      "UAParser >= 3.1.43",
+      "Wangkanai.Detection >= 3.0.0-alpha05"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Okosodoec\\.nuget\\packages\\": {},
-    "C:\\Microsoft\\Xamarin\\NuGet\\": {}
+    "C:\\Users\\HASSAN\\.nuget\\packages\\": {},
+    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
+      "projectUniqueName": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
       "projectName": "HealthBanc",
-      "projectPath": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
-      "packagesPath": "C:\\Users\\Okosodoec\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Okosodoec\\Documents\\HealthBancRepo\\HealthBanc\\HealthBanc\\HealthBanc\\obj\\",
+      "projectPath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
+      "packagesPath": "C:\\Users\\HASSAN\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
-        "C:\\Microsoft\\Xamarin\\NuGet\\"
+        "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
       ],
       "configFilePaths": [
-        "C:\\Users\\Okosodoec\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
+        "C:\\Users\\HASSAN\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "netcoreapp3.0"
@@ -13210,6 +13271,14 @@
           "Twilio": {
             "target": "Package",
             "version": "[5.46.0, )"
+          },
+          "UAParser": {
+            "target": "Package",
+            "version": "[3.1.43, )"
+          },
+          "Wangkanai.Detection": {
+            "target": "Package",
+            "version": "[3.0.0-alpha05, )"
           }
         },
         "imports": [
@@ -13229,7 +13298,7 @@
           },
           {
             "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[3.0.2, 3.0.2]"
+            "version": "[3.0.3, 3.0.3]"
           },
           {
             "name": "Microsoft.NETCore.App.Ref",
@@ -13248,7 +13317,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.101\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.302\\RuntimeIdentifierGraph.json"
       }
     }
   },
