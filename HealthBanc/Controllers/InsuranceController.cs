@@ -125,25 +125,15 @@ namespace HealthBanc.Controllers
 
                         var profile = _mapper.Map<iHealth>(userProfile);
                         profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
-                        profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value; profile.CPPhone = "Not Available"; profile.CPEmail = "Not Available";
-                        profile.DateOfBirth = userProfile.DateOfBirth; profile.CPCity = profile.TownOfResidence;
+                        profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
 
-                        profile.CPAddress = $"{profile.StateOfResidence}, {profile.TownOfResidence}";
-
-                        //var address = await _axaMansardSoap.GetHealthProvider(profile.PlanCode, profile.StateOfResidence, token);
-                        //if (address.Body.GetHealthProvidersResult.Count > 0)
-                        //{
-                        //    var primaryHealthAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.HospitalName.Contains(profile.CareProviderName)).FirstOrDefault();
-                        //    profile.CPAddress = primaryHealthAddress.Address;
-                        //    //var primarySecondaryAddress = address.Body.GetHealthProvidersResult.Where(x => x.City.Contains(profile.TownOfResidence) && x.Address.Contains(profile.AlternateHospital)).ToList();                            
-                        //}
+                        profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
+                        profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[0];
 
                         var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
                         var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
                         profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
-                        profile.TransId = _insuranceService.GetUniqueCode(12);
-
-                      
+                        profile.TransId = _insuranceService.GetUniqueCode(12);                      
 
                         if (profile.PlanCode == "7")
                         {

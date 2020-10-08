@@ -228,6 +228,14 @@
             "Twilio": {
               "target": "Package",
               "version": "[5.46.0, )"
+            },
+            "UAParser": {
+              "target": "Package",
+              "version": "[3.1.43, )"
+            },
+            "Wangkanai.Detection": {
+              "target": "Package",
+              "version": "[3.0.0-alpha05, )"
             }
           },
           "imports": [

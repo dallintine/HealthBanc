@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "nSxLLSrryEEePqPIRTyhHVvJyjVs9ODdCeB/1YS51HmcUjoJXjS/LjQo5U69mThqQ2V/mHR0VYUJ94tWUKWITg==",
+  "dgSpecHash": "QRVNzxzu5Q9Y7Wt8wyneyCSaXRrC5t1P6iwOJzOIHi3x+BcUuDkulqrjkV2M18vLOb/Z6LT0utGwvnwKvndgTA==",
   "success": true,
   "projectFilePath": "C:\\Users\\HASSAN\\Desktop\\Pharmhub\\HealthBanc\\HealthBanc\\HealthBanc\\HealthBanc.csproj",
   "expectedPackageFiles": [
@@ -293,6 +293,8 @@
     "C:\\Users\\HASSAN\\.nuget\\packages\\system.xml.xmldocument\\4.3.0\\system.xml.xmldocument.4.3.0.nupkg.sha512",
     "C:\\Users\\HASSAN\\.nuget\\packages\\system.xml.xmlserializer\\4.3.0\\system.xml.xmlserializer.4.3.0.nupkg.sha512",
     "C:\\Users\\HASSAN\\.nuget\\packages\\twilio\\5.46.0\\twilio.5.46.0.nupkg.sha512",
+    "C:\\Users\\HASSAN\\.nuget\\packages\\uaparser\\3.1.43\\uaparser.3.1.43.nupkg.sha512",
+    "C:\\Users\\HASSAN\\.nuget\\packages\\wangkanai.detection\\3.0.0-alpha05\\wangkanai.detection.3.0.0-alpha05.nupkg.sha512",
     "C:\\Users\\HASSAN\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\3.0.1\\microsoft.aspnetcore.app.ref.3.0.1.nupkg.sha512",
     "C:\\Users\\HASSAN\\.nuget\\packages\\microsoft.netcore.app.ref\\3.0.0\\microsoft.netcore.app.ref.3.0.0.nupkg.sha512",
     "C:\\Users\\HASSAN\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\3.0.3\\microsoft.netcore.app.host.win-x64.3.0.3.nupkg.sha512",

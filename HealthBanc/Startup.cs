@@ -155,6 +155,8 @@ namespace HealthBanc
             services.AddScoped<LiveExcelList>();
             services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
             services.Configure<Image>(Configuration);
+            services.AddScoped<IExceptionLogRepository, ExceptionLogRepository>();
+            services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

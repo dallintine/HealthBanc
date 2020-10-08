@@ -28,6 +28,13 @@ namespace HealthBanc.Controllers
         }
 
         [HttpGet("[action]")]
+        public IActionResult Error()
+        {
+            var x = "fdvsv";
+            var y = int.Parse(x);
+            return Ok();
+        }
+        [HttpGet("[action]")]
         public async Task<IActionResult> Delete()
         {
             var test = await _dbContext.TestUserProfiles.ToListAsync();

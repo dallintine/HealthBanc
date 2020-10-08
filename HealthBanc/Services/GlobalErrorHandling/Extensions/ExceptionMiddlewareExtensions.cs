@@ -1,7 +1,11 @@
-﻿using HealthBanc.Response;
+﻿using HealthBanc.Data;
+using HealthBanc.DataAccess.Interfaces;
+using HealthBanc.Domain.Models.ExceptionLog;
+using HealthBanc.Response;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -24,6 +28,29 @@ namespace HealthBanc.Services.GlobalErrorHandling.Extensions
                     var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
                     if (contextFeature != null)
                     {
+                        try
+                        {
+                            var exceptionLog = new ExceptionLog
+                            {
+                                ErrorDate = DateTime.Now,
+                                ErrorCode = contextFeature.Error.HResult.ToString() ?? " ",
+                                ErrorMessage = contextFeature.Error.Message ?? " ",
+                                StackTrace = contextFeature.Error.StackTrace ?? " ",
+                                //exceptionLog.Link = contextFeature.Error.HelpLink.ToString() ?? " ";
+                                Path = context.Request.Path.Value ?? " ",
+                                Source = contextFeature.Error.Source ?? " "
+                            };
+
+                            var dbContext = app.ApplicationServices.GetService<ApplicationDbContext>();
+
+                            dbContext.ExceptionLogs.Add(exceptionLog);
+                            await dbContext.SaveChangesAsync();
+                        }
+                        catch(Exception ex)
+                        {
+                            logger.Error($"Something went wrong: {ex.Message}",ex);
+                        }                             
+
                         logger.Error($"Something went wrong: {contextFeature.Error}");
                         await context.Response.WriteAsync(new ResponseMessage()
                         {
