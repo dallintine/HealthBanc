@@ -1,9 +1,11 @@
 ﻿using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Response;
+using HealthBanc.Services.ADOTP;
 using HealthBanc.ViewModels;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
@@ -37,12 +39,15 @@ namespace HealthBanc.Controllers
         private readonly IApplicationUserRepository _userRepository;
         private readonly IBackendAdminRepository _adminRepository;
         private readonly TokenValidationParameters _tokenValidationParameters;
+        private readonly IAdminLogin_LogoutLogRepository _auditLogin_LogoutLog;
+        private readonly IBackendOTPService _oTPService;
         private readonly JwtSettings _jwtsettings;
         private readonly AppEndpoint _appEndpoint;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
             ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
-            TokenValidationParameters tokenValidationParameters, IOptions<AppEndpoint> optionAccessor)
+            TokenValidationParameters tokenValidationParameters, IOptions<AppEndpoint> optionAccessor, IAdminLogin_LogoutLogRepository auditLogin_LogoutLog,
+            IBackendOTPService oTPService)
         {
             _appEndpoint = optionAccessor.Value;
             _userManager = userManager;
@@ -52,6 +57,8 @@ namespace HealthBanc.Controllers
             _userRepository = userRepository;
             _adminRepository = adminRepository;
             _tokenValidationParameters = tokenValidationParameters;
+            _auditLogin_LogoutLog = auditLogin_LogoutLog;
+            _oTPService = oTPService;
             _jwtsettings = jwtsettings.Value;
         }
 
@@ -65,10 +72,11 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> BackendLogin([FromBody] ADCredentials aDCredentials)
+        public async Task<IActionResult> BackendLogin([FromBody] ADCredentials aDCredentials,[FromRoute] string otp)
         {
             if (ModelState.IsValid)
             {
+                if (otp == null) return BadRequest(new ResponseMessage { Status = false, Message = "OTP is compulsory" });
                 var checkIfUserExist = await _userRepository.FindByUniqueUsername(aDCredentials.AD_Username);
                 if (checkIfUserExist is null)
                 {
@@ -89,45 +97,19 @@ namespace HealthBanc.Controllers
                             var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
                             if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                             {
-                                //var roles = await _userManager.GetRolesAsync(checkIfUserExist);
-                                ////Generate Token
-                                //var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
-                                //var tokenHandler = new JwtSecurityTokenHandler();
-                                //var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
-                                //var tokenDescriptor = new SecurityTokenDescriptor
-                                //{
-                                //    Subject = new ClaimsIdentity(new[]
-                                //    {
-                                //new Claim(JwtRegisteredClaimNames.Sub, aDCredentials.AD_Username),
-                                //new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                                //new Claim(ClaimTypes.Email,  aDCredentials.AD_Username),
-                                //new Claim("FirstName",checkIfUserExist.FirstName as string),
-                                //new Claim("LastName",checkIfUserExist.LastName as string),
-                                //new Claim(ClaimTypes.Role, roles.FirstOrDefault() as string)
-                                //}),
-                                //    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
-                                //    Issuer = _jwtsettings.Site,
-                                //    Audience = _jwtsettings.Audience,
-                                //    Expires = DateTime.UtcNow.AddMinutes(expirationTime)
-                                //};
-
-                                ////create the token 
-                                //var token = tokenHandler.CreateToken(tokenDescriptor);
-                                //var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
-                                //{
-                                //    Token = tokenHandler.WriteToken(token),
-                                //    Username = aDCredentials.AD_Username,
-                                //    FirstName = checkIfUserExist.FirstName,
-                                //    LastName = checkIfUserExist.LastName,
-                                //    Email = checkIfUserExist.Email,
-                                //    ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
-                                //    Roles = roles,
-                                //};
-                                var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                                return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
+                                var response =await _oTPService.OtpValidationAsync(otp, aDCredentials.AD_Username);
+                                if (response.Body.OtpValidationResult.Contains("00|Token Successfully"))
+                                {
+                                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                                    return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
+                                }
+                                return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
                             }
                             else
                             {
+                                var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
+                                var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email,true,false,true,false, loginOutHours);
+                                await _userRepository.Save();
                                 return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
                             }
                         }
@@ -391,6 +373,9 @@ namespace HealthBanc.Controllers
                 user.RefreshToken = refreshToken;
                 user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(7);
                 _userRepository.Update(user);
+
+                var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
+                var adminLogin_LogoutLog = new AdminLogin_LogoutLog(user.Id, user.Email, true, false, false, false, loginOutHours);
                 await _userRepository.Save();
 
                 var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO

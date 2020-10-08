@@ -1,4 +1,7 @@
-﻿using HealthBanc.DataAccess.Interfaces;
+﻿using AutoMapper;
+using HealthBanc.DataAccess.Interfaces;
+using HealthBanc.Domain.Models.ReportAndLogs;
+using HealthBanc.ViewModels;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -13,19 +16,27 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
     {
         private readonly IHttpContextAccessor _accessor;
         private readonly IDetectionService _detection;
-        private readonly IAuditLogRepository _auditLogRepository;
+        private readonly IUserAuditLogRepository _userAuditLog;
+        private readonly IMapper _mapper;
 
-        public AuditLogService(IHttpContextAccessor accessor,IDetectionService detection,IAuditLogRepository auditLogRepository)
+        public AuditLogService(IHttpContextAccessor accessor,IDetectionService detection,IUserAuditLogRepository userAuditLog,IMapper mapper)
         {
             _accessor = accessor;
             _detection = detection;
-            _auditLogRepository = auditLogRepository;
+            _userAuditLog = userAuditLog;
+            _mapper = mapper;
         }
 
-        public async Task CreateAuditLog(HealthBanc.Domain.Models.ReportAndLogs.UserAuditLog auditLog)
+        public async Task UserCreateAuditLog(AuditLogViewModel viewModel)
         {
-            _auditLogRepository.Create(auditLog);
-            await _auditLogRepository.Save();
+            var auditLog = _mapper.Map<UserAuditLog>(viewModel);
+            auditLog.IPAddress = GetIPAddress();
+            auditLog.Device = GetDevice();
+            auditLog.Date = DateTime.Now;
+            auditLog.Id = new Guid();
+            _userAuditLog.Create(auditLog);
+            await _userAuditLog.Save();
+            await Task.CompletedTask;
         }
 
         public string GetIPAddress()

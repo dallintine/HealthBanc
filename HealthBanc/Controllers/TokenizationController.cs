@@ -9,6 +9,7 @@ using HealthBanc.DTO.TokenizationDTO;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Services;
+using HealthBanc.Services.AuditAndReport.AuditLog;
 using HealthBanc.Services.InsuredCancelLiveSheet;
 using HealthBanc.Services.Tokenization;
 using HealthBanc.ViewModels;
@@ -39,10 +40,12 @@ namespace HealthBanc.Controllers
         private readonly ICardRepository _cardRepository;
         private readonly LiveExcelList _liveExcelList;
         private readonly IPaymentReferenceRepository _paymentReference;
+        private readonly AuditLogService _auditLogServices;
 
         public TokenizationController(TokenizationService tokenizationService,IMapper mapper, IAxaMansardUserProfileRepository mansardUserProfileRepository,
             IAxaMansardCompletionRepository completionRepository,SendLogViaWhatApp logViaWhatApp,ILogger<TokenizationController> logger,
-            ITokenizationReferenceRepository tokenizationReference,ICardRepository cardRepository, LiveExcelList liveExcelList,IPaymentReferenceRepository paymentReference)
+            ITokenizationReferenceRepository tokenizationReference,ICardRepository cardRepository, LiveExcelList liveExcelList,IPaymentReferenceRepository paymentReference,
+            AuditLogService auditLogServices)
         {
             _tokenizationService = tokenizationService;
             _mapper = mapper;
@@ -54,6 +57,7 @@ namespace HealthBanc.Controllers
             _cardRepository = cardRepository;
             _liveExcelList = liveExcelList;
             _paymentReference = paymentReference;
+            _auditLogServices = auditLogServices;
         }
 
         /// <summary>
@@ -90,6 +94,9 @@ namespace HealthBanc.Controllers
                             card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin; card.card = chargeCardRequest;
                             var cardResponse = await _tokenizationService.ChargeCard(card, Id);
 
+                            var auditViewModel = new AuditLogViewModel(Id, null, null, "Attempted card tokenization", null);
+                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
                             if (cardResponse.Status == true && cardResponse.ResponseCode == 0)
                             {                              
 
@@ -106,15 +113,22 @@ namespace HealthBanc.Controllers
                                 var debitCard = new Domain.Models.DebitCard(Id, userAxamansardProfile.Id, cardStatus, cardResponse.LastDigit, cardResponse.Type, tokenizeReference.Id);
                                 _cardRepository.Create(debitCard);
 
+                                var auditViewModel2 = new AuditLogViewModel(Id, null, null, "Debit Card Added", null);
+                                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2));
+
                                 checkprofileComplete.TokenizationCompleted = true;
-                                _completionRepository.Update(checkprofileComplete);
+                                _completionRepository.Update(checkprofileComplete);                               
 
-                                userAxamansardProfile.SubscriptionStatus = true;
-                                _mansardUserProfileRepository.Update(userAxamansardProfile);
-                                await _mansardUserProfileRepository.Save();
-
-                                if(userAxamansardProfile.Cards.Count == 1)
+                                if (userAxamansardProfile.Cards.Count == 1)
                                 {
+                                    userAxamansardProfile.SubscriptionStatus = true;
+                                    _mansardUserProfileRepository.Update(userAxamansardProfile);
+                                    await _mansardUserProfileRepository.Save();
+
+                                    var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
+                                        "iption status, free one month trail");
+                                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
+
                                     var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 
                                     var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
@@ -186,16 +200,24 @@ namespace HealthBanc.Controllers
                                 _cardRepository.Create(debitCard);
                                 await _cardRepository.Save();
 
+                                var auditViewModel2 = new AuditLogViewModel(Id, null, null, "Debit Card Added", null);
+                                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2));
+
+
                                 checkprofileComplete.TokenizationCompleted = true;
                                 _completionRepository.Update(checkprofileComplete);
-                                await _completionRepository.Save();
-
-                                userAxamansardProfile.SubscriptionStatus = true;
-                                _mansardUserProfileRepository.Update(userAxamansardProfile);
-                                await _mansardUserProfileRepository.Save();
+                                await _completionRepository.Save();                                                             
 
                                 if (userAxamansardProfile.Cards.Count == 1)
                                 {
+                                    userAxamansardProfile.SubscriptionStatus = true;
+                                    _mansardUserProfileRepository.Update(userAxamansardProfile);
+                                    await _mansardUserProfileRepository.Save();
+
+                                    var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
+                                        "iption status, free one month trail");
+                                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
+
                                     var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 
                                     var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
@@ -289,10 +311,29 @@ namespace HealthBanc.Controllers
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
                 var presentPrimaryCard = await _cardRepository.GetPrimaryCard(Id);
-                if (presentPrimaryCard == null) return BadRequest(new ResponseMessage { Message = "You dont have a card, Kindly tokenize a card" });
+                if (presentPrimaryCard == null)
+                {
+                    var auditViewModel3 = new AuditLogViewModel(Id, null, $"Primary card ID is {presentPrimaryCard.Id}", "Change Primary Card", $" Event Failed," +
+                        $" Error: You dont have a card, Kindly tokenize a card");
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
+
+                    return BadRequest(new ResponseMessage { Message = "You dont have a card, Kindly tokenize a card" });
+                }
                 var newPrimaryCard = await _cardRepository.GetCardByIdAsync(cardId, Id);
-                if (newPrimaryCard == null) return NotFound(new ResponseMessage { Message = "No secondary card tied to you was found" });
-                if (newPrimaryCard.Status == 1) return BadRequest(new ResponseMessage { Message = "This card is presenlty the primary card" });
+                if (newPrimaryCard == null) 
+                {
+                    var auditViewModel3 = new AuditLogViewModel(Id, null, $"Primary card ID is {presentPrimaryCard.Id}", "Change Primary Card", $" Event Failed," +
+                        $" Error: You dont have a card, Kindly tokenize a card");
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
+                    return NotFound(new ResponseMessage { Message = "No secondary card tied to you was found" });
+                }
+                if (newPrimaryCard.Status == 1) {
+
+                    var auditViewModel3 = new AuditLogViewModel(Id, null, $"Primary card ID is {presentPrimaryCard.Id}", "Change Primary Card", $" Event Failed," +
+                       $" Error: This card is presently the primary card");
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
+                    return BadRequest(new ResponseMessage { Message = "This card is presently the primary card" });
+                }
                 if (presentPrimaryCard != null && newPrimaryCard != null)
                 {
                     presentPrimaryCard.Status = 0;
@@ -300,6 +341,10 @@ namespace HealthBanc.Controllers
                     newPrimaryCard.Status = 1;
                     _cardRepository.Update(newPrimaryCard);
                     await _cardRepository.Save();
+
+                    var auditViewModel3 = new AuditLogViewModel(Id, null, $"Primary card ID is {presentPrimaryCard.Id}", "Change Primary Card", $"New primary card ID is {cardId}");
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
+
                     return Ok(new ResponseMessage { Message = "Primary card was changed successfully" });
                 }
             }
@@ -334,6 +379,9 @@ namespace HealthBanc.Controllers
                 }
                 _cardRepository.Delete(card);
                 await _cardRepository.Save();
+
+                var auditViewModel3 = new AuditLogViewModel(Id, null, $"Card id is ${cardId}", "Delete Card", $"Card was deleted successfully");
+                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
                 return Ok(new ResponseMessage { Message = "Card was deleted successfully",Status=true });
             }
             //return validation errors
@@ -355,19 +403,22 @@ namespace HealthBanc.Controllers
             int Id = int.Parse(userId);
 
             var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
+            if(userAxamansardProfile.SubscriptionStatus == true)
+            {
+                return BadRequest(new ResponseMessage { Message = "Subscription is currently active", Status=false });
+            }
             var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
-
             var tokenizationReference = await _cardRepository.GetPrimaryCardReference(Id);
-
-
             await _tokenizationService.InsertSubscription(use, tokenizationReference);
+            var auditViewModel3 = new AuditLogViewModel(Id, null, $"Inactive subscription", "Reactivated subscription", $"Subscription was reactivated");
+            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
             //if (result.Status == true)
             //{
             //    userAxamansardProfile.SubscriptionStatus = true;
             //    _mansardUserProfileRepository.Update(userAxamansardProfile);
 
             //    await _mansardUserProfileRepository.Save();
-                return Ok(new ResponseMessage {Message="Reactivation was successful",Status=true });
+            return Ok(new ResponseMessage {Message="Reactivation was successful",Status=true });
             //} 
             //return BadRequest(result);
         }

@@ -27,10 +27,12 @@ namespace HealthBanc.Data
         public DbSet<TokenizationReference> TokenizationReferences { get; set; }
         public DbSet<DebitCard> Cards { get; set; }
         public DbSet<PaymentReference> PaymentReferences { get; set; }
-        public DbSet<UserAuditLog> AuditLogs { get; set; }
+        public DbSet<UserAuditLog> UserAuditLogs { get; set; }
+        public DbSet<AdminAuditLog> AdminAuditLogs { get; set; }
         public DbSet<ExceptionLog> ExceptionLogs { get; set; }
-        public DbSet<AuditLogin_LogoutLog> AuditLogin_LogoutLogs { get; set; }
-
+        public DbSet<AdminLogin_LogoutLog> AuditLogin_LogoutLogs { get; set; }
+        public DbSet<UserLogin_LogoutLog> UserLogin_LogoutLogs { get; set; }
+        public DbSet<PasswordChangeHistory> PasswordChangeHistories { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

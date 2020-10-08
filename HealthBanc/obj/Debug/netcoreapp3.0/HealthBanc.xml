@@ -79,7 +79,7 @@
             Delete notification
             </summary>
         </member>
-        <member name="M:HealthBanc.Controllers.BackendAdminAuthController.BackendLogin(HealthBanc.ViewModels.ADCredentials)">
+        <member name="M:HealthBanc.Controllers.BackendAdminAuthController.BackendLogin(HealthBanc.ViewModels.ADCredentials,System.String)">
             <summary>
             Logs the BackendUser In
             </summary>

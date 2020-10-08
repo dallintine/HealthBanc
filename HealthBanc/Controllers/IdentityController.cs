@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Response;
@@ -32,9 +33,12 @@ namespace HealthBanc.Controllers
         private readonly IApplicationUserRepository _userRepository;
         private readonly IEmailSender _emailSender;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IPasswordChangeRepository _passwordChangeRepository;
+        private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
-            IApplicationUserRepository userRepository, IEmailSender emailSender,IPasswordHasher passwordHasher)
+            IApplicationUserRepository userRepository, IEmailSender emailSender,IPasswordHasher passwordHasher, IPasswordChangeRepository passwordChangeRepository,
+            IUserLogin_LogoutLogRepository logoutLogRepository)
         {
             _logger = logger;
             _identityService = identityService;
@@ -42,7 +46,10 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
             _userRepository = userRepository;
             _emailSender = emailSender;
-            _passwordHasher = passwordHasher;        }
+            _passwordHasher = passwordHasher;
+            _passwordChangeRepository = passwordChangeRepository;
+            _logoutLogRepository = logoutLogRepository;
+        }
 
         ///<summary>
         ///This Creates The User
@@ -246,7 +253,10 @@ namespace HealthBanc.Controllers
                     return Ok(response);
                 }
                 await _userManager.AccessFailedAsync(user);
-                return Unauthorized(new ResponseMessage { Message = "Username or password invalid, please try again with correct details.", Status = false });
+                var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, true);
+                _logoutLogRepository.Create(loginLog);
+                await _logoutLogRepository.Save();
+                return Unauthorized(new ResponseMessage { Message = "Password is invalid, please try again with correct details.", Status = false });
             }
             //return validation errors
             var errors = new List<ResponseMessage>();
@@ -467,6 +477,9 @@ namespace HealthBanc.Controllers
                                         var newPaswordHash = string.Join(",", hashedPassword);
                                         user.HashedPasswordHistory =  $"{newPaswordHash},{passwordHashed},";
                                         await _userManager.UpdateAsync(user);
+                                        var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, true, false);
+                                        _passwordChangeRepository.Create(passwordChangehistory);
+                                        await _passwordChangeRepository.Save();
                                         return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                                     }
                                 }                                

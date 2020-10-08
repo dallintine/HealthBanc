@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.DataAccess.Interfaces
 {
-    public interface IAuditLogRepository : IBaseRepository<UserAuditLog>
+    public interface IUserAuditLogRepository : IBaseRepository<UserAuditLog>
     {
     }
 }

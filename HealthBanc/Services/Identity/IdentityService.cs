@@ -2,6 +2,7 @@
 using HealthBanc.Data;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Infrastructure.Mail;
@@ -40,10 +41,13 @@ namespace HealthBanc.Services.Identity
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly ApplicationDbContext _dbContext;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IPasswordChangeRepository _passwordChangeRepository;
+        private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
 
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
              IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
-              TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext, IPasswordHasher passwordHasher)
+              TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext, IPasswordHasher passwordHasher,IPasswordChangeRepository passwordChangeRepository,
+              IUserLogin_LogoutLogRepository _LogoutLogRepository)
         {
             _logger = logger;
             _userManager = userManager;
@@ -56,6 +60,8 @@ namespace HealthBanc.Services.Identity
             _tokenValidationParameters = tokenValidationParameters;
             _dbContext = dbContext;
             _passwordHasher = passwordHasher;
+            _passwordChangeRepository = passwordChangeRepository;
+            _logoutLogRepository = _LogoutLogRepository;
         }
 
         public async Task<ResponseMessage> RegisterSuperAdmin(RegistrationViewModel registrationViewModel)
@@ -269,6 +275,10 @@ namespace HealthBanc.Services.Identity
                 _userRepository.Update(user);
                 await _userRepository.Save();
 
+                var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, false);
+                _logoutLogRepository.Create(loginLog);
+                await _userRepository.Save();
+
                 var loggedInResponse = new LoggedInResponseDTO
                 {
                     Token = tokenHandler.WriteToken(token),
@@ -393,6 +403,9 @@ namespace HealthBanc.Services.Identity
                                     var newPaswordHash = string.Join(",", hashedPassword);
                                     user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
                                     await _userManager.UpdateAsync(user);
+                                    var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, false, true);
+                                    _passwordChangeRepository.Create(passwordChangehistory);
+                                    await _passwordChangeRepository.Save();
                                     return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                                 }
                             }

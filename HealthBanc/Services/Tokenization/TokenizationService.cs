@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Hangfire;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.DTO.TokenizationDTO;
@@ -6,6 +7,8 @@ using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Response.Tokenize;
+using HealthBanc.Services.AuditAndReport.AuditLog;
+using HealthBanc.ViewModels;
 using HealthBanc.ViewModels.Tokenization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
@@ -29,10 +32,13 @@ namespace HealthBanc.Services.Tokenization
         private readonly IAxaMansardUserProfileRepository _axaMansardUser;
         private readonly IMapper _mapper;
         private readonly IPaymentReferenceRepository _paymentReference;
+        private readonly AuditLogService _auditLogServices;
+
         private AppEndpoint Options { get; }
 
         public TokenizationService(IWebHostEnvironment environment, IHttpClientFactory httpClientFactory,ILogger<TokenizationService> logger, SendLogViaWhatApp logViaWhatApp,
-            IAxaMansardUserProfileRepository axaMansardUser,IMapper mapper,IPaymentReferenceRepository paymentReference, IOptions<AppEndpoint> optionAccessor)
+            IAxaMansardUserProfileRepository axaMansardUser,IMapper mapper,IPaymentReferenceRepository paymentReference, IOptions<AppEndpoint> optionAccessor,
+            AuditLogService auditLogServices)
         {
             Options = optionAccessor.Value;
             _environment = environment;
@@ -42,6 +48,7 @@ namespace HealthBanc.Services.Tokenization
             _axaMansardUser = axaMansardUser;
             _mapper = mapper;
             _paymentReference = paymentReference;
+            _auditLogServices = auditLogServices;
         }
 
         public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard,int id)
@@ -79,9 +86,22 @@ namespace HealthBanc.Services.Tokenization
                             }
                         }
                         if (chargeCardResponse.data.status == "send_phone") return new TokenizationResponse { Message = "" };
-                        if (chargeCardResponse.data.status == "success") return new TokenizationResponse {Type = chargeCardResponse.data.authorization.card_type, LastDigit = chargeCardResponse.data.authorization.last4, 
-                            AuthorizationCode = chargeCardResponse.data.authorization.authorization_code, Signature = chargeCardResponse.data.authorization.signature,
-                            Message = "Card was tokenize successfully", Status = true,ResponseCode = 0};
+                        if (chargeCardResponse.data.status == "success")
+                        {
+                            var auditViewModel = new AuditLogViewModel(id, null, null, "Successfully Card Tokenization", $"Tokenization reference is {chargeCard.reference}");
+                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
+                            return new TokenizationResponse
+                            {
+                                Type = chargeCardResponse.data.authorization.card_type,
+                                LastDigit = chargeCardResponse.data.authorization.last4,
+                                AuthorizationCode = chargeCardResponse.data.authorization.authorization_code,
+                                Signature = chargeCardResponse.data.authorization.signature,
+                                Message = "Card was tokenize successfully",
+                                Status = true,
+                                ResponseCode = 0
+                            };
+                        } 
                         if (chargeCardResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                     }
                     var message = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
@@ -128,9 +148,22 @@ namespace HealthBanc.Services.Tokenization
                         {
                             return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
                         }
-                        if (otpResponse.data.status == "success") return new TokenizationResponse {Type=otpResponse.data.authorization.card_type , LastDigit = otpResponse.data.authorization.last4,
-                            Signature = otpResponse.data.authorization.signature,AuthorizationCode =otpResponse.data.authorization.authorization_code,
-                            Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
+                        if (otpResponse.data.status == "success") 
+                        {
+                            var auditViewModel = new AuditLogViewModel(user.UserId, null, null, "Successfully Card Tokenization", $"Tokenization reference is {reference}");
+                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
+                            return new TokenizationResponse
+                            {
+                                Type = otpResponse.data.authorization.card_type,
+                                LastDigit = otpResponse.data.authorization.last4,
+                                Signature = otpResponse.data.authorization.signature,
+                                AuthorizationCode = otpResponse.data.authorization.authorization_code,
+                                Message = "Card was tokenize successfully",
+                                Status = true,
+                                ResponseCode = 0
+                            };
+                        }
                         if (otpResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                     }
                     return new TokenizationResponse { Message = otpResponse.message, Status = false };
@@ -264,6 +297,11 @@ namespace HealthBanc.Services.Tokenization
                     };
                     _paymentReference.Create(payment);
                     await _paymentReference.Save();
+
+                    var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Inactive subscription status", "Subscription Status Changed",
+                           "Active subscription status");
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
                     //return new ResponseMessage { Status = true, Message = subscribePaymentResponse.message };
                     await Task.CompletedTask;
                 }
@@ -280,8 +318,7 @@ namespace HealthBanc.Services.Tokenization
             {
                 var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
                 subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = tokenization.TokenReference;
-                var fee = subscribePayment.RepaymentAmount == 1000 ? 20 : 50;
-                subscribePayment.Fees = fee;
+                subscribePayment.Fees = 0;
 
                 var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
@@ -293,6 +330,10 @@ namespace HealthBanc.Services.Tokenization
                     updatePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
                     if (updatePaymentResponse.status == true)
                     {
+                        var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId,$"Supscription plan of {userAxamansardProfile}", "Subscription Plan Changed",
+                            " subscription status");
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
                         return new ResponseMessage { Message = updatePaymentResponse.message, Status = true };
                     }
                     return new ResponseMessage { Message = updatePaymentResponse.message, Status = false };
@@ -334,6 +375,10 @@ namespace HealthBanc.Services.Tokenization
                         userAxamansardProfile.SubscriptionStatus = false;
                         _axaMansardUser.Update(userAxamansardProfile);
                         await _axaMansardUser.Save();
+
+                        var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Active subscription status", "Subscription Status Changed",
+                            "Inactive subscription status");
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
 
                         return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
                     }

@@ -17,6 +17,8 @@ using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Services;
+using HealthBanc.Services.ADOTP;
+using HealthBanc.Services.AuditAndReport.AuditLog;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.GlobalErrorHandling.Extensions;
 using HealthBanc.Services.Identity;
@@ -136,6 +138,7 @@ namespace HealthBanc
             services.Configure<AuthMessageSenderOption>(Configuration);
             services.Configure<Towns>(Configuration);
             services.Configure<AxaMansard>(Configuration);
+            services.Configure<SterlingOtp>(Configuration);
             services.Configure<AppEndpoint>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
@@ -156,7 +159,12 @@ namespace HealthBanc
             services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
             services.Configure<Image>(Configuration);
             services.AddScoped<IExceptionLogRepository, ExceptionLogRepository>();
-            services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddScoped<IUserAuditLogRepository, UserAuditLogRepository>();
+            services.AddScoped<IPasswordChangeRepository, PasswordChangeRepository>();
+            services.AddScoped<IUserLogin_LogoutLogRepository, UserLogin_LogoutLogRepository>();
+            services.AddScoped<IAdminLogin_LogoutLogRepository, AdminLogin_LogoutLogRepository>();
+            services.AddScoped<AuditLogService>();
+            services.AddScoped<IBackendOTPService, BackendOTPService>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

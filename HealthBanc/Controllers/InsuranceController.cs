@@ -34,6 +34,9 @@ using Microsoft.Extensions.Options;
 using HealthBanc.Services.InsuredCancelLiveSheet;
 using HealthBanc.DTO;
 using System.Globalization;
+using HealthBanc.ViewModels;
+using Hangfire;
+using HealthBanc.Services.AuditAndReport.AuditLog;
 
 namespace HealthBanc.Controllers
 {
@@ -47,13 +50,14 @@ namespace HealthBanc.Controllers
         private readonly ILogger<InsuranceController> _logger;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IAxaMansardCompletionRepository _completionRepository;
+        private readonly AuditLogService _auditLogServices;
         private readonly IAxaMansardSoap _axaMansardSoap;
         private readonly LiveExcelList _liveExcelList;
 
         private Towns Options { get; }
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger,
-            IApplicationUserRepository userRepository, IAxaMansardCompletionRepository completionRepository,
+            IApplicationUserRepository userRepository, IAxaMansardCompletionRepository completionRepository, AuditLogService auditLogServices,
             IAxaMansardSoap axaMansardSoap, IOptions<Towns> optionAccessor, LiveExcelList liveExcelList)
         {
             Options = optionAccessor.Value;
@@ -63,6 +67,7 @@ namespace HealthBanc.Controllers
             _logger = logger;
             _userRepository = userRepository;
             _completionRepository = completionRepository;
+            _auditLogServices = auditLogServices;
             _axaMansardSoap = axaMansardSoap;
             _liveExcelList = liveExcelList;
         }
@@ -158,17 +163,18 @@ namespace HealthBanc.Controllers
                             var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
                             axaInsuranceUser.UserId = Id;
                             axaInsuranceUser.AlternateHospitalAddress = profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[1];
-                            _axaMansard.Create(axaInsuranceUser);
-                            await _axaMansard.Save();
+                            _axaMansard.Create(axaInsuranceUser);                            
 
                             var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
-                            _completionRepository.Create(completionProfile);
-                            await _completionRepository.Save();
+                            _completionRepository.Create(completionProfile);                           
 
                             var newServiceString = user.ServiceUsed + "HealthInsured,";
                             user.ServiceUsed = newServiceString;
                             _userRepository.Update(user);
                             await _userRepository.Save();
+
+                            var auditViewModel = new AuditLogViewModel(Id, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
+                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
 
                             return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
                         }
@@ -335,6 +341,9 @@ namespace HealthBanc.Controllers
                 {
                     _axaMansard.Update(updatedProfile);
                     await _axaMansard.Save();
+
+                    var auditViewModel = new AuditLogViewModel(Id, null, null, "Updated HealthInsured Profile", "Updated HealthInsured profile");
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
                     return Ok(new ResponseMessage { Status = true, Message = "Profile was updated successfully" });
                 }
                 return BadRequest(new ResponseMessage { Status = false, Message = "This on us...Error occurred while updating profile" });

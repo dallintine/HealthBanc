@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.DataAccess.Implementation
 {
-    public class AuditLogRepository : BaseRepository<UserAuditLog>, IAuditLogRepository
+    public class AdminLogin_LogoutLogRepository : BaseRepository<AdminLogin_LogoutLog>, IAdminLogin_LogoutLogRepository
     {
-        public AuditLogRepository(ApplicationDbContext context) : base(context)
+        public AdminLogin_LogoutLogRepository(ApplicationDbContext context) : base(context)
         {
         }
     }

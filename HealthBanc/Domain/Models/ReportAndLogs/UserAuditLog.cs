@@ -16,6 +16,7 @@ namespace HealthBanc.Domain.Models.ReportAndLogs
         public string TransactionId { get; set; }
         [Required]
         public string BeforeEventContent { get; set; }
+
         public string ActionApplied { get; set; }
         [Required]
         public string AfterEventContent { get; set; }
@@ -23,6 +24,8 @@ namespace HealthBanc.Domain.Models.ReportAndLogs
         public DateTime Date { get; set; }
         [Required]
         public string IPAddress { get; set; }
+        [Required]
+        public string Device { get; set; }
         [Required]
         public string MACAddress { get; set; }
     }
