@@ -37,6 +37,7 @@ namespace HealthBanc.Domain.Models
         public string CPCity { get; set; }
         public string CPEmail { get; set; }
         public string AlternateHospital { get; set; }
+        public string AlternateHospitalAddress { get; set; }
         public string MedicalCondition { get; set; }
         public string PlanCode { get; set; }
         public Decimal Premium { get; set; }

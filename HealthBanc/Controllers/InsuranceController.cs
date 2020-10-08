@@ -153,6 +153,7 @@ namespace HealthBanc.Controllers
 
                             var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
                             axaInsuranceUser.UserId = Id;
+                            axaInsuranceUser.AlternateHospitalAddress = profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[1];
                             _axaMansard.Create(axaInsuranceUser);
                             await _axaMansard.Save();
 
