@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -187,6 +188,10 @@ namespace HealthBanc
             services.Configure<DataProtectionTokenProviderOptions>(options =>
                  options.TokenLifespan = TimeSpan.FromDays(5));
 
+            //Add Detection Service
+
+            services.AddDetection();
+
 
 
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")
@@ -349,6 +354,12 @@ namespace HealthBanc
                 Authorization = new[] { new MyAuthorizationFilter() }
             });
 
+            ServicePointManager.ServerCertificateValidationCallback +=
+                (sender, certificate, chain, errors) =>
+                {
+                    return true;
+                };
+
 
             app.UseCors("CorsPolicy");
             
@@ -382,6 +393,8 @@ namespace HealthBanc
             app.UseAuthentication();
 
             app.UseRouting();
+
+            app.UseDetection();
 
             app.UseAuthorization();
 

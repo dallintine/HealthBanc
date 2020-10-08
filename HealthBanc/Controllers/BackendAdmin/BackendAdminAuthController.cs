@@ -24,6 +24,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace HealthBanc.Controllers
 {
@@ -72,7 +73,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> BackendLogin([FromBody] ADCredentials aDCredentials,[FromRoute] string otp)
+        public async Task<IActionResult> BackendLogin([FromBody] ADCredentials aDCredentials,[FromQuery] string otp)
         {
             if (ModelState.IsValid)
             {
@@ -97,8 +98,11 @@ namespace HealthBanc.Controllers
                             var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
                             if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                             {
-                                var response =await _oTPService.OtpValidationAsync(otp, aDCredentials.AD_Username);
-                                if (response.Body.OtpValidationResult.Contains("00|Token Successfully"))
+                                var response = _oTPService.SOAPManual(otp, aDCredentials.AD_Username);
+                                XmlDocument xmlDoc = new XmlDocument();
+                                xmlDoc.LoadXml(response);
+                                var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
+                                if (responseResult.Contains("00|Token Successfully"))
                                 {
                                     var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
                                     return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
