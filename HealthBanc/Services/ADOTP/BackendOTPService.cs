@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ServiceReference1;
+using SterlOTP;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -103,9 +103,18 @@ namespace HealthBanc.Services.ADOTP
             return soapEnvelopeXml;
         }
 
-        private async Task<OTPCentralServiceSoapClient> GetInstanceAsync()
+        private OTPCentralServiceSoapClient GetInstanceAsync()
         {
-            return await Task.Run(() => new OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress));
+            var client = new OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress);
+            client.ChannelFactory.Credentials.ServiceCertificate.SslCertificateAuthentication =
+                new X509ServiceCertificateAuthentication
+                {
+                    CertificateValidationMode = X509CertificateValidationMode.None,
+                    RevocationMode = X509RevocationMode.NoCheck,
+                    TrustedStoreLocation = StoreLocation.LocalMachine
+                };
+            return client;
+            //return await Task.Run(() => new OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress));
         }
 
         public async Task<OtpValidationResponse> OtpValidationAsync(string otp, string username)
@@ -113,7 +122,15 @@ namespace HealthBanc.Services.ADOTP
             var response2 = new OtpValidationResponse();
             try
             {
-                var client = await GetInstanceAsync();
+                //var client = GetInstanceAsync();
+                var client = new OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress);
+                client.ChannelFactory.Credentials.ServiceCertificate.SslCertificateAuthentication =
+                    new X509ServiceCertificateAuthentication
+                    {
+                        CertificateValidationMode = X509CertificateValidationMode.None,
+                        RevocationMode = X509RevocationMode.NoCheck,
+                        TrustedStoreLocation = StoreLocation.LocalMachine
+                    };
                 var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
                 _logger.LogError(response.ToString());
                 return response;

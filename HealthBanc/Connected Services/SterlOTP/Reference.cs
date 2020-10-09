@@ -7,29 +7,29 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ServiceReference1
+namespace SterlOTP
 {
     
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "2.0.2")]
-    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="ServiceReference1.OTPCentralServiceSoap")]
+    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="SterlOTP.OTPCentralServiceSoap")]
     public interface OTPCentralServiceSoap
     {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/CreateUser", ReplyAction="*")]
-        System.Threading.Tasks.Task<ServiceReference1.CreateUserResponse> CreateUserAsync(ServiceReference1.CreateUserRequest request);
+        System.Threading.Tasks.Task<SterlOTP.CreateUserResponse> CreateUserAsync(SterlOTP.CreateUserRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/AssignToken", ReplyAction="*")]
-        System.Threading.Tasks.Task<ServiceReference1.AssignTokenResponse> AssignTokenAsync(ServiceReference1.AssignTokenRequest request);
+        System.Threading.Tasks.Task<SterlOTP.AssignTokenResponse> AssignTokenAsync(SterlOTP.AssignTokenRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/OtpValidation", ReplyAction="*")]
-        System.Threading.Tasks.Task<ServiceReference1.OtpValidationResponse> OtpValidationAsync(ServiceReference1.OtpValidationRequest request);
+        System.Threading.Tasks.Task<SterlOTP.OtpValidationResponse> OtpValidationAsync(SterlOTP.OtpValidationRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/MobileUserCreation", ReplyAction="*")]
-        System.Threading.Tasks.Task<ServiceReference1.MobileUserCreationResponse> MobileUserCreationAsync(ServiceReference1.MobileUserCreationRequest request);
+        System.Threading.Tasks.Task<SterlOTP.MobileUserCreationResponse> MobileUserCreationAsync(SterlOTP.MobileUserCreationRequest request);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/ActiveMobileToken", ReplyAction="*")]
-        System.Threading.Tasks.Task<ServiceReference1.ActiveMobileTokenResponse> ActiveMobileTokenAsync(ServiceReference1.ActiveMobileTokenRequest request);
+        System.Threading.Tasks.Task<SterlOTP.ActiveMobileTokenResponse> ActiveMobileTokenAsync(SterlOTP.ActiveMobileTokenRequest request);
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
@@ -40,13 +40,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="CreateUser", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.CreateUserRequestBody Body;
+        public SterlOTP.CreateUserRequestBody Body;
         
         public CreateUserRequest()
         {
         }
         
-        public CreateUserRequest(ServiceReference1.CreateUserRequestBody Body)
+        public CreateUserRequest(SterlOTP.CreateUserRequestBody Body)
         {
             this.Body = Body;
         }
@@ -92,13 +92,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="CreateUserResponse", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.CreateUserResponseBody Body;
+        public SterlOTP.CreateUserResponseBody Body;
         
         public CreateUserResponse()
         {
         }
         
-        public CreateUserResponse(ServiceReference1.CreateUserResponseBody Body)
+        public CreateUserResponse(SterlOTP.CreateUserResponseBody Body)
         {
             this.Body = Body;
         }
@@ -132,13 +132,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="AssignToken", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.AssignTokenRequestBody Body;
+        public SterlOTP.AssignTokenRequestBody Body;
         
         public AssignTokenRequest()
         {
         }
         
-        public AssignTokenRequest(ServiceReference1.AssignTokenRequestBody Body)
+        public AssignTokenRequest(SterlOTP.AssignTokenRequestBody Body)
         {
             this.Body = Body;
         }
@@ -180,13 +180,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="AssignTokenResponse", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.AssignTokenResponseBody Body;
+        public SterlOTP.AssignTokenResponseBody Body;
         
         public AssignTokenResponse()
         {
         }
         
-        public AssignTokenResponse(ServiceReference1.AssignTokenResponseBody Body)
+        public AssignTokenResponse(SterlOTP.AssignTokenResponseBody Body)
         {
             this.Body = Body;
         }
@@ -220,13 +220,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="OtpValidation", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.OtpValidationRequestBody Body;
+        public SterlOTP.OtpValidationRequestBody Body;
         
         public OtpValidationRequest()
         {
         }
         
-        public OtpValidationRequest(ServiceReference1.OtpValidationRequestBody Body)
+        public OtpValidationRequest(SterlOTP.OtpValidationRequestBody Body)
         {
             this.Body = Body;
         }
@@ -268,13 +268,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="OtpValidationResponse", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.OtpValidationResponseBody Body;
+        public SterlOTP.OtpValidationResponseBody Body;
         
         public OtpValidationResponse()
         {
         }
         
-        public OtpValidationResponse(ServiceReference1.OtpValidationResponseBody Body)
+        public OtpValidationResponse(SterlOTP.OtpValidationResponseBody Body)
         {
             this.Body = Body;
         }
@@ -308,13 +308,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="MobileUserCreation", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.MobileUserCreationRequestBody Body;
+        public SterlOTP.MobileUserCreationRequestBody Body;
         
         public MobileUserCreationRequest()
         {
         }
         
-        public MobileUserCreationRequest(ServiceReference1.MobileUserCreationRequestBody Body)
+        public MobileUserCreationRequest(SterlOTP.MobileUserCreationRequestBody Body)
         {
             this.Body = Body;
         }
@@ -360,13 +360,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="MobileUserCreationResponse", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.MobileUserCreationResponseBody Body;
+        public SterlOTP.MobileUserCreationResponseBody Body;
         
         public MobileUserCreationResponse()
         {
         }
         
-        public MobileUserCreationResponse(ServiceReference1.MobileUserCreationResponseBody Body)
+        public MobileUserCreationResponse(SterlOTP.MobileUserCreationResponseBody Body)
         {
             this.Body = Body;
         }
@@ -400,13 +400,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="ActiveMobileToken", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.ActiveMobileTokenRequestBody Body;
+        public SterlOTP.ActiveMobileTokenRequestBody Body;
         
         public ActiveMobileTokenRequest()
         {
         }
         
-        public ActiveMobileTokenRequest(ServiceReference1.ActiveMobileTokenRequestBody Body)
+        public ActiveMobileTokenRequest(SterlOTP.ActiveMobileTokenRequestBody Body)
         {
             this.Body = Body;
         }
@@ -444,13 +444,13 @@ namespace ServiceReference1
     {
         
         [System.ServiceModel.MessageBodyMemberAttribute(Name="ActiveMobileTokenResponse", Namespace="http://tempuri.org/", Order=0)]
-        public ServiceReference1.ActiveMobileTokenResponseBody Body;
+        public SterlOTP.ActiveMobileTokenResponseBody Body;
         
         public ActiveMobileTokenResponse()
         {
         }
         
-        public ActiveMobileTokenResponse(ServiceReference1.ActiveMobileTokenResponseBody Body)
+        public ActiveMobileTokenResponse(SterlOTP.ActiveMobileTokenResponseBody Body)
         {
             this.Body = Body;
         }
@@ -477,13 +477,13 @@ namespace ServiceReference1
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "2.0.2")]
-    public interface OTPCentralServiceSoapChannel : ServiceReference1.OTPCentralServiceSoap, System.ServiceModel.IClientChannel
+    public interface OTPCentralServiceSoapChannel : SterlOTP.OTPCentralServiceSoap, System.ServiceModel.IClientChannel
     {
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "2.0.2")]
-    public partial class OTPCentralServiceSoapClient : System.ServiceModel.ClientBase<ServiceReference1.OTPCentralServiceSoap>, ServiceReference1.OTPCentralServiceSoap
+    public partial class OTPCentralServiceSoapClient : System.ServiceModel.ClientBase<SterlOTP.OTPCentralServiceSoap>, SterlOTP.OTPCentralServiceSoap
     {
         
         /// <summary>
@@ -520,84 +520,84 @@ namespace ServiceReference1
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<ServiceReference1.CreateUserResponse> ServiceReference1.OTPCentralServiceSoap.CreateUserAsync(ServiceReference1.CreateUserRequest request)
+        System.Threading.Tasks.Task<SterlOTP.CreateUserResponse> SterlOTP.OTPCentralServiceSoap.CreateUserAsync(SterlOTP.CreateUserRequest request)
         {
             return base.Channel.CreateUserAsync(request);
         }
         
-        public System.Threading.Tasks.Task<ServiceReference1.CreateUserResponse> CreateUserAsync(string username, string firstname, string lastname, string hashkey)
+        public System.Threading.Tasks.Task<SterlOTP.CreateUserResponse> CreateUserAsync(string username, string firstname, string lastname, string hashkey)
         {
-            ServiceReference1.CreateUserRequest inValue = new ServiceReference1.CreateUserRequest();
-            inValue.Body = new ServiceReference1.CreateUserRequestBody();
+            SterlOTP.CreateUserRequest inValue = new SterlOTP.CreateUserRequest();
+            inValue.Body = new SterlOTP.CreateUserRequestBody();
             inValue.Body.username = username;
             inValue.Body.firstname = firstname;
             inValue.Body.lastname = lastname;
             inValue.Body.hashkey = hashkey;
-            return ((ServiceReference1.OTPCentralServiceSoap)(this)).CreateUserAsync(inValue);
+            return ((SterlOTP.OTPCentralServiceSoap)(this)).CreateUserAsync(inValue);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<ServiceReference1.AssignTokenResponse> ServiceReference1.OTPCentralServiceSoap.AssignTokenAsync(ServiceReference1.AssignTokenRequest request)
+        System.Threading.Tasks.Task<SterlOTP.AssignTokenResponse> SterlOTP.OTPCentralServiceSoap.AssignTokenAsync(SterlOTP.AssignTokenRequest request)
         {
             return base.Channel.AssignTokenAsync(request);
         }
         
-        public System.Threading.Tasks.Task<ServiceReference1.AssignTokenResponse> AssignTokenAsync(string serialNumber, string username, string hashkey)
+        public System.Threading.Tasks.Task<SterlOTP.AssignTokenResponse> AssignTokenAsync(string serialNumber, string username, string hashkey)
         {
-            ServiceReference1.AssignTokenRequest inValue = new ServiceReference1.AssignTokenRequest();
-            inValue.Body = new ServiceReference1.AssignTokenRequestBody();
+            SterlOTP.AssignTokenRequest inValue = new SterlOTP.AssignTokenRequest();
+            inValue.Body = new SterlOTP.AssignTokenRequestBody();
             inValue.Body.serialNumber = serialNumber;
             inValue.Body.username = username;
             inValue.Body.hashkey = hashkey;
-            return ((ServiceReference1.OTPCentralServiceSoap)(this)).AssignTokenAsync(inValue);
+            return ((SterlOTP.OTPCentralServiceSoap)(this)).AssignTokenAsync(inValue);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<ServiceReference1.OtpValidationResponse> ServiceReference1.OTPCentralServiceSoap.OtpValidationAsync(ServiceReference1.OtpValidationRequest request)
+        System.Threading.Tasks.Task<SterlOTP.OtpValidationResponse> SterlOTP.OTPCentralServiceSoap.OtpValidationAsync(SterlOTP.OtpValidationRequest request)
         {
             return base.Channel.OtpValidationAsync(request);
         }
         
-        public System.Threading.Tasks.Task<ServiceReference1.OtpValidationResponse> OtpValidationAsync(string otp, string username, string hashkey)
+        public System.Threading.Tasks.Task<SterlOTP.OtpValidationResponse> OtpValidationAsync(string otp, string username, string hashkey)
         {
-            ServiceReference1.OtpValidationRequest inValue = new ServiceReference1.OtpValidationRequest();
-            inValue.Body = new ServiceReference1.OtpValidationRequestBody();
+            SterlOTP.OtpValidationRequest inValue = new SterlOTP.OtpValidationRequest();
+            inValue.Body = new SterlOTP.OtpValidationRequestBody();
             inValue.Body.otp = otp;
             inValue.Body.username = username;
             inValue.Body.hashkey = hashkey;
-            return ((ServiceReference1.OTPCentralServiceSoap)(this)).OtpValidationAsync(inValue);
+            return ((SterlOTP.OTPCentralServiceSoap)(this)).OtpValidationAsync(inValue);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<ServiceReference1.MobileUserCreationResponse> ServiceReference1.OTPCentralServiceSoap.MobileUserCreationAsync(ServiceReference1.MobileUserCreationRequest request)
+        System.Threading.Tasks.Task<SterlOTP.MobileUserCreationResponse> SterlOTP.OTPCentralServiceSoap.MobileUserCreationAsync(SterlOTP.MobileUserCreationRequest request)
         {
             return base.Channel.MobileUserCreationAsync(request);
         }
         
-        public System.Threading.Tasks.Task<ServiceReference1.MobileUserCreationResponse> MobileUserCreationAsync(string username, string firstname, string lastname, string hashkey)
+        public System.Threading.Tasks.Task<SterlOTP.MobileUserCreationResponse> MobileUserCreationAsync(string username, string firstname, string lastname, string hashkey)
         {
-            ServiceReference1.MobileUserCreationRequest inValue = new ServiceReference1.MobileUserCreationRequest();
-            inValue.Body = new ServiceReference1.MobileUserCreationRequestBody();
+            SterlOTP.MobileUserCreationRequest inValue = new SterlOTP.MobileUserCreationRequest();
+            inValue.Body = new SterlOTP.MobileUserCreationRequestBody();
             inValue.Body.username = username;
             inValue.Body.firstname = firstname;
             inValue.Body.lastname = lastname;
             inValue.Body.hashkey = hashkey;
-            return ((ServiceReference1.OTPCentralServiceSoap)(this)).MobileUserCreationAsync(inValue);
+            return ((SterlOTP.OTPCentralServiceSoap)(this)).MobileUserCreationAsync(inValue);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<ServiceReference1.ActiveMobileTokenResponse> ServiceReference1.OTPCentralServiceSoap.ActiveMobileTokenAsync(ServiceReference1.ActiveMobileTokenRequest request)
+        System.Threading.Tasks.Task<SterlOTP.ActiveMobileTokenResponse> SterlOTP.OTPCentralServiceSoap.ActiveMobileTokenAsync(SterlOTP.ActiveMobileTokenRequest request)
         {
             return base.Channel.ActiveMobileTokenAsync(request);
         }
         
-        public System.Threading.Tasks.Task<ServiceReference1.ActiveMobileTokenResponse> ActiveMobileTokenAsync(string SerialNumber, string hashkey)
+        public System.Threading.Tasks.Task<SterlOTP.ActiveMobileTokenResponse> ActiveMobileTokenAsync(string SerialNumber, string hashkey)
         {
-            ServiceReference1.ActiveMobileTokenRequest inValue = new ServiceReference1.ActiveMobileTokenRequest();
-            inValue.Body = new ServiceReference1.ActiveMobileTokenRequestBody();
+            SterlOTP.ActiveMobileTokenRequest inValue = new SterlOTP.ActiveMobileTokenRequest();
+            inValue.Body = new SterlOTP.ActiveMobileTokenRequestBody();
             inValue.Body.SerialNumber = SerialNumber;
             inValue.Body.hashkey = hashkey;
-            return ((ServiceReference1.OTPCentralServiceSoap)(this)).ActiveMobileTokenAsync(inValue);
+            return ((SterlOTP.OTPCentralServiceSoap)(this)).ActiveMobileTokenAsync(inValue);
         }
         
         public virtual System.Threading.Tasks.Task OpenAsync()

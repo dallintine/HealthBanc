@@ -10,7 +10,7 @@
       "System.Collections.Generic.Dictionary`2"
     ],
     "namespaceMappings": [
-      "*, ServiceReference1"
+      "*, SterlOTP"
     ],
     "references": [
       "Autofac, {Autofac, 4.9.2}",
