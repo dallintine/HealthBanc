@@ -39,6 +39,7 @@ namespace HealthBanc.Services.ADOTP
             basicHttpBinding.CloseTimeout = TimeSpan.MaxValue;
             basicHttpBinding.ReceiveTimeout = TimeSpan.MaxValue;
             basicHttpBinding.SendTimeout = TimeSpan.MaxValue;
+            basicHttpBinding.UseDefaultWebProxy = true;
         }
 
         public string SOAPManual(string otp, string username)
