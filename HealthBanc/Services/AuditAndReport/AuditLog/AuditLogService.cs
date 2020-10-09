@@ -44,12 +44,12 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
 
         public string GetDevice()
         {
-            var userAgent = _accessor.HttpContext.Request.Headers["User-Agent"];
-            string uaString = Convert.ToString(userAgent[0]);
-            var uaParser = Parser.GetDefault();
-            ClientInfo c = uaParser.Parse(uaString);
+            //var userAgent = _accessor.HttpContext.Request.Headers["User-Agent"];
+            //string uaString = Convert.ToString(userAgent[0]);
+            //var uaParser = Parser.GetDefault();
+            //ClientInfo c = uaParser.Parse(uaString);
 
-            return  c.OS.ToString() + " " + c.UA.ToString() + " " +c.Device.Brand+","+c.Device.Family;
+            return  /*c.OS.ToString() + " " + c.UA.ToString() + " " +c.Device.Brand+","+c.Device.Family;*/ "test";
         }
     }
 }
