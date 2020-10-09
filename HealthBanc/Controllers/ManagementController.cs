@@ -31,9 +31,10 @@ namespace HealthBanc.Controllers
         }
 
         [HttpGet("[action]")]
-        public IActionResult Error(string OPP)
+        public async Task<IActionResult> Error(string OPP)
         {
-            var x = _iBAckend.OtpValidationAsync(OPP, "Hassannh");
+            var x =await _iBAckend.OtpValidationAsync(OPP, "Hassannh");
+            _logger.LogError(x.ToString());
             return Ok(x);
         }
         [HttpGet("[action]")]

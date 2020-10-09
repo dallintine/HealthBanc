@@ -115,10 +115,20 @@ namespace HealthBanc.Services.ADOTP
 
         public async Task<OtpValidationResponse> OtpValidationAsync(string otp, string username)
         {
-            var client = await GetInstanceAsync();
-            var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
-            return response;
+            var response2 = new OtpValidationResponse();
+            try
+            {
+                var client = await GetInstanceAsync();
+                var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
+                _logger.LogError(response.ToString());
+                return response;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogCritical("Error:", ex);
+            }
+            return response2;
+            
         }
-
     }
 }
