@@ -350,11 +350,11 @@ namespace HealthBanc
                 Authorization = new[] { new MyAuthorizationFilter() }
             });
 
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (sender, certificate, chain, errors) =>
-                {
-                    return true;
-                };
+            //ServicePointManager.ServerCertificateValidationCallback +=
+            //    (sender, certificate, chain, errors) =>
+            //    {
+            //        return true;
+            //    };
 
 
             app.UseCors("CorsPolicy");

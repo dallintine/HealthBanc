@@ -28,16 +28,27 @@ namespace HealthBanc.Services.ADOTP
         public String SOAPManual(string otp, string username)
         {
             const string url = "https://az-cpibap2-serv/OTPCentralService.asmx";
-            const string action = "OtpValidation";
+            const string action = "http://tempuri.org/OtpValidation";
 
             try
             {
                 XmlDocument soapEnvelopeXml = CreateSoapEnvelope(otp,username);
                 HttpWebRequest webRequest = CreateWebRequest(url, action);
 
-                InsertSoapEnvelopeIntoWebRequest(soapEnvelopeXml, webRequest);
+                using (Stream stream = webRequest.GetRequestStream())
+                {
+                    soapEnvelopeXml.Save(stream);
+                }
 
                 string result;
+                using (WebResponse response = webRequest.GetResponse())
+                {
+                    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
+                    {
+                        result = rd.ReadToEnd();
+                    }
+                }
+
                 using (WebResponse response = webRequest.GetResponse())
                 {
                     using (StreamReader rd = new StreamReader(response.GetResponseStream()))
@@ -51,7 +62,6 @@ namespace HealthBanc.Services.ADOTP
             {
                 _logger.LogError(ex.ToString());
                 return "false";
-                var y = ex.ToString();
             }
             
         }
@@ -82,12 +92,5 @@ namespace HealthBanc.Services.ADOTP
             return soapEnvelopeXml;
         }
 
-        private static void InsertSoapEnvelopeIntoWebRequest(XmlDocument soapEnvelopeXml, HttpWebRequest webRequest)
-        {
-            using (Stream stream = webRequest.GetRequestStream())
-            {
-                soapEnvelopeXml.Save(stream);
-            }
-        }
     }
 }
