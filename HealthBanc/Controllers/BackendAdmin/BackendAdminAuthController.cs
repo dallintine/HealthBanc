@@ -98,21 +98,24 @@ namespace HealthBanc.Controllers
                             var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
                             if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                             {
-                                var response = _oTPService.SOAPManual(otp, aDCredentials.AD_Username);
-                                if(response == "false")
-                                {
-                                    return BadRequest(new ResponseMessage { Message = "This on us. Could not validate OTO, try again later" });
-                                };
-                                _logger.LogError(response.ToString());
-                                XmlDocument xmlDoc = new XmlDocument();
-                                xmlDoc.LoadXml(response);
-                                var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
-                                if (responseResult.Contains("00|Token Successfully"))
-                                {
-                                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                                //var response = _oTPService.SOAPManual(otp, aDCredentials.AD_Username);
+                                //if(response == "false")
+                                //{
+                                //    return BadRequest(new ResponseMessage { Message = "This on us. Could not validate OTO, try again later" });
+                                //};
+                                //_logger.LogError(response.ToString());
+                                //XmlDocument xmlDoc = new XmlDocument();
+                                //xmlDoc.LoadXml(response);
+                                //var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
+                                //if (responseResult.Contains("00|Token Successfully"))
+                                //{
+                                var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
+                                var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, true, false, loginOutHours);
+                                await _userRepository.Save();
+                                var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
                                     return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
-                                }
-                                return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
+                                //}
+                                
                             }
                             else
                             {
