@@ -414,10 +414,10 @@ namespace HealthBanc.Controllers
             BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
             //if (result.Status == true)
             //{
-            //    userAxamansardProfile.SubscriptionStatus = true;
-            //    _mansardUserProfileRepository.Update(userAxamansardProfile);
+            userAxamansardProfile.SubscriptionStatus = true;
+            _mansardUserProfileRepository.Update(userAxamansardProfile);
 
-            //    await _mansardUserProfileRepository.Save();
+            await _mansardUserProfileRepository.Save();
             return Ok(new ResponseMessage {Message="Reactivation was successful",Status=true });
             //} 
             //return BadRequest(result);

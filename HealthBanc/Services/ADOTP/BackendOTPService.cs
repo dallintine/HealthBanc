@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
+using System.ServiceModel.Security;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -41,9 +42,10 @@ namespace HealthBanc.Services.ADOTP
             basicHttpBinding.SendTimeout = TimeSpan.MaxValue;
             basicHttpBinding.UseDefaultWebProxy = true;
         }
-
+       
         public string SOAPManual(string otp, string username)
         {
+
             const string url = "https://az-cpibap2-serv/OTPCentralService.asmx";
             const string action = "http://tempuri.org/OtpValidation";
 
@@ -116,28 +118,20 @@ namespace HealthBanc.Services.ADOTP
 
         public async Task<OtpValidationResponse> OtpValidationAsync(string otp, string username)
         {
-            ServiceReference1.OTPCentralServiceSoapClient client = new ServiceReference1.OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress);
-            var x =await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
-            return x;
+            var response2 = new OtpValidationResponse();
+            try
+            {
+                var client = await GetInstanceAsync();
+                var x = new OtpValidationRequestBody(otp, username, Options.SterlingOtpConfig.Hashkey);
+                var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
+                _logger.LogError(response.ToString());
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex.ToString(), ex.ToString());
+            }
+            return response2;
         }
-
-        //public async Task<OtpValidationResponse> OtpValidationAsync(string otp, string username)
-        //{            
-        //    var response2 = new OtpValidationResponse();
-        //    try
-        //    {
-        //        var client = await GetInstanceAsync();
-        //        var x = new OtpValidationRequestBody(otp, username, Options.SterlingOtpConfig.Hashkey);
-        //        var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
-        //        _logger.LogError(response.ToString());
-        //        return response;
-        //    }
-        //    catch(Exception ex)
-        //    {
-        //        _logger.LogCritical(ex.ToString(),ex.ToString());
-        //    }
-        //    return response2;
-            
-        //}
     }
 }
