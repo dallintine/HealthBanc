@@ -116,21 +116,28 @@ namespace HealthBanc.Services.ADOTP
 
         public async Task<OtpValidationResponse> OtpValidationAsync(string otp, string username)
         {
-            var response2 = new OtpValidationResponse();
-            try
-            {
-                var client = await GetInstanceAsync();
-                var x = new OtpValidationRequestBody(otp, username, Options.SterlingOtpConfig.Hashkey);
-                var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
-                _logger.LogError(response.ToString());
-                return response;
-            }
-            catch(Exception ex)
-            {
-                _logger.LogCritical(ex.ToString(),ex.ToString());
-            }
-            return response2;
-            
+            ServiceReference1.OTPCentralServiceSoapClient client = new ServiceReference1.OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress);
+            var x =await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
+            return x;
         }
+
+        //public async Task<OtpValidationResponse> OtpValidationAsync(string otp, string username)
+        //{            
+        //    var response2 = new OtpValidationResponse();
+        //    try
+        //    {
+        //        var client = await GetInstanceAsync();
+        //        var x = new OtpValidationRequestBody(otp, username, Options.SterlingOtpConfig.Hashkey);
+        //        var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
+        //        _logger.LogError(response.ToString());
+        //        return response;
+        //    }
+        //    catch(Exception ex)
+        //    {
+        //        _logger.LogCritical(ex.ToString(),ex.ToString());
+        //    }
+        //    return response2;
+            
+        //}
     }
 }
