@@ -20,7 +20,7 @@ namespace HealthBanc.Services.ADOTP
     {
         public readonly HealthBanc.Helpers.SterlingOtp Options;
         private readonly ILogger<BackendOTPService> _logger;
-        public readonly string serviceUrl = "https://az-cpibap2-serv/OTPCentralService.asmx?op=OtpValidation";
+        public readonly string serviceUrl = "https://az-cpibap2-serv/OTPCentralService.asmx";
         public readonly EndpointAddress endpointAddress;
         public readonly BasicHttpBinding basicHttpBinding;
 
@@ -41,6 +41,7 @@ namespace HealthBanc.Services.ADOTP
             basicHttpBinding.ReceiveTimeout = TimeSpan.MaxValue;
             basicHttpBinding.SendTimeout = TimeSpan.MaxValue;
             basicHttpBinding.UseDefaultWebProxy = true;
+            basicHttpBinding.Name = "OTPCentralServiceSoap";
         }
        
         public string SOAPManual(string otp, string username)
