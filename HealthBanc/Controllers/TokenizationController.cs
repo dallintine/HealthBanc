@@ -135,7 +135,7 @@ namespace HealthBanc.Controllers
                                        tokenizeReference), DateTime.Now.AddMinutes(2));
                                 }                                
 
-                                return Ok(new ResponseMessage { Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
+                                return Ok(new ResponseMessage {Data=cardResponse.Data, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
                             }
                             if (cardResponse.Status == true && cardResponse.ResponseCode == 12)
                             {
