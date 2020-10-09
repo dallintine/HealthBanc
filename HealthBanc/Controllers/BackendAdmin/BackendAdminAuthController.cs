@@ -110,7 +110,7 @@ namespace HealthBanc.Controllers
                                 //if (responseResult.Contains("00|Token Successfully"))
                                 //{
                                 var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-                                var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, true, false, loginOutHours);
+                                var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
                                 await _userRepository.Save();
                                 var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
                                     return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
