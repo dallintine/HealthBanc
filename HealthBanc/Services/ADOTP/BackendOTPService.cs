@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,9 +17,12 @@ namespace HealthBanc.Services.ADOTP
     public class BackendOTPService : IBackendOTPService
     {
         public readonly HealthBanc.Helpers.SterlingOtp Options;
-        public BackendOTPService(IOptions<HealthBanc.Helpers.SterlingOtp> optionAccessor)
+        private readonly ILogger<BackendOTPService> _logger;
+
+        public BackendOTPService(IOptions<HealthBanc.Helpers.SterlingOtp> optionAccessor, ILogger<BackendOTPService> logger)
         {
             Options = optionAccessor.Value;
+            _logger = logger;
         }
 
         public String SOAPManual(string otp, string username)
@@ -45,6 +49,7 @@ namespace HealthBanc.Services.ADOTP
             }
             catch(Exception ex)
             {
+                _logger.LogError(ex.ToString());
                 var y = ex.ToString();
             }
             return "goid";
