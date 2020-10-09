@@ -33,9 +33,9 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> Error(string OPP)
         {
-            var x =await _iBAckend.OtpValidationAsync(OPP, "Hassannh");
+            var x =_iBAckend.SOAPManual(OPP, "Hassannh");
             _logger.LogError(x.ToString());
-            return Ok(x.Body.OtpValidationResult);
+            return Ok(x.ToString());
         }
         [HttpGet("[action]")]
         public async Task<IActionResult> Delete()
