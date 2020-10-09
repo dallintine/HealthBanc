@@ -1,4 +1,5 @@
 ﻿using HealthBanc.Data;
+using HealthBanc.Services.ADOTP;
 using HealthBanc.Services.Insurance;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,20 +20,21 @@ namespace HealthBanc.Controllers
         private readonly ApplicationDbContext _dbContext;
         private readonly InsuranceService _insuranceService;
         private readonly ILogger<ManagementController> _logger;
+        private readonly IBackendOTPService _iBAckend;
 
-        public ManagementController(ApplicationDbContext dbContext, InsuranceService insuranceService,ILogger<ManagementController> logger)
+        public ManagementController(ApplicationDbContext dbContext, InsuranceService insuranceService,ILogger<ManagementController> logger, IBackendOTPService iBAckend)
         {
             _dbContext = dbContext;
             _insuranceService = insuranceService;
             _logger = logger;
+            _iBAckend = iBAckend;
         }
 
         [HttpGet("[action]")]
-        public IActionResult Error()
+        public IActionResult Error(string OPP)
         {
-            var x = "fdvsv";
-            var y = int.Parse(x);
-            return Ok();
+            var x = _iBAckend.OtpValidationAsync(OPP, "Hassannh");
+            return Ok(x);
         }
         [HttpGet("[action]")]
         public async Task<IActionResult> Delete()

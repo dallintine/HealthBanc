@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ServiceReference1;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,14 +19,29 @@ namespace HealthBanc.Services.ADOTP
     {
         public readonly HealthBanc.Helpers.SterlingOtp Options;
         private readonly ILogger<BackendOTPService> _logger;
+        public readonly string serviceUrl = "https://az-cpibap2-serv/OTPCentralService.asmx";
+        public readonly EndpointAddress endpointAddress;
+        public readonly BasicHttpBinding basicHttpBinding;
 
         public BackendOTPService(IOptions<HealthBanc.Helpers.SterlingOtp> optionAccessor, ILogger<BackendOTPService> logger)
         {
+
             Options = optionAccessor.Value;
             _logger = logger;
+            endpointAddress = new EndpointAddress(serviceUrl);
+
+            basicHttpBinding =
+                new BasicHttpBinding(endpointAddress.Uri.Scheme.ToLower() == "http" ?
+                            BasicHttpSecurityMode.None : BasicHttpSecurityMode.Transport);
+
+            //Please set the time accordingly, this is only for demo
+            basicHttpBinding.OpenTimeout = TimeSpan.MaxValue;
+            basicHttpBinding.CloseTimeout = TimeSpan.MaxValue;
+            basicHttpBinding.ReceiveTimeout = TimeSpan.MaxValue;
+            basicHttpBinding.SendTimeout = TimeSpan.MaxValue;
         }
 
-        public String SOAPManual(string otp, string username)
+        public string SOAPManual(string otp, string username)
         {
             const string url = "https://az-cpibap2-serv/OTPCentralService.asmx";
             const string action = "http://tempuri.org/OtpValidation";
@@ -90,6 +106,18 @@ namespace HealthBanc.Services.ADOTP
                     </soap:Body>
                 </soap:Envelope>");
             return soapEnvelopeXml;
+        }
+
+        private async Task<OTPCentralServiceSoapClient> GetInstanceAsync()
+        {
+            return await Task.Run(() => new OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress));
+        }
+
+        public async Task<OtpValidationResponse> OtpValidationAsync(string otp, string username)
+        {
+            var client = await GetInstanceAsync();
+            var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
+            return response;
         }
 
     }
