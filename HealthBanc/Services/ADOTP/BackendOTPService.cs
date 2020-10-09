@@ -125,7 +125,7 @@ namespace HealthBanc.Services.ADOTP
             }
             catch(Exception ex)
             {
-                _logger.LogCritical("Error:", ex);
+                _logger.LogCritical(ex.ToString(),ex.ToString());
             }
             return response2;
             
