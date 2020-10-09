@@ -207,7 +207,7 @@ namespace HealthBanc.Controllers
                                 _completionRepository.Update(checkprofileComplete);
                                 await _completionRepository.Save();                                                             
 
-                                if (userAxamansardProfile.Cards.Count == 1)
+                                if (userAxamansardProfile.SubscriptionStatus == null)
                                 {
                                     userAxamansardProfile.SubscriptionStatus = true;
                                     _mansardUserProfileRepository.Update(userAxamansardProfile);
