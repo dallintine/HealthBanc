@@ -28,7 +28,7 @@ namespace HealthBanc.Services.ADOTP
         public String SOAPManual(string otp, string username)
         {
             const string url = "https://az-cpibap2-serv/OTPCentralService.asmx";
-            const string action = "http://tempuri.org/OtpValidation";
+            const string action = "OtpValidation";
 
             try
             {
@@ -50,9 +50,10 @@ namespace HealthBanc.Services.ADOTP
             catch(Exception ex)
             {
                 _logger.LogError(ex.ToString());
+                return "false";
                 var y = ex.ToString();
             }
-            return "goid";
+            
         }
 
         private static HttpWebRequest CreateWebRequest(string url, string action)
