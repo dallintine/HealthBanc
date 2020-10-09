@@ -35,7 +35,7 @@ namespace HealthBanc.Controllers
         {
             var x =await _iBAckend.OtpValidationAsync(OPP, "Hassannh");
             _logger.LogError(x.ToString());
-            return Ok(x);
+            return Ok(x.Body.OtpValidationResult);
         }
         [HttpGet("[action]")]
         public async Task<IActionResult> Delete()
