@@ -99,6 +99,10 @@ namespace HealthBanc.Controllers
                             if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                             {
                                 var response = _oTPService.SOAPManual(otp, aDCredentials.AD_Username);
+                                if(response == "false")
+                                {
+                                    return BadRequest(new ResponseMessage { Message = "This on us. Could not validate OTO, try again later" });
+                                }
                                 _logger.LogError(response.ToString());
                                 XmlDocument xmlDoc = new XmlDocument();
                                 xmlDoc.LoadXml(response);
