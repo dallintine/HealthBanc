@@ -174,7 +174,7 @@ namespace HealthBanc.Controllers
                             await _userRepository.Save();
 
                             var auditViewModel = new AuditLogViewModel(Id, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
-                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                            await _auditLogServices.UserCreateAuditLog(auditViewModel);
 
                             return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
                         }

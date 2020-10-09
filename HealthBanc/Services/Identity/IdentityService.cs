@@ -415,6 +415,9 @@ namespace HealthBanc.Services.Identity
                         user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
                         await _userManager.ResetAccessFailedCountAsync(user);
                         await _userManager.UpdateAsync(user);
+
+                        var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, false, true);
+                        _passwordChangeRepository.Create(passwordChangehistory2);
                         return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                     }
                     else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))

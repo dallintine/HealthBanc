@@ -99,6 +99,7 @@ namespace HealthBanc.Controllers
                             if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                             {
                                 var response = _oTPService.SOAPManual(otp, aDCredentials.AD_Username);
+                                _logger.LogError(response.ToString());
                                 XmlDocument xmlDoc = new XmlDocument();
                                 xmlDoc.LoadXml(response);
                                 var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;

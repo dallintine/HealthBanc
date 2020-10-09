@@ -377,9 +377,8 @@ namespace HealthBanc.Services.Tokenization
 
                         var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Active subscription status", "Subscription Status Changed",
                             "Inactive subscription status");
-                        //await _auditLogServices.UserCreateAuditLog(auditViewModel);
-                        BackgroundJob.Enqueue(() =>  _auditLogServices.UserCreateAuditLog(auditViewModel));
-
+                        await _auditLogServices.UserCreateAuditLog(auditViewModel);
+                        //BackgroundJob.Enqueue(() =>  _auditLogServices.UserCreateAuditLog(auditViewModel));
                         return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
                     }
                     return new ResponseMessage { Message = subscribePaymentResponse.message, Status = false };

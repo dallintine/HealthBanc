@@ -477,8 +477,8 @@ namespace HealthBanc.Controllers
                                         var newPaswordHash = string.Join(",", hashedPassword);
                                         user.HashedPasswordHistory =  $"{newPaswordHash},{passwordHashed},";
                                         await _userManager.UpdateAsync(user);
-                                        var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, true, false);
-                                        _passwordChangeRepository.Create(passwordChangehistory);
+                                        var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, true, false);
+                                        _passwordChangeRepository.Create(passwordChangehistory2);
                                         await _passwordChangeRepository.Save();
                                         return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                                     }
@@ -486,6 +486,9 @@ namespace HealthBanc.Controllers
                             }
                             user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
                             await _userManager.UpdateAsync(user);
+                            var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, true, false);
+                            _passwordChangeRepository.Create(passwordChangehistory);
+                            await _passwordChangeRepository.Save();
                             return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                         }
                         return BadRequest(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });
