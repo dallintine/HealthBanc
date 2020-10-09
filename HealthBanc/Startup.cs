@@ -36,6 +36,7 @@ using Microsoft.AspNet.OData.Formatter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -166,6 +167,7 @@ namespace HealthBanc
             services.AddScoped<IAdminLogin_LogoutLogRepository, AdminLogin_LogoutLogRepository>();
             services.AddScoped<AuditLogService>();
             services.AddScoped<IBackendOTPService, BackendOTPService>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -187,12 +189,6 @@ namespace HealthBanc
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
                  options.TokenLifespan = TimeSpan.FromDays(5));
-
-            //Add Detection Service
-
-            services.AddDetection();
-
-
 
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")
                 , options => options.EnableRetryOnFailure(
@@ -393,8 +389,6 @@ namespace HealthBanc
             app.UseAuthentication();
 
             app.UseRouting();
-
-            app.UseDetection();
 
             app.UseAuthorization();
 

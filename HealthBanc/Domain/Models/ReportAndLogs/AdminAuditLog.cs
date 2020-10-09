@@ -12,18 +12,15 @@ namespace HealthBanc.Domain.Models.ReportAndLogs
         public Guid Id { get; set; }
         [Required]
         public int ApplicationUserId { get; set; }
-        [Required]
         public string TransactionId { get; set; }
-        [Required]
         public string BeforeEventContent { get; set; }
-        public string ActionApplied { get; set; }
         [Required]
+        public string ActionApplied { get; set; }
         public string AfterEventContent { get; set; }
         [Required]
         public DateTime Date { get; set; }
         [Required]
         public string IPAddress { get; set; }
-        [Required]
         public string MACAddress { get; set; }
     }
 }

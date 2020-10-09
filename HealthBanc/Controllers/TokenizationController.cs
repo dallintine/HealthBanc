@@ -258,7 +258,7 @@ namespace HealthBanc.Controllers
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
             var axamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
-            if(axamansardProfile.SubscriptionStatus == false)
+            if (axamansardProfile.SubscriptionStatus == false)
             {
                 return BadRequest(new ResponseMessage { Message = "You have no active subscription", Status = false });
             }

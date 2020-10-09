@@ -20,6 +20,8 @@
     <Compile Remove="Migrations\20200911135642_CheckForAddedTables.Designer.cs" />
     <Compile Remove="Migrations\20201008032404_addedPathModified.cs" />
     <Compile Remove="Migrations\20201008032404_addedPathModified.Designer.cs" />
+    <Compile Remove="Migrations\20201009045139_ModifiedUSerAuditLogTable.cs" />
+    <Compile Remove="Migrations\20201009045139_ModifiedUSerAuditLogTable.Designer.cs" />
   </ItemGroup>
 
   <!--<ItemGroup>
@@ -30,7 +32,6 @@
 
   <ItemGroup>
     <PackageReference Include="EPPlus" Version="4.5.3.2" />
-    <PackageReference Include="Wangkanai.Detection" Version="3.0.0-alpha05" />
     <PackageReference Include="UAParser" Version="3.1.43" />
     <PackageReference Include="AutoMapper" Version="9.0.0" />
     <PackageReference Include="Autofac" Version="4.9.2" />

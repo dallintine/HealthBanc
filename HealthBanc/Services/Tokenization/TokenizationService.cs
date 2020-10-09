@@ -113,7 +113,6 @@ namespace HealthBanc.Services.Tokenization
             }
             catch(Exception ex)
             {
-                _logViaWhatApp.SendLog(ex.ToString());
                 _logger.LogCritical("An error occurred while trying to charge cards: " + ex);
                 return new TokenizationResponse { Status = false };
             }
@@ -378,7 +377,8 @@ namespace HealthBanc.Services.Tokenization
 
                         var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Active subscription status", "Subscription Status Changed",
                             "Inactive subscription status");
-                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                        //await _auditLogServices.UserCreateAuditLog(auditViewModel);
+                        BackgroundJob.Enqueue(() =>  _auditLogServices.UserCreateAuditLog(auditViewModel));
 
                         return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
                     }
@@ -388,7 +388,6 @@ namespace HealthBanc.Services.Tokenization
             }
             catch (Exception ex)
             {
-                _logViaWhatApp.SendLog("An error occurred while trying to InsertSubscription: " + ex.ToString());
                 _logger.LogCritical("An error occurred while trying to InsertSubscription: " + ex);
                 return new ResponseMessage { Status = false, Message = "Can not cancel subscrption now, please try again later" };
             }

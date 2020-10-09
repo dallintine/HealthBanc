@@ -8,21 +8,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UAParser;
-using Wangkanai.Detection.Services;
 
 namespace HealthBanc.Services.AuditAndReport.AuditLog
 {
     public class AuditLogService
     {
         private readonly IHttpContextAccessor _accessor;
-        private readonly IDetectionService _detection;
         private readonly IUserAuditLogRepository _userAuditLog;
         private readonly IMapper _mapper;
 
-        public AuditLogService(IHttpContextAccessor accessor,IDetectionService detection,IUserAuditLogRepository userAuditLog,IMapper mapper)
+        public AuditLogService(IHttpContextAccessor accessor,IUserAuditLogRepository userAuditLog,IMapper mapper)
         {
             _accessor = accessor;
-            _detection = detection;
             _userAuditLog = userAuditLog;
             _mapper = mapper;
         }
@@ -52,7 +49,7 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
             var uaParser = Parser.GetDefault();
             ClientInfo c = uaParser.Parse(uaString);
 
-            return c.OS.ToString() + " " + c.UA.ToString() + " " + _detection.Device.Type.ToString();
+            return  c.OS.ToString() + " " + c.UA.ToString() + " " +c.Device.Brand+","+c.Device.Family;
         }
     }
 }

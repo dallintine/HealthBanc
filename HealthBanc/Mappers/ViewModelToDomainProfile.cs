@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AxaMansardSoap;
 using HealthBanc.Domain.Models;
+using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.Request.AxaMansard;
 using HealthBanc.ViewModels;
 using HealthBanc.ViewModels.AxaMansard;
@@ -27,6 +28,7 @@ namespace HealthBanc.Mappers
                 .ForMember(dest => dest.CustomerPhoto, opt => opt.MapFrom(x => x.CustomerPhoto))
                 .ForMember(dest => dest.IdentityPhoto, opt => opt.MapFrom(x => x.IdentityPhoto));
             CreateMap<UpdateProfileViewModel, AxaMansardUserProfile>();
+            CreateMap<AuditLogViewModel, UserAuditLog>();
         }
     }
 }
