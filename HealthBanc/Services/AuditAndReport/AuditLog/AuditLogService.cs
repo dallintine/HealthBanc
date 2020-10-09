@@ -38,7 +38,7 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
 
         public string GetIPAddress()
         {
-            var ip = _accessor.HttpContext.Connection.RemoteIpAddress.ToString();
+            var ip = /*_accessor.HttpContext.Connection.RemoteIpAddress.ToString();*/ "test";
             return ip;
         }
 
