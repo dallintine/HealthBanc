@@ -102,7 +102,7 @@ namespace HealthBanc.Controllers
                                 if(response == "false")
                                 {
                                     return BadRequest(new ResponseMessage { Message = "This on us. Could not validate OTO, try again later" });
-                                }
+                                };
                                 _logger.LogError(response.ToString());
                                 XmlDocument xmlDoc = new XmlDocument();
                                 xmlDoc.LoadXml(response);
