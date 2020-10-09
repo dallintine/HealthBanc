@@ -117,9 +117,9 @@ namespace HealthBanc.Controllers
                                 BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2));
 
                                 checkprofileComplete.TokenizationCompleted = true;
-                                _completionRepository.Update(checkprofileComplete);                               
-
-                                if (userAxamansardProfile.Cards.Count == 1)
+                                _completionRepository.Update(checkprofileComplete);    
+                                
+                                if (userAxamansardProfile.SubscriptionStatus == null )
                                 {
                                     userAxamansardProfile.SubscriptionStatus = true;
                                     _mansardUserProfileRepository.Update(userAxamansardProfile);
@@ -133,8 +133,7 @@ namespace HealthBanc.Controllers
 
                                     var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
                                        tokenizeReference), DateTime.Now.AddMinutes(2));
-                                }                                
-
+                                }
                                 return Ok(new ResponseMessage {Data=cardResponse.Data, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
                             }
                             if (cardResponse.Status == true && cardResponse.ResponseCode == 12)
