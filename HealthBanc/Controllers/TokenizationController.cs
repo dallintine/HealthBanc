@@ -388,7 +388,12 @@ namespace HealthBanc.Controllers
                 return BadRequest(new ResponseMessage { Message = "Subscription is currently active", Status=false });
             }
             var axaMansardBackgroundDTO = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
-            var tokenizationReference = await _cardRepository.GetPrimaryCardReference(Id);           
+            var tokenizationReference = await _cardRepository.GetPrimaryCardReference(Id);    
+            
+            if(tokenizationReference == null)
+            {
+                return BadRequest(new ResponseMessage {Message="Kindly add a primary card to reactivate subscription" });
+            }
 
             var auditViewModel3 = new AuditLogViewModel(Id, null, $"Inactive subscription", "Reactivated subscription", $"Subscription was reactivated");
             BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
