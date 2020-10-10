@@ -24,6 +24,10 @@
     <Compile Remove="Migrations\20201009045139_ModifiedUSerAuditLogTable.Designer.cs" />
     <Compile Remove="Migrations\20201010060638_AddedBackendAdminIDTo_AdminAuditLogTable.cs" />
     <Compile Remove="Migrations\20201010060638_AddedBackendAdminIDTo_AdminAuditLogTable.Designer.cs" />
+    <Compile Remove="Migrations\20201010092550_AddedBackendAdminIDTo_AdminAuditLogTable5.cs" />
+    <Compile Remove="Migrations\20201010092550_AddedBackendAdminIDTo_AdminAuditLogTable5.Designer.cs" />
+    <Compile Remove="Migrations\20201010092853_RemovedunessaryRoles.cs" />
+    <Compile Remove="Migrations\20201010092853_RemovedunessaryRoles.Designer.cs" />
   </ItemGroup>
 
   <!--<ItemGroup>
