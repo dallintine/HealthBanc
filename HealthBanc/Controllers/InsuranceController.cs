@@ -258,10 +258,7 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> AxaMansardGetHealthProvider(string state,string city,string healthPlan)
         {
-            if (healthPlan != "7" || healthPlan != "8")
-            {
-                return BadRequest(new ResponseMessage { Message = "Plancode is invalid" });
-            }
+            
             var tokenResult = await _axaMansardSoap.GetTokenRequest();
             var tokenBody = tokenResult.Body.getTokenResult;
             if (tokenBody.IsSuccessful == true)
