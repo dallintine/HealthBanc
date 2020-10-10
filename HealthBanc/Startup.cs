@@ -168,6 +168,7 @@ namespace HealthBanc
             services.AddScoped<AuditLogService>();
             services.AddScoped<IBackendOTPService, BackendOTPService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

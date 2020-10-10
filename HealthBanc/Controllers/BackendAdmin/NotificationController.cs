@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using Hangfire;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Request;
 using HealthBanc.Response;
+using HealthBanc.Services.AuditAndReport.AuditLog;
 using HealthBanc.Services.ImageService;
 using HealthBanc.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +15,7 @@ using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using static HealthBanc.Infrastructure.Mail.EmailSender;
 
@@ -27,14 +30,19 @@ namespace HealthBanc.Controllers.BackendAdmin
         private readonly INotificationRepository _notificationRepository;
         private readonly IImageService _imageService;
         private readonly ILogger<NotificationController> _logger;
+        private readonly AuditLogService _auditLogServices;
+        private readonly IBackendAdminRepository _adminRepository;
 
-        public NotificationController(IEmailSender emailSender,IMapper mapper,INotificationRepository notificationRepository,IImageService imageService,ILogger<NotificationController>logger)
+        public NotificationController(IEmailSender emailSender,IMapper mapper,INotificationRepository notificationRepository,IImageService imageService,ILogger<NotificationController>logger,
+            AuditLogService auditLogServices, IBackendAdminRepository adminRepository)
         {
             _emailSender = emailSender;
             _mapper = mapper;
             _notificationRepository = notificationRepository;
             _imageService = imageService;
             _logger = logger;
+            _auditLogServices = auditLogServices;
+            _adminRepository = adminRepository;
         }
 
         //WORKING1
@@ -84,6 +92,12 @@ namespace HealthBanc.Controllers.BackendAdmin
             {
                 try
                 {
+                    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                    int Id = int.Parse(userId);
+
+                    string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                    var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
                     var image = "";
                     if (notificationViewModel.Image != null)
                     {
@@ -93,6 +107,10 @@ namespace HealthBanc.Controllers.BackendAdmin
                     notification.ImageURl = image;
                     _notificationRepository.Create(notification);
                     await _notificationRepository.Save();
+
+                    var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id, null, null, "Created Notification", $"Notification with ID {notification.Id} was created");
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
                     return Ok(new ResponseMessage { Message = "Notification was created successfully", Status = true });
                 }
                 catch(Exception ex)
@@ -126,6 +144,12 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             try
             {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+
+                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
                 var notification = await _notificationRepository.GetNotificationById(notificationId);
                 if (notification != null)
                 {
@@ -133,6 +157,10 @@ namespace HealthBanc.Controllers.BackendAdmin
                     notification.RestoreServiceId = null;
                     _notificationRepository.Update(notification);
                     await _notificationRepository.Save();
+
+                    var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id, null, null, "Restore Notification", $"Notification with ID {notification.Id} was restored");
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
                     return Ok(new ResponseMessage {Message="Notification was changed successfully", Status=true });
                 }
                 return NotFound(new ResponseMessage { Message = "Notification was not found"});
@@ -248,12 +276,22 @@ namespace HealthBanc.Controllers.BackendAdmin
             }
             try
             {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int adminId = int.Parse(userId);
+
+                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
                 var notification = await _notificationRepository.GetNotificationById(Id);
                 if (notification is null) return NotFound(new ResponseMessage { Message = "Notification was not found" });
                 notification.RestoreServiceId = notification.Status;
                 notification.Status = 4;
                 _notificationRepository.Update(notification);
                 await _notificationRepository.Save();
+
+                var auditViewModel = new AdminAuditLogViewModel(adminId,backedAdmin.Id, null, null, "Trash Notification", $"Notification with ID {notification.Id} was trash");
+                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
                 return Ok(new ResponseMessage<Notification> { Data = notification, Status = true, Message = "Notification was trashed successfully" });
             }
             catch (Exception ex)
@@ -280,10 +318,20 @@ namespace HealthBanc.Controllers.BackendAdmin
             }
             try
             {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int adminId = int.Parse(userId);
+
+                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
                 var notification = await _notificationRepository.GetNotificationById(Id);
                 if (notification is null) return NotFound(new ResponseMessage { Message = "Notification was not found" });
                 _notificationRepository.Delete(notification);
                 await _notificationRepository.Save();
+
+                var auditViewModel = new AdminAuditLogViewModel(adminId,backedAdmin.Id, null, null, "Deleted Notification", $"Notification with ID {notification.Id} was deleted");
+                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
                 return Ok(new ResponseMessage<Notification> { Data = notification, Status = true, Message = "Notification was deleted successfully" });
             }
             catch (Exception ex)

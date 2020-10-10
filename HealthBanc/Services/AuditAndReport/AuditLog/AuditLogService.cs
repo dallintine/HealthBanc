@@ -16,12 +16,14 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
         private readonly IHttpContextAccessor _accessor;
         private readonly IUserAuditLogRepository _userAuditLog;
         private readonly IMapper _mapper;
+        private readonly IAdminAuditLogRepository _adminAuditLog;
 
-        public AuditLogService(IHttpContextAccessor accessor,IUserAuditLogRepository userAuditLog,IMapper mapper)
+        public AuditLogService(IHttpContextAccessor accessor,IUserAuditLogRepository userAuditLog,IMapper mapper, IAdminAuditLogRepository adminAuditLog)
         {
             _accessor = accessor;
             _userAuditLog = userAuditLog;
             _mapper = mapper;
+            _adminAuditLog = adminAuditLog;
         }
 
         public async Task UserCreateAuditLog(AuditLogViewModel viewModel)
@@ -32,6 +34,17 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
             auditLog.Date = DateTime.Now;
             auditLog.Id = new Guid();
             _userAuditLog.Create(auditLog);
+            await _userAuditLog.Save();
+            await Task.CompletedTask;
+        }
+
+        public async Task AdminCreateAuditLog(AdminAuditLogViewModel viewModel)
+        {
+            var auditLog = _mapper.Map<AdminAuditLog>(viewModel);
+            auditLog.IPAddress = GetIPAddress();
+            auditLog.Date = DateTime.Now;
+            auditLog.Id = new Guid();
+            _adminAuditLog.Create(auditLog);
             await _userAuditLog.Save();
             await Task.CompletedTask;
         }

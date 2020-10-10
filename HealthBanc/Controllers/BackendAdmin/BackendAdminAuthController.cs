@@ -1,4 +1,5 @@
-﻿using HealthBanc.DataAccess.Interfaces;
+﻿using Hangfire;
+using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
@@ -6,6 +7,7 @@ using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Response;
 using HealthBanc.Services.ADOTP;
+using HealthBanc.Services.AuditAndReport.AuditLog;
 using HealthBanc.ViewModels;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
@@ -42,13 +44,14 @@ namespace HealthBanc.Controllers
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly IAdminLogin_LogoutLogRepository _auditLogin_LogoutLog;
         private readonly IBackendOTPService _oTPService;
+        private readonly AuditLogService _auditLogServices;
         private readonly JwtSettings _jwtsettings;
         private readonly AppEndpoint _appEndpoint;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
             ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
             TokenValidationParameters tokenValidationParameters, IOptions<AppEndpoint> optionAccessor, IAdminLogin_LogoutLogRepository auditLogin_LogoutLog,
-            IBackendOTPService oTPService)
+            IBackendOTPService oTPService, AuditLogService auditLogServices)
         {
             _appEndpoint = optionAccessor.Value;
             _userManager = userManager;
@@ -60,6 +63,7 @@ namespace HealthBanc.Controllers
             _tokenValidationParameters = tokenValidationParameters;
             _auditLogin_LogoutLog = auditLogin_LogoutLog;
             _oTPService = oTPService;
+            _auditLogServices = auditLogServices;
             _jwtsettings = jwtsettings.Value;
         }
 
@@ -183,10 +187,17 @@ namespace HealthBanc.Controllers
             {
                 try
                 {
+                    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                    int Id = int.Parse(userId);
+
+                    string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+
                     var checkEmail = await _userManager.FindByEmailAsync(createAdminViewModel.Email);
                     if (checkEmail != null) return BadRequest(new ResponseMessage{ Message = "Email Already Exist" });
                     var checkIfUserExist = await _userRepository.FindByUniqueUsername(createAdminViewModel.UserName);
                     if (checkIfUserExist != null) return BadRequest(new ResponseMessage { Message = "Username Already Exist" });
+
+                    var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
 
                     var admin = new ApplicationUser()
                     {
@@ -211,6 +222,10 @@ namespace HealthBanc.Controllers
                         };
                         _adminRepository.Create(adminUser);
                         await _adminRepository.Save();
+
+                        var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id, null,null , "Admin user created", $"Admin user with email {adminUser.Email} was created");
+                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
                         return Ok(new ResponseMessage{ Message = "Admin has been created successfully", Status = true });
                     }
                 }
@@ -268,6 +283,12 @@ namespace HealthBanc.Controllers
         {
             try
             {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+
+                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
                 var user = await _userManager.FindByEmailAsync(email);
                 var admin = await _adminRepository.GetAdminByEmail(email);
                 if(user != null)
@@ -281,6 +302,10 @@ namespace HealthBanc.Controllers
                         admin.ClassOrRoleId = roleId;
                         _adminRepository.Update(admin);
                         await _adminRepository.Save();
+
+                        var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, null, null, "Change In Admin Role", $"Admin user with email {email} role was changed");
+                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
                         return Ok(new ResponseMessage {Message="Role was changed successfully", Status=true });
                     }
                 }
@@ -328,6 +353,12 @@ namespace HealthBanc.Controllers
         {
             try
             {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+
+                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
                 var user = await _userManager.FindByEmailAsync(email);
                 if (user != null)
                 {
@@ -337,6 +368,10 @@ namespace HealthBanc.Controllers
                         var admin = await _adminRepository.GetAdminByEmail(email);
                         _adminRepository.Delete(admin);
                         await _adminRepository.Save();
+
+                        var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, null, null, "Delete Admin", $"Admin user with email {email} was deleted");
+                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
                         return Ok(new ResponseMessage { Message = "Admin was deleted successfully", Status = true });
                     }
                     return BadRequest("An error occurred while trying to change to delete admin");

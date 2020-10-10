@@ -29,6 +29,7 @@ namespace HealthBanc.Mappers
                 .ForMember(dest => dest.IdentityPhoto, opt => opt.MapFrom(x => x.IdentityPhoto));
             CreateMap<UpdateProfileViewModel, AxaMansardUserProfile>();
             CreateMap<AuditLogViewModel, UserAuditLog>();
+            CreateMap<AdminAuditLogViewModel, AdminAuditLog>();
         }
     }
 }
