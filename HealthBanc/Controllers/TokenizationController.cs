@@ -112,6 +112,7 @@ namespace HealthBanc.Controllers
 
                                 var debitCard = new Domain.Models.DebitCard(Id, userAxamansardProfile.Id, cardStatus, cardResponse.LastDigit, cardResponse.Type, tokenizeReference.Id);
                                 _cardRepository.Create(debitCard);
+                                await _cardRepository.Save();
 
                                 var auditViewModel2 = new AuditLogViewModel(Id, null, null, "Debit Card Added", null);
                                 BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2));
