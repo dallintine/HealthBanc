@@ -82,34 +82,26 @@ namespace HealthBanc.Services.Identity
                 var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
                 if (result.Succeeded)
                 {
-                    try
+                    user.SuperAdminId = user.Id;
+                    await _userManager.UpdateAsync(user);
+                    await _userManager.AddToRoleAsync(user, "SuperAdmin");
+                    var confirmResult = await SendUserEmailVerificationAsync(user);
+                    if(confirmResult.Status != true)
                     {
-                        user.SuperAdminId = user.Id;
-                        await _userManager.UpdateAsync(user);
-                        await _userManager.AddToRoleAsync(user, "SuperAdmin");
-                        var confirmResult = await SendUserEmailVerificationAsync(user);
-                        if(confirmResult.Status != true)
-                        {
-                            return confirmResult;
-                        }
-                        var password = _passwordHasher.Hash(registrationViewModel.Password);
-                        user.HashedPasswordHistory = $"{password},";
-                        await _userManager.UpdateAsync(user);
-                        return new ResponseMessage
-                        {
-                            Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
-                            Status = true
-                        };
+                        return confirmResult;
                     }
-                    catch (Exception ex)
+                    var password = _passwordHasher.Hash(registrationViewModel.Password);
+                    user.HashedPasswordHistory = $"{password},";
+                    await _userManager.UpdateAsync(user);
+                    return new ResponseMessage
                     {
-                        _logger.LogError(ex, "System Failed to Save SuperAdmin Security Question with UserId ${0}", user.Id);
-                        return new ResponseMessage { Message = " Error occurred when trying to register user please try again latter or contact support",Status=false };
-                    }
+                        Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
+                        Status = true
+                    };
                 }
                 else
                 {
-                    return new ResponseMessage { Message = "Error occurred when trying to register user please try again latter or contact support" ,Status=false};
+                    return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description ,Status=false};
                 }
             }
             return new ResponseMessage { Message = "Email Already Exist",Status = false };
@@ -117,28 +109,20 @@ namespace HealthBanc.Services.Identity
 
         public async Task<ResponseMessage> ConfirmEmail(string userId, string emailToken)
         {
-            try
-            {
-                var decryptedUserId = _encryptAndDecrypt.DecryptString(userId, "hfahkbak78r32rg87griva..");
-                var user = await _userRepository.FindByIdAsync(int.Parse(decryptedUserId));
+            var decryptedUserId = _encryptAndDecrypt.DecryptString(userId, "hfahkbak78r32rg87griva..");
+            var user = await _userRepository.FindByIdAsync(int.Parse(decryptedUserId));
 
-                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
-                var result = await _userManager.ConfirmEmailAsync(user, decryptedEmailToken);
-                if (result.Succeeded)
-                {
-                    return new ResponseMessage { Status = true };
-                }
-                else if (!result.Succeeded && result.Errors.Any(x => x.Code == "InvalidToken"))
-                {
-                    return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
-                }
-                return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
-            }
-            catch (Exception ex)
+            var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
+            var result = await _userManager.ConfirmEmailAsync(user, decryptedEmailToken);
+            if (result.Succeeded)
             {
-                _logger.LogCritical("Error occurred when trying to confirm email please try again later : " + ex);
+                return new ResponseMessage { Status = true };
             }
-            return new ResponseMessage { Message = "Error occurred when trying to confirm email please try again later" };
+            else if (!result.Succeeded && result.Errors.Any(x => x.Code == "InvalidToken"))
+            {
+                return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
+            }
+            return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
         }
 
         //public async Task<ResponseMessage> Login(ApplicationUser user, LoginViewModel loginModel)
@@ -238,74 +222,66 @@ namespace HealthBanc.Services.Identity
         {
             var roles = await _userManager.GetRolesAsync(user);
 
-            try
+            //Generate Token
+            var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                //Generate Token
-                var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
-                var tokenDescriptor = new SecurityTokenDescriptor
+                Subject = new ClaimsIdentity(new[]
                 {
-                    Subject = new ClaimsIdentity(new[]
-                    {
-                        new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                        new Claim("SuperAdminId", user.SuperAdminId.ToString()),
-                        new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
-                        new Claim(ClaimTypes.Name, user.Id.ToString()),
-                        new Claim("FirstName",user.FirstName??"Not Available"),
-                        new Claim("LastName",user.LastName??"Not Available"),
-                        new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
-                        new Claim("id",user.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email),
-                        new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
-                        new Claim("LoggedOn", DateTime.Now.ToString()),
-                    }),
-                    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
-                    Issuer = _jwtsettings.Site,
-                    Audience = _jwtsettings.Audience,
-                    Expires = DateTime.Now.AddMinutes(expirationTime),
-                };
-                //create the token 
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                var refreshToken = GenerateRefreshToken();
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim("SuperAdminId", user.SuperAdminId.ToString()),
+                    new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
+                    new Claim(ClaimTypes.Name, user.Id.ToString()),
+                    new Claim("FirstName",user.FirstName??"Not Available"),
+                    new Claim("LastName",user.LastName??"Not Available"),
+                    new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
+                    new Claim("id",user.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
+                    new Claim("LoggedOn", DateTime.Now.ToString()),
+                }),
+                SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _jwtsettings.Site,
+                Audience = _jwtsettings.Audience,
+                Expires = DateTime.Now.AddMinutes(expirationTime),
+            };
+            //create the token 
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var refreshToken = GenerateRefreshToken();
 
-                user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(5);
-                _userRepository.Update(user);
-                await _userRepository.Save();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(5);
+            _userRepository.Update(user);
+            await _userRepository.Save();
 
-                var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, false);
-                _logoutLogRepository.Create(loginLog);
-                await _userRepository.Save();
+            var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, false);
+            _logoutLogRepository.Create(loginLog);
+            await _userRepository.Save();
 
-                var loggedInResponse = new LoggedInResponseDTO
-                {
-                    Token = tokenHandler.WriteToken(token),
-                    Username = user.Email,
-                    Name = $"{user.FirstName} {user.LastName}",
-                    Roles = roles,
-                    ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
-                    Success = true,
-                    RefreshToken = refreshToken
-                };
-
-                if (user.ServiceUsed != null)
-                {
-                    var serviceList = user.ServiceUsed.Split(",").ToList();
-                    if (serviceList.LastOrDefault() == "")
-                    {
-                        serviceList.RemoveAt(serviceList.Count - 1);
-                    }
-                    loggedInResponse.Services = serviceList;
-                }                
-                return loggedInResponse;
-            }
-            catch (Exception ex)
+            var loggedInResponse = new LoggedInResponseDTO
             {
-                _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
-                return new LoggedInResponseDTO { Errors = new[] { "Error occurred while validating token" } };
-            }
+                Token = tokenHandler.WriteToken(token),
+                Username = user.Email,
+                Name = $"{user.FirstName} {user.LastName}",
+                Roles = roles,
+                ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
+                Success = true,
+                RefreshToken = refreshToken
+            };
+
+            if (user.ServiceUsed != null)
+            {
+                var serviceList = user.ServiceUsed.Split(",").ToList();
+                if (serviceList.LastOrDefault() == "")
+                {
+                    serviceList.RemoveAt(serviceList.Count - 1);
+                }
+                loggedInResponse.Services = serviceList;
+            }                
+            return loggedInResponse;
         }
 
         public string GenerateRefreshToken()
@@ -347,15 +323,8 @@ namespace HealthBanc.Services.Identity
 
 
                 // Email the user the verification code
-                try
-                {
-                    _emailSender.SendEmail(forgotPassword.Username,"d-f9c4860583d340f1bf25a355dc64caf2", passwordResetLink,null);
-                    return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Falied to send Email Reset Mail to user ");
-                }
+                _emailSender.SendEmail(forgotPassword.Username,"d-f9c4860583d340f1bf25a355dc64caf2", passwordResetLink,null);
+                return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
             }
             return new ResponseMessage { Message = "Username Does Not Exist", Status = false };
         }
@@ -363,79 +332,72 @@ namespace HealthBanc.Services.Identity
         public async Task<ResponseMessage> ResetPassword(string decryptedEmail, string decryptedEmailToken, ResetPasswordViewModel viewModel)
         {
             var user = await _userManager.FindByEmailAsync(decryptedEmail);
-            try
+
+            PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, viewModel.ConfirmPassword);
+            if (passResult.Equals(PasswordVerificationResult.Failed))
             {
-                PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, viewModel.ConfirmPassword);
-                if (passResult.Equals(PasswordVerificationResult.Failed))
+                if (user.HashedPasswordHistory != null)
                 {
+                    var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
+                    if (hashedPassword.LastOrDefault() == "")
+                    {
+                        hashedPassword.RemoveAt(hashedPassword.Count - 1);
+                    }
+                    foreach (var item in hashedPassword)
+                    {
+                        var checkForValidPassword = _passwordHasher.Check(item, viewModel.ConfirmPassword);
+                        if (checkForValidPassword.Verified == true)
+                        {
+                            return new ResponseMessage { Message = "The password you entered has been used before,please try another" };
+                        }
+                    }
+                }
+
+                var userPassword = await _userManager.ResetPasswordAsync(user, decryptedEmailToken, viewModel.Password);
+                if (userPassword.Succeeded)
+                {
+                    var passwordHashed = _passwordHasher.Hash(viewModel.ConfirmPassword);
                     if (user.HashedPasswordHistory != null)
                     {
                         var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
                         if (hashedPassword.LastOrDefault() == "")
                         {
                             hashedPassword.RemoveAt(hashedPassword.Count - 1);
-                        }
-                        foreach (var item in hashedPassword)
-                        {
-                            var checkForValidPassword = _passwordHasher.Check(item, viewModel.ConfirmPassword);
-                            if (checkForValidPassword.Verified == true)
+                            if (hashedPassword.Count > 3)
                             {
-                                return new ResponseMessage { Message = "The password you entered has been used before,please try another" };
+                                user.LockoutEnd = null;
+                                await _userManager.ResetAccessFailedCountAsync(user);
+                                hashedPassword.RemoveAt(0);
+                                var newPaswordHash = string.Join(",", hashedPassword);
+                                user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
+                                await _userManager.UpdateAsync(user);
+                                var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, false, true);
+                                _passwordChangeRepository.Create(passwordChangehistory);
+                                await _passwordChangeRepository.Save();
+                                return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                             }
                         }
                     }
 
-                    var userPassword = await _userManager.ResetPasswordAsync(user, decryptedEmailToken, viewModel.Password);
-                    if (userPassword.Succeeded)
-                    {
-                        var passwordHashed = _passwordHasher.Hash(viewModel.ConfirmPassword);
-                        if (user.HashedPasswordHistory != null)
-                        {
-                            var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
-                            if (hashedPassword.LastOrDefault() == "")
-                            {
-                                hashedPassword.RemoveAt(hashedPassword.Count - 1);
-                                if (hashedPassword.Count > 3)
-                                {
-                                    user.LockoutEnd = null;
-                                    await _userManager.ResetAccessFailedCountAsync(user);
-                                    hashedPassword.RemoveAt(0);
-                                    var newPaswordHash = string.Join(",", hashedPassword);
-                                    user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
-                                    await _userManager.UpdateAsync(user);
-                                    var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, false, true);
-                                    _passwordChangeRepository.Create(passwordChangehistory);
-                                    await _passwordChangeRepository.Save();
-                                    return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
-                                }
-                            }
-                        }
+                    user.LockoutEnd = null;
+                    user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
+                    await _userManager.ResetAccessFailedCountAsync(user);
+                    await _userManager.UpdateAsync(user);
 
-                        user.LockoutEnd = null;
-                        user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
-                        await _userManager.ResetAccessFailedCountAsync(user);
-                        await _userManager.UpdateAsync(user);
-
-                        var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, false, true);
-                        _passwordChangeRepository.Create(passwordChangehistory2);
-                        return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
-                    }
-                    else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))
-                    {                        
-                        return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
-                    }
-                    return new ResponseMessage { Message = userPassword.Errors.FirstOrDefault().Description, Data = userPassword.Errors};
+                    var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, false, true);
+                    _passwordChangeRepository.Create(passwordChangehistory2);
+                    return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                 }
-                else
-                {
-                    return new ResponseMessage { Message = "New Password Cant Be similar with Old Password" };
+                else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))
+                {                        
+                    return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
                 }
+                return new ResponseMessage { Message = userPassword.Errors.FirstOrDefault().Description, Data = userPassword.Errors};
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogCritical("Errror occured When Trying to reset " + user.UserName + " password : " + ex);
+                return new ResponseMessage { Message = "New Password Cant Be similar with Old Password" };
             }
-            return new ResponseMessage { Message = "Error occured When Trying to reset user password" };
         }
 
         public async Task<ResponseMessage> CreateAdmin(CreateAdminRegViewModel regViewModel, string superAdminEmail, int superAdminId)
@@ -581,16 +543,8 @@ namespace HealthBanc.Services.Identity
 
 
                 // Email the user the verification code
-                try
-                {
-                    _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl,null);
-                    return new ResponseMessage { Status = true };
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Falied to send Email Verification Mail to user From Method SendUserEmailVerificationAsync()");
-                    return new ResponseMessage { Status = true, Message="An error occurred while trying to send email"};
-                }
+                _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl,null);
+                return new ResponseMessage { Status = true };
             }
             return new ResponseMessage { Status = true, Message = "User does not exist.coukd not fetch user" };
         }

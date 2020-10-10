@@ -91,106 +91,99 @@ namespace HealthBanc.Controllers
             return Ok(result.Body.getTokenResult);
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
         public async Task<IActionResult> AxaMansardCreateUserProfile([FromForm] UserProfileviewModel userProfile)
         {
             if (ModelState.IsValid)
             {
-                try
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var user = await _userRepository.FindByIdAsync(Id);
+
+                var checkIfUserHasBeenProfiled = await _axaMansard.GetByAdminIdAsync(Id);
+                if (checkIfUserHasBeenProfiled != null) return BadRequest(new ResponseMessage { Message = "User has a profile already" });
+
+
+                var supportedTypes = new[] { ".JPG", ".JPE", ".PNG", ".JPEG" };
+                var customerPhoto = System.IO.Path.GetExtension(userProfile.CustomerPhoto.FileName).ToUpperInvariant();
+                var identityPhoto = System.IO.Path.GetExtension(userProfile.IdentityPhoto.FileName).ToUpperInvariant();
+
+                if (!supportedTypes.Contains(customerPhoto) || !supportedTypes.Contains(identityPhoto))
                 {
-                    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                    int Id = int.Parse(userId);
-                    var user = await _userRepository.FindByIdAsync(Id);
+                    return BadRequest(new ResponseMessage { Message = "FIle extension is invalid - Only Upload PNG/JPEG/JPG/JPE" });
+                }
 
-                    var checkIfUserHasBeenProfiled = await _axaMansard.GetByAdminIdAsync(Id);
-                    if (checkIfUserHasBeenProfiled != null) return BadRequest(new ResponseMessage { Message = "User has a profile already" });
+                var customerPhotorSize = userProfile.CustomerPhoto.Length;
+                var identityPhotoSize = userProfile.IdentityPhoto.Length;
+                if ((customerPhotorSize / 1048576) > 4 || (identityPhotoSize / 1048576) > 4)
+                {
+                    return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" });
+                }
 
+                var tokenResult = await _axaMansardSoap.GetTokenRequest();
+                if (tokenResult.Body.getTokenResult.IsSuccessful == true)
+                {
+                    var token = tokenResult.Body.getTokenResult.message;
 
-                    var supportedTypes = new[] { ".JPG", ".JPE", ".PNG", ".JPEG" };
-                    var customerPhoto = System.IO.Path.GetExtension(userProfile.CustomerPhoto.FileName).ToUpperInvariant();
-                    var identityPhoto = System.IO.Path.GetExtension(userProfile.IdentityPhoto.FileName).ToUpperInvariant();
+                    var profile = _mapper.Map<iHealth>(userProfile);
+                    profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
+                    profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
 
-                    if (!supportedTypes.Contains(customerPhoto) || !supportedTypes.Contains(identityPhoto))
+                    profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
+                    profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[0];
+
+                    var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
+                    var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
+                    profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
+                    profile.TransId = _insuranceService.GetUniqueCode(12);                      
+
+                    if (profile.PlanCode == "7")
                     {
-                        return BadRequest(new ResponseMessage { Message = "FIle extension is invalid - Only Upload PNG/JPEG/JPG/JPE" });
+                        profile.Premium = Decimal.Parse("1020");
+                    }
+                    else if (profile.PlanCode == "8")
+                    {
+                        profile.Premium = Decimal.Parse("2050");
                     }
 
-                    var customerPhotorSize = userProfile.CustomerPhoto.Length;
-                    var identityPhotoSize = userProfile.IdentityPhoto.Length;
-                    if ((customerPhotorSize / 1048576) > 4 || (identityPhotoSize / 1048576) > 4)
+                    //var result = await _axaMansardSoap.SaveHealth(profile, token);
+                    if (/*result.Body.SaveHealthResult.IsSuccessful ==*/ true )
                     {
-                        return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" });
-                    }
+                        //var getResponse = new AxaResponse();
+                        //getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
+                        //getResponse.Message = result.Body.SaveHealthResult.message;
 
-                    var tokenResult = await _axaMansardSoap.GetTokenRequest();
-                    if (tokenResult.Body.getTokenResult.IsSuccessful == true)
-                    {
-                        var token = tokenResult.Body.getTokenResult.message;
+                        var getResponse = new AxaResponse();
+                        getResponse.IsSuccessful = "True";
+                        getResponse.Message = "Profile was created successfully";
 
-                        var profile = _mapper.Map<iHealth>(userProfile);
-                        profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
-                        profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
+                        var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
+                        axaInsuranceUser.UserId = Id;
+                        axaInsuranceUser.AlternateHospitalAddress = profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[1];
 
-                        profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
-                        profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[0];
+                        var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
 
-                        var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
-                        var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
-                        profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
-                        profile.TransId = _insuranceService.GetUniqueCode(12);                      
-
-                        if (profile.PlanCode == "7")
+                        if (!user.ServiceUsed.Contains("HealthInsured,"))
                         {
-                            profile.Premium = Decimal.Parse("1020");
-                        }
-                        else if (profile.PlanCode == "8")
-                        {
-                            profile.Premium = Decimal.Parse("2050");
-                        }
-
-                        //var result = await _axaMansardSoap.SaveHealth(profile, token);
-                        if (/*result.Body.SaveHealthResult.IsSuccessful ==*/ true )
-                        {
-                            //var getResponse = new AxaResponse();
-                            //getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-                            //getResponse.Message = result.Body.SaveHealthResult.message;
-
-                            var getResponse = new AxaResponse();
-                            getResponse.IsSuccessful = "True";
-                            getResponse.Message = "Profile was created successfully";
-
-                            var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
-                            axaInsuranceUser.UserId = Id;
-                            axaInsuranceUser.AlternateHospitalAddress = profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[1];
-                            _axaMansard.Create(axaInsuranceUser);                            
-
-                            var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
-                            _completionRepository.Create(completionProfile);                           
-
                             var newServiceString = user.ServiceUsed + "HealthInsured,";
                             user.ServiceUsed = newServiceString;
                             _userRepository.Update(user);
-                            await _userRepository.Save();
-
-                            var auditViewModel = new AuditLogViewModel(Id, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
-                            await _auditLogServices.UserCreateAuditLog(auditViewModel);
-
-                            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
                         }
-                        //var getResponse2 = new AxaResponse();
-                        //getResponse2.Message = result.Body.SaveHealthResult.message;
-                        //getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-                        //return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
+                        await _userRepository.Save();
+
+
+                        var auditViewModel = new AuditLogViewModel(Id, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
+                        return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
                     }
-                    return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message, Status = false });
+                    //var getResponse2 = new AxaResponse();
+                    //getResponse2.Message = result.Body.SaveHealthResult.message;
+                    //getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
+                    //return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogCritical("An error occurred when trying to create profile " + ex);
-                    return BadRequest("This on us.. An error occure when trying to create profile, kindly " +
-                        "try again later ");
-                }
+                return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message, Status = false });
             }
             //return validation errors
             var errors = new List<string>();
@@ -205,7 +198,7 @@ namespace HealthBanc.Controllers
         }
 
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
@@ -220,7 +213,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "Towns could not  be fetched,please try again later", Status = false });
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         [HttpGet("[action]")]
@@ -241,10 +234,14 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage<List<AxaListResponse>> { Message = tokenResult.Body.getTokenResult.message });
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> AxaMansardGetHealthPremium(string planCode)
         {
+            if(planCode != "7" || planCode != "8")
+            {
+                return BadRequest(new ResponseMessage { Message = "Plancode is invalid" });
+            }
             var tokenResult = await _axaMansardSoap.GetTokenRequest();
             if (tokenResult.Body.getTokenResult.IsSuccessful == true)
             {
@@ -260,10 +257,14 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message });
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> AxaMansardGetHealthProvider(string state,string city,string healthPlan)
         {
+            if (healthPlan != "7" || healthPlan != "8")
+            {
+                return BadRequest(new ResponseMessage { Message = "Plancode is invalid" });
+            }
             var tokenResult = await _axaMansardSoap.GetTokenRequest();
             var tokenBody = tokenResult.Body.getTokenResult;
             if (tokenBody.IsSuccessful == true)
@@ -274,12 +275,12 @@ namespace HealthBanc.Controllers
                     var healthProvider = result.Body.GetHealthProvidersResult.Where(x => x.City.Contains(city)).ToList();
                     return Ok(new ResponseMessage { Data = healthProvider, Message = "HealthPlan was fetched successfully", Status = true });
                 }
-                return BadRequest(new ResponseMessage { Message = "Could not fecth healthProvider", Status = false });
+                return BadRequest(new ResponseMessage { Message = "No healthProvider tied to specified State,City and Plan", Status = false });
             }
             return BadRequest(new ResponseMessage { Message = tokenBody.message });
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
         [HttpGet("[action]")]
@@ -301,31 +302,23 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
         [HttpGet("[action]")]
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetProfileCompletion()
         {
-            try
-            {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
 
-                var profile = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
-                if (profile == null)
-                {
-                    var profileState = new HealthInsuredProfileStateDTO(false, false);
-                    return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileState, Status = true, Message = "Profile completion state was fetched successfully" });
-                }
-                var profileSate2 = new HealthInsuredProfileStateDTO(profile.ProfileCompleted, profile.TokenizationCompleted);
-                return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileSate2, Status = true, Message = "Profile completion state was fetched successfully" });
-            }
-            catch (Exception ex)
+            var profile = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
+            if (profile == null)
             {
-                _logger.LogCritical("An error occurred while trying to get user profile completion: " + ex);
-                return BadRequest(new ResponseMessage<HealthInsuredProfileStateDTO> { Message = "An error occurred while trying to get user profile information.Please try again later" });
+                var profileState = new HealthInsuredProfileStateDTO(false, false);
+                return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileState, Status = true, Message = "Profile completion state was fetched successfully" });
             }
-        }        
+            var profileSate2 = new HealthInsuredProfileStateDTO(profile.ProfileCompleted, profile.TokenizationCompleted);
+            return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileSate2, Status = true, Message = "Profile completion state was fetched successfully" });
+        }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
         public async Task<IActionResult> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel)
         {

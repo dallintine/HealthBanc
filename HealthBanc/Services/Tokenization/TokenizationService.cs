@@ -53,219 +53,185 @@ namespace HealthBanc.Services.Tokenization
 
         public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard,int id)
         {
-            try
+            var httpClient = _httpClientFactory.CreateClient("Paystack");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(chargeCard), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationChargeCard, content);
+            if (response.IsSuccessStatusCode)
             {
-                var httpClient = _httpClientFactory.CreateClient("Paystack");
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(chargeCard), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationChargeCard, content);
-                if (response.IsSuccessStatusCode)
+                var chargeCardResponse = new ChargeCardResponse();
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                chargeCardResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+                if(chargeCardResponse.status is true)
                 {
-                    var chargeCardResponse = new ChargeCardResponse();
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    chargeCardResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
-                    if(chargeCardResponse.status is true)
+                    var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
+                    if (!validResponse.Contains(chargeCardResponse.data.status)) return new TokenizationResponse { Message = chargeCardResponse.data.url };
+                    if (chargeCardResponse.data.status == "send_otp")
                     {
-                        var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(chargeCardResponse.data.status)) return new TokenizationResponse { Message = chargeCardResponse.data.url };
-                        if (chargeCardResponse.data.status == "send_otp")
-                        {
-                            var otpViewModel = new SetOtpViewModel(null, chargeCard.pin, chargeCard.reference);
-                            return new TokenizationResponse { Data = otpViewModel, Message = "Please enter your OTP code", Status = true, ResponseCode = 12, };
-                        }
-                        if (chargeCardResponse.data.status == "send_pin")
-                        {
-                            return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
-                        }
-                        if (chargeCardResponse.data.status == "send_birthday")
-                        {
-                            var user = await _axaMansardUser.GetByAdminIdAsync(id);
-                            if (user != null)
-                            {
-                                var result = await SubmitBirthDay(user.DateOfBirth,user,chargeCard.pin,chargeCard.reference);
-                                return new TokenizationResponse { Status = result.Status, Message = result.Message, ResponseCode = result.ResponseCode };
-                            }
-                        }
-                        if (chargeCardResponse.data.status == "send_phone") return new TokenizationResponse { Message = "" };
-                        if (chargeCardResponse.data.status == "success")
-                        {
-                            var auditViewModel = new AuditLogViewModel(id, null, null, "Successfully Card Tokenization", $"Tokenization reference is {chargeCard.reference}");
-                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
-
-                            return new TokenizationResponse
-                            {
-                                Type = chargeCardResponse.data.authorization.card_type,
-                                LastDigit = chargeCardResponse.data.authorization.last4,
-                                AuthorizationCode = chargeCardResponse.data.authorization.authorization_code,
-                                Signature = chargeCardResponse.data.authorization.signature,
-                                Message = "Card was tokenize successfully",
-                                Status = true,
-                                ResponseCode = 0
-                            };
-                        } 
-                        if (chargeCardResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
+                        var otpViewModel = new SetOtpViewModel(null, chargeCard.pin, chargeCard.reference);
+                        return new TokenizationResponse { Data = otpViewModel, Message = "Please enter your OTP code", Status = true, ResponseCode = 12, };
                     }
-                    var message = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
-                    return new TokenizationResponse { Message = chargeCardResponse.message+", "+message,Status = false };
+                    if (chargeCardResponse.data.status == "send_pin")
+                    {
+                        return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
+                    }
+                    if (chargeCardResponse.data.status == "send_birthday")
+                    {
+                        var user = await _axaMansardUser.GetByAdminIdAsync(id);
+                        if (user != null)
+                        {
+                            var result = await SubmitBirthDay(user.DateOfBirth,user,chargeCard.pin,chargeCard.reference);
+                            return new TokenizationResponse { Status = result.Status, Message = result.Message, ResponseCode = result.ResponseCode };
+                        }
+                    }
+                    if (chargeCardResponse.data.status == "send_phone") return new TokenizationResponse { Message = "" };
+                    if (chargeCardResponse.data.status == "success")
+                    {
+                        var auditViewModel = new AuditLogViewModel(id, null, null, "Successfully Card Tokenization", $"Tokenization reference is {chargeCard.reference}");
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
+                        return new TokenizationResponse
+                        {
+                            Type = chargeCardResponse.data.authorization.card_type,
+                            LastDigit = chargeCardResponse.data.authorization.last4,
+                            AuthorizationCode = chargeCardResponse.data.authorization.authorization_code,
+                            Signature = chargeCardResponse.data.authorization.signature,
+                            Message = "Card was tokenize successfully",
+                            Status = true,
+                            ResponseCode = 0
+                        };
+                    } 
+                    if (chargeCardResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                 }
-                _logViaWhatApp.SendLog("Couldnt connect with payment service: ChargeCard Service:");
-                _logger.LogCritical("Couldnt connect with payment service: ChargeCard Service:");
-                return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
+                var message = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
+                return new TokenizationResponse { Message = chargeCardResponse.message+", "+message,Status = false };
             }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to charge cards: " + ex);
-                return new TokenizationResponse { Status = false };
-            }
+            _logViaWhatApp.SendLog("Couldnt connect with payment service: ChargeCard Service:");
+            _logger.LogCritical("Couldnt connect with payment service: ChargeCard Service:");
+            return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
         }
 
         public async Task<TokenizationResponse> SendOtp( string otp,AxaMansardUserProfile user,string pin,string reference)
         {
-            try
+            var otpRequest = new SendOtp(otp, reference);
+            var httpClient = _httpClientFactory.CreateClient("Paystack");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(otpRequest), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationSendOtp, content);
+            if (response.IsSuccessStatusCode)
             {
-                var otpRequest = new SendOtp(otp, reference);
-                var httpClient = _httpClientFactory.CreateClient("Paystack");
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(otpRequest), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationSendOtp, content);
-                if (response.IsSuccessStatusCode)
+                var otpResponse = new ChargeCardResponse();
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                otpResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+                if(otpResponse.status == true)
                 {
-                    var otpResponse = new ChargeCardResponse();
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    otpResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
-                    if(otpResponse.status == true)
+                    var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
+                    if (!validResponse.Contains(otpResponse.data.status)) return new TokenizationResponse { Message = otpResponse.data.url };
+                    if (otpResponse.data.status == "send_birthday")
                     {
-                        var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(otpResponse.data.status)) return new TokenizationResponse { Message = otpResponse.data.url };
-                        if (otpResponse.data.status == "send_birthday")
-                        {
-                          var result = await SubmitBirthDay(user.DateOfBirth, user, pin,reference);
-                        }
-                        if (otpResponse.data.status == "send_phone")
-                        {
-                            var result = await SubmitPhone(user.PhoneNumber, user, pin,reference);
-                        }
-                        if (otpResponse.data.status == "send_pin")
-                        {
-                            return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
-                        }
-                        if (otpResponse.data.status == "success") 
-                        {
-                            var auditViewModel = new AuditLogViewModel(user.UserId, null, null, "Successfully Card Tokenization", $"Tokenization reference is {reference}");
-                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
-
-                            return new TokenizationResponse
-                            {
-                                Type = otpResponse.data.authorization.card_type,
-                                LastDigit = otpResponse.data.authorization.last4,
-                                Signature = otpResponse.data.authorization.signature,
-                                AuthorizationCode = otpResponse.data.authorization.authorization_code,
-                                Message = "Card was tokenize successfully",
-                                Status = true,
-                                ResponseCode = 0
-                            };
-                        }
-                        if (otpResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
+                        var result = await SubmitBirthDay(user.DateOfBirth, user, pin,reference);
                     }
-                    return new TokenizationResponse { Message = otpResponse.message, Status = false };
-                   
+                    if (otpResponse.data.status == "send_phone")
+                    {
+                        var result = await SubmitPhone(user.PhoneNumber, user, pin,reference);
+                    }
+                    if (otpResponse.data.status == "send_pin")
+                    {
+                        return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
+                    }
+                    if (otpResponse.data.status == "success") 
+                    {
+                        var auditViewModel = new AuditLogViewModel(user.UserId, null, null, "Successfully Card Tokenization", $"Tokenization reference is {reference}");
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
+                        return new TokenizationResponse
+                        {
+                            Type = otpResponse.data.authorization.card_type,
+                            LastDigit = otpResponse.data.authorization.last4,
+                            Signature = otpResponse.data.authorization.signature,
+                            AuthorizationCode = otpResponse.data.authorization.authorization_code,
+                            Message = "Card was tokenize successfully",
+                            Status = true,
+                            ResponseCode = 0
+                        };
+                    }
+                    if (otpResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                 }
-                _logger.LogCritical("Couldnt connect with payment service: SendOtp Service:");
-                return new TokenizationResponse { Message="Couldnt connect with payment service, please try again later", Status = false };
+                return new TokenizationResponse { Message = otpResponse.message, Status = false };
+                   
             }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to send otp: " + ex);
-                return new TokenizationResponse { Status = false };
-            }
+            _logger.LogCritical("Couldnt connect with payment service: SendOtp Service:");
+            return new TokenizationResponse { Message="Couldnt connect with payment service, please try again later", Status = false };
         }
 
         private async Task<TokenizationResponse> SubmitPhone(string phoneNumber, AxaMansardUserProfile user,string pin,string reference)
         {
-            try
+            var phoneRequest = new SubmitPhoneNumber(phoneNumber, reference);
+            var httpClient = _httpClientFactory.CreateClient("Paystack");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneRequest), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationSubmitPhone, content);
+            if (response.IsSuccessStatusCode)
             {
-                var phoneRequest = new SubmitPhoneNumber(phoneNumber, reference);
-                var httpClient = _httpClientFactory.CreateClient("Paystack");
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneRequest), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationSubmitPhone, content);
-                if (response.IsSuccessStatusCode)
+                var phoneResponse = new ChargeCardResponse();
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                phoneResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+                if(phoneResponse.status is true)
                 {
-                    var phoneResponse = new ChargeCardResponse();
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    phoneResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
-                    if(phoneResponse.status is true)
+                    var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
+                    if (!validResponse.Contains(phoneResponse.data.status)) return new TokenizationResponse() { Message = phoneResponse.data.url };
+                    if (phoneResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
+                    if (phoneResponse.data.status == "send_birthday")
                     {
-                        var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(phoneResponse.data.status)) return new TokenizationResponse() { Message = phoneResponse.data.url };
-                        if (phoneResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
-                        if (phoneResponse.data.status == "send_birthday")
-                        {
-                            var result = await SubmitBirthDay(user.DateOfBirth,user,pin,reference);
-                        }
-                        if (phoneResponse.data.status == "send_pin")
-                        {
-                            return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
-                        }
-                        if (phoneResponse.data.status == "success") return new TokenizationResponse {Signature = phoneResponse.data.authorization.signature,
-                            Type = phoneResponse.data.authorization.card_type,LastDigit = phoneResponse.data.authorization.last4,
-                            AuthorizationCode = phoneResponse.data.authorization.authorization_code,Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
-                        if (phoneResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
+                        var result = await SubmitBirthDay(user.DateOfBirth,user,pin,reference);
                     }
-                    return new TokenizationResponse { Message = phoneResponse.message, Status = false };
+                    if (phoneResponse.data.status == "send_pin")
+                    {
+                        return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
+                    }
+                    if (phoneResponse.data.status == "success") return new TokenizationResponse {Signature = phoneResponse.data.authorization.signature,
+                        Type = phoneResponse.data.authorization.card_type,LastDigit = phoneResponse.data.authorization.last4,
+                        AuthorizationCode = phoneResponse.data.authorization.authorization_code,Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
+                    if (phoneResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                 }
-                _logViaWhatApp.SendLog("Couldnt connect with payment service: SubmitPhone Service:");
-                _logger.LogCritical("Couldnt connect with payment service: SubmitPhone Service:");
-                return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
+                return new TokenizationResponse { Message = phoneResponse.message, Status = false };
             }
-            catch (Exception ex)
-            {
-                _logViaWhatApp.SendLog("An error occurred while trying to SubmitPhone: " + ex.ToString());
-                _logger.LogCritical("An error occurred while trying to SubmitPhone: " + ex);
-                return new TokenizationResponse { Status = false, Message = "This on us. Can not tokenize card now, please try again later" };
-            }
+            _logViaWhatApp.SendLog("Couldnt connect with payment service: SubmitPhone Service:");
+            _logger.LogCritical("Couldnt connect with payment service: SubmitPhone Service:");
+            return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
         }
 
         private async Task<TokenizationResponse> SubmitBirthDay(DateTime date, AxaMansardUserProfile user,string pin, string reference)
         {
-            try
+            var birthRequest = new SubmitBirthday(date, reference);
+            var httpClient = _httpClientFactory.CreateClient("Paystack");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(birthRequest), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationaSubmitBirthDay, content);
+            if (response.IsSuccessStatusCode)
             {
-                var birthRequest = new SubmitBirthday(date, reference);
-                var httpClient = _httpClientFactory.CreateClient("Paystack");
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(birthRequest), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync(Options.APIUri.PayStackTokenisationaSubmitBirthDay, content);
-                if (response.IsSuccessStatusCode)
+                var birthdayResponse = new ChargeCardResponse();
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                birthdayResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+                if(birthdayResponse.status == true)
                 {
-                    var birthdayResponse = new ChargeCardResponse();
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    birthdayResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
-                    if(birthdayResponse.status == true)
+                    var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
+                    if (!validResponse.Contains(birthdayResponse.data.status)) return new TokenizationResponse { Message = birthdayResponse.data.url };
+                    if (birthdayResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
+                    if (birthdayResponse.data.status == "send_phone")
                     {
-                        var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                        if (!validResponse.Contains(birthdayResponse.data.status)) return new TokenizationResponse { Message = birthdayResponse.data.url };
-                        if (birthdayResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
-                        if (birthdayResponse.data.status == "send_phone")
-                        {
-                            var result = await SubmitPhone(user.PhoneNumber, user, pin,reference);
-                        }
-                        if (birthdayResponse.data.status == "send_pin")
-                        {
-                            return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
-                        }
-                        if (birthdayResponse.data.status == "success") return new TokenizationResponse {Signature = birthdayResponse.data.authorization.signature,
-                            Type = birthdayResponse.data.authorization.card_type, LastDigit = birthdayResponse.data.authorization.last4,
-                            AuthorizationCode = birthdayResponse.data.authorization.authorization_code, Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
-                        if (birthdayResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
+                        var result = await SubmitPhone(user.PhoneNumber, user, pin,reference);
                     }
-                    return new TokenizationResponse { Status = false, Message = birthdayResponse.message };                 
+                    if (birthdayResponse.data.status == "send_pin")
+                    {
+                        return new TokenizationResponse { Status = false, Message = "Please enter a valid pin number" };
+                    }
+                    if (birthdayResponse.data.status == "success") return new TokenizationResponse {Signature = birthdayResponse.data.authorization.signature,
+                        Type = birthdayResponse.data.authorization.card_type, LastDigit = birthdayResponse.data.authorization.last4,
+                        AuthorizationCode = birthdayResponse.data.authorization.authorization_code, Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
+                    if (birthdayResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
                 }
-                _logViaWhatApp.SendLog("Couldnt connect with payment service: SubmitBirthDay Service:");
-                _logger.LogCritical("Couldnt connect with payment service: SubmitBirthDay Service:");
-                return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
+                return new TokenizationResponse { Status = false, Message = birthdayResponse.message };                 
             }
-            catch (Exception ex)
-            {
-                _logViaWhatApp.SendLog("An error occurred while trying to SubmitBirthDay: " + ex.ToString());
-                _logger.LogCritical("An error occurred while trying to SubmitBirthDay: " + ex);
-                return new TokenizationResponse { Status = false , Message = "This on us. Can not tokenize card now, please try again later" };
-            }
+            _logViaWhatApp.SendLog("Couldnt connect with payment service: SubmitBirthDay Service:");
+            _logger.LogCritical("Couldnt connect with payment service: SubmitBirthDay Service:");
+            return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
         }
 
         public async Task InsertSubscription(AxaMansardBackgroundDTO userAxamansardProfile,TokenizationReference tokenization)
@@ -313,84 +279,75 @@ namespace HealthBanc.Services.Tokenization
 
         public async Task<ResponseMessage> UpdateSubscription(AxaMansardUserProfile userAxamansardProfile, TokenizationReference tokenization)
         {
-            try
-            {
-                var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
-                subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = tokenization.TokenReference;
-                subscribePayment.Fees = 0;
+            var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
+            subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = tokenization.TokenReference;
+            subscribePayment.Fees = 0;
 
-                var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync(Options.APIUri.PaystackPaymentUpdateSubscription, content);
-                if (response.IsSuccessStatusCode)
+            var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(Options.APIUri.PaystackPaymentUpdateSubscription, content);
+            if (response.IsSuccessStatusCode)
+            {
+                var updatePaymentResponse = new SubscribePaymentResponse();
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                updatePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
+                if (updatePaymentResponse.status == true)
                 {
-                    var updatePaymentResponse = new SubscribePaymentResponse();
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    updatePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
-                    if (updatePaymentResponse.status == true)
-                    {
-                        var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId,$"Supscription plan of {userAxamansardProfile}", "Subscription Plan Changed",
-                            " subscription status");
-                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                    var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId,$"Supscription plan of {userAxamansardProfile}", "Subscription Plan Changed",
+                        " subscription status");
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
 
-                        return new ResponseMessage { Message = updatePaymentResponse.message, Status = true };
-                    }
-                    return new ResponseMessage { Message = updatePaymentResponse.message, Status = false };
+                    return new ResponseMessage { Message = updatePaymentResponse.message, Status = true };
                 }
-                return new ResponseMessage { Message = "Could not connect to paystack payment service" };
+                return new ResponseMessage { Message = updatePaymentResponse.message, Status = false };
             }
-            catch (Exception ex)
-            {
-                _logViaWhatApp.SendLog("An error occurred while trying to InsertSubscription: " + ex.ToString());
-                _logger.LogCritical("An error occurred while trying to InsertSubscription: " + ex);
-                return new ResponseMessage { Status = false, Message = "This on us. Can not insert subscription" };
-            }
+            return new ResponseMessage { Message = "Could not connect to paystack payment service" };
         }
 
         public async Task<ResponseMessage> CancelSubscription(AxaMansardUserProfile userAxamansardProfile)
         {
-            try
+            var paymentReference = await _axaMansardUser.ActivePaymentReference(userAxamansardProfile.UserId);
+            if(paymentReference == null)
             {
-                var paymentReference = await _axaMansardUser.ActivePaymentReference(userAxamansardProfile.UserId);
-                if(paymentReference == null)
+                userAxamansardProfile.SubscriptionStatus = false;
+                _axaMansardUser.Update(userAxamansardProfile);
+                await _axaMansardUser.Save();
+
+                var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, null, "Active subscription status", "Subscription Status Changed",
+                        "Inactive subscription status");
+                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+
+                return new ResponseMessage { Message = "Subscription was cancelled successfully", Status = true };
+            }
+            var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
+            subscribePayment.RequestId = paymentReference.RequestId; subscribePayment.Fees = 0;
+
+            var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(Options.APIUri.PaystackPaymentCancelSubscription, content);
+            if (response.IsSuccessStatusCode)
+            {
+                var subscribePaymentResponse = new SubscribePaymentResponse();
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
+                if (subscribePaymentResponse.status == true)
                 {
+                    paymentReference.Active = false;
+                    _paymentReference.Update(paymentReference);
+                        
                     userAxamansardProfile.SubscriptionStatus = false;
                     _axaMansardUser.Update(userAxamansardProfile);
                     await _axaMansardUser.Save();
+
+                    var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Active subscription status", "Subscription Status Changed",
+                        "Inactive subscription status");
+                    BackgroundJob.Enqueue(() =>  _auditLogServices.UserCreateAuditLog(auditViewModel));
+
+                    return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
                 }
-                var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
-                subscribePayment.RequestId = paymentReference.RequestId; subscribePayment.Fees = 0;
-
-                var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync(Options.APIUri.PaystackPaymentCancelSubscription, content);
-                if (response.IsSuccessStatusCode)
-                {
-                    var subscribePaymentResponse = new SubscribePaymentResponse();
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
-                    if (subscribePaymentResponse.status == true)
-                    {
-                        userAxamansardProfile.SubscriptionStatus = false;
-                        _axaMansardUser.Update(userAxamansardProfile);
-                        await _axaMansardUser.Save();
-
-                        var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Active subscription status", "Subscription Status Changed",
-                            "Inactive subscription status");
-                        await _auditLogServices.UserCreateAuditLog(auditViewModel);
-                        //BackgroundJob.Enqueue(() =>  _auditLogServices.UserCreateAuditLog(auditViewModel));
-                        return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
-                    }
-                    return new ResponseMessage { Message = subscribePaymentResponse.message, Status = false };
-                }
-                return new ResponseMessage { Message = "Could not connect to paystack payment service" };
+                return new ResponseMessage { Message = subscribePaymentResponse.message, Status = false };
             }
-            catch (Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to InsertSubscription: " + ex);
-                return new ResponseMessage { Status = false, Message = "Can not cancel subscrption now, please try again later" };
-            }
-
+            return new ResponseMessage { Message = "Could not connect to paystack payment service" };
         }
 
         public async Task<ResponseMessage<ChargeCardResponse>> ValidateCharge (string reference)

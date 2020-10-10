@@ -89,53 +89,45 @@ namespace HealthBanc.Controllers
                 }
                 else
                 {
-                    try
+                    var httpClient = _httpClientFactory.CreateClient("Fiorano");
+                    var loginCredentials = new ADCredentialsRoot();
+                    loginCredentials.AD_Credentials = aDCredentials;
+                    HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
+                    var authentication = await httpClient.PostAsync(_appEndpoint.APIUri.FiorianoADAuthentication, content);
+                    if (authentication.IsSuccessStatusCode)
                     {
-                        var httpClient = _httpClientFactory.CreateClient("Fiorano");
-                        var loginCredentials = new ADCredentialsRoot();
-                        loginCredentials.AD_Credentials = aDCredentials;
-                        HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
-                        var authentication = await httpClient.PostAsync(_appEndpoint.APIUri.FiorianoADAuthentication, content);
-                        if (authentication.IsSuccessStatusCode)
+                        string apiResponse = await authentication.Content.ReadAsStringAsync();
+                        var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
+                        if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                         {
-                            string apiResponse = await authentication.Content.ReadAsStringAsync();
-                            var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
-                            if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
-                            {
-                                //var response = _oTPService.SOAPManual(otp, aDCredentials.AD_Username);
-                                //if(response == "false")
-                                //{
-                                //    return BadRequest(new ResponseMessage { Message = "This on us. Could not validate OTO, try again later" });
-                                //};
-                                //_logger.LogError(response.ToString());
-                                //XmlDocument xmlDoc = new XmlDocument();
-                                //xmlDoc.LoadXml(response);
-                                //var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
-                                //if (responseResult.Contains("00|Token Successfully"))
-                                //{
-                                var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-                                var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
-                                await _userRepository.Save();
-                                var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                                    return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
-                                //}
+                            //var response = _oTPService.SOAPManual(otp, aDCredentials.AD_Username);
+                            //if(response == "false")
+                            //{
+                            //    return BadRequest(new ResponseMessage { Message = "This on us. Could not validate OTO, try again later" });
+                            //};
+                            //_logger.LogError(response.ToString());
+                            //XmlDocument xmlDoc = new XmlDocument();
+                            //xmlDoc.LoadXml(response);
+                            //var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
+                            //if (responseResult.Contains("00|Token Successfully"))
+                            //{
+                            var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
+                            var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
+                            await _userRepository.Save();
+                            var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                                return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
+                            //}
                                 
-                            }
-                            else
-                            {
-                                var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-                                var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email,true,false,true,false, loginOutHours);
-                                await _userRepository.Save();
-                                return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
-                            }
                         }
-                        return BadRequest(new ResponseMessage { Message = "An error occurred when connecting to core ADService" });
+                        else
+                        {
+                            var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
+                            var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email,true,false,true,false, loginOutHours);
+                            await _userRepository.Save();
+                            return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogCritical("Error occured when trying to Login backend admin" + ex);
-                        return BadRequest(new ResponseMessage{ Message = "Sorry for the inconvenience please try again or contact support" });
-                    }
+                    return BadRequest(new ResponseMessage { Message = "An error occurred when connecting to core ADService" });
                 }
             }
             //return validation errors
@@ -185,56 +177,48 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                try
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+
+                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+                var checkEmail = await _userManager.FindByEmailAsync(createAdminViewModel.Email);
+                if (checkEmail != null) return BadRequest(new ResponseMessage{ Message = "Email Already Exist" });
+                var checkIfUserExist = await _userRepository.FindByUniqueUsername(createAdminViewModel.UserName);
+                if (checkIfUserExist != null) return BadRequest(new ResponseMessage { Message = "Username Already Exist" });
+
+                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
+                var admin = new ApplicationUser()
                 {
-                    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                    int Id = int.Parse(userId);
-
-                    string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
-
-                    var checkEmail = await _userManager.FindByEmailAsync(createAdminViewModel.Email);
-                    if (checkEmail != null) return BadRequest(new ResponseMessage{ Message = "Email Already Exist" });
-                    var checkIfUserExist = await _userRepository.FindByUniqueUsername(createAdminViewModel.UserName);
-                    if (checkIfUserExist != null) return BadRequest(new ResponseMessage { Message = "Username Already Exist" });
-
-                    var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
-
-                    var admin = new ApplicationUser()
+                    FirstName = createAdminViewModel.FirstName,
+                    LastName = createAdminViewModel.LastName,
+                    Email = createAdminViewModel.Email,
+                    UserName = createAdminViewModel.Email,
+                    UniqueUsername = createAdminViewModel.UserName,
+                    EmailConfirmed = true
+                };
+                var result = _userManager.CreateAsync(admin).Result;
+                if (result.Succeeded)
+                {
+                    var role = await _roleRepository.GetRole(createAdminViewModel.RoleId);
+                    await _userManager.AddToRoleAsync(admin, role.Name);
+                    BackendAdminUser adminUser = new BackendAdminUser()
                     {
+                        Email = createAdminViewModel.Email,
                         FirstName = createAdminViewModel.FirstName,
                         LastName = createAdminViewModel.LastName,
-                        Email = createAdminViewModel.Email,
-                        UserName = createAdminViewModel.Email,
-                        UniqueUsername = createAdminViewModel.UserName,
-                        EmailConfirmed = true
+                        ClassOrRoleId = createAdminViewModel.RoleId
                     };
-                    var result = _userManager.CreateAsync(admin).Result;
-                    if (result.Succeeded)
-                    {
-                        var role = await _roleRepository.GetRole(createAdminViewModel.RoleId);
-                        await _userManager.AddToRoleAsync(admin, role.Name);
-                        BackendAdminUser adminUser = new BackendAdminUser()
-                        {
-                            Email = createAdminViewModel.Email,
-                            FirstName = createAdminViewModel.FirstName,
-                            LastName = createAdminViewModel.LastName,
-                            ClassOrRoleId = createAdminViewModel.RoleId
-                        };
-                        _adminRepository.Create(adminUser);
-                        await _adminRepository.Save();
+                    _adminRepository.Create(adminUser);
+                    await _adminRepository.Save();
 
-                        var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id, null,null , "Admin user created", $"Admin user with email {adminUser.Email} was created");
-                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                    var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id, null,null , "Admin user created", $"Admin user with email {adminUser.Email} was created");
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
-                        return Ok(new ResponseMessage{ Message = "Admin has been created successfully", Status = true });
-                    }
+                    return Ok(new ResponseMessage{ Message = "Admin has been created successfully", Status = true });
                 }
-                catch(Exception ex)
-                {
-                    _logger.LogCritical("And error occurred while trying to creat backend admin: " + ex);
-                    return BadRequest(new ResponseMessage{ Message = "An error occurred while trying to create admin,please try again or contact admin" });
-                }
-               
+                return BadRequest(new ResponseMessage { Message = result.Errors.FirstOrDefault().Description.ToString() });
             }
             //return validation errors
             var errors = new List<string>();
@@ -258,16 +242,8 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> GetBackendAdminUsers()
         {
-            try
-            {
-                var users = await _adminRepository.GetBackendAdmins();
-                return Ok(new ResponseMessage<List<BackendAdminUser>>{ Data = users, Status = true, Message = "Admin users was fetched successfully" });
-            }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to fetch admin users " + ex);
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to fetch admin users" });
-            }
+            var users = await _adminRepository.GetBackendAdmins();
+            return Ok(new ResponseMessage<List<BackendAdminUser>>{ Data = users, Status = true, Message = "Admin users was fetched successfully" });            
         }
 
         //WORKING1
@@ -281,41 +257,33 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> ChangeAdminRole([FromQuery] string email,int roleId)
         {
-            try
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+            var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
+            var user = await _userManager.FindByEmailAsync(email);
+            var admin = await _adminRepository.GetAdminByEmail(email);
+            if(user != null)
             {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-
-                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
-                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
-
-                var user = await _userManager.FindByEmailAsync(email);
-                var admin = await _adminRepository.GetAdminByEmail(email);
-                if(user != null)
+                var userRole = await _userManager.GetRolesAsync(user);
+                var removeRoleResult = _userManager.RemoveFromRoleAsync(user, userRole.FirstOrDefault()).Result;
+                var role = await _roleRepository.GetRole(roleId);
+                var result = _userManager.AddToRoleAsync(user, role.Name).Result;
+                if (result.Succeeded)
                 {
-                    var userRole = await _userManager.GetRolesAsync(user);
-                    var removeRoleResult = _userManager.RemoveFromRoleAsync(user, userRole.FirstOrDefault()).Result;
-                    var role = await _roleRepository.GetRole(roleId);
-                    var result = _userManager.AddToRoleAsync(user, role.Name).Result;
-                    if (result.Succeeded)
-                    {
-                        admin.ClassOrRoleId = roleId;
-                        _adminRepository.Update(admin);
-                        await _adminRepository.Save();
+                    admin.ClassOrRoleId = roleId;
+                    _adminRepository.Update(admin);
+                    await _adminRepository.Save();
 
-                        var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, null, null, "Change In Admin Role", $"Admin user with email {email} role was changed");
-                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, null, null, "Change In Admin Role", $"Admin user with email {email} role was changed");
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
-                        return Ok(new ResponseMessage {Message="Role was changed successfully", Status=true });
-                    }
+                    return Ok(new ResponseMessage {Message="Role was changed successfully", Status=true });
                 }
-                return NotFound(new ResponseMessage { Message="User does not exist" });
             }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to change admin role " + ex);
-                return BadRequest("An error occurred while trying to change to change admin role");
-            }           
+            return NotFound(new ResponseMessage { Message="User does not exist" });
         }
 
         //WORKING1
@@ -328,16 +296,8 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAdminRoles()
         {
-            try
-            {
-                var roles = await _roleRepository.GetAdminRoles();
-                return Ok(new ResponseMessage {Data=roles,Message="Admin roles was fetched susseffully"});
-            }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to get admin roles: " + ex);
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get admin roles" });
-            }           
+            var roles = await _roleRepository.GetAdminRoles();
+            return Ok(new ResponseMessage {Data=roles,Message="Admin roles was fetched susseffully"});                    
         }
 
         //WORKING1
@@ -351,99 +311,83 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> RemoveAdmin([FromQuery]string email)
         {
-            try
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+            var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user != null)
             {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-
-                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
-                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
-
-                var user = await _userManager.FindByEmailAsync(email);
-                if (user != null)
+                var result = _userManager.DeleteAsync(user).Result;
+                if (result.Succeeded)
                 {
-                    var result = _userManager.DeleteAsync(user).Result;
-                    if (result.Succeeded)
-                    {
-                        var admin = await _adminRepository.GetAdminByEmail(email);
-                        _adminRepository.Delete(admin);
-                        await _adminRepository.Save();
+                    var admin = await _adminRepository.GetAdminByEmail(email);
+                    _adminRepository.Delete(admin);
+                    await _adminRepository.Save();
 
-                        var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, null, null, "Delete Admin", $"Admin user with email {email} was deleted");
-                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, null, null, "Delete Admin", $"Admin user with email {email} was deleted");
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
-                        return Ok(new ResponseMessage { Message = "Admin was deleted successfully", Status = true });
-                    }
-                    return BadRequest("An error occurred while trying to change to delete admin");
+                    return Ok(new ResponseMessage { Message = "Admin was deleted successfully", Status = true });
                 }
-                return NotFound(new ResponseMessage { Message = "User does not exist" });
-            }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to delete admin " + ex);
                 return BadRequest("An error occurred while trying to change to delete admin");
             }
+            return NotFound(new ResponseMessage { Message = "User does not exist" });
         }
 
         private async Task<LoggedInAdminResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)
         {
             var roles = await _userManager.GetRolesAsync(user);
 
-            try
+            //Generate Token
+            var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                //Generate Token
-                var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
-                var tokenDescriptor = new SecurityTokenDescriptor
+                Subject = new ClaimsIdentity(new[]
                 {
-                    Subject = new ClaimsIdentity(new[]
-                    {
-                    new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(ClaimTypes.Email,  user.Email),
-                    new Claim("FirstName",user.FirstName as string),
-                    new Claim("LastName",user.LastName as string),
-                    new Claim(ClaimTypes.Name, user.Id.ToString()),
-                    new Claim(ClaimTypes.Role, roles.FirstOrDefault() as string)
-                    }),
-                    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
-                    Issuer = _jwtsettings.Site,
-                    Audience = _jwtsettings.Audience,
-                    Expires = DateTime.Now.AddMinutes(expirationTime),
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Email,  user.Email),
+                new Claim("FirstName",user.FirstName as string),
+                new Claim("LastName",user.LastName as string),
+                new Claim(ClaimTypes.Name, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, roles.FirstOrDefault() as string)
+                }),
+                SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _jwtsettings.Site,
+                Audience = _jwtsettings.Audience,
+                Expires = DateTime.Now.AddMinutes(expirationTime),
 
-                };
-                //create the token 
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                var refreshToken = GenerateRefreshToken();
+            };
+            //create the token 
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var refreshToken = GenerateRefreshToken();
 
-                user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(7);
-                _userRepository.Update(user);
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(7);
+            _userRepository.Update(user);
 
-                var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-                var adminLogin_LogoutLog = new AdminLogin_LogoutLog(user.Id, user.Email, true, false, false, false, loginOutHours);
-                await _userRepository.Save();
+            var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
+            var adminLogin_LogoutLog = new AdminLogin_LogoutLog(user.Id, user.Email, true, false, false, false, loginOutHours);
+            await _userRepository.Save();
 
-                var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
-                {
-                    Token = tokenHandler.WriteToken(token),
-                    Username = user.UniqueUsername,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Email = user.Email,
-                    ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
-                    Roles = roles,
-                    Success = true,
-                    RefreshToken = refreshToken
-                };
-                return loggedInAdminResponseDTO;
-            }
-            catch (Exception ex)
+            var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
             {
-                _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
-                return new LoggedInAdminResponseDTO { Errors = new[] { "Error occurred while validating token" } };
-            }
+                Token = tokenHandler.WriteToken(token),
+                Username = user.UniqueUsername,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
+                Roles = roles,
+                Success = true,
+                RefreshToken = refreshToken
+            };
+            return loggedInAdminResponseDTO;
         }
 
         private string GenerateRefreshToken()

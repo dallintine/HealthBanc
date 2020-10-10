@@ -67,177 +67,156 @@ namespace HealthBanc.Controllers
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
         public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard)
         {
-            try
+            if (ModelState.IsValid)
             {
-                if (ModelState.IsValid)
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+
+                var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
+                var checkprofileComplete = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
+                if(checkprofileComplete != null)
                 {
-                    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                    int Id = int.Parse(userId);
-
-                    var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
-                    var checkprofileComplete = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
-                    if(checkprofileComplete != null)
+                    if (userAxamansardProfile != null && checkprofileComplete.ProfileCompleted == true)
                     {
-                        if (userAxamansardProfile != null && checkprofileComplete.ProfileCompleted == true)
-                        {
-                            var cardNumber = chargeCard.card.number.Replace(" ", "");
-                            var checkIfCardWasPreviouslyTokenized = await _cardRepository.CheckIfCardWasPreviouslyTokenized(Id, cardNumber.Substring(cardNumber.Length - 4));
-                            if (checkIfCardWasPreviouslyTokenized != null) return BadRequest(new ResponseMessage { Message = "This card was previously tokenized successfully" });
+                        var cardNumber = chargeCard.card.number.Replace(" ", "");
+                        var checkIfCardWasPreviouslyTokenized = await _cardRepository.CheckIfCardWasPreviouslyTokenized(Id, cardNumber.Substring(cardNumber.Length - 4));
+                        if (checkIfCardWasPreviouslyTokenized != null) return BadRequest(new ResponseMessage { Message = "This card was previously tokenized successfully" });
 
-                            var card = new ChargeCard();
-                            var chargeCardRequest = _mapper.Map<Request.Tokenize.Card>(chargeCard.card);
-                            card.email = userAxamansardProfile.Email; card.amount = userAxamansardProfile.Premium.ToString();
-                            card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin; card.card = chargeCardRequest;
-                            var cardResponse = await _tokenizationService.ChargeCard(card, Id);
+                        var card = new ChargeCard();
+                        var chargeCardRequest = _mapper.Map<Request.Tokenize.Card>(chargeCard.card);
+                        card.email = userAxamansardProfile.Email; card.amount = userAxamansardProfile.Premium.ToString();
+                        card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin; card.card = chargeCardRequest;
+                        var cardResponse = await _tokenizationService.ChargeCard(card, Id);
 
-                            var auditViewModel = new AuditLogViewModel(Id, null, null, "Attempted card tokenization", null);
-                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                        var auditViewModel = new AuditLogViewModel(Id, null, null, "Attempted card tokenization", null);
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
 
-                            if (cardResponse.Status == true && cardResponse.ResponseCode == 0)
-                            {                              
+                        if (cardResponse.Status == true && cardResponse.ResponseCode == 0)
+                        {                              
 
-                                var tokenizeReference = new TokenizationReference();
-                                tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = card.reference; tokenizeReference.Authorization_Code = cardResponse.AuthorizationCode;
-                                _tokenizationReference.Create(tokenizeReference);
-                                await _tokenizationReference.Save();                                
+                            var tokenizeReference = new TokenizationReference();
+                            tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = card.reference; tokenizeReference.Authorization_Code = cardResponse.AuthorizationCode;
+                            _tokenizationReference.Create(tokenizeReference);
+                            await _tokenizationReference.Save();                                
 
-                                //If card count is 0. it means there is no card available, so the card tokenised will
-                                //be the primary card so primary card status is set to 1 
-                                //to set a primary card, card status is 0;
-                                var cardStatus = userAxamansardProfile.Cards.Count == 0 ? 1 : 0;
+                            //If card count is 0. it means there is no card available, so the card tokenised will
+                            //be the primary card so primary card status is set to 1 
+                            //to set a primary card, card status is 0;
+                            var cardStatus = userAxamansardProfile.Cards.Count == 0 ? 1 : 0;
 
-                                var debitCard = new Domain.Models.DebitCard(Id, userAxamansardProfile.Id, cardStatus, cardResponse.LastDigit, cardResponse.Type, tokenizeReference.Id);
-                                _cardRepository.Create(debitCard);
-                                await _cardRepository.Save();
+                            var debitCard = new Domain.Models.DebitCard(Id, userAxamansardProfile.Id, cardStatus, cardResponse.LastDigit, cardResponse.Type, tokenizeReference.Id);
+                            _cardRepository.Create(debitCard);
 
-                                var auditViewModel2 = new AuditLogViewModel(Id, null, null, "Debit Card Added", null);
-                                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2));
+                            var auditViewModel2 = new AuditLogViewModel(Id, null, null, "Debit Card Added", null);
+                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2));
 
-                                checkprofileComplete.TokenizationCompleted = true;
-                                _completionRepository.Update(checkprofileComplete);    
+                            checkprofileComplete.TokenizationCompleted = true;
+                            _completionRepository.Update(checkprofileComplete);    
                                 
-                                if (userAxamansardProfile.SubscriptionStatus == null )
-                                {
-                                    userAxamansardProfile.SubscriptionStatus = true;
-                                    _mansardUserProfileRepository.Update(userAxamansardProfile);
-                                    await _mansardUserProfileRepository.Save();
-
-                                    var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
-                                        "iption status, free one month trail");
-                                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
-
-                                    var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
-
-                                    var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                       tokenizeReference), DateTime.Now.AddMinutes(2));
-                                }
-                                return Ok(new ResponseMessage {Data=cardResponse.Data, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
-                            }
-                            if (cardResponse.Status == true && cardResponse.ResponseCode == 12)
+                            if (userAxamansardProfile.SubscriptionStatus == null )
                             {
-                                return Ok(new ResponseMessage { Data = cardResponse.Data, Message = cardResponse.Message, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode });
+                                userAxamansardProfile.SubscriptionStatus = true;
+                                _mansardUserProfileRepository.Update(userAxamansardProfile);                                   
+
+                                var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
+                                    "iption status, free one month trail");
+                                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
+
+                                var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
+
+                                var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                    tokenizeReference), DateTime.Now.AddMinutes(2));
                             }
-                            return BadRequest(new ResponseMessage { Data = cardResponse.Data, Message = cardResponse.Message, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode });
+                            await _mansardUserProfileRepository.Save();
+                            return Ok(new ResponseMessage {Data=cardResponse.Data, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
                         }
-                        return BadRequest(new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false });
+                        if (cardResponse.Status == true && cardResponse.ResponseCode == 12)
+                        {
+                            return Ok(new ResponseMessage { Data = cardResponse.Data, Message = cardResponse.Message, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode });
+                        }
+                        return BadRequest(new ResponseMessage { Data = cardResponse.Data, Message = cardResponse.Message, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode });
                     }
                     return BadRequest(new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false });
                 }
-                //return validation errors
-                var errors = new List<string>();
-                var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-                foreach (var error in errorList)
-                {
-                    errors.Add(error);
-                }
-                return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+                return BadRequest(new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false });
             }
-            catch(Exception ex)
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
             {
-                _logViaWhatApp.SendLog("An error occurred while trying to charge card:" + ex.Message.ToString());
-                _logger.LogCritical("An error occurred while trying to submit user otp:" + ex);
-                return BadRequest("An error occurred while trying to charge card:");                
+                errors.Add(error);
             }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
         public async Task<IActionResult> SubmitOtp(SetOtpViewModel otpViewModel)
         {
             if (ModelState.IsValid)
             {
-                try
-                {
-                    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                    int Id = int.Parse(userId);
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
 
-                    var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
-                    var checkprofileComplete = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
-                    if (checkprofileComplete != null)
+                var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
+                var checkprofileComplete = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
+                if (checkprofileComplete != null)
+                {
+                    if (userAxamansardProfile != null && checkprofileComplete.ProfileCompleted == true)
                     {
-                        if (userAxamansardProfile != null && checkprofileComplete.ProfileCompleted == true)
+                        var response = await _tokenizationService.SendOtp(otpViewModel.otp, userAxamansardProfile, otpViewModel.pin, otpViewModel.reference);
+                        if (response.Status)
                         {
-                            var response = await _tokenizationService.SendOtp(otpViewModel.otp, userAxamansardProfile, otpViewModel.pin, otpViewModel.reference);
-                            if (response.Status)
+                            var tokenizeReference = new TokenizationReference();
+                            tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = otpViewModel.reference; tokenizeReference.Authorization_Code = response.AuthorizationCode;
+                            _tokenizationReference.Create(tokenizeReference);
+                            await _tokenizationReference.Save();
+
+                            //If card count is 0. it means there is no card available, so the card tokenised will
+                            //be the primary card so primary card status is set to 1 
+                            //to set a primary card, card status is 0;
+                            var cardStatus = userAxamansardProfile.Cards.Count == 0 ? 1 : 0;
+
+                            var debitCard = new Domain.Models.DebitCard(Id, userAxamansardProfile.Id, cardStatus, response.LastDigit, response.Type, tokenizeReference.Id);
+                            _cardRepository.Create(debitCard);
+
+                            var auditViewModel2 = new AuditLogViewModel(Id, null, null, "Debit Card Added", null);
+                            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2));
+
+
+                            checkprofileComplete.TokenizationCompleted = true;
+                            _completionRepository.Update(checkprofileComplete);                                         
+
+                            if (userAxamansardProfile.SubscriptionStatus == null)
                             {
-                                var tokenizeReference = new TokenizationReference();
-                                tokenizeReference.SuperAdminId = Id; tokenizeReference.TokenReference = otpViewModel.reference; tokenizeReference.Authorization_Code = response.AuthorizationCode;
-                                _tokenizationReference.Create(tokenizeReference);
-                                await _tokenizationReference.Save();
+                                userAxamansardProfile.SubscriptionStatus = true;
+                                _mansardUserProfileRepository.Update(userAxamansardProfile);
 
-                                //If card count is 0. it means there is no card available, so the card tokenised will
-                                //be the primary card so primary card status is set to 1 
-                                //to set a primary card, card status is 0;
-                                var cardStatus = userAxamansardProfile.Cards.Count == 0 ? 1 : 0;
+                                var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
+                                    "iption status, free one month trail");
+                                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
 
-                                var debitCard = new Domain.Models.DebitCard(Id, userAxamansardProfile.Id, cardStatus, response.LastDigit, response.Type, tokenizeReference.Id);
-                                _cardRepository.Create(debitCard);
-                                await _cardRepository.Save();
+                                var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 
-                                var auditViewModel2 = new AuditLogViewModel(Id, null, null, "Debit Card Added", null);
-                                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2));
-
-
-                                checkprofileComplete.TokenizationCompleted = true;
-                                _completionRepository.Update(checkprofileComplete);
-                                await _completionRepository.Save();                                                             
-
-                                if (userAxamansardProfile.SubscriptionStatus == null)
-                                {
-                                    userAxamansardProfile.SubscriptionStatus = true;
-                                    _mansardUserProfileRepository.Update(userAxamansardProfile);
-                                    await _mansardUserProfileRepository.Save();
-
-                                    var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
-                                        "iption status, free one month trail");
-                                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
-
-                                    var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
-
-                                    var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                       tokenizeReference), DateTime.Now.AddMinutes(2));
-                                }
-
-                                return Ok(new ResponseMessage { Data = response.Data, Message = response.Message, Status = response.Status, ResponseCode = response.ResponseCode });
+                                var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                    tokenizeReference), DateTime.Now.AddMinutes(2));
                             }
-                            return BadRequest(new ResponseMessage { Data = response.Data, Message = response.Message, Status = response.Status, ResponseCode = response.ResponseCode });
+                            await _mansardUserProfileRepository.Save();
+
+                            return Ok(new ResponseMessage { Data = response.Data, Message = response.Message, Status = response.Status, ResponseCode = response.ResponseCode });
                         }
-                        return BadRequest(new ResponseMessage { Message = "User has not been profiled", Status = false });
+                        return BadRequest(new ResponseMessage { Data = response.Data, Message = response.Message, Status = response.Status, ResponseCode = response.ResponseCode });
                     }
-                    return BadRequest(new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false });
+                    return BadRequest(new ResponseMessage { Message = "User has not been profiled", Status = false });
                 }
-                catch (Exception ex)
-                {
-                    _logViaWhatApp.SendLog("An error occurred while trying to submit user otp: " + ex.ToString());
-                    _logger.LogCritical("An error occurred while trying to submit user otp: " + ex);
-                    return BadRequest("An error occurred while trying to charge card: ");
-                }
+                return BadRequest(new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false });
             }
             //return validation errors
             var errors = new List<string>();
@@ -251,7 +230,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });            
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> CancelSubscription(string reason)
         {
@@ -281,7 +260,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CardDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<List<CardDTO>>))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage<List<CardDTO>>))]
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetCards()
         {
@@ -302,7 +281,7 @@ namespace HealthBanc.Controllers
             return NotFound(new ResponseMessage<List<DebitCard>> { Status = false, Message = "User was not found" });
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> ChangePrimaryCard(int cardId)
         {
@@ -323,7 +302,7 @@ namespace HealthBanc.Controllers
                 if (newPrimaryCard == null) 
                 {
                     var auditViewModel3 = new AuditLogViewModel(Id, null, $"Primary card ID is {presentPrimaryCard.Id}", "Change Primary Card", $" Event Failed," +
-                        $" Error: You dont have a card, Kindly tokenize a card");
+                        $" Error: No secondary card tied to you was found");
                     BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
                     return NotFound(new ResponseMessage { Message = "No secondary card tied to you was found" });
                 }
@@ -360,7 +339,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString()});
         }
 
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> DeleteCard(int cardId)
         {
@@ -370,7 +349,7 @@ namespace HealthBanc.Controllers
                 int Id = int.Parse(userId);
                 var card = await _cardRepository.GetCardByIdAsync(cardId, Id);
                 var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
-                //var userCardCount = await _cardRepository.GetUserCardCount(Id);
+
                 if (card == null) return NotFound(new ResponseMessage { Message = "Card  was not found" });
                 if (card.Status == 1 && userAxamansardProfile.SubscriptionStatus == true) return BadRequest(new ResponseMessage { Message = "Kindly add a new card and change primary card to delete present primary card" });
                 if(card.TokenizationReference != null)
@@ -396,6 +375,7 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> ReactivateWithPresentPrimaryCard()
         {
@@ -407,28 +387,19 @@ namespace HealthBanc.Controllers
             {
                 return BadRequest(new ResponseMessage { Message = "Subscription is currently active", Status=false });
             }
-            var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
-            var tokenizationReference = await _cardRepository.GetPrimaryCardReference(Id);
-            await _tokenizationService.InsertSubscription(use, tokenizationReference);
+            var axaMansardBackgroundDTO = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
+            var tokenizationReference = await _cardRepository.GetPrimaryCardReference(Id);           
+
             var auditViewModel3 = new AuditLogViewModel(Id, null, $"Inactive subscription", "Reactivated subscription", $"Subscription was reactivated");
             BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3));
-            //if (result.Status == true)
-            //{
+
+            BackgroundJob.Enqueue(() => _tokenizationService.InsertSubscription(axaMansardBackgroundDTO, tokenizationReference));
+
             userAxamansardProfile.SubscriptionStatus = true;
             _mansardUserProfileRepository.Update(userAxamansardProfile);
 
             await _mansardUserProfileRepository.Save();
             return Ok(new ResponseMessage {Message="Reactivation was successful",Status=true });
-            //} 
-            //return BadRequest(result);
         }
-
-        //[HttpPost("[action]")]
-        //public async Task<IActionResult> RecurJobs()
-        //{
-        //    RecurringJob.AddOrUpdate(() => Console.WriteLine("Test succeded"), Cron.Minutely);
-        //    return Ok("Intiated");
-
-        //}
     }
 }
