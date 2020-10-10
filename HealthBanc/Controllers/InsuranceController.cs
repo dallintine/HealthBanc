@@ -164,12 +164,9 @@ namespace HealthBanc.Controllers
 
                         var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
 
-                        if (!user.ServiceUsed.Contains("HealthInsured,"))
-                        {
-                            var newServiceString = user.ServiceUsed + "HealthInsured,";
-                            user.ServiceUsed = newServiceString;
-                            _userRepository.Update(user);
-                        }
+                        var newServiceString = user.ServiceUsed + "HealthInsured,";
+                        user.ServiceUsed = newServiceString;
+                        _userRepository.Update(user);
                         await _userRepository.Save();
 
 
