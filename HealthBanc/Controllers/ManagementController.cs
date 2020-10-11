@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace HealthBanc.Controllers
 {
@@ -31,12 +32,26 @@ namespace HealthBanc.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult> Error(string OPP)
+        public async Task<ActionResult> Error()
         {
-            var x =await _iBAckend.OtpValidationAsync(OPP, "Hassannh");
+            var x =await _iBAckend.OtpValidationAsync("246832", "Hassannh");
             _logger.LogError(x.ToString());
             return Ok(x.Body.OtpValidationResult);
         }
+
+        [HttpPost("[action]")]
+        public ActionResult Errors()
+        {
+            var x = _iBAckend.SOAPManual("246832", "Hassannh");
+            _logger.LogError("Value from SoapManual" + x.ToString());
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(x);
+            var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
+            _logger.LogError("Response result: " + responseResult);
+            _logger.LogError(x.ToString());
+            return Ok(responseResult);
+        }
+
         [HttpGet("[action]")]
         public async Task<IActionResult> Delete()
         {

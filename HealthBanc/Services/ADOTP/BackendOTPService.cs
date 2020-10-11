@@ -72,7 +72,7 @@ namespace HealthBanc.Services.ADOTP
             }
             catch(Exception ex)
             {
-                _logger.LogError(ex.ToString());
+                _logger.LogError("This happende in the SoapManual: "+ex.ToString());
                 return "false";
             }
             
@@ -138,7 +138,8 @@ namespace HealthBanc.Services.ADOTP
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex.ToString(), ex.ToString());
+                _logger.LogCritical("OTP validation exception :" + ex.ToString(), ex.ToString());
+                _logger.LogError("OTP validation Inner exception :" +ex.InnerException.StackTrace.ToString());               
             }
             return response2;
         }
