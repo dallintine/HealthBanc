@@ -125,14 +125,12 @@ namespace HealthBanc.Services.ADOTP
             try
             {
                 var client = await GetInstanceAsync();
-                //var client = new OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress);
-                //client.ChannelFactory.Credentials.ServiceCertificate.SslCertificateAuthentication =
-                //    new X509ServiceCertificateAuthentication
-                //    {
-                //        CertificateValidationMode = X509CertificateValidationMode.None,
-                //        RevocationMode = X509RevocationMode.NoCheck,
-                //        TrustedStoreLocation = StoreLocation.LocalMachine
-                //    };
+                client.ClientCredentials.ServiceCertificate.SslCertificateAuthentication =
+                 new X509ServiceCertificateAuthentication()
+                 {
+                     CertificateValidationMode = X509CertificateValidationMode.None,
+                     RevocationMode = X509RevocationMode.NoCheck
+                 };
                 var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
                 _logger.LogError(response.ToString());
                 return response;

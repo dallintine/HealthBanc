@@ -32,17 +32,17 @@ namespace HealthBanc.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult> Error()
+        public async Task<ActionResult> Error(string otp, string name)
         {
-            var x =await _iBAckend.OtpValidationAsync("246832", "Hassannh");
+            var x =await _iBAckend.OtpValidationAsync(otp, name);
             _logger.LogError(x.ToString());
             return Ok(x.Body.OtpValidationResult);
         }
 
         [HttpPost("[action]")]
-        public ActionResult Errors()
+        public ActionResult Errors(string otp, string name)
         {
-            var x = _iBAckend.SOAPManual("246832", "Hassannh");
+            var x = _iBAckend.SOAPManual(otp, name);
             _logger.LogError("Value from SoapManual" + x.ToString());
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(x);
