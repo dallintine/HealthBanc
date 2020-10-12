@@ -107,15 +107,6 @@ namespace HealthBanc.Services.ADOTP
 
         private async Task<OTPCentralServiceSoapClient> GetInstanceAsync()
         {
-            //var client = new OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress);
-            //client.ChannelFactory.Credentials.ServiceCertificate.SslCertificateAuthentication =
-            //    new X509ServiceCertificateAuthentication
-            //    {
-            //        CertificateValidationMode = X509CertificateValidationMode.None,
-            //        RevocationMode = X509RevocationMode.NoCheck,
-            //        TrustedStoreLocation = StoreLocation.LocalMachine
-            //    };
-            //return client;
             return await Task.Run(() => new OTPCentralServiceSoapClient(basicHttpBinding, endpointAddress));
         }
 
@@ -125,12 +116,12 @@ namespace HealthBanc.Services.ADOTP
             try
             {
                 var client = await GetInstanceAsync();
-                client.ClientCredentials.ServiceCertificate.SslCertificateAuthentication =
-                 new X509ServiceCertificateAuthentication()
-                 {
-                     CertificateValidationMode = X509CertificateValidationMode.None,
-                     RevocationMode = X509RevocationMode.NoCheck
-                 };
+                //client.ClientCredentials.ServiceCertificate.SslCertificateAuthentication =
+                // new X509ServiceCertificateAuthentication()
+                // {
+                //     CertificateValidationMode = X509CertificateValidationMode.None,
+                //     RevocationMode = X509RevocationMode.NoCheck
+                // };
                 var response = await client.OtpValidationAsync(otp, username, Options.SterlingOtpConfig.Hashkey);
                 _logger.LogError(response.ToString());
                 return response;

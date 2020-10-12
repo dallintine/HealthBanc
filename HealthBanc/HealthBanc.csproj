@@ -30,10 +30,6 @@
     <Compile Remove="Migrations\20201010092853_RemovedunessaryRoles.Designer.cs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="Connected Services\Microsoft WCF Web Service Reference Provider\ConnectedService.json" />
-  </ItemGroup>
-
   <!--<ItemGroup>
     <Content Include="google-credentials.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
