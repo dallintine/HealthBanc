@@ -323,6 +323,14 @@ namespace HealthBanc.Controllers
                 if (checkIfUserHasBeenProfiled == null) return BadRequest(new ResponseMessage { Message = "User does not have a profile" });
 
                 var updatedProfile = _mapper.Map<UpdateProfileViewModel, AxaMansardUserProfile>(updateProfileViewModel, checkIfUserHasBeenProfiled);
+                if (updatedProfile.PlanCode == "7")
+                {
+                    updatedProfile.Premium = Decimal.Parse("1000");
+                }
+                else if (updatedProfile.PlanCode == "8")
+                {
+                    updatedProfile.Premium = Decimal.Parse("2000");
+                }
                 if (updatedProfile != null)
                 {
                     _axaMansard.Update(updatedProfile);
