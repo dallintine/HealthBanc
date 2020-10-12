@@ -8,22 +8,27 @@ namespace HealthBanc.ViewModels
 {
     public class AuditLogViewModel
     {
-        [Required]
-        public Guid Id { get; set; }
+        public AuditLogViewModel()
+        {
+        }
+
+        public AuditLogViewModel(int applicationUserId, string transactionId, string beforeEventContent, string actionApplied, string afterEventContent)
+        {
+            ApplicationUserId = applicationUserId;
+            TransactionId = transactionId;
+            BeforeEventContent = beforeEventContent;
+            ActionApplied = actionApplied;
+            AfterEventContent = afterEventContent;
+        }
+
         [Required]
         public int ApplicationUserId { get; set; }
-        [Required]
         public string TransactionId { get; set; }
         [Required]
         public string BeforeEventContent { get; set; }
+        [Required]
         public string ActionApplied { get; set; }
         [Required]
         public string AfterEventContent { get; set; }
-        [Required]
-        public DateTime Date { get; set; }
-        [Required]
-        public string IPAddress { get; set; }
-        [Required]
-        public string MACAddress { get; set; }
     }
 }

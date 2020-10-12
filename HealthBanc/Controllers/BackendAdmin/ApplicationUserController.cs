@@ -40,26 +40,18 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAllUsers([FromQuery]PaginationQuery paginationQuery)
         {
-            try
-            {
-                var users = await _applicationUserRepository.GetAllUsers(paginationQuery);
-                var userDT0 = _mapper.Map<IEnumerable<ApplicationUser>, List<ApplicationUserDTO>>(users.Data);
+            var users = await _applicationUserRepository.GetAllUsers(paginationQuery);
+            var userDT0 = _mapper.Map<IEnumerable<ApplicationUser>, List<ApplicationUserDTO>>(users.Data);
 
-                var paginatedResponse = new PagedResponse<ApplicationUserDTO>
-                {
-                    Data = userDT0,
-                    PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                    PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                    RecordCount = users.RecordCount,
-                    PageCount = users.PageCount
-                };
-                return Ok(paginatedResponse);
-            }
-            catch(Exception ex)
+            var paginatedResponse = new PagedResponse<ApplicationUserDTO>
             {
-                _logger.LogCritical("An error occurred while trying to get all users " + ex);
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get all users" });
-            }
+                Data = userDT0,
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = users.RecordCount,
+                PageCount = users.PageCount
+            };
+            return Ok(paginatedResponse);
         }
 
         //WORKING1
@@ -74,17 +66,9 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             if(email != null)
             {
-                try
-                {
-                    var user = await _applicationUserRepository.GetByEmailAsync(email);
-                    var userDTO = _mapper.Map<ApplicationUserDTO>(user);
-                    return Ok(new ResponseMessage<ApplicationUserDTO> { Data = userDTO, Status = true, Message = "User detail was fetched successfully" });
-                }
-                catch(Exception ex)
-                {
-                    _logger.LogCritical("An error occured while trying to get user detail " + ex);
-                    return BadRequest(new ResponseMessage { Message = "An error occured while trying to get user detail"});
-                }                
+                var user = await _applicationUserRepository.GetByEmailAsync(email);
+                var userDTO = _mapper.Map<ApplicationUserDTO>(user);
+                return Ok(new ResponseMessage<ApplicationUserDTO> { Data = userDTO, Status = true, Message = "User detail was fetched successfully" });
             }
             return BadRequest(new ResponseMessage { Message = "email can not be null" });
         }

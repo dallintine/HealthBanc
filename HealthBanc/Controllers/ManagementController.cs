@@ -1,4 +1,5 @@
 ﻿using HealthBanc.Data;
+using HealthBanc.Services.ADOTP;
 using HealthBanc.Services.Insurance;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace HealthBanc.Controllers
 {
@@ -19,21 +21,37 @@ namespace HealthBanc.Controllers
         private readonly ApplicationDbContext _dbContext;
         private readonly InsuranceService _insuranceService;
         private readonly ILogger<ManagementController> _logger;
+        private readonly IBackendOTPService _iBAckend;
 
-        public ManagementController(ApplicationDbContext dbContext, InsuranceService insuranceService,ILogger<ManagementController> logger)
+        public ManagementController(ApplicationDbContext dbContext, InsuranceService insuranceService,ILogger<ManagementController> logger, IBackendOTPService iBAckend)
         {
             _dbContext = dbContext;
             _insuranceService = insuranceService;
             _logger = logger;
+            _iBAckend = iBAckend;
         }
 
         [HttpGet("[action]")]
-        public IActionResult Error()
+        public async Task<ActionResult> Error(string otp, string name)
         {
-            var x = "fdvsv";
-            var y = int.Parse(x);
-            return Ok();
+            var x =await _iBAckend.OtpValidationAsync(otp, name);
+            _logger.LogError(x.ToString());
+            return Ok(x.Body.OtpValidationResult);
         }
+
+        [HttpPost("[action]")]
+        public ActionResult Errors(string otp, string name)
+        {
+            var x = _iBAckend.SOAPManual(otp, name);
+            _logger.LogError("Value from SoapManual" + x.ToString());
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(x);
+            var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
+            _logger.LogError("Response result: " + responseResult);
+            _logger.LogError(x.ToString());
+            return Ok(responseResult);
+        }
+
         [HttpGet("[action]")]
         public async Task<IActionResult> Delete()
         {

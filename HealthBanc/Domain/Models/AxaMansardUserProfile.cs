@@ -45,7 +45,7 @@ namespace HealthBanc.Domain.Models
         public string IdentityPhoto { get; set; }
         public string StateOfResidence { get; set; }
         public string TownOfResidence { get; set; }
-        public bool SubscriptionStatus { get; set; }
+        public bool? SubscriptionStatus { get; set; }
         public List<DebitCard> Cards { get; set; }
         public List<PaymentReference> PaymentReferences { get; set; }
     }

@@ -4437,18 +4437,6 @@
         "runtime": {
           "lib/netcoreapp2.0/UAParser.dll": {}
         }
-      },
-      "Wangkanai.Detection/3.0.0-alpha05": {
-        "type": "package",
-        "compile": {
-          "lib/netcoreapp3.0/Wangkanai.Detection.dll": {}
-        },
-        "runtime": {
-          "lib/netcoreapp3.0/Wangkanai.Detection.dll": {}
-        },
-        "frameworkReferences": [
-          "Microsoft.AspNetCore.App"
-        ]
       }
     }
   },
@@ -12976,18 +12964,6 @@
         "uaparser.3.1.43.nupkg.sha512",
         "uaparser.nuspec"
       ]
-    },
-    "Wangkanai.Detection/3.0.0-alpha05": {
-      "sha512": "J6q28lplOrMwJTBtyuQ1BRZeqKBVPuP7R+q1Xu8wjMQ17nTibHsE5yeVQSV5uxHaTMoZrJIRkyymo9FoWwW76Q==",
-      "type": "package",
-      "path": "wangkanai.detection/3.0.0-alpha05",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "lib/netcoreapp3.0/Wangkanai.Detection.dll",
-        "wangkanai.detection.3.0.0-alpha05.nupkg.sha512",
-        "wangkanai.detection.nuspec"
-      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -13039,8 +13015,7 @@
       "System.ServiceModel.NetTcp >= 4.4.*",
       "System.ServiceModel.Security >= 4.4.*",
       "Twilio >= 5.46.0",
-      "UAParser >= 3.1.43",
-      "Wangkanai.Detection >= 3.0.0-alpha05"
+      "UAParser >= 3.1.43"
     ]
   },
   "packageFolders": {
@@ -13276,10 +13251,6 @@
           "UAParser": {
             "target": "Package",
             "version": "[3.1.43, )"
-          },
-          "Wangkanai.Detection": {
-            "target": "Package",
-            "version": "[3.0.0-alpha05, )"
           }
         },
         "imports": [

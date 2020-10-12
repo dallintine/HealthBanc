@@ -5,8 +5,25 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.Domain.Models.ReportAndLogs
 {
-    public class AuditLogin_LogoutLog
+    public class AdminLogin_LogoutLog
     {
+        public AdminLogin_LogoutLog()
+        {
+        }
+
+        public AdminLogin_LogoutLog(int applicationUserid, string email, bool signin, bool signOut, bool loginFailure, bool logOutFailure, bool loginOutHours)
+        {
+            Id = new Guid();
+            ApplicationUserid = applicationUserid;
+            Email = email;
+            Signin = signin;
+            SignOut = signOut;
+            LoginFailure = loginFailure;
+            LogOutFailure = logOutFailure;
+            Date = DateTime.Now;
+            LoginOutHours = loginOutHours;
+        }
+
         public Guid Id { get; set; }
         public int ApplicationUserid { get; set; }
         public string Email { get; set; }
@@ -15,7 +32,7 @@ namespace HealthBanc.Domain.Models.ReportAndLogs
         public bool LoginFailure { get; set; }
         public bool LogOutFailure { get; set; }
         public DateTime Date { get; set; }
-        public  bool LoginOutHours { get; set; }
+        public  bool? LoginOutHours { get; set; }
 
     }
 }

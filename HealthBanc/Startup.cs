@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Services;
+using HealthBanc.Services.ADOTP;
+using HealthBanc.Services.AuditAndReport.AuditLog;
 using HealthBanc.Services.EncryptionService;
 using HealthBanc.Services.GlobalErrorHandling.Extensions;
 using HealthBanc.Services.Identity;
@@ -33,6 +36,7 @@ using Microsoft.AspNet.OData.Formatter;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -73,7 +77,7 @@ namespace HealthBanc
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection")));
             services.AddHangfireServer();
 
             services.AddHsts(options =>
@@ -136,6 +140,7 @@ namespace HealthBanc
             services.Configure<AuthMessageSenderOption>(Configuration);
             services.Configure<Towns>(Configuration);
             services.Configure<AxaMansard>(Configuration);
+            services.Configure<SterlingOtp>(Configuration);
             services.Configure<AppEndpoint>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
@@ -156,7 +161,14 @@ namespace HealthBanc
             services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
             services.Configure<Image>(Configuration);
             services.AddScoped<IExceptionLogRepository, ExceptionLogRepository>();
-            services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddScoped<IUserAuditLogRepository, UserAuditLogRepository>();
+            services.AddScoped<IPasswordChangeRepository, PasswordChangeRepository>();
+            services.AddScoped<IUserLogin_LogoutLogRepository, UserLogin_LogoutLogRepository>();
+            services.AddScoped<IAdminLogin_LogoutLogRepository, AdminLogin_LogoutLogRepository>();
+            services.AddScoped<AuditLogService>();
+            services.AddScoped<IBackendOTPService, BackendOTPService>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -178,8 +190,6 @@ namespace HealthBanc
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
                  options.TokenLifespan = TimeSpan.FromDays(5));
-
-
 
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")
                 , options => options.EnableRetryOnFailure(
@@ -340,6 +350,12 @@ namespace HealthBanc
             {
                 Authorization = new[] { new MyAuthorizationFilter() }
             });
+
+            ServicePointManager.ServerCertificateValidationCallback +=
+                (sender, certificate, chain, errors) =>
+                {
+                    return true;
+                };
 
 
             app.UseCors("CorsPolicy");

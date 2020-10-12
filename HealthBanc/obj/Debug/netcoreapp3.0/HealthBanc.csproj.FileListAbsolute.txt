@@ -244,15 +244,12 @@ C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netc
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csproj.CoreCompileInputs.cache
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\UAParser.dll
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Wangkanai.Detection.dll
-C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csprojAssemblyReference.cache
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\web.config
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\appsettings.Development.json
-C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\appsettings.json
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Connected Services\AxaMansardSoap\ConnectedService.json
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Properties\launchSettings.json
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\town.json
+C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\appsettings.json
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.exe
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.deps.json
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\HealthBanc.runtimeconfig.json
@@ -402,8 +399,6 @@ C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.ServiceModel.dll
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\System.ServiceModel.Security.dll
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Twilio.dll
-C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\UAParser.dll
-C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Wangkanai.Detection.dll
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\es\Hangfire.Core.resources.dll
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\fa\Hangfire.Core.resources.dll
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\fr\Hangfire.Core.resources.dll
@@ -493,5 +488,6 @@ C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\obj
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.dll
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.xml
 C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.pdb
-C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Connected Services\Microsoft WCF Web Service Reference Provider\ConnectedService.json
-C:\Users\Okosodoec\Documents\HealthBancRepo\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Connected Services\ServiceReference1\ConnectedService.json
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\UAParser.dll
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\bin\Debug\netcoreapp3.0\Connected Services\SterlOTP\ConnectedService.json
+C:\Users\HASSAN\Desktop\Pharmhub\HealthBanc\HealthBanc\HealthBanc\obj\Debug\netcoreapp3.0\HealthBanc.csprojAssemblyReference.cache

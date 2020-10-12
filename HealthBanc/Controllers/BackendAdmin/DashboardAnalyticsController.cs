@@ -38,28 +38,19 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> DashboardAnalytics()
         {
-            try
+            var users = await _userRepository.GetUsersStatus();
+            var signUpAnalytics = await _userRepository.GetSignUpAnalytics(null);
+            var serviceBreakdown = await _userRepository.GetServiceBreakdown(null);
+            var dashbordDTO = new DashboardDTO()
             {
-                var users = await _userRepository.GetUsersStatus();
-                var signUpAnalytics = await _userRepository.GetSignUpAnalytics(null);
-                var serviceBreakdown = await _userRepository.GetServiceBreakdown(null);
-                var dashbordDTO = new DashboardDTO()
-                {
-                    ActiveUsers = users.ActiveUsers,
-                    RegisteredUsers = users.RegisteredUsers,
-                    InactiveUsers = users.InactiveUsers,
-                    ServiceBreakdowns = serviceBreakdown.ServiceBreakdowns,
-                    SignUpMonths = signUpAnalytics.SignUpMonths
-                };
+                ActiveUsers = users.ActiveUsers,
+                RegisteredUsers = users.RegisteredUsers,
+                InactiveUsers = users.InactiveUsers,
+                ServiceBreakdowns = serviceBreakdown.ServiceBreakdowns,
+                SignUpMonths = signUpAnalytics.SignUpMonths
+            };
 
-                return Ok(new ResponseMessage<DashboardDTO> { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
-            }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to get dashboard analytics", ex);
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get dashboard analytics"});
-            }
-
+            return Ok(new ResponseMessage<DashboardDTO> { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });           
         }
 
         //WORKING1
@@ -72,22 +63,14 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> GetUsersStatus()
         {
-            try
+            var users = await _userRepository.GetUsersStatus();
+            var dashbordDTO = new DashboardDTO()
             {
-                var users = await _userRepository.GetUsersStatus();
-                var dashbordDTO = new DashboardDTO()
-                {
-                    ActiveUsers = users.ActiveUsers,
-                    RegisteredUsers = users.RegisteredUsers,
-                    InactiveUsers = users.InactiveUsers,
-                };
-                return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
-            }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to get user status", ex);
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get user status" });
-            }
+                ActiveUsers = users.ActiveUsers,
+                RegisteredUsers = users.RegisteredUsers,
+                InactiveUsers = users.InactiveUsers,
+            };
+            return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
         }
 
         //WORKING1
@@ -100,25 +83,16 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> GetServiceBreakdown([FromQuery] int? timeId)
         {
-            try
+            if ((timeId > 0 && timeId < 3) || timeId is null)
             {
-                if ((timeId > 0 && timeId < 3) || timeId is null)
+                var serviceBreakdown = await _userRepository.GetServiceBreakdown(timeId);
+                var dashbordDTO = new DashboardDTO()
                 {
-                    var serviceBreakdown = await _userRepository.GetServiceBreakdown(timeId);
-                    var dashbordDTO = new DashboardDTO()
-                    {
-                        ServiceBreakdowns = serviceBreakdown.ServiceBreakdowns
-                    };
-                    return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
-                }
-                return BadRequest(new ResponseMessage { Message = "timeId is invalid" });
+                    ServiceBreakdowns = serviceBreakdown.ServiceBreakdowns
+                };
+                return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
             }
-            catch (Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to get GetServiceBreakdown", ex);
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to process service breakdown" });
-            }
-
+            return BadRequest(new ResponseMessage { Message = "timeId is invalid" });
         }
 
         //WORKING1
@@ -131,24 +105,16 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> GetSignUpAnalytics([FromQuery] int? timeId)
         {
-            try
+            if (timeId == 1 || timeId is null)
             {
-                if (timeId == 1 || timeId is null)
+                var signUpAnalytics = await _userRepository.GetSignUpAnalytics(timeId);
+                var dashbordDTO = new DashboardDTO()
                 {
-                    var signUpAnalytics = await _userRepository.GetSignUpAnalytics(timeId);
-                    var dashbordDTO = new DashboardDTO()
-                    {
-                        SignUpMonths = signUpAnalytics.SignUpMonths
-                    };
-                    return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
-                }
-                return BadRequest(new ResponseMessage { Message = "timeId is invalid" });
+                    SignUpMonths = signUpAnalytics.SignUpMonths
+                };
+                return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
             }
-            catch (Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to get GetServiceBreakdown", ex);
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to process service breakdown" });
-            }
+            return BadRequest(new ResponseMessage { Message = "timeId is invalid" });
         }
 
         //WORKING1
@@ -161,16 +127,9 @@ namespace HealthBanc.Controllers.BackendAdmin
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> GetServices()
         {
-            try
-            {
-                var services = await _serviceRepository.GetServicesAsync();
-                return Ok(new ResponseMessage { Data = services, Status = true, Message = "Service was fetched successfully" });
-            }
-            catch(Exception ex)
-            {
-                _logger.LogCritical("An error occurred while trying to fetch services", ex);
-                return BadRequest(new ResponseMessage {Message = "An error occurred while trying to fetch services" });
-            }
+            
+            var services = await _serviceRepository.GetServicesAsync();
+            return Ok(new ResponseMessage { Data = services, Status = true, Message = "Service was fetched successfully" });            
         }
     }
 }

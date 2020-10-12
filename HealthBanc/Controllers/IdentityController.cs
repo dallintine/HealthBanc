@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Response;
@@ -32,9 +33,12 @@ namespace HealthBanc.Controllers
         private readonly IApplicationUserRepository _userRepository;
         private readonly IEmailSender _emailSender;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IPasswordChangeRepository _passwordChangeRepository;
+        private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
-            IApplicationUserRepository userRepository, IEmailSender emailSender, IPasswordHasher passwordHasher)
+            IApplicationUserRepository userRepository, IEmailSender emailSender,IPasswordHasher passwordHasher, IPasswordChangeRepository passwordChangeRepository,
+            IUserLogin_LogoutLogRepository logoutLogRepository)
         {
             _logger = logger;
             _identityService = identityService;
@@ -43,6 +47,8 @@ namespace HealthBanc.Controllers
             _userRepository = userRepository;
             _emailSender = emailSender;
             _passwordHasher = passwordHasher;
+            _passwordChangeRepository = passwordChangeRepository;
+            _logoutLogRepository = logoutLogRepository;
         }
 
         ///<summary>
@@ -103,7 +109,7 @@ namespace HealthBanc.Controllers
                 {
                     return Redirect("https://pharmmall.azurewebsites.net/signin");
                 }
-                if (response.ResponseCode == 23)
+                if(response.ResponseCode  == 23)
                 {
                     return Redirect("https://pharmmall.azurewebsites.net/resend_email_link");
                 }
@@ -151,7 +157,7 @@ namespace HealthBanc.Controllers
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null || user.UniqueUsername != null)
             {
-                return BadRequest(new ResponseMessage { Message = "User does not exist", Status = false });
+                return BadRequest(new ResponseMessage {Message = "User does not exist" , Status=false });
             }
             if (user.EmailConfirmed == true)
             {
@@ -247,7 +253,10 @@ namespace HealthBanc.Controllers
                     return Ok(response);
                 }
                 await _userManager.AccessFailedAsync(user);
-                return Unauthorized(new ResponseMessage { Message = "Username or password invalid, please try again with correct details.", Status = false });
+                var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, true);
+                _logoutLogRepository.Create(loginLog);
+                await _logoutLogRepository.Save();
+                return Unauthorized(new ResponseMessage { Message = "Password is invalid, please try again with correct details.", Status = false });
             }
             //return validation errors
             var errors = new List<ResponseMessage>();
@@ -318,7 +327,7 @@ namespace HealthBanc.Controllers
             {
                 return BadRequest(authResponse);
             }
-            return Ok(authResponse);
+            return Ok( authResponse);
         }
 
         //WORKING1
@@ -354,7 +363,7 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
-
+      
         //WORKING1
         /// <summary>
         /// Resets the user Password
@@ -392,10 +401,10 @@ namespace HealthBanc.Controllers
                 {
                     return Ok(response);
                 }
-                if (response.ResponseCode == 23)
+                if(response.ResponseCode == 23)
                 {
                     return BadRequest(response);
-                }
+                }             
                 return BadRequest(response);
             }
             //return validation errors
@@ -408,9 +417,8 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error });
             }
             return BadRequest(errors);
-        }
-
-
+        }               
+        
         //WORKING1
         /// <summary>
         /// Changes the user password
@@ -422,7 +430,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordViewModel changePassword)
         {
             if (ModelState.IsValid)
@@ -435,7 +443,7 @@ namespace HealthBanc.Controllers
                     PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, changePassword.ConfirmPassword);
                     if (passResult.Equals(PasswordVerificationResult.Failed))
                     {
-                        if (user.HashedPasswordHistory != null)
+                        if(user.HashedPasswordHistory != null)
                         {
                             var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
                             if (hashedPassword.LastOrDefault() == "")
@@ -450,30 +458,36 @@ namespace HealthBanc.Controllers
                                     return BadRequest(new ResponseMessage { Message = "The password you entered has been used before,please try another" });
                                 }
                             }
-                        }
-
+                        }                      
+                        
                         var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
                         if (userPassword.Succeeded)
                         {
                             var passwordHashed = _passwordHasher.Hash(changePassword.NewPassword);
                             if (user.HashedPasswordHistory != null)
                             {
-                                var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
+                                var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();                                
                                 if (hashedPassword.LastOrDefault() == "")
                                 {
                                     hashedPassword.RemoveAt(hashedPassword.Count - 1);
-                                    if (hashedPassword.Count > 3)
+                                    if(hashedPassword.Count >3)
                                     {
-                                        hashedPassword.RemoveAt(0);
+                                        hashedPassword.RemoveAt(0);                                       
                                         var newPaswordHash = string.Join(",", hashedPassword);
-                                        user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
+                                        user.HashedPasswordHistory =  $"{newPaswordHash},{passwordHashed},";
                                         await _userManager.UpdateAsync(user);
+                                        var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, true, false);
+                                        _passwordChangeRepository.Create(passwordChangehistory2);
+                                        await _passwordChangeRepository.Save();
                                         return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                                     }
-                                }
+                                }                                
                             }
                             user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
                             await _userManager.UpdateAsync(user);
+                            var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, true, false);
+                            _passwordChangeRepository.Create(passwordChangehistory);
+                            await _passwordChangeRepository.Save();
                             return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                         }
                         return BadRequest(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });
@@ -495,89 +509,7 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error });
             }
             return BadRequest(errors);
-        }
-
-        /// <summary>
-        /// This Creates Admin Requires SuperAdmin Rights
-        /// </summary>
-        ///<response code="200">Success : Admin Was Created Successfully,User Should Check Email For Further Instruction</response>
-        ///<reponse code="400">Error : List of Input Validation Errors</reponse>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [HttpPost("[action]")]
-        [Authorize(Policy = "SuperAdminRole")]
-        public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminRegViewModel regViewModel)
-        {
-            if (ModelState.IsValid)
-            {
-                string superAdminEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-                string getSuperAdminId = User.FindFirst("SuperAdminId")?.Value;
-                int superAdminId = int.Parse(getSuperAdminId);
-                var response = await _identityService.CreateAdmin(regViewModel, superAdminEmail, superAdminId);
-
-                if (response.Status == true)
-                {
-                    return Ok(response);
-                }
-                return BadRequest(response);
-            }
-            //return validation errors
-            var errors = new List<ResponseMessage>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(new ResponseMessage() { Message = error });
-            }
-            return BadRequest(errors);
-        }
-
-        /// <summary>
-        /// This Confirms the Created AdminEmail
-        /// </summary>
-        /// <param name="email">Encoded String:Takes the Useremail as query Parameter</param>
-        /// <param name="emailToken">Encoded String:Takes the EmailToken also as query Parameter</param>
-        /// <param name="regViewModel"></param>
-        /// <response code="200">Success : Email Confirmed Successfully Please Login</response>
-        ///<reponse code="400">Error : List of Input Validation Errors</reponse>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [HttpPost("[action]")]
-        public async Task<IActionResult> AdminReg(string email, string emailToken, [FromBody] AdminRegViewModel regViewModel)
-        {
-            if (ModelState.IsValid)
-            {
-                if (email is null || emailToken is null)
-                {
-                    return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
-                }
-                var response = await _identityService.AdminReg(email, emailToken, regViewModel);
-                if (response.Status == true)
-                {
-                    return Ok(response);
-                }
-                if (response.ResponseCode == 2)
-                {
-                    return BadRequest(response);
-                }
-                if (response.ResponseCode == 23)
-                {
-                    return BadRequest(response);
-                }
-                return BadRequest(response);
-            }
-            //return validation errors
-            var errors = new List<ResponseMessage>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(new ResponseMessage() { Message = error });
-            }
-            return Unauthorized(errors);
-        }
+        }       
 
         [HttpGet("[action]")]
         [Authorize]
@@ -594,11 +526,95 @@ namespace HealthBanc.Controllers
                 }
                 return NotFound(new ResponseMessage { Message = "User was not found" });
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get service used by user" });
-            }
+            }           
         }
 
     }
 }
+
+
+
+///// <summary>
+///// This Creates Admin Requires SuperAdmin Rights
+///// </summary>
+/////<response code="200">Success : Admin Was Created Successfully,User Should Check Email For Further Instruction</response>
+/////<reponse code="400">Error : List of Input Validation Errors</reponse>
+//[ProducesResponseType(200, Type = typeof(ResponseMessage))]
+//[ProducesResponseType(400, Type = typeof(ResponseMessage))]
+//[HttpPost("[action]")]
+//[Authorize(Roles = "SuperAdmin")]
+//public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminRegViewModel regViewModel)
+//{
+//    if (ModelState.IsValid)
+//    {
+//        string superAdminEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+//        string getSuperAdminId = User.FindFirst("SuperAdminId")?.Value;
+//        int superAdminId = int.Parse(getSuperAdminId);
+//        var response = await _identityService.CreateAdmin(regViewModel, superAdminEmail, superAdminId);
+
+//        if (response.Status == true)
+//        {
+//            return Ok(response);
+//        }
+//        return BadRequest(response);
+//    }
+//    //return validation errors
+//    var errors = new List<ResponseMessage>();
+//    var errorList = ModelState.Values.SelectMany(m => m.Errors)
+//        .Select(e => e.ErrorMessage)
+//        .ToList();
+//    foreach (var error in errorList)
+//    {
+//        errors.Add(new ResponseMessage() { Message = error });
+//    }
+//    return BadRequest(errors);
+//}
+
+///// <summary>
+///// This Confirms the Created AdminEmail
+///// </summary>
+///// <param name="email">Encoded String:Takes the Useremail as query Parameter</param>
+///// <param name="emailToken">Encoded String:Takes the EmailToken also as query Parameter</param>
+///// <param name="regViewModel"></param>
+///// <response code="200">Success : Email Confirmed Successfully Please Login</response>
+/////<reponse code="400">Error : List of Input Validation Errors</reponse>
+//[ProducesResponseType(200, Type = typeof(ResponseMessage))]
+//[ProducesResponseType(400, Type = typeof(ResponseMessage))]
+//[HttpPost("[action]")]
+//public async Task<IActionResult> AdminReg(string email, string emailToken, [FromBody] AdminRegViewModel regViewModel)
+//{
+//    if (ModelState.IsValid)
+//    {
+//        if (email is null || emailToken is null)
+//        {
+//            return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
+//        }
+//        var response = await _identityService.AdminReg(email, emailToken, regViewModel);
+//        if (response.Status == true)
+//        {
+//            return Ok(response);
+//        }
+//        if (response.ResponseCode == 2)
+//        {
+//            return BadRequest(response);
+//        }
+//        if (response.ResponseCode == 23)
+//        {
+//            return BadRequest(response);
+//        }
+//        return BadRequest(response);
+//    }
+//    //return validation errors
+//    var errors = new List<ResponseMessage>();
+//    var errorList = ModelState.Values.SelectMany(m => m.Errors)
+//        .Select(e => e.ErrorMessage)
+//        .ToList();
+//    foreach (var error in errorList)
+//    {
+//        errors.Add(new ResponseMessage() { Message = error });
+//    }
+//    return Unauthorized(errors);
+//}

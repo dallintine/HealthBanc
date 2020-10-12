@@ -56,30 +56,6 @@ namespace HealthBanc.Migrations
                         },
                         new
                         {
-                            Id = 2,
-                            Name = "RepSuperAdmin",
-                            NormalizedName = "REPSUPERADMIN"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Initiator",
-                            NormalizedName = "INITIATOR"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Reviewer",
-                            NormalizedName = "REVIEWER"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Authorizer",
-                            NormalizedName = "Authorizer"
-                        },
-                        new
-                        {
                             Id = 6,
                             Name = "Super-Administrator",
                             NormalizedName = "SUPER-ADMINISTRATOR"
@@ -333,7 +309,7 @@ namespace HealthBanc.Migrations
                     b.Property<string>("StateOfResidence")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("SubscriptionStatus")
+                    b.Property<bool?>("SubscriptionStatus")
                         .HasColumnType("bit");
 
                     b.Property<string>("Surname")
@@ -401,26 +377,6 @@ namespace HealthBanc.Migrations
                         {
                             Id = 1,
                             Name = "SuperAdmin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "RepSuperAdmin"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Initiator"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Reviewer"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Authorizer"
                         },
                         new
                         {
@@ -586,7 +542,49 @@ namespace HealthBanc.Migrations
                     b.ToTable("PaymentReferences");
                 });
 
-            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.AuditLogin_LogoutLog", b =>
+            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.AdminAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionApplied")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AfterEventContent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ApplicationUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BackendAdminUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BeforeEventContent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IPAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MACAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TransactionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BackendAdminUserId");
+
+                    b.ToTable("AdminAuditLogs");
+                });
+
+            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.AdminLogin_LogoutLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -607,7 +605,7 @@ namespace HealthBanc.Migrations
                     b.Property<bool>("LoginFailure")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("LoginOutHours")
+                    b.Property<bool?>("LoginOutHours")
                         .HasColumnType("bit");
 
                     b.Property<bool>("SignOut")
@@ -621,6 +619,32 @@ namespace HealthBanc.Migrations
                     b.ToTable("AuditLogin_LogoutLogs");
                 });
 
+            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.PasswordChangeHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ApplicationUserid")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("ChangePassword")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ResetPassword")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PasswordChangeHistories");
+                });
+
             modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.UserAuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -628,37 +652,67 @@ namespace HealthBanc.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ActionApplied")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("AfterEventContent")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ApplicationUserId")
                         .HasColumnType("int");
 
                     b.Property<string>("BeforeEventContent")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Device")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IPAddress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MACAddress")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TransactionId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("UserAuditLogs");
+                });
+
+            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.UserLogin_LogoutLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ApplicationUserid")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("FailedSigninAttempt")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SignOut")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Signin")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserLogin_LogoutLogs");
                 });
 
             modelBuilder.Entity("HealthBanc.Domain.Models.Service", b =>
@@ -679,7 +733,7 @@ namespace HealthBanc.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Pharmmall"
+                            Name = "HealthMall"
                         },
                         new
                         {
@@ -893,6 +947,15 @@ namespace HealthBanc.Migrations
                     b.HasOne("HealthBanc.Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
                         .WithMany("PaymentReferences")
                         .HasForeignKey("AxaMansardUserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthBanc.Domain.Models.ReportAndLogs.AdminAuditLog", b =>
+                {
+                    b.HasOne("HealthBanc.Domain.Models.BackendAdminUser", "BackendAdminUser")
+                        .WithMany()
+                        .HasForeignKey("BackendAdminUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

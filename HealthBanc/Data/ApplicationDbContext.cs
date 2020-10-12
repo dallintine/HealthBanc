@@ -27,20 +27,18 @@ namespace HealthBanc.Data
         public DbSet<TokenizationReference> TokenizationReferences { get; set; }
         public DbSet<DebitCard> Cards { get; set; }
         public DbSet<PaymentReference> PaymentReferences { get; set; }
-        public DbSet<UserAuditLog> AuditLogs { get; set; }
+        public DbSet<UserAuditLog> UserAuditLogs { get; set; }
+        public DbSet<AdminAuditLog> AdminAuditLogs { get; set; }
         public DbSet<ExceptionLog> ExceptionLogs { get; set; }
-        public DbSet<AuditLogin_LogoutLog> AuditLogin_LogoutLogs { get; set; }
-
+        public DbSet<AdminLogin_LogoutLog> AuditLogin_LogoutLogs { get; set; }
+        public DbSet<UserLogin_LogoutLog> UserLogin_LogoutLogs { get; set; }
+        public DbSet<PasswordChangeHistory> PasswordChangeHistories { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
             builder.Entity<AppRole>().HasData(
                  new { Id = 1, Name = "SuperAdmin", NormalizedName = "SUPERADMIN" },
-                 new { Id = 2, Name = "RepSuperAdmin", NormalizedName = "REPSUPERADMIN"},
-                 new { Id = 3, Name = "Initiator", NormalizedName = "INITIATOR" },
-                 new { Id = 4, Name = "Reviewer", NormalizedName = "REVIEWER" },
-                 new { Id = 5, Name = "Authorizer", NormalizedName = "Authorizer" },
                  new { Id = 6, Name = "Super-Administrator", NormalizedName = "SUPER-ADMINISTRATOR" },
                  new { Id = 7, Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
                  new { Id = 8, Name = "Technical-Support", NormalizedName = "TECHNICAL-SUPPORT" },
@@ -49,10 +47,6 @@ namespace HealthBanc.Data
 
             builder.Entity<ClassOrRole>().HasData(
                new { Id = 1, Name = "SuperAdmin" },
-               new { Id = 2, Name = "RepSuperAdmin" },
-               new { Id = 3, Name = "Initiator" },
-               new { Id = 4, Name = "Reviewer" },
-               new { Id = 5, Name = "Authorizer" },
                new { Id = 6, Name = "Super-Administrator"},
                new { Id = 7, Name = "Administrator"},
                new { Id = 8, Name = "Technical-Support"},
@@ -60,7 +54,7 @@ namespace HealthBanc.Data
            );
 
             builder.Entity<Service>().HasData(
-                new { Id=1, Name="Pharmmall"},
+                new { Id=1, Name="HealthMall"},
                 new {Id = 2, Name="HealthInsured"}
            );
         }
