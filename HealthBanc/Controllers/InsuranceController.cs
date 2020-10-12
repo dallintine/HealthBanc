@@ -140,11 +140,11 @@ namespace HealthBanc.Controllers
 
                     if (profile.PlanCode == "7")
                     {
-                        profile.Premium = Decimal.Parse("1020");
+                        profile.Premium = Decimal.Parse("1000");
                     }
                     else if (profile.PlanCode == "8")
                     {
-                        profile.Premium = Decimal.Parse("2050");
+                        profile.Premium = Decimal.Parse("2000");
                     }
 
                     //var result = await _axaMansardSoap.SaveHealth(profile, token);
