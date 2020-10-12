@@ -22,6 +22,10 @@
     <Compile Remove="Migrations\20201008032404_addedPathModified.Designer.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Connected Services\Microsoft WCF Web Service Reference Provider\ConnectedService.json" />
+  </ItemGroup>
+
   <!--<ItemGroup>
     <Content Include="google-credentials.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

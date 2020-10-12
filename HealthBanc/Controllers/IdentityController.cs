@@ -34,7 +34,7 @@ namespace HealthBanc.Controllers
         private readonly IPasswordHasher _passwordHasher;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
-            IApplicationUserRepository userRepository, IEmailSender emailSender,IPasswordHasher passwordHasher)
+            IApplicationUserRepository userRepository, IEmailSender emailSender, IPasswordHasher passwordHasher)
         {
             _logger = logger;
             _identityService = identityService;
@@ -42,7 +42,8 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
             _userRepository = userRepository;
             _emailSender = emailSender;
-            _passwordHasher = passwordHasher;        }
+            _passwordHasher = passwordHasher;
+        }
 
         ///<summary>
         ///This Creates The User
@@ -102,7 +103,7 @@ namespace HealthBanc.Controllers
                 {
                     return Redirect("https://pharmmall.azurewebsites.net/signin");
                 }
-                if(response.ResponseCode  == 23)
+                if (response.ResponseCode == 23)
                 {
                     return Redirect("https://pharmmall.azurewebsites.net/resend_email_link");
                 }
@@ -150,7 +151,7 @@ namespace HealthBanc.Controllers
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null || user.UniqueUsername != null)
             {
-                return BadRequest(new ResponseMessage {Message = "User does not exist" , Status=false });
+                return BadRequest(new ResponseMessage { Message = "User does not exist", Status = false });
             }
             if (user.EmailConfirmed == true)
             {
@@ -317,7 +318,7 @@ namespace HealthBanc.Controllers
             {
                 return BadRequest(authResponse);
             }
-            return Ok( authResponse);
+            return Ok(authResponse);
         }
 
         //WORKING1
@@ -353,7 +354,7 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
-      
+
         //WORKING1
         /// <summary>
         /// Resets the user Password
@@ -391,10 +392,10 @@ namespace HealthBanc.Controllers
                 {
                     return Ok(response);
                 }
-                if(response.ResponseCode == 23)
+                if (response.ResponseCode == 23)
                 {
                     return BadRequest(response);
-                }             
+                }
                 return BadRequest(response);
             }
             //return validation errors
@@ -407,9 +408,9 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error });
             }
             return BadRequest(errors);
-        }       
-        
-        
+        }
+
+
         //WORKING1
         /// <summary>
         /// Changes the user password
@@ -434,7 +435,7 @@ namespace HealthBanc.Controllers
                     PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, changePassword.ConfirmPassword);
                     if (passResult.Equals(PasswordVerificationResult.Failed))
                     {
-                        if(user.HashedPasswordHistory != null)
+                        if (user.HashedPasswordHistory != null)
                         {
                             var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
                             if (hashedPassword.LastOrDefault() == "")
@@ -449,27 +450,27 @@ namespace HealthBanc.Controllers
                                     return BadRequest(new ResponseMessage { Message = "The password you entered has been used before,please try another" });
                                 }
                             }
-                        }                      
-                        
+                        }
+
                         var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
                         if (userPassword.Succeeded)
                         {
                             var passwordHashed = _passwordHasher.Hash(changePassword.NewPassword);
                             if (user.HashedPasswordHistory != null)
                             {
-                                var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();                                
+                                var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
                                 if (hashedPassword.LastOrDefault() == "")
                                 {
                                     hashedPassword.RemoveAt(hashedPassword.Count - 1);
-                                    if(hashedPassword.Count >3)
+                                    if (hashedPassword.Count > 3)
                                     {
-                                        hashedPassword.RemoveAt(0);                                       
+                                        hashedPassword.RemoveAt(0);
                                         var newPaswordHash = string.Join(",", hashedPassword);
-                                        user.HashedPasswordHistory =  $"{newPaswordHash},{passwordHashed},";
+                                        user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
                                         await _userManager.UpdateAsync(user);
                                         return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
                                     }
-                                }                                
+                                }
                             }
                             user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
                             await _userManager.UpdateAsync(user);
@@ -547,7 +548,7 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                if(email is null || emailToken is null)
+                if (email is null || emailToken is null)
                 {
                     return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
                 }
@@ -593,10 +594,10 @@ namespace HealthBanc.Controllers
                 }
                 return NotFound(new ResponseMessage { Message = "User was not found" });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get service used by user" });
-            }           
+            }
         }
 
     }
