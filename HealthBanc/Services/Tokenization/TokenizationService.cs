@@ -51,7 +51,7 @@ namespace HealthBanc.Services.Tokenization
             _auditLogServices = auditLogServices;
         }
 
-        public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard,int id)
+        public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard,int id,string ipAddress,string device)
         {
             var httpClient = _httpClientFactory.CreateClient("Paystack");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(chargeCard), Encoding.UTF8, "application/json");
@@ -87,7 +87,7 @@ namespace HealthBanc.Services.Tokenization
                     if (chargeCardResponse.data.status == "success")
                     {
                         var auditViewModel = new AuditLogViewModel(id, null, null, "Successfully Card Tokenization", $"Tokenization reference is {chargeCard.reference}");
-                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
 
                         return new TokenizationResponse
                         {
@@ -110,7 +110,7 @@ namespace HealthBanc.Services.Tokenization
             return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
         }
 
-        public async Task<TokenizationResponse> SendOtp( string otp,AxaMansardUserProfile user,string pin,string reference)
+        public async Task<TokenizationResponse> SendOtp( string otp,AxaMansardUserProfile user,string pin,string reference, string ipAddress, string device)
         {
             var otpRequest = new SendOtp(otp, reference);
             var httpClient = _httpClientFactory.CreateClient("Paystack");
@@ -140,7 +140,7 @@ namespace HealthBanc.Services.Tokenization
                     if (otpResponse.data.status == "success") 
                     {
                         var auditViewModel = new AuditLogViewModel(user.UserId, null, null, "Successfully Card Tokenization", $"Tokenization reference is {reference}");
-                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
 
                         return new TokenizationResponse
                         {
@@ -234,7 +234,7 @@ namespace HealthBanc.Services.Tokenization
             return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
         }
 
-        public async Task InsertSubscription(AxaMansardBackgroundDTO userAxamansardProfile,TokenizationReference tokenization)
+        public async Task InsertSubscription(AxaMansardBackgroundDTO userAxamansardProfile,TokenizationReference tokenization,string ipAddress, string device)
         {
             var requestId = Guid.NewGuid().ToString();
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
@@ -265,19 +265,15 @@ namespace HealthBanc.Services.Tokenization
 
                     var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Inactive subscription status", "Subscription Status Changed",
                            "Active subscription status");
-                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
-
-                    //return new ResponseMessage { Status = true, Message = subscribePaymentResponse.message };
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
                     await Task.CompletedTask;
                 }
-                //return new ResponseMessage { Status = false, Message = subscribePaymentResponse.message };
                 await Task.CompletedTask;
             }
-            //return new ResponseMessage { Status = false, Message = "Couldnt connect to payment service" };
             await Task.CompletedTask;
         }
 
-        public async Task<ResponseMessage> UpdateSubscription(AxaMansardUserProfile userAxamansardProfile, TokenizationReference tokenization)
+        public async Task UpdateSubscription(AxaMansardBackgroundDTO userAxamansardProfile, TokenizationReference tokenization)
         {
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = tokenization.TokenReference;
@@ -293,18 +289,18 @@ namespace HealthBanc.Services.Tokenization
                 updatePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
                 if (updatePaymentResponse.status == true)
                 {
-                    var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId,$"Supscription plan of {userAxamansardProfile}", "Subscription Plan Changed",
-                        " subscription status");
-                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
-
-                    return new ResponseMessage { Message = updatePaymentResponse.message, Status = true };
+                    //var device = _auditLogServices.GetDevice(agent);
+                    //var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId,$"Supscription plan of {userAxamansardProfile}", "Subscription Plan Changed",
+                    //    " subscription status");
+                    //BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,));
+                    await Task.CompletedTask;
                 }
-                return new ResponseMessage { Message = updatePaymentResponse.message, Status = false };
+                await Task.CompletedTask;
             }
-            return new ResponseMessage { Message = "Could not connect to paystack payment service" };
+            await Task.CompletedTask;
         }
 
-        public async Task<ResponseMessage> CancelSubscription(AxaMansardUserProfile userAxamansardProfile)
+        public async Task<ResponseMessage> CancelSubscription(AxaMansardUserProfile userAxamansardProfile,string ipAddress, string device)
         {
             var paymentReference = await _axaMansardUser.ActivePaymentReference(userAxamansardProfile.UserId);
             if(paymentReference == null)
@@ -315,7 +311,7 @@ namespace HealthBanc.Services.Tokenization
 
                 var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, null, "Active subscription status", "Subscription Status Changed",
                         "Inactive subscription status");
-                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
 
                 return new ResponseMessage { Message = "Subscription was cancelled successfully", Status = true };
             }
@@ -341,7 +337,7 @@ namespace HealthBanc.Services.Tokenization
 
                     var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Active subscription status", "Subscription Status Changed",
                         "Inactive subscription status");
-                    BackgroundJob.Enqueue(() =>  _auditLogServices.UserCreateAuditLog(auditViewModel));
+                    BackgroundJob.Enqueue(() =>  _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
 
                     return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
                 }

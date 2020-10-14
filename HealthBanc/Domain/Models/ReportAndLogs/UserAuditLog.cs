@@ -19,9 +19,7 @@ namespace HealthBanc.Domain.Models.ReportAndLogs
         public string AfterEventContent { get; set; }
         [Required]
         public DateTime Date { get; set; }
-        [Required]
         public string IPAddress { get; set; }
-        [Required]
         public string Device { get; set; }
         public string MACAddress { get; set; }
     }

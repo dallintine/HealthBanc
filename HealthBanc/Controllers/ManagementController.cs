@@ -1,5 +1,6 @@
 ﻿using HealthBanc.Data;
 using HealthBanc.Services.ADOTP;
+using HealthBanc.Services.AuditAndReport.AuditLog;
 using HealthBanc.Services.Insurance;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,13 +23,18 @@ namespace HealthBanc.Controllers
         private readonly InsuranceService _insuranceService;
         private readonly ILogger<ManagementController> _logger;
         private readonly IBackendOTPService _iBAckend;
+        private readonly IHttpContextAccessor _accessor;
+        private readonly AuditLogService _auditLogService;
 
-        public ManagementController(ApplicationDbContext dbContext, InsuranceService insuranceService,ILogger<ManagementController> logger, IBackendOTPService iBAckend)
+        public ManagementController(ApplicationDbContext dbContext, InsuranceService insuranceService,ILogger<ManagementController> logger, IBackendOTPService iBAckend,
+            IHttpContextAccessor accessor,AuditLogService auditLogService)
         {
             _dbContext = dbContext;
             _insuranceService = insuranceService;
             _logger = logger;
             _iBAckend = iBAckend;
+            _accessor = accessor;
+            _auditLogService = auditLogService;
         }
 
         [HttpGet("[action]")]
@@ -50,6 +56,14 @@ namespace HealthBanc.Controllers
             _logger.LogError("Response result: " + responseResult);
             _logger.LogError(x.ToString());
             return Ok(responseResult);
+        }
+
+        [HttpGet("[action]")]
+        public ActionResult Device()
+        {
+            var x = _accessor.HttpContext.Request.Headers["User-Agent"];
+            var ip = _auditLogService.GetDevice(x);
+            return Ok(ip);
         }
 
         [HttpGet("[action]")]

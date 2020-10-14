@@ -1,13 +1,17 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using UAParser;
 
 namespace HealthBanc.ViewModels
 {
     public class AuditLogViewModel
     {
+
         public AuditLogViewModel()
         {
         }
@@ -30,5 +34,7 @@ namespace HealthBanc.ViewModels
         public string ActionApplied { get; set; }
         [Required]
         public string AfterEventContent { get; set; }
+        public string IPAddress { get; set; }
+        public string Device { get; set; }
     }
 }

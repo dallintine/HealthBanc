@@ -37,6 +37,7 @@ using System.Globalization;
 using HealthBanc.ViewModels;
 using Hangfire;
 using HealthBanc.Services.AuditAndReport.AuditLog;
+using Microsoft.Extensions.Primitives;
 
 namespace HealthBanc.Controllers
 {
@@ -53,12 +54,15 @@ namespace HealthBanc.Controllers
         private readonly AuditLogService _auditLogServices;
         private readonly IAxaMansardSoap _axaMansardSoap;
         private readonly LiveExcelList _liveExcelList;
+        private readonly IHttpContextAccessor _accessor;
+        public string IpAddress;
+        public StringValues agent;
 
         private Towns Options { get; }
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger,
             IApplicationUserRepository userRepository, IAxaMansardCompletionRepository completionRepository, AuditLogService auditLogServices,
-            IAxaMansardSoap axaMansardSoap, IOptions<Towns> optionAccessor, LiveExcelList liveExcelList)
+            IAxaMansardSoap axaMansardSoap, IOptions<Towns> optionAccessor, LiveExcelList liveExcelList,IHttpContextAccessor accessor)
         {
             Options = optionAccessor.Value;
             _insuranceService = insuranceService;
@@ -70,6 +74,9 @@ namespace HealthBanc.Controllers
             _auditLogServices = auditLogServices;
             _axaMansardSoap = axaMansardSoap;
             _liveExcelList = liveExcelList;
+            _accessor = accessor;
+            IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
+            agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
 
         [HttpGet("[action]")]
@@ -173,7 +180,8 @@ namespace HealthBanc.Controllers
 
 
                         var auditViewModel = new AuditLogViewModel(Id, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
-                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                        var device = _auditLogServices.GetDevice(agent);
+                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,IpAddress,device));
 
                         return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
                     }
@@ -304,6 +312,10 @@ namespace HealthBanc.Controllers
             var profile = await _completionRepository.GetCompletionStateBySuperAdminId(Id);
             if (profile == null)
             {
+                var auditViewModel = new AuditLogViewModel(Id, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
+                var device = _auditLogServices.GetDevice(agent);
+                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, IpAddress, device));
+
                 var profileState = new HealthInsuredProfileStateDTO(false, false);
                 return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileState, Status = true, Message = "Profile completion state was fetched successfully" });
             }
@@ -337,7 +349,8 @@ namespace HealthBanc.Controllers
                     await _axaMansard.Save();
 
                     var auditViewModel = new AuditLogViewModel(Id, null, null, "Updated HealthInsured Profile", "Updated HealthInsured profile");
-                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel));
+                    var device = _auditLogServices.GetDevice(agent);
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,IpAddress,device));
                     return Ok(new ResponseMessage { Status = true, Message = "Profile was updated successfully" });
                 }
                 return BadRequest(new ResponseMessage { Status = false, Message = "This on us...Error occurred while updating profile" });

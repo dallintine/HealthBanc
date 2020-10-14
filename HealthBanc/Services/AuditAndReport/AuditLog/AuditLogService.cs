@@ -3,6 +3,7 @@ using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.ViewModels;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
         private readonly IMapper _mapper;
         private readonly IAdminAuditLogRepository _adminAuditLog;
 
-        public AuditLogService(IHttpContextAccessor accessor,IUserAuditLogRepository userAuditLog,IMapper mapper, IAdminAuditLogRepository adminAuditLog)
+        public AuditLogService(IHttpContextAccessor accessor, IUserAuditLogRepository userAuditLog,IMapper mapper, IAdminAuditLogRepository adminAuditLog)
         {
             _accessor = accessor;
             _userAuditLog = userAuditLog;
@@ -26,11 +27,11 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
             _adminAuditLog = adminAuditLog;
         }
 
-        public async Task UserCreateAuditLog(AuditLogViewModel viewModel)
+        public async Task UserCreateAuditLog(AuditLogViewModel viewModel, string ip, string device)
         {
             var auditLog = _mapper.Map<UserAuditLog>(viewModel);
-            auditLog.IPAddress = GetIPAddress();
-            auditLog.Device = GetDevice();
+            auditLog.IPAddress = ip;
+            auditLog.Device = device;
             auditLog.Date = DateTime.Now;
             auditLog.Id = new Guid();
             _userAuditLog.Create(auditLog);
@@ -41,7 +42,7 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
         public async Task AdminCreateAuditLog(AdminAuditLogViewModel viewModel)
         {
             var auditLog = _mapper.Map<AdminAuditLog>(viewModel);
-            auditLog.IPAddress = GetIPAddress();
+            auditLog.IPAddress = "test";
             auditLog.Date = DateTime.Now;
             auditLog.Id = new Guid();
             _adminAuditLog.Create(auditLog);
@@ -49,20 +50,13 @@ namespace HealthBanc.Services.AuditAndReport.AuditLog
             await Task.CompletedTask;
         }
 
-        public string GetIPAddress()
+        public string GetDevice(StringValues agent)
         {
-            var ip = /*_accessor.HttpContext.Connection.RemoteIpAddress.ToString();*/ "test";
-            return ip;
-        }
-
-        public string GetDevice()
-        {
-            //var userAgent = _accessor.HttpContext.Request.Headers["User-Agent"];
-            //string uaString = Convert.ToString(userAgent[0]);
-            //var uaParser = Parser.GetDefault();
-            //ClientInfo c = uaParser.Parse(uaString);
-
-            return  /*c.OS.ToString() + " " + c.UA.ToString() + " " +c.Device.Brand+","+c.Device.Family;*/ "test";
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            return  c.OS.ToString() + "," + c.UA.ToString() + "," +c.Device.Model+","+c.Device.Brand+","+c.Device.Family;
         }
     }
 }
