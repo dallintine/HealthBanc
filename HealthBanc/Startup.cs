@@ -89,6 +89,8 @@ namespace HealthBanc
 
             services.AddControllersWithViews();
 
+            services.AddApplicationInsightsTelemetry();
+
             services.AddControllers();
 
             ///////////////Add Swagger Service/////////////////////////

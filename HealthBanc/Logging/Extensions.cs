@@ -1,4 +1,5 @@
 using System;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
 using Serilog;
 using Serilog.Events;
@@ -14,6 +15,7 @@ namespace HealthBanc.Logging
                 var appOptions = context.Configuration.GetOptions<AppOptions>("app");
                 var seqOptions = context.Configuration.GetOptions<SeqOptions>("seq");
                 var serilogOptions = context.Configuration.GetOptions<SerilogOptions>("serilog");
+                var applicationInsightsOptions = context.Configuration.GetOptions<ApplicationInsightsOptions>("applicationinsightsoptions");
                 if (!Enum.TryParse<LogEventLevel>(serilogOptions.Level, true, out var level))
                 {
                     level = LogEventLevel.Information;
@@ -24,10 +26,11 @@ namespace HealthBanc.Logging
                     .MinimumLevel.Is(level)
                     .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
                     .Enrich.WithProperty("ApplicationName", applicationName);
-                Configure(loggerConfiguration, level, seqOptions, serilogOptions,azureBlobOptions);
+                Configure(loggerConfiguration, level, seqOptions, serilogOptions,azureBlobOptions, applicationInsightsOptions);
             });
 
-        private static void Configure(LoggerConfiguration loggerConfiguration, LogEventLevel level,SeqOptions seqOptions, SerilogOptions serilogOptions,AzureBlobOptions azureBlobOptions)
+        private static void Configure(LoggerConfiguration loggerConfiguration, LogEventLevel level,SeqOptions seqOptions, SerilogOptions serilogOptions,AzureBlobOptions azureBlobOptions,
+            ApplicationInsightsOptions applicationInsightsOptions)
         {            
 
             if (seqOptions.Enabled)
@@ -44,6 +47,11 @@ namespace HealthBanc.Logging
             {
                 loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, Serilog.Events.LogEventLevel.Warning, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName, azureBlobOptions.OutputTemplate);
             }
+
+            if (applicationInsightsOptions.Enabled)
+            {
+                loggerConfiguration.WriteTo.ApplicationInsights(new TelemetryConfiguration { InstrumentationKey = applicationInsightsOptions.InstrumentalKey}, TelemetryConverter.Traces);
+            }            
         }
     }
 }
