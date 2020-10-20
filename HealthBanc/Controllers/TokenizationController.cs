@@ -334,8 +334,8 @@ namespace HealthBanc.Controllers
 
                     var activePaymentReference = userAxamansardProfile.PaymentReferences.FirstOrDefault(x => x.Active == true);
 
-                    BackgroundJob.Enqueue(() => _tokenizationService.UpdateSubscription(axaMansardBackgroundDTO, newPrimaryCard.TokenizationReference, activePaymentReference,
-                       IpAddress, device));
+                    BackgroundJob.Enqueue(() => _tokenizationService.UpdateSubscription(axaMansardBackgroundDTO, newPrimaryCard.TokenizationReference.Authorization_Code,
+                        activePaymentReference.RequestId, IpAddress, device));
 
                     presentPrimaryCard.Status = 0;
                     _cardRepository.Update(presentPrimaryCard);

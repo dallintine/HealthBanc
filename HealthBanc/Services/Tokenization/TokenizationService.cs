@@ -273,11 +273,11 @@ namespace HealthBanc.Services.Tokenization
             await Task.CompletedTask;
         }
 
-        public async Task UpdateSubscription(AxaMansardBackgroundDTO userAxamansardProfile, TokenizationReference tokenization,PaymentReference paymentReference,string ipAddress,
+        public async Task UpdateSubscription(AxaMansardBackgroundDTO userAxamansardProfile, string authorization_Code, string requestId,string ipAddress,
             string device)
         {
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
-            subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = paymentReference.RequestId;
+            subscribePayment.Token = authorization_Code; subscribePayment.RequestId = requestId;
             subscribePayment.Fees = 0;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
