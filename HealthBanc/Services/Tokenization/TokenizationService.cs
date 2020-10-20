@@ -239,7 +239,7 @@ namespace HealthBanc.Services.Tokenization
             var requestId = Guid.NewGuid().ToString();
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = requestId;
-            subscribePayment.Fees = 0;
+            subscribePayment.Fees = 0;subscribePayment.NextRepaymentDate = DateTime.Now.AddMonths(1);
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
@@ -273,10 +273,11 @@ namespace HealthBanc.Services.Tokenization
             await Task.CompletedTask;
         }
 
-        public async Task UpdateSubscription(AxaMansardBackgroundDTO userAxamansardProfile, TokenizationReference tokenization)
+        public async Task UpdateSubscription(AxaMansardBackgroundDTO userAxamansardProfile, TokenizationReference tokenization,PaymentReference paymentReference,string ipAddress,
+            string device)
         {
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
-            subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = tokenization.TokenReference;
+            subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = paymentReference.RequestId;
             subscribePayment.Fees = 0;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
@@ -289,10 +290,9 @@ namespace HealthBanc.Services.Tokenization
                 updatePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
                 if (updatePaymentResponse.status == true)
                 {
-                    //var device = _auditLogServices.GetDevice(agent);
-                    //var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId,$"Supscription plan of {userAxamansardProfile}", "Subscription Plan Changed",
-                    //    " subscription status");
-                    //BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,));
+                    var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "", "Changed primary card",
+                        "");
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
                     await Task.CompletedTask;
                 }
                 await Task.CompletedTask;

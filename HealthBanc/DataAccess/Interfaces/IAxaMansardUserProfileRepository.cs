@@ -12,5 +12,6 @@ namespace HealthBanc.DataAccess.Interfaces
         Task<PaymentReference> ActivePaymentReference(int id);
         Task<AxaMansardUserProfile> GetByAdminIdAsync(int id);
         Task<AxaMansardUserProfile> GetByIdAsync(int id);
+        Task<AxaMansardUserProfile> UserAndPaymentReference(int id);
     }
 }

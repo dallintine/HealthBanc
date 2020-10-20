@@ -145,6 +145,7 @@ namespace HealthBanc
             services.Configure<AxaMansard>(Configuration);
             services.Configure<SterlingOtp>(Configuration);
             services.Configure<AppEndpoint>(Configuration);
+            services.Configure<Paystack>(Configuration);
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();

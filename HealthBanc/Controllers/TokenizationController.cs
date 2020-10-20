@@ -329,8 +329,13 @@ namespace HealthBanc.Controllers
                 }
                 if (presentPrimaryCard != null && newPrimaryCard != null)
                 {
-                    var userAxamansardProfile = await _mansardUserProfileRepository.GetByAdminIdAsync(Id);
+                    var userAxamansardProfile = await _mansardUserProfileRepository.UserAndPaymentReference(Id);
                     var axaMansardBackgroundDTO = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
+
+                    var activePaymentReference = userAxamansardProfile.PaymentReferences.FirstOrDefault(x => x.Active == true);
+
+                    BackgroundJob.Enqueue(() => _tokenizationService.UpdateSubscription(axaMansardBackgroundDTO, newPrimaryCard.TokenizationReference, activePaymentReference,
+                       IpAddress, device));
 
                     presentPrimaryCard.Status = 0;
                     _cardRepository.Update(presentPrimaryCard);
@@ -339,9 +344,7 @@ namespace HealthBanc.Controllers
                     await _cardRepository.Save();
 
                     var auditViewModel3 = new AuditLogViewModel(Id, null, $"Primary card ID is {presentPrimaryCard.Id}", "Change Primary Card", $"New primary card ID is {cardId}");
-                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3, IpAddress, device));
-
-                    BackgroundJob.Enqueue(() => _tokenizationService.UpdateSubscription(axaMansardBackgroundDTO, newPrimaryCard.TokenizationReference));
+                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3, IpAddress, device));                  
 
 
                     return Ok(new ResponseMessage { Message = "Primary card was changed successfully" });

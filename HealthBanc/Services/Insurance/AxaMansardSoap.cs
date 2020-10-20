@@ -11,14 +11,14 @@ namespace HealthBanc.Services.Insurance
 {
     public class AxaMansardSoap : IAxaMansardSoap
     {
-        public readonly string serviceUrl = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
+        //public readonly string serviceUrl = "https://careers.axamansard.com/esales/webservice/axamdemo.asmx";
         public readonly EndpointAddress endpointAddress;
         public readonly BasicHttpBinding basicHttpBinding;
         private AxaMansard Options { get; }
         public AxaMansardSoap(IOptions<AxaMansard> optionAccessor)
         {
             Options = optionAccessor.Value;
-            endpointAddress = new EndpointAddress(serviceUrl);
+            endpointAddress = new EndpointAddress(Options.AxaMansardConfiguration.ServiceUrl);
 
             basicHttpBinding =
                 new BasicHttpBinding(endpointAddress.Uri.Scheme.ToLower() == "http" ?

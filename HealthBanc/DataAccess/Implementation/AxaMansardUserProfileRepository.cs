@@ -32,5 +32,12 @@ namespace HealthBanc.DataAccess.Implementation
             var paymentRefence = user.PaymentReferences.Where(x => x.Active = true).FirstOrDefault();
             return paymentRefence;
         }
+
+        public async Task<AxaMansardUserProfile> UserAndPaymentReference(int id)
+        {
+            var user = await _context.AxaMansardUserProfile.Include(x => x.PaymentReferences)
+               .FirstOrDefaultAsync(x => x.UserId == id);
+            return user;
+        }
     }
 }
