@@ -35,14 +35,12 @@ namespace HealthBanc.Services.Tokenization
         private readonly IPaymentReferenceRepository _paymentReference;
         private readonly AuditLogService _auditLogServices;
         private AppEndpoint Options { get; }
-        private Paystack PaystackOptions { get; set; }
 
         public TokenizationService(IWebHostEnvironment environment, IHttpClientFactory httpClientFactory,ILogger<TokenizationService> logger, SendLogViaWhatApp logViaWhatApp,
             IAxaMansardUserProfileRepository axaMansardUser,IMapper mapper,IPaymentReferenceRepository paymentReference, IOptions<AppEndpoint> optionAccessor,
-            AuditLogService auditLogServices, IOptions<Paystack> paystackOptions)
+            AuditLogService auditLogServices)
         {
             Options = optionAccessor.Value;
-            PaystackOptions = paystackOptions.Value;
             _environment = environment;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
@@ -242,7 +240,6 @@ namespace HealthBanc.Services.Tokenization
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = requestId;
             subscribePayment.NextRepaymentDate = DateTime.Now.AddMonths(1);
-            subscribePayment.Channel = PaystackOptions.Config.Channel; subscribePayment.TokenType = PaystackOptions.Config.TokenType;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
@@ -281,7 +278,6 @@ namespace HealthBanc.Services.Tokenization
         {
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.Token = authorization_Code; subscribePayment.RequestId = requestId;
-            subscribePayment.Channel = PaystackOptions.Config.Channel; subscribePayment.TokenType = PaystackOptions.Config.TokenType;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
@@ -320,7 +316,6 @@ namespace HealthBanc.Services.Tokenization
             }
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.RequestId = paymentReference.RequestId; subscribePayment.Fees = 0;
-            subscribePayment.Channel = PaystackOptions.Config.Channel; subscribePayment.TokenType = PaystackOptions.Config.TokenType;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
