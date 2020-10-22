@@ -19,7 +19,6 @@ namespace HealthBanc.Mappers
 
         public DomainToDTOProfile()
         {
-
             CreateMap<Service, ServiceBreakdown>();
             CreateMap<ApplicationUser, ApplicationUserDTO>();
             CreateMap<AxaMansardUserProfile, AxaMansardUserDTO>();
@@ -29,7 +28,9 @@ namespace HealthBanc.Mappers
                 .ForMember(dest => dest.EmailAddress, opt => opt.MapFrom(x => x.Email))
                 .ForMember(dest => dest.RepaymentAmount, opt => opt.MapFrom(x => Convert.ToInt32(x.Premium)))
                 .ForMember(dest => dest.Channel, opt => opt.MapFrom(x => "healthinsured"))
-                .ForMember(dest => dest.TokenType, opt => opt.MapFrom(x => "paystack"));
+                .ForMember(dest => dest.TokenType, opt => opt.MapFrom(x => "paystack"))
+                .ForMember(dest => dest.Fees, opt => opt.MapFrom(x => 0));
+            
 
             CreateMap<AxaMansardUserProfile, SubscribePayment>()
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(x => x.Othernames))

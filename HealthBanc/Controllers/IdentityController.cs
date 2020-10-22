@@ -8,6 +8,7 @@ using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
+using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
@@ -19,6 +20,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace HealthBanc.Controllers
 {
@@ -35,11 +37,13 @@ namespace HealthBanc.Controllers
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPasswordChangeRepository _passwordChangeRepository;
         private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
+        private AppEndpoint Options { get; }
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
             IApplicationUserRepository userRepository, IEmailSender emailSender,IPasswordHasher passwordHasher, IPasswordChangeRepository passwordChangeRepository,
-            IUserLogin_LogoutLogRepository logoutLogRepository)
+            IUserLogin_LogoutLogRepository logoutLogRepository, IOptions<AppEndpoint> optionAccessor)
         {
+            Options = optionAccessor.Value;
             _logger = logger;
             _identityService = identityService;
             _userManager = userManager;
@@ -107,11 +111,11 @@ namespace HealthBanc.Controllers
                 var response = await _identityService.ConfirmEmail(userId, emailToken);
                 if (response.Status == true)
                 {
-                    return Redirect("https://pharmmall.azurewebsites.net/signin");
+                    return Redirect(Options.APIUri.HealthBancSignIn);
                 }
                 if(response.ResponseCode  == 23)
                 {
-                    return Redirect("https://pharmmall.azurewebsites.net/resend_email_link");
+                    return Redirect(Options.APIUri.HealthBancResendEmail);
                 }
                 return BadRequest(response);
             }
@@ -126,30 +130,6 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(errors);
         }
-
-        //[HttpGet("[action]")]
-        //public async Task<IActionResult> ResendConfirmationLink(string email)
-        //{
-        //    var user = await _userManager.FindByEmailAsync(email);
-        //    if(user == null || user.UniqueUsername != null)
-        //    {
-        //        ViewBag.Error = "User does not exist";
-        //        return View("ConfirmEmail");
-        //    }
-        //    if(user.EmailConfirmed == true)
-        //    {
-        //        ViewBag.Error = "Your email address has previously been confirmed, kindly proceed to login";
-        //        return View("ConfirmEmail");
-        //    }
-        //    var confirmResult = await _identityService.SendUserEmailVerificationAsync(user);
-        //    if(confirmResult.Status == true)
-        //    {
-        //        ViewBag.Success = "Link was sent successfully, kindly check your email";
-        //        return View("ConfirmEmail");
-        //    }
-        //    ViewBag.Error = confirmResult.Message;
-        //    return View("ConfirmEmail");
-        //}
 
         [HttpGet("[action]")]
         public async Task<IActionResult> ResendConfirmationLink(string email)
@@ -170,54 +150,6 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(new ResponseMessage { Message = confirmResult.Message, Status = false });
         }
-
-
-        //[ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        //[ProducesResponseType(401, Type = typeof(ResponseMessage))]
-        //[ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        //[ProducesResponseType(404, Type = typeof(ResponseMessage))]
-        //[HttpPost("[action]")]
-        //public async Task<ActionResult> Login([FromBody] LoginViewModel loginViewModel)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        //get the user
-        //        var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
-
-        //        if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "Account with this email does not exist", Status = false });
-
-
-        //        if (user.EmailConfirmed == false) return Unauthorized(new ResponseMessage { Message = "Please Confirm Your Email Address", Status = false });
-
-        //        if (user.LockoutEnd != null)
-        //        {
-        //            return Unauthorized(new ResponseMessage { Message = "Your Account Has Been Locked,Please Contact Support", Status = false });
-        //        }
-
-        //        //check that the user is not null and that his password is correct
-        //        if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
-        //        {
-        //            var response = await _identityService.Login(user, loginViewModel);
-        //            if (response.Status != true)
-        //            {
-        //                return BadRequest(response);
-        //            }
-        //            return Ok(response);
-        //        }
-        //        await _userManager.AccessFailedAsync(user);
-        //        return Unauthorized(new ResponseMessage { Message = "Username or password invalid, please try again with correct details.", Status = false });
-        //    }
-        //    //return validation errors
-        //    var errors = new List<ResponseMessage>();
-        //    var errorList = ModelState.Values.SelectMany(m => m.Errors)
-        //        .Select(e => e.ErrorMessage)
-        //        .ToList();
-        //    foreach (var error in errorList)
-        //    {
-        //        errors.Add(new ResponseMessage() { Message = error, Status = false });
-        //    }
-        //    return BadRequest(errors);
-        //}
 
         /// <summary>
         /// 
@@ -269,53 +201,6 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(errors);
         }
-
-        //[ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        //[ProducesResponseType(401, Type = typeof(ResponseMessage))]
-        //[ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        //[ProducesResponseType(404, Type = typeof(ResponseMessage))]
-        //[HttpPost("[action]")]
-        //public async Task<ActionResult> Login([FromBody] LoginViewModel loginViewModel)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        //get the user
-        //        var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
-
-        //        if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "Account with this email does not exist", Status = false });
-
-
-        //        if (user.EmailConfirmed == false) return Unauthorized(new ResponseMessage { Message = "Please Confirm Your Email Address", Status = false });
-
-        //        if (user.LockoutEnd != null)
-        //        {
-        //            return Unauthorized(new ResponseMessage { Message = "Your Account Has Been Locked,Please Contact Support", Status = false });
-        //        }
-
-        //        //check that the user is not null and that his password is correct
-        //        if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
-        //        {
-        //            var response = await _identityService.Login(user, loginViewModel);
-        //            if (!response.Success)
-        //            {
-        //                 return BadRequest(new ResponseMessage<LoggedInResponseDTO> {Data=response,Message="An error occurred while creating token"});
-        //            }
-        //            return Ok(new ResponseMessage<LoggedInResponseDTO> { Data = response, Message = "User was authenticated successfully", Status = true });
-        //        }
-        //        await _userManager.AccessFailedAsync(user);
-        //        return Unauthorized(new ResponseMessage<LoggedInResponseDTO> { Message = "Username or password invalid, please try again with correct details.", Status = false });
-        //    }
-        //    //return validation errors
-        //    var errors = new List<ResponseMessage>();
-        //    var errorList = ModelState.Values.SelectMany(m => m.Errors)
-        //        .Select(e => e.ErrorMessage)
-        //        .ToList();
-        //    foreach (var error in errorList)
-        //    {
-        //        errors.Add(new ResponseMessage() { Message = error, Status = false });
-        //    }
-        //    return BadRequest(errors);
-        //}
 
         [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]

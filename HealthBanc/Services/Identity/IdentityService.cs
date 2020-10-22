@@ -5,6 +5,7 @@ using HealthBanc.Domain.Models;
 using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
 using HealthBanc.Helpers.Jwt_Authorization;
+using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Response;
 using HealthBanc.Services.EncryptionService;
@@ -43,12 +44,14 @@ namespace HealthBanc.Services.Identity
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPasswordChangeRepository _passwordChangeRepository;
         private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
+        private AppEndpoint Options { get; }
 
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
              IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
               TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext, IPasswordHasher passwordHasher,IPasswordChangeRepository passwordChangeRepository,
-              IUserLogin_LogoutLogRepository _LogoutLogRepository)
+              IUserLogin_LogoutLogRepository _LogoutLogRepository, IOptions<AppEndpoint> optionAccessor)
         {
+            Options = optionAccessor.Value;
             _logger = logger;
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
@@ -124,61 +127,6 @@ namespace HealthBanc.Services.Identity
             }
             return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
         }
-
-        //public async Task<ResponseMessage> Login(ApplicationUser user, LoginViewModel loginModel)
-        //{
-        //    await _userManager.ResetAccessFailedCountAsync(user);
-        //    var roles = await _userManager.GetRolesAsync(user);
-
-
-        //    try
-        //    {
-        //        //Generate Token
-        //        var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
-        //        var tokenHandler = new JwtSecurityTokenHandler();
-        //        var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
-        //        var tokenDescriptor = new SecurityTokenDescriptor
-        //        {
-        //            Subject = new ClaimsIdentity(new[]
-        //            {
-        //                new Claim(JwtRegisteredClaimNames.Sub, loginModel.EmailAddress),
-        //                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        //                new Claim("SuperAdminId", user.SuperAdminId.ToString()),
-        //                new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
-        //                new Claim(ClaimTypes.Name, user.Id.ToString()),
-        //                new Claim("FirstName",user.FirstName??"Not Available"),
-        //                new Claim("LastName",user.LastName??"Not Available"),
-        //                new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
-        //                new Claim(ClaimTypes.Email, user.Email),
-        //                new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
-        //                new Claim("LoggedOn", DateTime.Now.ToString()),
-        //            }),
-        //            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
-        //            Issuer = _jwtsettings.Site,
-        //            Audience = _jwtsettings.Audience,
-        //            Expires = DateTime.UtcNow.AddMinutes(expirationTime)
-        //        };
-        //        //create the token 
-        //        var token = tokenHandler.CreateToken(tokenDescriptor);
-        //        var refreshToken = GenerateRefreshToken();
-        //        var loogedInResponse = new LoggedInResponseDTO
-        //        {
-        //            Token = tokenHandler.WriteToken(token),
-        //            Username = user.Email,
-        //            Name = $"{user.FirstName} {user.LastName}",
-        //            Roles = roles,
-        //            ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
-        //        };
-        //        user.LastLoginDate = DateTime.Now;
-        //        await _userManager.UpdateAsync(user);
-        //        return new ResponseMessage { Data = loogedInResponse, Status = true, Message = "User was logged in successfully" };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogCritical("An error Occurred when " + user.Email + " tried to Login : " + ex);
-        //    }
-        //    return new ResponseMessage { Message = "Error occured please try again later" };
-        //}
 
         public async Task<ResponseMessage> Login2(ApplicationUser user, LoginViewModel loginModel)
         {
@@ -319,7 +267,7 @@ namespace HealthBanc.Services.Identity
 
                 var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
 
-                var passwordResetLink = $"https://pharmmall.azurewebsites.net/set-new-password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
 
                 // Email the user the verification code
@@ -398,134 +346,7 @@ namespace HealthBanc.Services.Identity
             {
                 return new ResponseMessage { Message = "New Password Cant Be similar with Old Password" };
             }
-        }
-
-        public async Task<ResponseMessage> CreateAdmin(CreateAdminRegViewModel regViewModel, string superAdminEmail, int superAdminId)
-        {
-            var superAdmin = await _userManager.FindByEmailAsync(superAdminEmail);
-
-            var checkIfAdminExist = await _userManager.FindByNameAsync(regViewModel.Email);
-
-
-            if (checkIfAdminExist == null)
-            {
-                var user = new ApplicationUser
-                {
-                    UserName = regViewModel.Email,
-                    Email = regViewModel.Email,
-                    FirstName = regViewModel.FirstName,
-                    LastName = regViewModel.LastName,
-                    PhoneNumber = regViewModel.PhoneNumber,
-                    DateOfRegistration = DateTime.Now,
-                    SuperAdminId = superAdminId
-                };
-
-                var result = await _userManager.CreateAsync(user);
-                if (result.Succeeded)
-                {
-                    try
-                    {
-                        user.AdminId = user.Id;
-                        await _userManager.UpdateAsync(user);
-                        var role = await _classOrRole.GetRole(regViewModel.ClassOrRoleId);
-                        await _userManager.AddToRoleAsync(user, role.Name);
-
-                        // Generate an email verification code
-                        var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-
-                        var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
-                        var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
-
-                        // TODO: Replace with APIRoutes that will contain the static routes to use
-
-                        var confirmationUrl = $"https://pharmmall.azurewebsites.net/set-new-password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}&destination=adminreg";
-                        _emailSender.SendEmail(user.UserName, "d-6035520c662a43fba6ad2718deaedf79", confirmationUrl, superAdmin.FirstName + " " + superAdmin.LastName);
-
-
-                        return new ResponseMessage
-                        {
-                            Message = "Admin was invited successfully. Admin should check email for invite",
-                            Status = true
-                        };
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error Occurred While Trying to Create the Admin");
-                    }
-                }
-                return new ResponseMessage { Message = "Error Occurred While Trying to Create the Admin" };
-            }
-            else
-            {
-                if(checkIfAdminExist.UniqueUsername != null)
-                {
-                    return new ResponseMessage { Message = "User exist with admin access, Kindly invite with another email" };
-                }
-                if(checkIfAdminExist.ServiceUsed != null)
-                {
-                    if (checkIfAdminExist.ServiceUsed.Contains("Pharmmall") && checkIfAdminExist.UniqueUsername == null)
-                    {
-                        return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
-                    }
-                }               
-                if (checkIfAdminExist.AdminId == null && checkIfAdminExist.UniqueUsername == null)
-                {
-                    checkIfAdminExist.SuperAdminId = superAdminId;
-                    checkIfAdminExist.AdminId = checkIfAdminExist.Id;
-                    await _userManager.UpdateAsync(checkIfAdminExist);
-
-                    var role = await _classOrRole.GetRole(regViewModel.ClassOrRoleId);
-                    await _userManager.AddToRoleAsync(checkIfAdminExist, role.Name);
-
-                    var loginPage = $"https://pharmmall.azurewebsites.net/signin";
-                    _emailSender.SendEmail(checkIfAdminExist.Email, "d-bb5d5f1175764248be51f9c1bdaf533e", loginPage, superAdmin.FirstName +" "+superAdmin.LastName);
-
-                    return new ResponseMessage
-                    {
-                        Message = "Admin was invited successfully. Admin should check email for invite",
-                        Status = true
-                    };
-                }
-                return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
-            }            
-        }
-
-        public async Task<ResponseMessage> AdminReg(string email, string emailToken, AdminRegViewModel regViewModel)
-        {
-            var decryptedEmail = _encryptAndDecrypt.DecryptString(email, "hfahkbak78r32rg87griva..");
-            var decryptedToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
-
-            var user = await _userManager.FindByEmailAsync(decryptedEmail);
-
-            if (user == null)
-            {
-                return new ResponseMessage { Message = "User does not exist",ResponseCode = 2 };
-            }
-            var result = await _userManager.ConfirmEmailAsync(user, decryptedToken);
-
-            if (result.Succeeded)
-            {
-                try
-                {
-                    var token = _userManager.GeneratePasswordResetTokenAsync(user);
-                    var setPassword = await _userManager.ResetPasswordAsync(user, token.Result, regViewModel.NewPassword);
-                    if (setPassword.Succeeded)
-                    {
-                        return new ResponseMessage { Message = "Email Confirmed Successfully,Please Log In", Status = true };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error occured While Trying to create admin");
-                }
-                return new ResponseMessage { Message = "Error occured While Trying to Create Admin " };
-            }
-            else if (!result.Succeeded && result.Errors.Any(x => x.Code == "InvalidToken"))
-            {
-                return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
-            }
-            return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
-        }
+        }       
 
         public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user)
         {
@@ -539,7 +360,7 @@ namespace HealthBanc.Services.Identity
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
 
-                var confirmationUrl = $"https://healthbanc.sterlingapps.p.azurewebsites.net/v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
 
                 // Email the user the verification code
@@ -548,28 +369,161 @@ namespace HealthBanc.Services.Identity
             }
             return new ResponseMessage { Status = true, Message = "User does not exist.coukd not fetch user" };
         }
-
-        private async Task Welcome(ApplicationUser user)
-        {
-            // Get the user details
-            var userIdentity = await _userManager.FindByNameAsync(user.UserName);
-            if (userIdentity != null)
-            {
-
-                // TODO: Replace with APIRoutes that will contain the static routes to use
-
-                var confirmationUrl = $"https://pharmmall.azurewebsites.net/signin";
-
-                // Email the user the verification code
-                try
-                {
-                    _emailSender.SendEmail(user.UserName, "d-6aaf1c3f84434710a9319c4afa1e35f2", "confirmationUrl", null) ;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Falied to send Email Verification Mail to Admin From Method VerifyAdmin()");
-                }
-            }
-        }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//public async Task<ResponseMessage> CreateAdmin(CreateAdminRegViewModel regViewModel, string superAdminEmail, int superAdminId)
+//{
+//    var superAdmin = await _userManager.FindByEmailAsync(superAdminEmail);
+
+//    var checkIfAdminExist = await _userManager.FindByNameAsync(regViewModel.Email);
+
+
+//    if (checkIfAdminExist == null)
+//    {
+//        var user = new ApplicationUser
+//        {
+//            UserName = regViewModel.Email,
+//            Email = regViewModel.Email,
+//            FirstName = regViewModel.FirstName,
+//            LastName = regViewModel.LastName,
+//            PhoneNumber = regViewModel.PhoneNumber,
+//            DateOfRegistration = DateTime.Now,
+//            SuperAdminId = superAdminId
+//        };
+
+//        var result = await _userManager.CreateAsync(user);
+//        if (result.Succeeded)
+//        {
+//            try
+//            {
+//                user.AdminId = user.Id;
+//                await _userManager.UpdateAsync(user);
+//                var role = await _classOrRole.GetRole(regViewModel.ClassOrRoleId);
+//                await _userManager.AddToRoleAsync(user, role.Name);
+
+//                // Generate an email verification code
+//                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+//                var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
+//                var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
+
+//                // TODO: Replace with APIRoutes that will contain the static routes to use
+
+//                var confirmationUrl = $"https://pharmmall.azurewebsites.net/set-new-password/?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}&destination=adminreg";
+//                _emailSender.SendEmail(user.UserName, "d-6035520c662a43fba6ad2718deaedf79", confirmationUrl, superAdmin.FirstName + " " + superAdmin.LastName);
+
+
+//                return new ResponseMessage
+//                {
+//                    Message = "Admin was invited successfully. Admin should check email for invite",
+//                    Status = true
+//                };
+//            }
+//            catch (Exception ex)
+//            {
+//                _logger.LogError(ex, "Error Occurred While Trying to Create the Admin");
+//            }
+//        }
+//        return new ResponseMessage { Message = "Error Occurred While Trying to Create the Admin" };
+//    }
+//    else
+//    {
+//        if (checkIfAdminExist.UniqueUsername != null)
+//        {
+//            return new ResponseMessage { Message = "User exist with admin access, Kindly invite with another email" };
+//        }
+//        if (checkIfAdminExist.ServiceUsed != null)
+//        {
+//            if (checkIfAdminExist.ServiceUsed.Contains("Pharmmall") && checkIfAdminExist.UniqueUsername == null)
+//            {
+//                return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
+//            }
+//        }
+//        if (checkIfAdminExist.AdminId == null && checkIfAdminExist.UniqueUsername == null)
+//        {
+//            checkIfAdminExist.SuperAdminId = superAdminId;
+//            checkIfAdminExist.AdminId = checkIfAdminExist.Id;
+//            await _userManager.UpdateAsync(checkIfAdminExist);
+
+//            var role = await _classOrRole.GetRole(regViewModel.ClassOrRoleId);
+//            await _userManager.AddToRoleAsync(checkIfAdminExist, role.Name);
+
+//            var loginPage = $"https://pharmmall.azurewebsites.net/signin";
+//            _emailSender.SendEmail(checkIfAdminExist.Email, "d-bb5d5f1175764248be51f9c1bdaf533e", loginPage, superAdmin.FirstName + " " + superAdmin.LastName);
+
+//            return new ResponseMessage
+//            {
+//                Message = "Admin was invited successfully. Admin should check email for invite",
+//                Status = true
+//            };
+//        }
+//        return new ResponseMessage { Message = "Admin exist with a company in HealthMall, Kindly invite with another email" };
+//    }
+//}
+
+//public async Task<ResponseMessage> AdminReg(string email, string emailToken, AdminRegViewModel regViewModel)
+//{
+//    var decryptedEmail = _encryptAndDecrypt.DecryptString(email, "hfahkbak78r32rg87griva..");
+//    var decryptedToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
+
+//    var user = await _userManager.FindByEmailAsync(decryptedEmail);
+
+//    if (user == null)
+//    {
+//        return new ResponseMessage { Message = "User does not exist", ResponseCode = 2 };
+//    }
+//    var result = await _userManager.ConfirmEmailAsync(user, decryptedToken);
+
+//    if (result.Succeeded)
+//    {
+//        try
+//        {
+//            var token = _userManager.GeneratePasswordResetTokenAsync(user);
+//            var setPassword = await _userManager.ResetPasswordAsync(user, token.Result, regViewModel.NewPassword);
+//            if (setPassword.Succeeded)
+//            {
+//                return new ResponseMessage { Message = "Email Confirmed Successfully,Please Log In", Status = true };
+//            }
+//        }
+//        catch (Exception ex)
+//        {
+//            _logger.LogError(ex, "Error occured While Trying to create admin");
+//        }
+//        return new ResponseMessage { Message = "Error occured While Trying to Create Admin " };
+//    }
+//    else if (!result.Succeeded && result.Errors.Any(x => x.Code == "InvalidToken"))
+//    {
+//        return new ResponseMessage { Message = "Invalid Token", ResponseCode = 23 };
+//    }
+//    return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
+//}
