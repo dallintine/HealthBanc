@@ -194,7 +194,11 @@ namespace HealthBanc.Services.Tokenization
                 {
                     var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
                     if (!validResponse.Contains(phoneResponse.data.status)) return new TokenizationResponse() { Message = phoneResponse.data.url };
-                    if (phoneResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
+                    if (phoneResponse.data.status == "send_otp")
+                    {
+                        var otpViewModel = new SetOtpViewModel(null, pin, reference);
+                        return new TokenizationResponse { Data = otpViewModel, Message = "Please enter your OTP code", Status = true, ResponseCode = 12, };
+                    }
                     if (phoneResponse.data.status == "send_birthday")
                     {
                         var result = await SubmitBirthDay(user.DateOfBirth,user,pin,reference);
@@ -230,7 +234,11 @@ namespace HealthBanc.Services.Tokenization
                 {
                     var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
                     if (!validResponse.Contains(birthdayResponse.data.status)) return new TokenizationResponse { Message = birthdayResponse.data.url };
-                    if (birthdayResponse.data.status == "send_otp") return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
+                    if (birthdayResponse.data.status == "send_otp")
+                    {
+                        var otpViewModel = new SetOtpViewModel(null, pin, reference);
+                        return new TokenizationResponse { Message = "Please enter your OTP code", Status = true, ResponseCode = 12 };
+                    }
                     if (birthdayResponse.data.status == "send_phone")
                     {
                         var result = await SubmitPhone(user.PhoneNumber, user, pin,reference);
@@ -447,7 +455,7 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        private async Task SendEmailReminder(AxaMansardBackgroundDTO mansardBackgroundDTO,string reminderEmailTemplateId)
+        public async Task SendEmailReminder(AxaMansardBackgroundDTO mansardBackgroundDTO,string reminderEmailTemplateId)
         {
             var confirmationUrl = $"{Options.APIUri.HealthBancSignIn}";
 
