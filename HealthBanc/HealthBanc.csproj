@@ -11,6 +11,12 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
+  <!--<ItemGroup>
+    <Content Include="google-credentials.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>-->
+
   <ItemGroup>
     <Compile Remove="Migrations\20200826154633_ModifiedTestUserTable.cs" />
     <Compile Remove="Migrations\20200826154633_ModifiedTestUserTable.Designer.cs" />
@@ -29,12 +35,6 @@
     <Compile Remove="Migrations\20201010092853_RemovedunessaryRoles.cs" />
     <Compile Remove="Migrations\20201010092853_RemovedunessaryRoles.Designer.cs" />
   </ItemGroup>
-
-  <!--<ItemGroup>
-    <Content Include="google-credentials.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>-->
 
   <ItemGroup>
     <PackageReference Include="EPPlus" Version="4.5.3.2" />

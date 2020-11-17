@@ -2,6 +2,7 @@
 using Hangfire;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.Helpers;
 using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Request;
 using HealthBanc.Response;
@@ -11,6 +12,7 @@ using HealthBanc.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
@@ -32,10 +34,12 @@ namespace HealthBanc.Controllers.BackendAdmin
         private readonly ILogger<NotificationController> _logger;
         private readonly AuditLogService _auditLogServices;
         private readonly IBackendAdminRepository _adminRepository;
+        private SendGridTemplateId _emailTemplateAccessor { get; }
 
         public NotificationController(IEmailSender emailSender,IMapper mapper,INotificationRepository notificationRepository,IImageService imageService,ILogger<NotificationController>logger,
-            AuditLogService auditLogServices, IBackendAdminRepository adminRepository)
+            AuditLogService auditLogServices, IBackendAdminRepository adminRepository, IOptions<SendGridTemplateId> emailTemplateAccessor)
         {
+            _emailTemplateAccessor = emailTemplateAccessor.Value;
             _emailSender = emailSender;
             _mapper = mapper;
             _notificationRepository = notificationRepository;
@@ -57,7 +61,7 @@ namespace HealthBanc.Controllers.BackendAdmin
             if (ModelState.IsValid)
             {
                 var @object = _mapper.Map<HelloEmail>(heliumHealth);
-                _emailSender.SendEmailWithObject("Oluwaseunayo.Lojede@sterling.ng", "d-ae6ac5d73c714e3896c7011b5276c2b5", @object);
+                _emailSender.SendEmailWithObject("healthbanc@sterling.ng", _emailTemplateAccessor.HeliumHealth, @object);
                 return Ok(new ResponseMessage{ Status = true, Message = "Notification was sent successfully" });                             
             }
             var errors = new List<string>();

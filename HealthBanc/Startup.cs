@@ -145,7 +145,7 @@ namespace HealthBanc
             services.Configure<AxaMansard>(Configuration);
             services.Configure<SterlingOtp>(Configuration);
             services.Configure<AppEndpoint>(Configuration);
-            services.Configure<Paystack>(Configuration);
+            services.Configure<Paystack>(Configuration.GetSection("PaystackConfig"));
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
@@ -174,6 +174,9 @@ namespace HealthBanc
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
+            services.Configure<SubscriptionDuration>(Configuration.GetSection("SubscriptionDuration"));
+            services.Configure<GoogleSheetAPI>(Configuration.GetSection("GoogleSheetAPI"));
+            services.Configure<SendGridTemplateId>(Configuration.GetSection("SendGridTemplateId"));
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -190,8 +193,6 @@ namespace HealthBanc
                 options.Password.RequireNonAlphanumeric = false;
             }).AddEntityFrameworkStores<ApplicationDbContext>().
             AddDefaultTokenProviders();
-
-
 
             services.Configure<DataProtectionTokenProviderOptions>(options =>
                  options.TokenLifespan = TimeSpan.FromDays(5));
@@ -288,7 +289,7 @@ namespace HealthBanc
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultSignInScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(/*JwtBearerDefaults.AuthenticationScheme,*/ options =>
+            }).AddJwtBearer(options =>
             {
                 options.SaveToken = true;
                 options.TokenValidationParameters = tokenValidationParameters;
@@ -350,8 +351,9 @@ namespace HealthBanc
                 }
             }
 
-
-            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            var hangfireSecret = new JwtSettings();
+            Configuration.GetSection(nameof(JwtSettings)).Bind(hangfireSecret);
+            app.UseHangfireDashboard($"/hangfire", new DashboardOptions
             {
                 Authorization = new[] { new MyAuthorizationFilter() }
             });

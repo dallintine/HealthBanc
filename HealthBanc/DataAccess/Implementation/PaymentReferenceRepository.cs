@@ -19,5 +19,9 @@ namespace HealthBanc.DataAccess.Implementation
         {
             return await _context.PaymentReferences.FirstOrDefaultAsync(x => x.UserId == userId && x.Active == true);
         }
+        public async Task<PaymentReference> GetById(int id)
+        {
+            return await _context.PaymentReferences.FirstOrDefaultAsync(x => x.Id == id);
+        }
     }
 }

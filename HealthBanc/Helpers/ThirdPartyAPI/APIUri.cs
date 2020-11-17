@@ -27,5 +27,6 @@ namespace HealthBanc.Helpers.ThirdPartyAPI
         public string PaystackPaymentInsertSubscription { get; set; }
         public string PaystackPaymentUpdateSubscription { get; set; }
         public string PaystackPaymentCancelSubscription { get; set; }
+        public string PaystackPaymentGetSubscription { get; set; }
     }
 }

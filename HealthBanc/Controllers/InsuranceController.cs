@@ -128,69 +128,49 @@ namespace HealthBanc.Controllers
                     return BadRequest(new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" });
                 }
 
-                var tokenResult = await _axaMansardSoap.GetTokenRequest();
-                if (tokenResult.Body.getTokenResult.IsSuccessful == true)
+                var profile = _mapper.Map<iHealth>(userProfile);
+                profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
+                profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
+
+                profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
+                profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[0];
+
+                var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
+                var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
+                profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
+                profile.TransId = _insuranceService.GetUniqueCode(12);                      
+
+                if (profile.PlanCode == "7")
                 {
-                    var token = tokenResult.Body.getTokenResult.message;
-
-                    var profile = _mapper.Map<iHealth>(userProfile);
-                    profile.Surname = User.FindFirst("LastName")?.Value; profile.Othernames = User.FindFirst("FirstName")?.Value; profile.Email = User.FindFirstValue(ClaimTypes.Email);
-                    profile.PhoneNumber = User.FindFirst("PhoneNumber")?.Value;
-
-                    profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
-                    profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[0];
-
-                    var base64Photo = await _insuranceService.GetBase64(userProfile.CustomerPhoto, profile.Surname);
-                    var base64Identity = await _insuranceService.GetBase64(userProfile.IdentityPhoto, profile.Surname);
-                    profile.IdentityPhoto = base64Identity; profile.CustomerPhoto = base64Photo;
-                    profile.TransId = _insuranceService.GetUniqueCode(12);                      
-
-                    if (profile.PlanCode == "7")
-                    {
-                        profile.Premium = Decimal.Parse("1000");
-                    }
-                    else if (profile.PlanCode == "8")
-                    {
-                        profile.Premium = Decimal.Parse("2000");
-                    }
-
-                    //var result = await _axaMansardSoap.SaveHealth(profile, token);
-                    if (/*result.Body.SaveHealthResult.IsSuccessful ==*/ true )
-                    {
-                        //var getResponse = new AxaResponse();
-                        //getResponse.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-                        //getResponse.Message = result.Body.SaveHealthResult.message;
-
-                        var getResponse = new AxaResponse();
-                        getResponse.IsSuccessful = "True";
-                        getResponse.Message = "Profile was created successfully";
-
-                        var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
-                        axaInsuranceUser.UserId = Id;
-                        axaInsuranceUser.AlternateHospitalAddress = profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[1];
-                        _axaMansard.Create(axaInsuranceUser);
-
-                        var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
-                        _completionRepository.Create(completionProfile);
-
-                        var newServiceString = user.ServiceUsed + "HealthInsured,";
-                        user.ServiceUsed = newServiceString;
-                        _userRepository.Update(user);
-                        await _userRepository.Save();
-
-
-                        var auditViewModel = new AuditLogViewModel(Id, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
-                        var device = _auditLogServices.GetDevice(agent);
-                        BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,IpAddress,device));
-
-                        return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
-                    }
-                    //var getResponse2 = new AxaResponse();
-                    //getResponse2.Message = result.Body.SaveHealthResult.message;
-                    //getResponse2.IsSuccessful = result.Body.SaveHealthResult.IsSuccessful.ToString();
-                    //return BadRequest(new ResponseMessage { Message = getResponse2.Message, Data = getResponse2 });
+                    profile.Premium = Decimal.Parse("1000");
                 }
-                return BadRequest(new ResponseMessage { Message = tokenResult.Body.getTokenResult.message, Status = false });
+                else if (profile.PlanCode == "8")
+                {
+                    profile.Premium = Decimal.Parse("2000");
+                }               
+
+                var axaInsuranceUser = _mapper.Map<AxaMansardUserProfile>(profile);
+                axaInsuranceUser.UserId = Id;
+                axaInsuranceUser.AlternateHospitalAddress = profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[1];
+                _axaMansard.Create(axaInsuranceUser);
+
+                var completionProfile = new AxaMansardCompletionProfile(Id, true, false);
+                _completionRepository.Create(completionProfile);
+
+                var newServiceString = user.ServiceUsed + "HealthInsured,";
+                user.ServiceUsed = newServiceString;
+                _userRepository.Update(user);
+                await _userRepository.Save();
+
+                var getResponse = new AxaResponse();
+                getResponse.IsSuccessful = "True";
+                getResponse.Message = "Profile was created successfully";
+
+                var auditViewModel = new AuditLogViewModel(Id, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
+                var device = _auditLogServices.GetDevice(agent);
+                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,IpAddress,device));
+
+                return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message ="Profile was created successfully", Status = true });
             }
             //return validation errors
             var errors = new List<string>();

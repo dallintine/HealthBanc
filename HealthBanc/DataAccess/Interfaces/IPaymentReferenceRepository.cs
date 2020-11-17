@@ -10,5 +10,6 @@ namespace HealthBanc.DataAccess.Interfaces
     public interface IPaymentReferenceRepository : IBaseRepository<PaymentReference>
     {
         Task<PaymentReference> GetActivePayment(int userId);
+        Task<PaymentReference> GetById(int id);
     }
 }

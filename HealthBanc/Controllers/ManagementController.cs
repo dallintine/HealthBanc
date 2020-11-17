@@ -2,6 +2,7 @@
 using HealthBanc.Services.ADOTP;
 using HealthBanc.Services.AuditAndReport.AuditLog;
 using HealthBanc.Services.Insurance;
+using HealthBanc.Services.InsuredCancelLiveSheet;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +26,10 @@ namespace HealthBanc.Controllers
         private readonly IBackendOTPService _iBAckend;
         private readonly IHttpContextAccessor _accessor;
         private readonly AuditLogService _auditLogService;
+        private readonly LiveExcelList _list;
 
         public ManagementController(ApplicationDbContext dbContext, InsuranceService insuranceService,ILogger<ManagementController> logger, IBackendOTPService iBAckend,
-            IHttpContextAccessor accessor,AuditLogService auditLogService)
+            IHttpContextAccessor accessor,AuditLogService auditLogService,LiveExcelList list)
         {
             _dbContext = dbContext;
             _insuranceService = insuranceService;
@@ -35,6 +37,7 @@ namespace HealthBanc.Controllers
             _iBAckend = iBAckend;
             _accessor = accessor;
             _auditLogService = auditLogService;
+            _list = list;
         }
 
         [HttpGet("[action]")]

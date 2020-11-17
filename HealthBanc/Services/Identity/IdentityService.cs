@@ -4,6 +4,7 @@ using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
 using HealthBanc.Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
+using HealthBanc.Helpers;
 using HealthBanc.Helpers.Jwt_Authorization;
 using HealthBanc.Helpers.ThirdPartyAPI;
 using HealthBanc.Infrastructure.Mail;
@@ -45,13 +46,15 @@ namespace HealthBanc.Services.Identity
         private readonly IPasswordChangeRepository _passwordChangeRepository;
         private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
         private AppEndpoint Options { get; }
+        private SendGridTemplateId _emailTemplateAccessor { get; }
 
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
              IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
               TokenValidationParameters tokenValidationParameters,ApplicationDbContext dbContext, IPasswordHasher passwordHasher,IPasswordChangeRepository passwordChangeRepository,
-              IUserLogin_LogoutLogRepository _LogoutLogRepository, IOptions<AppEndpoint> optionAccessor)
+              IUserLogin_LogoutLogRepository _LogoutLogRepository, IOptions<AppEndpoint> optionAccessor, IOptions<SendGridTemplateId> emailTemplateAccessor)
         {
             Options = optionAccessor.Value;
+            _emailTemplateAccessor = emailTemplateAccessor.Value;
             _logger = logger;
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
@@ -188,20 +191,24 @@ namespace HealthBanc.Services.Identity
                     new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
                     new Claim("id",user.Id.ToString()),
                     new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
+                    //new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
                     new Claim("LoggedOn", DateTime.Now.ToString()),
                 }),
                 SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _jwtsettings.Site,
                 Audience = _jwtsettings.Audience,
-                Expires = DateTime.Now.AddMinutes(expirationTime),
+                Expires = DateTime.Now.AddDays(expirationTime),               
+                
             };
+            tokenDescriptor.Subject.AddClaims(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
             //create the token 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var refreshToken = GenerateRefreshToken();
 
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(5);
+            user.LastLoginDate = DateTime.Now;
             _userRepository.Update(user);
             await _userRepository.Save();
 
@@ -271,7 +278,7 @@ namespace HealthBanc.Services.Identity
 
 
                 // Email the user the verification code
-                _emailSender.SendEmail(forgotPassword.Username,"d-f9c4860583d340f1bf25a355dc64caf2", passwordResetLink,null);
+                _emailSender.SendEmail(forgotPassword.Username, _emailTemplateAccessor.ForgotPassowrd, passwordResetLink,null);
                 return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
             }
             return new ResponseMessage { Message = "Username Does Not Exist", Status = false };
@@ -364,7 +371,7 @@ namespace HealthBanc.Services.Identity
 
 
                 // Email the user the verification code
-                _emailSender.SendEmail(user.UserName, "d-d817b3791475490382e72d71567df4b2", confirmationUrl,null);
+                _emailSender.SendEmail(user.UserName, _emailTemplateAccessor.VerifyEmail, confirmationUrl,null);
                 return new ResponseMessage { Status = true };
             }
             return new ResponseMessage { Status = true, Message = "User does not exist.coukd not fetch user" };

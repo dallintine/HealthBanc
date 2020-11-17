@@ -27,7 +27,7 @@ namespace HealthBanc.Infrastructure.Mail
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
 
             var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom("hassan.olatade.hh@gmail.com", "HEALTHBANC");
+            sendGridMessage.SetFrom("healthbancng@gmail.com", "HEALTHBANC");
             sendGridMessage.AddTo(email, "HEALTHBANC");
             sendGridMessage.SetTemplateId(templateId);
             sendGridMessage.SetTemplateData(new HelloEmail
@@ -44,7 +44,7 @@ namespace HealthBanc.Infrastructure.Mail
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
 
             var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom("hassan.olatade.hh@gmail.com", "HEALTHBANC");
+            sendGridMessage.SetFrom("healthbancng@gmail.com", "HEALTHBANC");
             sendGridMessage.AddTo(email, "HEALTHBANC");
             sendGridMessage.SetTemplateId(templateId);
             sendGridMessage.SetTemplateData(new HelloEmail
@@ -59,6 +59,24 @@ namespace HealthBanc.Infrastructure.Mail
             var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
         }
 
+        public void SendInsurancePaymentReminder(string email, string templateId, string url, string userName,string premiumAmount)
+        {
+            var sendGridClient = new SendGridClient(Options.SendGridApiKey);
+
+            var sendGridMessage = new SendGridMessage();
+            sendGridMessage.SetFrom("healthbancng@gmail.com", "HEALTHBANC");
+            sendGridMessage.AddTo(email, "HEALTHBANC");
+            sendGridMessage.SetTemplateId(templateId);
+            sendGridMessage.SetTemplateData(new HelloEmail
+            {
+                token = url,
+                UserName = userName,
+                PremiumAmount = premiumAmount
+            });
+
+            var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
+        }
+
         public class HelloEmail
         {
             [JsonProperty("token")]
@@ -68,6 +86,12 @@ namespace HealthBanc.Infrastructure.Mail
             public string HealthServiveProviderType { get; set; }
             public string EmailAddress { get; set; }
             public string PhoneNumber { get; set; }
+            public string UserName { get; set; }
+            public string PremiumAmount { get; set; }
         }
     }
 }
+
+
+
+  //"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",

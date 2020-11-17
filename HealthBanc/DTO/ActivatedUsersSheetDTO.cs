@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.DTO
 {
-    public class InactiveUsersDTO
+    public class ActivatedUsersSheetDTO
     {
         public string TransId { get; set; }
         public string Gender { get; set; }
@@ -25,6 +25,7 @@ namespace HealthBanc.DTO
         public string StateOfResidence { get; set; }
         public string TownOfResidence { get; set; }
         public bool SubscriptionStatus { get; set; }
-        public string EndDate { get; set; }
-    }    
+        public bool FreeTrail { get; set; }
+        public string StartDate { get; set; }
+    }
 }

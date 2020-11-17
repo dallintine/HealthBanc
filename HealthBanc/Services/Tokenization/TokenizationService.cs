@@ -1,14 +1,18 @@
 ﻿using AutoMapper;
 using Hangfire;
+using Hangfire.Server;
 using HealthBanc.DataAccess.Interfaces;
 using HealthBanc.Domain.Models;
+using HealthBanc.DTO;
 using HealthBanc.DTO.TokenizationDTO;
 using HealthBanc.Helpers;
 using HealthBanc.Helpers.ThirdPartyAPI;
+using HealthBanc.Infrastructure.Mail;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Response.Tokenize;
 using HealthBanc.Services.AuditAndReport.AuditLog;
+using HealthBanc.Services.InsuredCancelLiveSheet;
 using HealthBanc.ViewModels;
 using HealthBanc.ViewModels.Tokenization;
 using Microsoft.AspNetCore.Hosting;
@@ -34,11 +38,14 @@ namespace HealthBanc.Services.Tokenization
         private readonly IMapper _mapper;
         private readonly IPaymentReferenceRepository _paymentReference;
         private readonly AuditLogService _auditLogServices;
+        private readonly LiveExcelList _liveExcelList;
+        private readonly IEmailSender _emailSender;
+
         private AppEndpoint Options { get; }
 
         public TokenizationService(IWebHostEnvironment environment, IHttpClientFactory httpClientFactory,ILogger<TokenizationService> logger, SendLogViaWhatApp logViaWhatApp,
             IAxaMansardUserProfileRepository axaMansardUser,IMapper mapper,IPaymentReferenceRepository paymentReference, IOptions<AppEndpoint> optionAccessor,
-            AuditLogService auditLogServices)
+            AuditLogService auditLogServices, LiveExcelList liveExcelList, IEmailSender emailSender)
         {
             Options = optionAccessor.Value;
             _environment = environment;
@@ -49,6 +56,8 @@ namespace HealthBanc.Services.Tokenization
             _mapper = mapper;
             _paymentReference = paymentReference;
             _auditLogServices = auditLogServices;
+            _liveExcelList = liveExcelList;
+            _emailSender = emailSender;
         }
 
         public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard,int id,string ipAddress,string device)
@@ -64,7 +73,7 @@ namespace HealthBanc.Services.Tokenization
                 if(chargeCardResponse.status is true)
                 {
                     var validResponse = new[] { "send_otp", "send_pin", "success", "send_phone", "send_birthday", "open_url" };
-                    if (!validResponse.Contains(chargeCardResponse.data.status)) return new TokenizationResponse { Message = chargeCardResponse.data.url };
+                    if (!validResponse.Contains(chargeCardResponse.data.status)) return new TokenizationResponse { Message = "Timeout error" };
                     if (chargeCardResponse.data.status == "send_otp")
                     {
                         var otpViewModel = new SetOtpViewModel(null, chargeCard.pin, chargeCard.reference);
@@ -79,11 +88,19 @@ namespace HealthBanc.Services.Tokenization
                         var user = await _axaMansardUser.GetByAdminIdAsync(id);
                         if (user != null)
                         {
-                            var result = await SubmitBirthDay(user.DateOfBirth,user,chargeCard.pin,chargeCard.reference);
+                            var result = await SubmitPhone(user.PhoneNumber,user,chargeCard.pin,chargeCard.reference);
                             return new TokenizationResponse { Status = result.Status, Message = result.Message, ResponseCode = result.ResponseCode };
                         }
                     }
-                    if (chargeCardResponse.data.status == "send_phone") return new TokenizationResponse { Message = "" };
+                    if (chargeCardResponse.data.status == "send_phone")
+                    {
+                        var user = await _axaMansardUser.GetByAdminIdAsync(id);
+                        if (user != null)
+                        {
+                            var result = await SubmitPhone(user.PhoneNumber, user, chargeCard.pin, chargeCard.reference);
+                            return new TokenizationResponse { Status = result.Status, Message = result.Message, ResponseCode = result.ResponseCode };
+                        }
+                    }
                     if (chargeCardResponse.data.status == "success")
                     {
                         var auditViewModel = new AuditLogViewModel(id, null, null, "Successfully Card Tokenization", $"Tokenization reference is {chargeCard.reference}");
@@ -100,7 +117,7 @@ namespace HealthBanc.Services.Tokenization
                             ResponseCode = 0
                         };
                     } 
-                    if (chargeCardResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
+                    if (chargeCardResponse.data.status == "open_url") return new TokenizationResponse { Message = "Please try again" };
                 }
                 var message = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
                 return new TokenizationResponse { Message = chargeCardResponse.message+", "+message,Status = false };
@@ -153,7 +170,7 @@ namespace HealthBanc.Services.Tokenization
                             ResponseCode = 0
                         };
                     }
-                    if (otpResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
+                    if (otpResponse.data.status == "open_url") return new TokenizationResponse { Message = "Please try again" };
                 }
                 return new TokenizationResponse { Message = otpResponse.message, Status = false };
                    
@@ -189,7 +206,7 @@ namespace HealthBanc.Services.Tokenization
                     if (phoneResponse.data.status == "success") return new TokenizationResponse {Signature = phoneResponse.data.authorization.signature,
                         Type = phoneResponse.data.authorization.card_type,LastDigit = phoneResponse.data.authorization.last4,
                         AuthorizationCode = phoneResponse.data.authorization.authorization_code,Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
-                    if (phoneResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
+                    if (phoneResponse.data.status == "open_url") return new TokenizationResponse { Message = "Please try again" };
                 }
                 return new TokenizationResponse { Message = phoneResponse.message, Status = false };
             }
@@ -225,21 +242,20 @@ namespace HealthBanc.Services.Tokenization
                     if (birthdayResponse.data.status == "success") return new TokenizationResponse {Signature = birthdayResponse.data.authorization.signature,
                         Type = birthdayResponse.data.authorization.card_type, LastDigit = birthdayResponse.data.authorization.last4,
                         AuthorizationCode = birthdayResponse.data.authorization.authorization_code, Message = "Card was tokenize successfully", Status = true, ResponseCode = 0 };
-                    if (birthdayResponse.data.status == "open_url") return new TokenizationResponse { Message = "" };
+                    if (birthdayResponse.data.status == "open_url") return new TokenizationResponse { Message = "Please try again" };
                 }
                 return new TokenizationResponse { Status = false, Message = birthdayResponse.message };                 
             }
-            _logViaWhatApp.SendLog("Couldnt connect with payment service: SubmitBirthDay Service:");
-            _logger.LogCritical("Couldnt connect with payment service: SubmitBirthDay Service:");
             return new TokenizationResponse { Message = "Couldnt connect with payment service, please try again later", Status = false };
         }
 
-        public async Task InsertSubscription(AxaMansardBackgroundDTO userAxamansardProfile,TokenizationReference tokenization,string ipAddress, string device)
+        public async Task InsertSubscription(AxaMansardBackgroundDTO userAxamansardProfile,TokenizationReference tokenization,string ipAddress, string device,string channel,
+            string tokenType,string reminderEmailTemplateId)
         {
             var requestId = Guid.NewGuid().ToString();
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = requestId;
-            subscribePayment.NextRepaymentDate = DateTime.Now.AddMonths(1);
+            subscribePayment.NextRepaymentDate = DateTime.Now.AddMonths(1);subscribePayment.Channel = channel; subscribePayment.TokenType = tokenType;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
@@ -266,6 +282,10 @@ namespace HealthBanc.Services.Tokenization
                     var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Inactive subscription status", "Subscription Status Changed",
                            "Active subscription status");
                     BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
+                    //RecurringJob.AddOrUpdate(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId,payment.Id,null), Cron.DayInterval(32));
+                    //RecurringJob.AddOrUpdate(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId), Cron.Monthly(27));
+                    RecurringJob.AddOrUpdate(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, payment.Id, null), Cron.MinuteInterval(7));
+                    RecurringJob.AddOrUpdate(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId), Cron.MinuteInterval(4));
                     await Task.CompletedTask;
                 }
                 await Task.CompletedTask;
@@ -274,10 +294,11 @@ namespace HealthBanc.Services.Tokenization
         }
 
         public async Task UpdateSubscription(AxaMansardBackgroundDTO userAxamansardProfile, string authorization_Code, string requestId,string ipAddress,
-            string device)
+            string device, string channel,string tokenType)
         {
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.Token = authorization_Code; subscribePayment.RequestId = requestId;
+            subscribePayment.Channel = channel; subscribePayment.TokenType = tokenType;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
@@ -299,7 +320,7 @@ namespace HealthBanc.Services.Tokenization
             await Task.CompletedTask;
         }
 
-        public async Task<ResponseMessage> CancelSubscription(AxaMansardUserProfile userAxamansardProfile,string ipAddress, string device)
+        public async Task<ResponseMessage> CancelSubscription(AxaMansardUserProfile userAxamansardProfile,string ipAddress, string device, string channel, string tokenType)
         {
             var paymentReference = await _axaMansardUser.ActivePaymentReference(userAxamansardProfile.UserId);
             if(paymentReference == null)
@@ -316,6 +337,7 @@ namespace HealthBanc.Services.Tokenization
             }
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.RequestId = paymentReference.RequestId; subscribePayment.Fees = 0;
+            subscribePayment.Channel = channel; subscribePayment.TokenType = tokenType;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
@@ -345,6 +367,60 @@ namespace HealthBanc.Services.Tokenization
             return new ResponseMessage { Message = "Could not connect to paystack payment service" };
         }
 
+        public async Task GetSubscription(SubscribePayment subscribePayment,int userId,int paymentReferenceId, PerformContext context)
+        {
+            var paymentReference = await _paymentReference.GetById(paymentReferenceId);
+            if(paymentReference.Active)
+            {
+                var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+                var response = await httpClient.GetAsync($"{Options.APIUri.PaystackPaymentGetSubscription}?requestId={subscribePayment.RequestId}&channel={subscribePayment.Channel}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var subscribePaymentResponse = new SubscribePaymentResponse();
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
+                    if (subscribePaymentResponse.status == true)
+                    {
+                        if (subscribePaymentResponse.data.repaymentStatus != "Paid")
+                        {
+                            HttpContent content = new StringContent(JsonConvert.SerializeObject(subscribePayment), Encoding.UTF8, "application/json");
+                            var response2 = await httpClient.PostAsync(Options.APIUri.PaystackPaymentCancelSubscription, content);
+                            if (response2.IsSuccessStatusCode)
+                            {
+                                var subscribePaymentResponse2 = new SubscribePaymentResponse();
+                                string apiResponse2 = await response.Content.ReadAsStringAsync();
+                                subscribePaymentResponse2 = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse2);
+                                if (subscribePaymentResponse2.status == true)
+                                {
+                                    paymentReference.Active = false;
+                                    _paymentReference.Update(paymentReference);
+
+                                    var userAxamansardProfile = await _axaMansardUser.GetByAdminIdAsync(paymentReference.AxaMansardUserProfileId);
+
+                                    userAxamansardProfile.SubscriptionStatus = false;
+                                    _axaMansardUser.Update(userAxamansardProfile);
+                                    await _axaMansardUser.Save();
+
+                                    var deactivatedUserSheet = _mapper.Map<InactiveUsersDTO>(userAxamansardProfile);
+                                    BackgroundJob.Enqueue(() => _liveExcelList.RemoveFromActiveListToInactiveList(deactivatedUserSheet));
+
+                                    string jobId = context.BackgroundJob.Id;
+                                    RecurringJob.RemoveIfExists(jobId);
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+            else
+            {
+                string jobId2 = context.BackgroundJob.Id;
+                RecurringJob.RemoveIfExists(jobId2);
+            }
+            await Task.CompletedTask;
+        }
+
         public async Task<ResponseMessage<ChargeCardResponse>> ValidateCharge (string reference)
         {
             try
@@ -369,6 +445,15 @@ namespace HealthBanc.Services.Tokenization
                 _logger.LogCritical("An error occurred while trying to SubmitBirthDay: " + ex);
                 return new ResponseMessage<ChargeCardResponse> { Status = false };
             }
+        }
+
+        private async Task SendEmailReminder(AxaMansardBackgroundDTO mansardBackgroundDTO,string reminderEmailTemplateId)
+        {
+            var confirmationUrl = $"{Options.APIUri.HealthBancSignIn}";
+
+            _emailSender.SendInsurancePaymentReminder(mansardBackgroundDTO.Email, reminderEmailTemplateId, confirmationUrl, mansardBackgroundDTO.Surname+" "+
+                mansardBackgroundDTO.Othernames, mansardBackgroundDTO.Premium.ToString());
+            await Task.CompletedTask;
         }
     }
 }

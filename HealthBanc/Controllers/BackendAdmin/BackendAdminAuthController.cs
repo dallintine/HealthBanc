@@ -77,11 +77,10 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> BackendLogin([FromBody] ADCredentials aDCredentials,[FromQuery] string otp)
+        public async Task<IActionResult> BackendLogin([FromBody] ADCredentials aDCredentials)
         {
             if (ModelState.IsValid)
             {
-                if (otp == null) return BadRequest(new ResponseMessage { Status = false, Message = "OTP is compulsory" });
                 var checkIfUserExist = await _userRepository.FindByUniqueUsername(aDCredentials.AD_Username);
                 if (checkIfUserExist is null)
                 {
@@ -100,29 +99,18 @@ namespace HealthBanc.Controllers
                         var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
                         if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                         {
-                            //var response = _oTPService.SOAPManual(otp, aDCredentials.AD_Username);
-                            //if(response == "false")
-                            //{
-                            //    return BadRequest(new ResponseMessage { Message = "This on us. Could not validate OTO, try again later" });
-                            //};
-                            //_logger.LogError(response.ToString());
-                            //XmlDocument xmlDoc = new XmlDocument();
-                            //xmlDoc.LoadXml(response);
-                            //var responseResult = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
-                            //if (responseResult.Contains("00|Token Successfully"))
-                            //{
                             var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
                             var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
+                            _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
                             await _userRepository.Save();
                             var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                                return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
-                            //}
-                                
+                            return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
                         }
                         else
                         {
                             var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
                             var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email,true,false,true,false, loginOutHours);
+                            _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
                             await _userRepository.Save();
                             return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
                         }
@@ -342,7 +330,8 @@ namespace HealthBanc.Controllers
             var roles = await _userManager.GetRolesAsync(user);
 
             //Generate Token
-            var expirationTime = Convert.ToDouble(_jwtsettings.ExpirationTime);
+            var expirary = (int.Parse(_jwtsettings.ExpirationTime) * 10).ToString();
+            var expirationTime = Convert.ToDouble(expirary);
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
             var tokenDescriptor = new SecurityTokenDescriptor

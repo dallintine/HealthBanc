@@ -25,6 +25,7 @@ namespace HealthBanc.Response.Tokenize
         public string url { get; set; }
         public string status { get; set; }
         public string reference { get; set; }
+        public string repaymentStatus { get; set;}
         public Authorization authorization { get; set; }
     }
     public class Message

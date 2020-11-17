@@ -6,6 +6,7 @@ using HealthBanc.Domain.Models;
 using HealthBanc.DTO;
 using HealthBanc.DTO.ApplicationUserDTOs;
 using HealthBanc.DTO.TokenizationDTO;
+using HealthBanc.Helpers;
 using HealthBanc.Request.Tokenize;
 using HealthBanc.Response;
 using HealthBanc.Services;
@@ -18,6 +19,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
@@ -46,12 +48,19 @@ namespace HealthBanc.Controllers
         private readonly IHttpContextAccessor _accessor;
         public string IpAddress;
         public StringValues agent;
+        private SubscriptionDuration subDurationOptions { get; }
+        private Paystack _paystackOptions { get; }
+        private SendGridTemplateId _templateId { get; }
+
 
         public TokenizationController(TokenizationService tokenizationService,IMapper mapper, IAxaMansardUserProfileRepository mansardUserProfileRepository,
             IAxaMansardCompletionRepository completionRepository,SendLogViaWhatApp logViaWhatApp,ILogger<TokenizationController> logger,
             ITokenizationReferenceRepository tokenizationReference,ICardRepository cardRepository, LiveExcelList liveExcelList,IPaymentReferenceRepository paymentReference,
-            AuditLogService auditLogServices, IHttpContextAccessor accessor)
+            AuditLogService auditLogServices, IHttpContextAccessor accessor,IOptions<SubscriptionDuration> subDuration,IOptions<Paystack> paystackOptions,
+            IOptions<SendGridTemplateId> templateId)
         {
+            _templateId = templateId.Value;
+            _paystackOptions = paystackOptions.Value;
             _tokenizationService = tokenizationService;
             _mapper = mapper;
             _mansardUserProfileRepository = mansardUserProfileRepository;
@@ -64,6 +73,7 @@ namespace HealthBanc.Controllers
             _paymentReference = paymentReference;
             _auditLogServices = auditLogServices;
             _accessor = accessor;
+            subDurationOptions = subDuration.Value;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -98,7 +108,7 @@ namespace HealthBanc.Controllers
 
                         var card = new ChargeCard();
                         var chargeCardRequest = _mapper.Map<Request.Tokenize.Card>(chargeCard.card);
-                        card.email = userAxamansardProfile.Email; card.amount = userAxamansardProfile.Premium.ToString();
+                        card.email = userAxamansardProfile.Email; card.amount = "100";
                         card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin; card.card = chargeCardRequest;
                         var cardResponse = await _tokenizationService.ChargeCard(card, Id,IpAddress,device);
 
@@ -126,20 +136,75 @@ namespace HealthBanc.Controllers
 
                             checkprofileComplete.TokenizationCompleted = true;
                             _completionRepository.Update(checkprofileComplete);    
-                                
+                             
+                            // Check if user does not have a subscrption status
                             if (userAxamansardProfile.SubscriptionStatus == null )
                             {
+                                // Set subscrption status to true and update database
                                 userAxamansardProfile.SubscriptionStatus = true;
                                 _mansardUserProfileRepository.Update(userAxamansardProfile);                                   
 
+                                // Create Audit thats user subscrption changed and run in background process
                                 var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
                                     "iption status, free one month trail");
                                 BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3,IpAddress,device));
 
+                                // Get a Axamansard profile DTO to use in Background process.
                                 var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 
-                                var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                    tokenizeReference,IpAddress,device), DateTime.Now.AddMinutes(2));
+                                // Check if Users are allowed to have a free trial.
+                                if(subDurationOptions.FreeTrial == true)
+                                {
+                                    // Write user details to Goggle sheet by connecting to live google sheet API and also write to if users had a free trial
+                                    var activatedUsersSheet = _mapper.Map<ActivatedUsersSheetDTO>(userAxamansardProfile);
+                                    activatedUsersSheet.FreeTrail = true;
+                                    await _liveExcelList.ActivatedUsers(activatedUsersSheet);
+
+                                    if (subDurationOptions.FreeTrialDay)
+                                    {
+                                        BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device,_paystackOptions.Channel,_paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddDays(subDurationOptions.FreeTrialDayDuration));
+                                    }
+                                    if (subDurationOptions.FreeTrialMinute)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddMinutes(subDurationOptions.FreeTrialMinuteDuration));
+                                    }
+                                    if (subDurationOptions.FreeTrialMonth)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
+                                    }
+                                }
+                                //If Users are not allowed to have a free trial run this
+                                else
+                                {
+                                    // Write user details to Goggle sheet by connecting to live google sheet API and also write to if users do not a free trial
+                                    var activatedUsersSheet = _mapper.Map<ActivatedUsersSheetDTO>(userAxamansardProfile);
+                                    activatedUsersSheet.FreeTrail = false;
+                                    await _liveExcelList.ActivatedUsers(activatedUsersSheet);
+
+                                    if (subDurationOptions.Now)
+                                    {
+                                        BackgroundJob.Enqueue(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder));
+                                    }
+                                    if (subDurationOptions.Minutes)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddMinutes(subDurationOptions.MinuteDuration));
+                                    }
+                                    if (subDurationOptions.Days)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddDays(subDurationOptions.DaysDuration));
+                                    }
+                                }
                             }
                             await _mansardUserProfileRepository.Save();
                             return Ok(new ResponseMessage {Data=cardResponse.Data, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
@@ -216,8 +281,58 @@ namespace HealthBanc.Controllers
 
                                 var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 
-                                var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                    tokenizeReference,IpAddress,device), DateTime.Now.AddMinutes(2));
+                                if (subDurationOptions.FreeTrial == true)
+                                {
+                                    // Write user details to Goggle sheet by connecting to live google sheet API and also write to if users had a free trial
+                                    var activatedUsersSheet = _mapper.Map<ActivatedUsersSheetDTO>(userAxamansardProfile);
+                                    activatedUsersSheet.FreeTrail = true;
+                                    await _liveExcelList.ActivatedUsers(activatedUsersSheet);
+
+                                    if (subDurationOptions.FreeTrialDay)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddDays(subDurationOptions.FreeTrialDayDuration));
+                                    }
+                                    if (subDurationOptions.FreeTrialMinute)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddMinutes(subDurationOptions.FreeTrialMinuteDuration));
+                                    }
+                                    if (subDurationOptions.FreeTrialMonth)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
+                                    }
+
+                                }
+                                else
+                                {
+                                    // Write user details to Goggle sheet by connecting to live google sheet API and also write to if users do not a free trial
+                                    var activatedUsersSheet = _mapper.Map<ActivatedUsersSheetDTO>(userAxamansardProfile);
+                                    activatedUsersSheet.FreeTrail = false;
+                                    await _liveExcelList.ActivatedUsers(activatedUsersSheet);
+
+                                    if (subDurationOptions.Now)
+                                    {
+                                        BackgroundJob.Enqueue(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder));
+                                    }
+                                    if (subDurationOptions.Minutes)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddMinutes(subDurationOptions.MinuteDuration));
+                                    }
+                                    if (subDurationOptions.Days)
+                                    {
+                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
+                                        , DateTime.Now.AddDays(subDurationOptions.DaysDuration));
+                                    }
+                                }
                             }
                             await _mansardUserProfileRepository.Save();
 
@@ -253,11 +368,11 @@ namespace HealthBanc.Controllers
                 return BadRequest(new ResponseMessage { Message = "You have no active subscription", Status = false });
             }
             var device = _auditLogServices.GetDevice(agent);
-            var cancelationResult = await _tokenizationService.CancelSubscription(axamansardProfile,IpAddress,device);
+            var cancelationResult = await _tokenizationService.CancelSubscription(axamansardProfile,IpAddress,device, _paystackOptions.Channel, _paystackOptions.TokenType);
             if(cancelationResult.Status == true)
             {
-                var listDTO = _mapper.Map<InactiveUsersDTO>(axamansardProfile);
-                await _liveExcelList.WriteAsync(listDTO);
+                var deactivatedUserSheet = _mapper.Map<InactiveUsersDTO>(axamansardProfile);
+                BackgroundJob.Enqueue(() => _liveExcelList.RemoveFromActiveListToInactiveList(deactivatedUserSheet));
 
                 var profileDTO = _mapper.Map<AxaMansardUserDTO>(axamansardProfile);
                 return Ok(new ResponseMessage { Data = profileDTO, Message = "Subscription was cancelled successfully", Status = true });
@@ -335,7 +450,7 @@ namespace HealthBanc.Controllers
                     var activePaymentReference = userAxamansardProfile.PaymentReferences.FirstOrDefault(x => x.Active == true);
 
                     BackgroundJob.Enqueue(() => _tokenizationService.UpdateSubscription(axaMansardBackgroundDTO, newPrimaryCard.TokenizationReference.Authorization_Code,
-                        activePaymentReference.RequestId, IpAddress, device));
+                        activePaymentReference.RequestId, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType));
 
                     presentPrimaryCard.Status = 0;
                     _cardRepository.Update(presentPrimaryCard);
@@ -423,7 +538,11 @@ namespace HealthBanc.Controllers
             var device = _auditLogServices.GetDevice(agent);
             BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3,IpAddress,device));
 
-            BackgroundJob.Enqueue(() => _tokenizationService.InsertSubscription(axaMansardBackgroundDTO, tokenizationReference,IpAddress,device));
+            BackgroundJob.Enqueue(() => _tokenizationService.InsertSubscription(axaMansardBackgroundDTO, tokenizationReference,IpAddress,device, _paystackOptions.Channel
+                , _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder));
+
+            var activatedSheet = _mapper.Map<ActivatedUsersSheetDTO>(userAxamansardProfile);
+            BackgroundJob.Enqueue(() => _liveExcelList.RemoveFromInactiveListToActiveList(activatedSheet));
 
             userAxamansardProfile.SubscriptionStatus = true;
             _mansardUserProfileRepository.Update(userAxamansardProfile);

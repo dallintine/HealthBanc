@@ -46,7 +46,13 @@ namespace HealthBanc.Mappers
             CreateMap<DebitCard, CardDTO>();
             CreateMap<AxaMansardUserProfile, InactiveUsersDTO>()
                 .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.Premium.ToString()))
-                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(x => x.DateOfBirth.ToString()));
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(x => x.DateOfBirth.ToString()))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(x => DateTime.Now.ToString()));
+
+            CreateMap<AxaMansardUserProfile, ActivatedUsersSheetDTO>()
+                .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.Premium.ToString()))
+                .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(x => x.DateOfBirth.ToString()))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(x => DateTime.Now.ToString()));
 
             CreateMap<AxaMansardUserProfile, AxaMansardBackgroundDTO>();
         }
