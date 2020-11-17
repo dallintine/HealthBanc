@@ -29,7 +29,7 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
 
         private static readonly string[] Scopes = { SheetsService.Scope.Spreadsheets };
 
-        private SheetsService GetSheetsService()
+        public SheetsService GetSheetsService()
         {
             string GoogleCredentialsFileName = Path.Combine(_environment.WebRootPath, "google-credentials.json");
             using (var stream = new FileStream(GoogleCredentialsFileName, FileMode.Open, FileAccess.Read))
@@ -149,7 +149,7 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
             }
         }
 
-        private async Task<string> ReadActivatedUsers(string transId)
+        public async Task<string> ReadActivatedUsers(string transId)
         {
             const string ReadRange = "A2:A";
             var serviceValues = GetSheetsService().Spreadsheets.Values;
@@ -170,7 +170,7 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
             return "false";
         }
 
-        private async Task<string> ReadDeactivatedUsers(string transId)
+        public async Task<string> ReadDeactivatedUsers(string transId)
         {
             const string ReadRange = "A2:A";
             var serviceValues = GetSheetsService().Spreadsheets.Values;
