@@ -279,25 +279,29 @@ namespace HealthBanc.Services.Tokenization
                 subscribePaymentResponse = JsonConvert.DeserializeObject<SubscribePaymentResponse>(apiResponse);
                 if (subscribePaymentResponse.status == true)
                 {
-                    var payment = new PaymentReference()
+                    var paymentReference = await _paymentReference.GetActivePayment(userAxamansardProfile.UserId);
+                    if (paymentReference == null)
                     {
-                        Date = DateTime.Now,
-                        AxaMansardUserProfileId = userAxamansardProfile.Id,
-                        UserId = userAxamansardProfile.UserId,
-                        Amount = userAxamansardProfile.Premium,
-                        RequestId = requestId,
-                        Active = true,
-                    };
-                    _paymentReference.Create(payment);
-                    await _paymentReference.Save();
+                        var payment = new PaymentReference()
+                        {
+                            Date = DateTime.Now,
+                            AxaMansardUserProfileId = userAxamansardProfile.Id,
+                            UserId = userAxamansardProfile.UserId,
+                            Amount = userAxamansardProfile.Premium,
+                            RequestId = requestId,
+                            Active = true,
+                        };
+                        _paymentReference.Create(payment);
+                        await _paymentReference.Save();
+                        RecurringJob.AddOrUpdate(Guid.NewGuid().ToString(), () => GetSubscription(subscribePayment, userAxamansardProfile.UserId, payment.Id, null), Cron.MinuteInterval(4));
+                    }                    
 
                     var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Inactive subscription status", "Subscription Status Changed",
                            "Active subscription status");
                     BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
-                    //RecurringJob.AddOrUpdate(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId,payment.Id,null), Cron.DayInterval(32));
-                    //RecurringJob.AddOrUpdate(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId), Cron.Monthly(27));
-                    RecurringJob.AddOrUpdate(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, payment.Id, null), Cron.MinuteInterval(7));
-                    RecurringJob.AddOrUpdate(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId), Cron.MinuteInterval(4));
+                    //RecurringJob.AddOrUpdate(Guid.NewGuid().ToString(),() => GetSubscription(subscribePayment, userAxamansardProfile.UserId,payment.Id,null), Cron.DayInterval(32));
+                    //RecurringJob.AddOrUpdate(Guid.NewGuid().ToString(),() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId), Cron.Monthly(27));                    
+                    RecurringJob.AddOrUpdate(Guid.NewGuid().ToString(),() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId,null), Cron.MinuteInterval(2));
                     await Task.CompletedTask;
                 }
                 await Task.CompletedTask;
@@ -407,11 +411,13 @@ namespace HealthBanc.Services.Tokenization
                                     paymentReference.Active = false;
                                     _paymentReference.Update(paymentReference);
 
-                                    var userAxamansardProfile = await _axaMansardUser.GetByAdminIdAsync(paymentReference.AxaMansardUserProfileId);
-
-                                    userAxamansardProfile.SubscriptionStatus = false;
-                                    _axaMansardUser.Update(userAxamansardProfile);
-                                    await _axaMansardUser.Save();
+                                    var userAxamansardProfile = await _axaMansardUser.GetByAdminIdAsync(paymentReference.UserId);
+                                    if(userAxamansardProfile != null)
+                                    {
+                                        userAxamansardProfile.SubscriptionStatus = false;
+                                        _axaMansardUser.Update(userAxamansardProfile);
+                                        await _axaMansardUser.Save();
+                                    }                                    
 
                                     var deactivatedUserSheet = _mapper.Map<InactiveUsersDTO>(userAxamansardProfile);
                                     BackgroundJob.Enqueue(() => _liveExcelList.RemoveFromActiveListToInactiveList(deactivatedUserSheet));
@@ -459,12 +465,21 @@ namespace HealthBanc.Services.Tokenization
             }
         }
 
-        public async Task SendEmailReminder(AxaMansardBackgroundDTO mansardBackgroundDTO,string reminderEmailTemplateId)
+        public async Task SendEmailReminder(AxaMansardBackgroundDTO mansardBackgroundDTO,string reminderEmailTemplateId,PerformContext context)
         {
-            var confirmationUrl = $"{Options.APIUri.HealthBancSignIn}";
+            var user = await _axaMansardUser.GetByIdAsync(mansardBackgroundDTO.Id);
+            if(user.SubscriptionStatus == true)
+            {
+                var confirmationUrl = $"{Options.APIUri.HealthBancSignIn}";
 
-            _emailSender.SendInsurancePaymentReminder(mansardBackgroundDTO.Email, reminderEmailTemplateId, confirmationUrl, mansardBackgroundDTO.Surname+" "+
-                mansardBackgroundDTO.Othernames, mansardBackgroundDTO.Premium.ToString());
+                _emailSender.SendInsurancePaymentReminder(mansardBackgroundDTO.Email, reminderEmailTemplateId, confirmationUrl, mansardBackgroundDTO.Surname + " " +
+                    mansardBackgroundDTO.Othernames, mansardBackgroundDTO.Premium.ToString());
+            }
+            else
+            {
+                string jobId = context.BackgroundJob.Id;
+                RecurringJob.RemoveIfExists(jobId);
+            }            
             await Task.CompletedTask;
         }
     }
