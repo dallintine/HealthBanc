@@ -177,6 +177,7 @@ namespace HealthBanc
             services.Configure<SubscriptionDuration>(Configuration.GetSection("SubscriptionDuration"));
             services.Configure<GoogleSheetAPI>(Configuration.GetSection("GoogleSheetAPI"));
             services.Configure<SendGridTemplateId>(Configuration.GetSection("SendGridTemplateId"));
+            services.Configure<Helpers.Environment>(Configuration.GetSection("Environment"));
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -382,17 +383,23 @@ namespace HealthBanc
                 await next();
             });
 
-            app.UseHttpsRedirection();            
+            app.UseHttpsRedirection();
 
-            var swaggerOptions = new Helpers.SwaggerOptions();
-            Configuration.GetSection(nameof(Helpers.SwaggerOptions)).Bind(swaggerOptions);
+            var developmentOptions = new Helpers.Environment();
+            Configuration.GetSection(nameof(Helpers.Environment)).Bind(developmentOptions);
 
-            app.UseSwagger(option => { option.RouteTemplate = swaggerOptions.JsonRoute; });
-
-            app.UseSwaggerUI(option =>
+            if (developmentOptions.Staging)
             {
-                option.SwaggerEndpoint(swaggerOptions.UiEndpoint, swaggerOptions.Description);
-            });
+                var swaggerOptions = new Helpers.SwaggerOptions();
+                Configuration.GetSection(nameof(Helpers.SwaggerOptions)).Bind(swaggerOptions);
+
+                app.UseSwagger(option => { option.RouteTemplate = swaggerOptions.JsonRoute; });
+
+                app.UseSwaggerUI(option =>
+                {
+                    option.SwaggerEndpoint(swaggerOptions.UiEndpoint, swaggerOptions.Description);
+                });
+            }           
 
             app.UseAuthentication();
 
@@ -407,7 +414,6 @@ namespace HealthBanc
 
             applicationLifetime.ApplicationStopped.Register(() =>
             {
-                //consulClient.Agent.ServiceDeregister(serviceId);
                 AutofacContainer.Dispose();
             });
         }

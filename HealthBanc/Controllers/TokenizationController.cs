@@ -163,20 +163,20 @@ namespace HealthBanc.Controllers
                                     if (subDurationOptions.FreeTrialDay)
                                     {
                                         BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device,_paystackOptions.Channel,_paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddDays(subDurationOptions.FreeTrialDayDuration));
+                                            tokenizeReference, IpAddress, device,_paystackOptions.Channel,_paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddDays(subDurationOptions.FreeTrialDayDuration));
                                     }
                                     if (subDurationOptions.FreeTrialMinute)
                                     {
                                         var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddMinutes(subDurationOptions.FreeTrialMinuteDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            ,_paystackOptions.HealthInsuredAccount), DateTime.Now.AddMinutes(subDurationOptions.FreeTrialMinuteDuration));
                                     }
                                     if (subDurationOptions.FreeTrialMonth)
                                     {
                                         var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
                                     }
                                 }
                                 //If Users are not allowed to have a free trial run this
@@ -190,19 +190,20 @@ namespace HealthBanc.Controllers
                                     if (subDurationOptions.Now)
                                     {
                                         BackgroundJob.Enqueue(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount));
                                     }
                                     if (subDurationOptions.Minutes)
                                     {
                                         var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddMinutes(subDurationOptions.MinuteDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddMinutes(subDurationOptions.MinuteDuration));
                                     }
                                     if (subDurationOptions.Days)
                                     {
                                         var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddDays(subDurationOptions.DaysDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddDays(subDurationOptions.DaysDuration));
                                     }
                                 }
                             }
@@ -291,20 +292,20 @@ namespace HealthBanc.Controllers
                                     if (subDurationOptions.FreeTrialDay)
                                     {
                                         BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddDays(subDurationOptions.FreeTrialDayDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddDays(subDurationOptions.FreeTrialDayDuration));
                                     }
                                     if (subDurationOptions.FreeTrialMinute)
                                     {
                                         BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddMinutes(subDurationOptions.FreeTrialMinuteDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddMinutes(subDurationOptions.FreeTrialMinuteDuration));
                                     }
                                     if (subDurationOptions.FreeTrialMonth)
                                     {
                                         BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
                                     }
 
                                 }
@@ -318,19 +319,20 @@ namespace HealthBanc.Controllers
                                     if (subDurationOptions.Now)
                                     {
                                         BackgroundJob.Enqueue(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount));
                                     }
                                     if (subDurationOptions.Minutes)
                                     {
                                         var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddMinutes(subDurationOptions.MinuteDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddMinutes(subDurationOptions.MinuteDuration));
                                     }
                                     if (subDurationOptions.Days)
                                     {
                                         var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
-                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
-                                        , DateTime.Now.AddDays(subDurationOptions.DaysDuration));
+                                            tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
+                                            , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddDays(subDurationOptions.DaysDuration));
                                     }
                                 }
                             }
@@ -539,7 +541,7 @@ namespace HealthBanc.Controllers
             BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3,IpAddress,device));
 
             BackgroundJob.Enqueue(() => _tokenizationService.InsertSubscription(axaMansardBackgroundDTO, tokenizationReference,IpAddress,device, _paystackOptions.Channel
-                , _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder));
+                , _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder, _paystackOptions.HealthInsuredAccount));
 
             var activatedSheet = _mapper.Map<ActivatedUsersSheetDTO>(userAxamansardProfile);
             BackgroundJob.Enqueue(() => _liveExcelList.RemoveFromInactiveListToActiveList(activatedSheet));

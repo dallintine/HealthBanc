@@ -9,6 +9,9 @@ namespace HealthBanc.Helpers
     {
         public string DeactivatedUsersExcelId { get; set; }
         public string ActivatedUsersId { get; set; }
+        public string StagingDeactivatedUsersExcelId { get; set; }
+        public string StagingActivatedUsersId { get; set; }
+
 
 
     }

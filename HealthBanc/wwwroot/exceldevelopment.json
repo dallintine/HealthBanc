@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "healthbanc",
+  "private_key_id": "8ce21070317902cae5458e34e606e7e2b31fd1f5",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDhLy9sgm3isWwu\na5YlK5Odqhms5aBR71qZwYSMAUzrm40vL3yE7x/RhFbc+poOG8o4KW6zAyAME1NI\nu7nmry9breX9VrQjEOn5Qm5hp+36OXvmR7c1zMLJHzqLf/x8yMjNOc5CSDsOKhGN\niUC6qX6IXU2O/qy7OG/u108c2GgtTyxVZIPo+39jz3b59xvzAYKPaQSoy2ukL9Oh\ngSZ7xSHbewjOF9vW7QnO8R+4M09FUTqadphkpn4gkblvSEWFReC9qxX18tZQ3Ho5\npvzsZVPYUfBJyzoF+pdeR12HKeeSc4Kd7PyG3vJObayogyBeaBrAe/3GFE8+pdd/\nAIbF7Z3jAgMBAAECggEAFLEHRIs/maL/88wDAetdJxGoRlDbSGwcASDdExhTfxrO\nAFX2tShb3h6w9KE6Yq1/CWYVO/G/khx8fKRzUpUqXtw90+eRqd82AKdwCR0rKuD5\nV5GjbhggleZ+tK7P/o9clC8JmuGUO5r1/fFstzo33EPmioswSAvJjULPjDD+cZs2\npj9EnDMPd63mzHTODiEm4r1OUSNLPH5XWesiixxWpT0QGCiAlbZ3o+J+XFzdxW+7\nTRKfD6gckPE9hn0ApmQw2wOALW3QdKQsV939jH2WG7MzEJsrb5iqmHypxfPWTCX8\nGBYvWNbk6kYGDgBuur8pN9Xw3zfZmB0V0Sf6oqWLUQKBgQD7M29f7NgQ0+BKcBel\njA2Y0ktGjLyUMzcKsxQ3/fio34zrLGX2QvTqLaTzrdOFl04ntTLIv+A7YQuCEQG/\npREgbWIJXQghS5EwrtjQHlpgX6EK3qRZajIF3OTyupooNCP0sCgoaoUfSBpwzE0/\nWYsCINTVu5fJoUyXkJzoVHeJ1wKBgQDlfIJTMc0QaXJBx1xAoPihj13N0dnFrkpT\nwrQo+c7HTpVhrpfDeacgIA8duHI7VznhokVru0FczhI6GbnDis8DLKVqwwC7jEgZ\ngNf6MlHrK2+RK6F6CjjfrR32t+r3DuN7TlduCpI0PWEUEasXuQdwPRBMS8CW9emI\nyNF5xbXC1QKBgA/z6kTLQ8V9zyarC7VluY9U+5bVZTx8LCivyr7rkBkZaVeeEDOd\nePRORcV76oz3WO1IopsBJHpg5VwzPEsxbm8Cw1EY6WVD6UqQMBC3fMHWEOIh1Yog\nJmEc8CVCGHwpI4dskIBQk3ezGorDTryRMTTHZPzV1wPlDHoroutWQektAoGAd4kA\ndYdWUnsqibrngb6XY8hCy0fI0KB1lOWxZDqjC8wSIZyI7sg6VpB8bzW5QtGvk6kr\n0e7rIAUzF1J5IbL3G6cwzsieZBKxJ5+mYGu/oeixJ4P7i48xisko929bk68MrRjk\nj6wv9cgW/hYp8aRujHcyOxumSLv1FkvMWUqz37UCgYBs1nalntHc9Y5sd5EcsH1u\nt91kPVtpZQAZ1zJUm1jd4dlTdAfhKCUpG1cYiW9aRIMqbrBWH/ovtau0R9/cmMDr\n4/OwedK1NE+jhdG0xPo9RGLQUiWEZ3lQ1oFDV+SdWm2XFm0iZRoJMtQ7tUUotv5D\nzGohsWcmxVLNQxD/wZ9JvQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "healthbancaccount@healthbanc.iam.gserviceaccount.com",
+  "client_id": "112565067343492115831",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/healthbancaccount%40healthbanc.iam.gserviceaccount.com"
+}

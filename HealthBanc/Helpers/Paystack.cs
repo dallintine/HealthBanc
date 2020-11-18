@@ -9,5 +9,6 @@ namespace HealthBanc.Helpers
     {
         public string Channel { get; set; }
         public string TokenType { get; set; }
+        public string HealthInsuredAccount { get; set; }
     }
 }

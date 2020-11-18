@@ -20,28 +20,47 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
 
         private readonly IWebHostEnvironment _environment;
         private GoogleSheetAPI Options { get; }
+        private HealthBanc.Helpers.Environment envOptions { get; }
+        private string activatedUserId {get;set;}
+        private string deactivatedUserId { get; set; }
 
-        public LiveExcelList(IWebHostEnvironment environment, IOptions<GoogleSheetAPI> optionAccessor)
+        public LiveExcelList(IWebHostEnvironment environment, IOptions<GoogleSheetAPI> optionAccessor, IOptions<HealthBanc.Helpers.Environment> envAccessor)
         {
             Options = optionAccessor.Value;
-            _environment = environment;
+            envOptions = envAccessor.Value;
+            activatedUserId = envAccessor.Value.Production ? optionAccessor.Value.ActivatedUsersId : optionAccessor.Value.StagingActivatedUsersId;
+            deactivatedUserId = envAccessor.Value.Production ? optionAccessor.Value.DeactivatedUsersExcelId : optionAccessor.Value.StagingDeactivatedUsersExcelId;
         }
 
         private static readonly string[] Scopes = { SheetsService.Scope.Spreadsheets };
 
         public SheetsService GetSheetsService()
         {
-            string GoogleCredentialsFileName = Path.Combine(_environment.WebRootPath, "google-credentials.json");
-            using (var stream = new FileStream(GoogleCredentialsFileName, FileMode.Open, FileAccess.Read))
+            if(envOptions.Production == true)
             {
-                var serviceInitializer = new BaseClientService.Initializer
+                string GoogleCredentialsFileName = Path.Combine(_environment.WebRootPath, "google-credentials.json");
+                using (var stream = new FileStream(GoogleCredentialsFileName, FileMode.Open, FileAccess.Read))
                 {
-                    HttpClientInitializer = GoogleCredential.FromStream(stream).CreateScoped(Scopes)
-                };
-                return new SheetsService(serviceInitializer);
+                    var serviceInitializer = new BaseClientService.Initializer
+                    {
+                        HttpClientInitializer = GoogleCredential.FromStream(stream).CreateScoped(Scopes)
+                    };
+                    return new SheetsService(serviceInitializer);
+                }
             }
+            else
+            {
+                string GoogleCredentialsFileName = Path.Combine(_environment.WebRootPath, "exceldevelopment.json");
+                using (var stream = new FileStream(GoogleCredentialsFileName, FileMode.Open, FileAccess.Read))
+                {
+                    var serviceInitializer = new BaseClientService.Initializer
+                    {
+                        HttpClientInitializer = GoogleCredential.FromStream(stream).CreateScoped(Scopes)
+                    };
+                    return new SheetsService(serviceInitializer);
+                }
+            }   
         }
-
 
         public static List<object> ProcessDeactivatedUsers(InactiveUsersDTO user)
         {
@@ -62,7 +81,7 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
             const string WriteRange = "A2:T2";
             var serviceValues = GetSheetsService().Spreadsheets.Values;
             var valueRange = new ValueRange { Values = new List<IList<object>> { ProcessActivatedUsers(user) } };
-            var update = serviceValues.Append(valueRange, Options.ActivatedUsersId, WriteRange);
+            var update = serviceValues.Append(valueRange, activatedUserId, WriteRange);
             update.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
             update.InsertDataOption = SpreadsheetsResource.ValuesResource.AppendRequest.InsertDataOptionEnum.INSERTROWS;
             var response = update.ExecuteAsync();
@@ -75,7 +94,7 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
             var serviceValues = GetSheetsService().Spreadsheets.Values;
             var valueRange = new ValueRange { Values = new List<IList<object>> { ProcessDeactivatedUsers(user) } };
 
-            var update = serviceValues.Append(valueRange, Options.DeactivatedUsersExcelId, WriteRange);
+            var update = serviceValues.Append(valueRange,deactivatedUserId, WriteRange);
             update.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.RAW;
             try
             {
@@ -111,7 +130,7 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
                 SheetData.BatchUpdateSpreadsheetRequest requestBody = new SheetData.BatchUpdateSpreadsheetRequest();
                 requestBody.Requests = requests;
 
-                SpreadsheetsResource.BatchUpdateRequest updateRequest = GetSheetsService().Spreadsheets.BatchUpdate(requestBody, Options.ActivatedUsersId);
+                SpreadsheetsResource.BatchUpdateRequest updateRequest = GetSheetsService().Spreadsheets.BatchUpdate(requestBody, activatedUserId);
 
                 SheetData.BatchUpdateSpreadsheetResponse response = await updateRequest.ExecuteAsync();
 
@@ -141,7 +160,8 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
                 SheetData.BatchUpdateSpreadsheetRequest requestBody = new SheetData.BatchUpdateSpreadsheetRequest();
                 requestBody.Requests = requests;
 
-                SpreadsheetsResource.BatchUpdateRequest updateRequest = GetSheetsService().Spreadsheets.BatchUpdate(requestBody, Options.DeactivatedUsersExcelId);
+                SpreadsheetsResource.BatchUpdateRequest updateRequest =  GetSheetsService().Spreadsheets.BatchUpdate(requestBody, deactivatedUserId);
+
 
                 SheetData.BatchUpdateSpreadsheetResponse response =await updateRequest.ExecuteAsync();
 
@@ -153,7 +173,7 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
         {
             const string ReadRange = "A2:A";
             var serviceValues = GetSheetsService().Spreadsheets.Values;
-            var response = await serviceValues.Get(Options.ActivatedUsersId, ReadRange).ExecuteAsync();
+            var response = await serviceValues.Get(activatedUserId, ReadRange).ExecuteAsync();
             var values = response.Values;
             if (values != null)
             {
@@ -174,7 +194,7 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
         {
             const string ReadRange = "A2:A";
             var serviceValues = GetSheetsService().Spreadsheets.Values;
-            var response = await serviceValues.Get(Options.DeactivatedUsersExcelId, ReadRange).ExecuteAsync();
+            var response = await serviceValues.Get(deactivatedUserId, ReadRange).ExecuteAsync();
             var values = response.Values;
             if (values != null)
             {
