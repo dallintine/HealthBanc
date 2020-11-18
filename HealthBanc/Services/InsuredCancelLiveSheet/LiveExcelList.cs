@@ -17,8 +17,6 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
 {
     public class LiveExcelList
     {
-
-        private readonly IWebHostEnvironment _environment;
         private GoogleSheetAPI Options { get; }
         private HealthBanc.Helpers.Environment envOptions { get; }
         private string activatedUserId {get;set;}
@@ -30,9 +28,11 @@ namespace HealthBanc.Services.InsuredCancelLiveSheet
             envOptions = envAccessor.Value;
             activatedUserId = envAccessor.Value.Production ? optionAccessor.Value.ActivatedUsersId : optionAccessor.Value.StagingActivatedUsersId;
             deactivatedUserId = envAccessor.Value.Production ? optionAccessor.Value.DeactivatedUsersExcelId : optionAccessor.Value.StagingDeactivatedUsersExcelId;
+            _environment = environment;
         }
 
         private static readonly string[] Scopes = { SheetsService.Scope.Spreadsheets };
+        private readonly IWebHostEnvironment _environment;
 
         public SheetsService GetSheetsService()
         {
