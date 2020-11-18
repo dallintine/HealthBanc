@@ -290,19 +290,19 @@ namespace HealthBanc.Controllers
 
                                     if (subDurationOptions.FreeTrialDay)
                                     {
-                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                        BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
                                             tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
                                         , DateTime.Now.AddDays(subDurationOptions.FreeTrialDayDuration));
                                     }
                                     if (subDurationOptions.FreeTrialMinute)
                                     {
-                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                        BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
                                             tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
                                         , DateTime.Now.AddMinutes(subDurationOptions.FreeTrialMinuteDuration));
                                     }
                                     if (subDurationOptions.FreeTrialMonth)
                                     {
-                                        var jobId = BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
+                                        BackgroundJob.Schedule(() => _tokenizationService.InsertSubscription(use,
                                             tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder)
                                         , DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
                                     }

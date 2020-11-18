@@ -36,11 +36,13 @@ namespace HealthBanc.DataAccess.Implementation
             }
             //If Status is null returns all registered users
             //if status is 1 returns active users
-            //if status is 2 returns deactivated users
+            //if status is 2 returns inactive users
+            //if status is 3 returns deactivated or locked out users
             if (paginationQuery.Status != null)
             {
                 if (paginationQuery.Status == 1) queryable = queryable.Where(x => x.LastLoginDate.AddDays(30) >= DateTime.Now).AsQueryable();
                 if (paginationQuery.Status == 2) queryable = queryable.Where(x => x.LastLoginDate.AddDays(30) <= DateTime.Now).AsQueryable();
+                if (paginationQuery.Status == 3) queryable = queryable.Where(x => x.LockoutEnd != null).AsQueryable();
             }
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))
