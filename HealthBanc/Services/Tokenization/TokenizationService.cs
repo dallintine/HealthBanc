@@ -294,14 +294,12 @@ namespace HealthBanc.Services.Tokenization
                         };
                         _paymentReference.Create(payment);
                         await _paymentReference.Save();
-                        //BackgroundJob.Schedule(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, payment.Id, null), DateTime.Now.AddMonths(1).AddDays(1));
-                        BackgroundJob.Schedule(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, payment.Id, null), DateTime.Now.AddMinutes(2).AddMinutes(2));
+                        BackgroundJob.Schedule(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, payment.Id, null), DateTime.Now.AddMonths(1).AddDays(1));
                         var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Inactive subscription status", "Subscription Status Changed",
                           "Active subscription status");
                         BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
 
-                        //BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId, null), DateTime.Now.AddMonths(1).Subtract(new TimeSpan(3,0,0,0)));
-                        BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId, null), DateTime.Now.AddMinutes(5).Subtract(new TimeSpan(0, 0, 3, 0)));
+                        BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId, null), DateTime.Now.AddMonths(1).Subtract(new TimeSpan(3,0,0,0)));
                     }  
                 }
             }
@@ -430,8 +428,7 @@ namespace HealthBanc.Services.Tokenization
                         else
                         {
                             var userAxamansardProfile = await _axaMansardUser.GetByAdminIdAsync(userId);
-                            //BackgroundJob.Schedule(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, paymentReference.Id, null), DateTime.Now.AddMonths(1).AddDays(Double.Parse("1")));
-                            BackgroundJob.Schedule(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, paymentReference.Id, null), DateTime.Now.AddMinutes(2).AddMinutes(2));
+                            BackgroundJob.Schedule(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, paymentReference.Id, null), DateTime.Now.AddMonths(1).AddDays(1));
                         }
                     }
                 }
@@ -481,8 +478,7 @@ namespace HealthBanc.Services.Tokenization
                 _emailSender.SendInsurancePaymentReminder(mansardBackgroundDTO.Email, reminderEmailTemplateId, confirmationUrl, mansardBackgroundDTO.Surname + " " +
                     mansardBackgroundDTO.Othernames, mansardBackgroundDTO.Premium.ToString());
 
-                //BackgroundJob.Schedule(() => SendEmailReminder(mansardBackgroundDTO, reminderEmailTemplateId, null), DateTime.Now.AddMonths(1).Subtract(new TimeSpan(3, 0, 0, 0)));
-                BackgroundJob.Schedule(() => SendEmailReminder(mansardBackgroundDTO, reminderEmailTemplateId, null), DateTime.Now.AddMinutes(5).Subtract(new TimeSpan(0, 0, 3, 0)));
+                BackgroundJob.Schedule(() => SendEmailReminder(mansardBackgroundDTO, reminderEmailTemplateId, null), DateTime.Now.AddMonths(1).Subtract(new TimeSpan(3, 0, 0, 0)));
             }
             else
             {
