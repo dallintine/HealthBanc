@@ -179,6 +179,9 @@ namespace HealthBanc.Controllers
                                             tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
                                             , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
                                         userAxamansardProfile.CustomerNo = jobId;
+
+                                        BackgroundJob.Schedule(() => _tokenizationService.SendEmailReminder(use, _templateId.HealthInsured_PaymentReminder, null),
+                                            DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
                                     }
                                 }
                                 //If Users are not allowed to have a free trial run this
@@ -316,6 +319,9 @@ namespace HealthBanc.Controllers
                                             tokenizeReference, IpAddress, device, _paystackOptions.Channel, _paystackOptions.TokenType, _templateId.HealthInsured_PaymentReminder
                                             , _paystackOptions.HealthInsuredAccount), DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration));
                                         userAxamansardProfile.CustomerNo = jobId;
+
+                                        BackgroundJob.Schedule(() => _tokenizationService.SendEmailReminder(use, _templateId.HealthInsured_PaymentReminder, null), 
+                                            DateTime.Now.AddDays(subDurationOptions.FreeTrialMonthDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
                                     }
 
                                 }
