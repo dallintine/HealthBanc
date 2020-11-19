@@ -399,7 +399,8 @@ namespace HealthBanc
                 {
                     option.SwaggerEndpoint(swaggerOptions.UiEndpoint, swaggerOptions.Description);
                 });
-            }           
+            }     
+            
 
             app.UseAuthentication();
 

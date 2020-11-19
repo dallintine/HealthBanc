@@ -278,7 +278,8 @@ namespace HealthBanc.Controllers
 
                                 var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
                                     "iption status, free one month trail");
-                                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3,IpAddress,device));
+
+                                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel3, IpAddress, device));
 
                                 var use = _mapper.Map<AxaMansardBackgroundDTO>(userAxamansardProfile);
 
