@@ -267,7 +267,7 @@ namespace HealthBanc.Services.Tokenization
             var requestId = Guid.NewGuid().ToString();
             var subscribePayment = _mapper.Map<SubscribePayment>(userAxamansardProfile);
             subscribePayment.Token = tokenization.Authorization_Code; subscribePayment.RequestId = requestId;
-            subscribePayment.NextRepaymentDate = DateTime.Now.AddMonths(1);subscribePayment.Channel = channel; subscribePayment.TokenType = tokenType;
+            subscribePayment.NextRepaymentDate = DateTime.Now.AddMonths(1); subscribePayment.Channel = channel; subscribePayment.TokenType = tokenType;
             subscribePayment.SettlementAccount = settlementAccount == null ? null : settlementAccount;
 
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
@@ -296,14 +296,14 @@ namespace HealthBanc.Services.Tokenization
                         await _paymentReference.Save();
                         BackgroundJob.Schedule(() => GetSubscription(subscribePayment, userAxamansardProfile.UserId, payment.Id, null), DateTime.Now.AddMonths(1).AddDays(1));
                         var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Inactive subscription status", "Subscription Status Changed",
-                          "Active subscription status");
+                            "Active subscription status");
                         BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
 
-                        BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId, null), DateTime.Now.AddMonths(1).Subtract(new TimeSpan(3,0,0,0)));
-                    }  
+                        BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile, reminderEmailTemplateId, null), DateTime.Now.AddMonths(1).Subtract(new TimeSpan(3, 0, 0, 0)));
+                    }
                 }
             }
-            await Task.CompletedTask;
+            await Task.CompletedTask; 
         }
 
         public async Task UpdateSubscription(AxaMansardBackgroundDTO userAxamansardProfile, string authorization_Code, string requestId,string ipAddress,
@@ -365,14 +365,18 @@ namespace HealthBanc.Services.Tokenization
                     paymentReference.Active = false;
                     _paymentReference.Update(paymentReference);
                     await _paymentReference.Save();
-                        
+
+                    BackgroundJob.Delete(userAxamansardProfile.CustomerNo);
+
                     userAxamansardProfile.SubscriptionStatus = false;
+                    userAxamansardProfile.CustomerNo = null;
                     _axaMansardUser.Update(userAxamansardProfile);
                     await _axaMansardUser.Save();
 
                     var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, subscribePayment.RequestId, "Active subscription status", "Subscription Status Changed",
                         "Inactive subscription status");
                     BackgroundJob.Enqueue(() =>  _auditLogServices.UserCreateAuditLog(auditViewModel,ipAddress,device));
+                    
 
                     return new ResponseMessage { Message = subscribePaymentResponse.message, Status = true };
                 }
