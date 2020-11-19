@@ -141,8 +141,7 @@ namespace HealthBanc.Controllers
                             if (userAxamansardProfile.SubscriptionStatus == null )
                             {
                                 // Set subscrption status to true and update database
-                                userAxamansardProfile.SubscriptionStatus = true;
-                                _mansardUserProfileRepository.Update(userAxamansardProfile);                                   
+                                userAxamansardProfile.SubscriptionStatus = true;                              
 
                                 // Create Audit thats user subscrption changed and run in background process
                                 var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
@@ -213,6 +212,8 @@ namespace HealthBanc.Controllers
                                     }
                                 }
                             }
+
+                            _mansardUserProfileRepository.Update(userAxamansardProfile);
                             await _mansardUserProfileRepository.Save();
                             return Ok(new ResponseMessage {Data=cardResponse.Data, Status = cardResponse.Status, ResponseCode = cardResponse.ResponseCode, Message = cardResponse.Message });
                         }
@@ -280,7 +281,6 @@ namespace HealthBanc.Controllers
                             if (userAxamansardProfile.SubscriptionStatus == null)
                             {
                                 userAxamansardProfile.SubscriptionStatus = true;
-                                _mansardUserProfileRepository.Update(userAxamansardProfile);
 
                                 var auditViewModel3 = new AuditLogViewModel(Id, null, "Inactive subscription status", "Subscription Status Changed", "Active subscr" +
                                     "iption status, free one month trail");
@@ -349,6 +349,7 @@ namespace HealthBanc.Controllers
                                     }
                                 }
                             }
+                            _mansardUserProfileRepository.Update(userAxamansardProfile);
                             await _mansardUserProfileRepository.Save();
 
                             return Ok(new ResponseMessage { Data = response.Data, Message = response.Message, Status = response.Status, ResponseCode = response.ResponseCode });
