@@ -338,7 +338,10 @@ namespace HealthBanc.Services.Tokenization
             var paymentReference = await _axaMansardUser.ActivePaymentReference(userAxamansardProfile.UserId);
             if(paymentReference == null)
             {
+                BackgroundJob.Delete(userAxamansardProfile.CustomerNo);
+
                 userAxamansardProfile.SubscriptionStatus = false;
+                userAxamansardProfile.CustomerNo = null;
                 _axaMansardUser.Update(userAxamansardProfile);
                 await _axaMansardUser.Save();
 
