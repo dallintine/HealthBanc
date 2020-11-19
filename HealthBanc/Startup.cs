@@ -354,7 +354,7 @@ namespace HealthBanc
 
             var hangfireSecret = new JwtSettings();
             Configuration.GetSection(nameof(JwtSettings)).Bind(hangfireSecret);
-            app.UseHangfireDashboard($"/hangfire", new DashboardOptions
+            app.UseHangfireDashboard($"/apiResponse1963.", new DashboardOptions
             {
                 Authorization = new[] { new MyAuthorizationFilter() }
             });
