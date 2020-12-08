@@ -20,7 +20,7 @@ namespace HealthBanc.Services.ADOTP
     {
         public readonly HealthBanc.Helpers.SterlingOtp Options;
         private readonly ILogger<BackendOTPService> _logger;
-        public readonly string serviceUrl = "https://az-cpibap2-serv/OTPCentralService.asmx";
+        public readonly string serviceUrl = "https://172.18.4.99/OTPCentralService.asmx";
         public readonly EndpointAddress endpointAddress;
         public readonly BasicHttpBinding basicHttpBinding;
 
