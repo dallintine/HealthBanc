@@ -117,7 +117,28 @@ namespace HealthBanc.Controllers
         {
             var townList = _insuranceService.GetTowns(state);
             return Ok(townList);
-        }        
+        }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        [HttpGet("[action]")]
+        public IActionResult AxaMansardGetHealthPlans()
+        {
+            var axaListResponse = new List<AxaListResponse>();           
+            var axaResponse = new AxaListResponse()
+            {
+                Text = "Rugby",
+                Code = "7"
+            };
+            axaListResponse.Add(axaResponse);
+            var axaResponse2 = new AxaListResponse()
+            {
+                Text = "Sapphire",
+                Code = "8"
+            };
+            axaListResponse.Add(axaResponse2);
+            return Ok(new ResponseMessage<List<AxaListResponse>> { Data = axaListResponse, Message = "HealthPan was fetched successfully", Status = true });            
+        }
 
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
