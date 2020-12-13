@@ -244,7 +244,7 @@ namespace HealthBanc
                     builder =>
                         builder.AllowAnyOrigin()
                             .AllowAnyMethod()
-                            .AllowAnyHeader();
+                            .AllowAnyHeader());
             });
 
             //---------------------------- CORS setting---------------------------------------------------------//
