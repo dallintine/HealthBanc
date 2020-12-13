@@ -108,7 +108,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
             profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[0]; profile.TransId = uniqueIdentifier;
 
-            var updatedProfile = _mapper.Map(userProfile, profile);
+            var updatedProfile = _mapper.Map(user, profile);
 
             _axaMansard.Create(updatedProfile);
 
@@ -126,21 +126,20 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var bearerRequest = await AxaMansardAuthentication();
             if (bearerRequest.Status)
             {
-                var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+                var httpClient = _httpClientFactory.CreateClient("AxaMansard");
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",bearerRequest.Data.Auth_token);
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync($"{Options.AxaMansardEnrollement}", content);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var authResponse = new EnrollementResponse();
                     string apiResponse = await response.Content.ReadAsStringAsync();
-                    authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
-                    if (authResponse.success)
-                    {
-                        return new ResponseMessage { Status = true, Message = authResponse.message };
-                    }
-                    return new ResponseMessage { Status = false, Message = authResponse.message };
+                    var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
+                    //if (authResponse.success)
+                    //{
+                    //    return new ResponseMessage { Status = true, Message = authResponse.message };
+                    //}
+                    return new ResponseMessage { Status = true, Message = authResponse.message };
                 }
                 return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
             }
@@ -149,17 +148,16 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
         private async Task<ResponseMessage<AuthenticationResponse>> AxaMansardAuthentication()
         {
-            var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
-            httpClient.DefaultRequestHeaders.Add("x-api-key", $"{Options.Apikey}");
-            httpClient.DefaultRequestHeaders.Add("x -api-secret", $"{Options.ApiSecret}");
-            httpClient.DefaultRequestHeaders.Add("x-client-key", $"{Options.ClientKey}");
+            var httpClient = _httpClientFactory.CreateClient("AxaMansard");
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-key", $"{Options.Apikey}");
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-secret", $"{Options.ApiSecret}");
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-client-key", $"{Options.ClientKey}");
 
             var response = await httpClient.GetAsync($"{Options.AxaMansardToken}");
             if (response.IsSuccessStatusCode)
             {
-                var authResponse = new AuthenticationResponse();
                 string apiResponse = await response.Content.ReadAsStringAsync();
-                authResponse = JsonConvert.DeserializeObject<AuthenticationResponse>(apiResponse);
+                var authResponse = JsonConvert.DeserializeObject<AuthenticationResponse>(apiResponse);
                 if (authResponse.Succeeded)
                 {
                     return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = true, Message = "Request was processed successfully" };

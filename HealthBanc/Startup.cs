@@ -214,8 +214,8 @@ namespace HealthBanc
                 x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
             var paystackUrl = Configuration.GetSection("Paystack");
-            services.Configure<Paystack>(baseUrl);
-            var paystackUrlValues = baseUrl.Get<Paystack>();
+            services.Configure<Paystack>(paystackUrl);
+            var paystackUrlValues = paystackUrl.Get<Paystack>();
 
             services.AddHttpClient("Paystack", client =>
             {
@@ -225,9 +225,9 @@ namespace HealthBanc
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
 
-            var axaMansard = Configuration.GetSection("Paystack");
-            services.Configure<AxaMansardConfiguration>(baseUrl);
-            var axaMansardValues = baseUrl.Get<AxaMansardConfiguration>();
+            var axaMansard = Configuration.GetSection("AxaMansardConfiguration");
+            services.Configure<AxaMansardConfiguration>(axaMansard);
+            var axaMansardValues = axaMansard.Get<AxaMansardConfiguration>();
 
             services.AddHttpClient("AxaMansard", client =>
             {
