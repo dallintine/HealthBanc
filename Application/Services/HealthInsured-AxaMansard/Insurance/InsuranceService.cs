@@ -89,7 +89,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             if (enrollmentResult.Status)
             {
-                CreateAxamansardUserProfile(userProfile, user, enrollmentModel.EnrollmentNo);
+                CreateAxamansardUserProfile(userProfile, user, enrollmentModel.EnrollmentNo);                
 
                 var auditViewModel = new AuditLogViewModel(userId, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
                 BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
