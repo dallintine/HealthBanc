@@ -8,31 +8,10 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured_AxaMansard.Implementation;
 using Hangfire;
-using HealthBanc.Data;
-using HealthBanc.DataAccess.Implementation;
-using HealthBanc.DataAccess.Interfaces;
-using HealthBanc.Domain.Models;
-using HealthBanc.Helpers;
-using HealthBanc.Helpers.Jwt_Authorization;
-using HealthBanc.Helpers.ThirdPartyAPI;
-using HealthBanc.Infrastructure.Mail;
-using HealthBanc.Services;
-using HealthBanc.Services.ADOTP;
-using HealthBanc.Services.AuditAndReport.AuditLog;
-using HealthBanc.Services.EncryptionService;
-using HealthBanc.Services.GlobalErrorHandling.Extensions;
-using HealthBanc.Services.Identity;
-using HealthBanc.Services.ImageService;
-using HealthBanc.Services.Insurance;
-using HealthBanc.Services.InsuredCancelLiveSheet;
-using HealthBanc.Services.PasswordManager;
-using HealthBanc.Services.Tokenization;
-using HealthBanc.ViewModels;
-using MediatR;
-using Microsoft.AspNet.OData.Builder;
-using Microsoft.AspNet.OData.Extensions;
-using Microsoft.AspNet.OData.Formatter;
+using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -46,14 +25,28 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Net.Http.Headers;
-using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
-using OfficeOpenXml;
 using Polly;
-using Serilog;
+using Infrastructure.Mail;
+using Application.Helpers;
+using Application.Helpers.ThirdPartyAPI;
+using Infrastructure.EncryptionService;
+using HealthBanc.Middleware.GlobalErrorHandling.Extensions;
+using Infrastructure.PasswordManager;
+using Domain.Models;
+using Persistence;
+using Application.Helpers.Jwt_Authorization;
+using Application.Services.Identity;
+using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
+using Application.HealthInsured_AxaMansard_Service.Insurance;
+using Application.Interfaces;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
+using DataAccess.General.Interfaces;
+using DataAccess.General.Implementation;
+using DataAccess.Logs.Implementation;
+using DataAccess.Logs.Interfaces;
+using OfficeOpenXml;
 
 namespace HealthBanc
 {
@@ -66,7 +59,6 @@ namespace HealthBanc
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-                .AddJsonFile("town.json", false, true)
                 .AddEnvironmentVariables();
             this.Configuration = builder.Build();
         }
@@ -137,51 +129,48 @@ namespace HealthBanc
             services.AddAutoMapper(typeof(Startup));
 
             services.AddScoped<IdentityService>();
-            services.AddScoped<IEmailSender, EmailSender>();
-            services.AddScoped<IImageService, ImageService>();
             services.AddScoped<IApplicationUserRepository,ApplicationUserRepository>();
-            services.Configure<AuthMessageSenderOption>(Configuration);
-            services.Configure<Towns>(Configuration);
-            services.Configure<AxaMansard>(Configuration);
-            services.Configure<SterlingOtp>(Configuration);
-            services.Configure<AppEndpoint>(Configuration);
-            services.Configure<Paystack>(Configuration.GetSection("PaystackConfig"));
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
             services.AddScoped<IServiceRepository, ServiceRepository>();
             services.AddScoped<InsuranceService>();
-            services.AddScoped<IAxaMansardSoap, HealthBanc.Services.Insurance.AxaMansardSoap>();
+            services.AddScoped<ExcelPackage>();
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
-            services.AddScoped<ExcelPackage>();
-            services.AddScoped<TokenizationService>();
             services.AddScoped<IAxaMansardCompletionRepository,AxaMansardCompletionRepository>();
-            services.AddScoped<SendLogViaWhatApp>();
-            services.AddScoped<ITokenizationReferenceRepository, TokenizationReferenceRepository>();
             services.AddScoped<ICardRepository, CardRepository>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
-            services.AddScoped<LiveExcelList>();
             services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
-            services.Configure<Image>(Configuration);
             services.AddScoped<IExceptionLogRepository, ExceptionLogRepository>();
             services.AddScoped<IUserAuditLogRepository, UserAuditLogRepository>();
             services.AddScoped<IPasswordChangeRepository, PasswordChangeRepository>();
             services.AddScoped<IUserLogin_LogoutLogRepository, UserLogin_LogoutLogRepository>();
             services.AddScoped<IAdminLogin_LogoutLogRepository, AdminLogin_LogoutLogRepository>();
+            services.AddScoped<IInsufficientChargeTransactionRepository, IInsufficientChargeTransactionRepository>();
+            services.AddScoped<IScheduledAxaEnrollmentRepository, ScheduledAxaEnrollmentRepository>();
+            services.AddScoped<IScheduledPaymentRepository, ScheduledPaymentRepository>();
+            services.AddScoped<IAxaEnrollmentReactivationRepository, AxaEnrollmentReactivationRepository>();
+            services.AddScoped<IPaymentOnReactivationRepository, PaymentOnReactivationRepository>();
+            services.AddScoped<IAxaMansardHospitalListRepository, AxaMansardHospitalListRepository>();
             services.AddScoped<AuditLogService>();
-            services.AddScoped<IBackendOTPService, BackendOTPService>();
+            services.AddScoped<TokenizationService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
             services.Configure<SubscriptionDuration>(Configuration.GetSection("SubscriptionDuration"));
-            services.Configure<GoogleSheetAPI>(Configuration.GetSection("GoogleSheetAPI"));
             services.Configure<SendGridTemplateId>(Configuration.GetSection("SendGridTemplateId"));
-            services.Configure<Helpers.Environment>(Configuration.GetSection("Environment"));
+            services.Configure<Paystack>(Configuration.GetSection("Paystack"));
+            services.Configure<AxaMansardConfiguration>(Configuration.GetSection("AxaMansardConfiguration"));
+            services.Configure<Application.Helpers.Environment>(Configuration.GetSection("Environment"));
+            services.Configure<AuthMessageSenderOption>(Configuration);
+            services.Configure<SterlingOtp>(Configuration);
+            services.Configure<AppEndpoint>(Configuration);
+            services.Configure<ImageStorage>(Configuration.GetSection("ImageStorage"));
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
-                options.SignIn.RequireConfirmedEmail = true;
+                options.SignIn.RequireConfirmedEmail = true;                
                 options.Lockout.AllowedForNewUsers = true;
                 options.Lockout.MaxFailedAccessAttempts = 3;
                 options.Lockout.DefaultLockoutTimeSpan = DateTime.Now.AddYears(100) - DateTime.Now;
@@ -200,7 +189,7 @@ namespace HealthBanc
 
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")
                 , options => options.EnableRetryOnFailure(
-                  maxRetryCount: 10, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
+                  maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
             /////////////////////////////////////Register Services//////////////////////////////
 
@@ -210,7 +199,7 @@ namespace HealthBanc
             
             var baseUrl = Configuration.GetSection("APIUri");
             services.Configure<APIUri>(baseUrl);
-            var baseUrlValues = baseUrl.Get<APIUri>();
+            var baseUrlValues = baseUrl.Get<APIUri>();           
 
             services.AddHttpClient("Fiorano", client =>
             {
@@ -219,16 +208,25 @@ namespace HealthBanc
                 .AddTransientHttpErrorPolicy(x =>
                 x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            var paystackUrl = Configuration.GetSection("Paystack");
+            services.Configure<Paystack>(baseUrl);
+            var paystackUrlValues = baseUrl.Get<Paystack>();
+
             services.AddHttpClient("Paystack", client =>
             {
-                client.BaseAddress = new Uri(baseUrlValues.PayStackTokenisationBaseAddress);
+                client.BaseAddress = new Uri(paystackUrlValues.PayStackBaseAddress);
             })
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
-            services.AddHttpClient("PaystackPayment", client =>
+
+            var axaMansard = Configuration.GetSection("Paystack");
+            services.Configure<AxaMansardConfiguration>(baseUrl);
+            var axaMansardValues = baseUrl.Get<AxaMansardConfiguration>();
+
+            services.AddHttpClient("AxaMansard", client =>
             {
-                client.BaseAddress = new Uri(baseUrlValues.PaystackPaymentBaseAddress);
+                client.BaseAddress = new Uri(axaMansardValues.AxaMansardBaseAddress);
             })
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
@@ -323,34 +321,34 @@ namespace HealthBanc
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, UserManager<ApplicationUser> userManger,
             IBackendAdminRepository backendAdminRepository, Serilog.ILogger logger)
         {
-            if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
-            {
-                ApplicationUser user = new ApplicationUser()
-                {
-                    UniqueUsername = "hassannh",
-                    UserName = "hassan.hassan@sterling.ng",
-                    Email = "hassan.hassan@sterling.ng",
-                    FirstName = "Hassan",
-                    LastName = "Hassan",
-                    EmailConfirmed = true
-                };
-                BackendAdminUser adminUser = new BackendAdminUser()
-                {
-                    Email = "hassan.hassan@sterling.ng",
-                    FirstName = "Hassan",
-                    LastName = "Hassan",
-                    ClassOrRoleId = 6
-                };
+            //if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
+            //{
+            //    ApplicationUser user = new ApplicationUser()
+            //    {
+            //        UniqueUsername = "hassannh",
+            //        UserName = "hassan.hassan@sterling.ng",
+            //        Email = "hassan.hassan@sterling.ng",
+            //        FirstName = "Hassan",
+            //        LastName = "Hassan",
+            //        EmailConfirmed = true
+            //    };
+            //    BackendAdminUser adminUser = new BackendAdminUser()
+            //    {
+            //        Email = "hassan.hassan@sterling.ng",
+            //        FirstName = "Hassan",
+            //        LastName = "Hassan",
+            //        ClassOrRoleId = 6
+            //    };
 
-                var result = userManger.CreateAsync(user).Result;
+            //    var result = userManger.CreateAsync(user).Result;
 
-                if (result.Succeeded)
-                {
-                    userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
-                    backendAdminRepository.Create(adminUser);
-                    backendAdminRepository.Save().Wait();
-                }
-            }
+            //    if (result.Succeeded)
+            //    {
+            //        userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
+            //        backendAdminRepository.Create(adminUser);
+            //        backendAdminRepository.Save().Wait();
+            //    }
+            //}
 
             var hangfireSecret = new JwtSettings();
             Configuration.GetSection(nameof(JwtSettings)).Bind(hangfireSecret);
@@ -385,13 +383,13 @@ namespace HealthBanc
 
             app.UseHttpsRedirection();
 
-            var developmentOptions = new Helpers.Environment();
-            Configuration.GetSection(nameof(Helpers.Environment)).Bind(developmentOptions);
+            var developmentOptions = new Application.Helpers.Environment();
+            Configuration.GetSection(nameof(Application.Helpers.Environment)).Bind(developmentOptions);
 
             if (developmentOptions.Staging)
             {
-                var swaggerOptions = new Helpers.SwaggerOptions();
-                Configuration.GetSection(nameof(Helpers.SwaggerOptions)).Bind(swaggerOptions);
+                var swaggerOptions = new SwaggerOptions();
+                Configuration.GetSection(nameof(SwaggerOptions)).Bind(swaggerOptions);
 
                 app.UseSwagger(option => { option.RouteTemplate = swaggerOptions.JsonRoute; });
 

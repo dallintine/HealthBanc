@@ -4,17 +4,17 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
-using HealthBanc.DataAccess.Interfaces;
-using HealthBanc.Domain.Models;
-using HealthBanc.Domain.Models.ReportAndLogs;
+using Application.DTO;
+using Application.Helpers.ThirdPartyAPI;
+using Application.Interfaces;
+using Application.Services.Identity;
+using Application.ViewModels.UserReg_Login;
+using DataAccess.General.Interfaces;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.Logs.Interfaces;
+using Domain.Models;
+using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
-using HealthBanc.Helpers.ThirdPartyAPI;
-using HealthBanc.Infrastructure.Mail;
-using HealthBanc.Response;
-using HealthBanc.Services.EncryptionService;
-using HealthBanc.Services.Identity;
-using HealthBanc.Services.PasswordManager;
-using HealthBanc.ViewModels;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -33,14 +33,13 @@ namespace HealthBanc.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IApplicationUserRepository _userRepository;
-        private readonly IEmailSender _emailSender;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPasswordChangeRepository _passwordChangeRepository;
         private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
         private AppEndpoint Options { get; }
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
-            IApplicationUserRepository userRepository, IEmailSender emailSender,IPasswordHasher passwordHasher, IPasswordChangeRepository passwordChangeRepository,
+            IApplicationUserRepository userRepository,IPasswordHasher passwordHasher, IPasswordChangeRepository passwordChangeRepository,
             IUserLogin_LogoutLogRepository logoutLogRepository, IOptions<AppEndpoint> optionAccessor)
         {
             Options = optionAccessor.Value;
@@ -49,7 +48,6 @@ namespace HealthBanc.Controllers
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
             _userRepository = userRepository;
-            _emailSender = emailSender;
             _passwordHasher = passwordHasher;
             _passwordChangeRepository = passwordChangeRepository;
             _logoutLogRepository = logoutLogRepository;
@@ -65,7 +63,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> RegisterUser([FromBody] RegistrationViewModel registrationViewModel)
+        public async Task<IActionResult> RegisterUser([FromBody] Application.ViewModels.UserReg_Login.RegistrationViewModel registrationViewModel)
         {
             if (ModelState.IsValid)
             {

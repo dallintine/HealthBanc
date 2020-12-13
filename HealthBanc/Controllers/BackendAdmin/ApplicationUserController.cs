@@ -1,10 +1,10 @@
-﻿using AutoMapper;
-using HealthBanc.DataAccess.Implementation;
-using HealthBanc.DataAccess.Interfaces;
-using HealthBanc.Domain.Models;
+﻿using Application.DTO;
+using AutoMapper;
+using DataAccess;
+using DataAccess.General.Interfaces;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using Domain.Models;
 using HealthBanc.DTO.ApplicationUserDTOs;
-using HealthBanc.Request;
-using HealthBanc.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

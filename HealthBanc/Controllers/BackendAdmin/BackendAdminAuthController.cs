@@ -1,15 +1,17 @@
-﻿using Hangfire;
-using HealthBanc.DataAccess.Interfaces;
-using HealthBanc.Domain.Models;
-using HealthBanc.Domain.Models.ReportAndLogs;
+﻿using Application.API_ResponseModel;
+using Application.DTO;
+using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
+using Application.Helpers.Jwt_Authorization;
+using Application.Helpers.ThirdPartyAPI;
+using Application.ViewModels;
+using Application.ViewModels.UserReg_Login;
+using DataAccess.General.Interfaces;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.Logs.Interfaces;
+using Domain.Models;
+using Domain.Models.ReportAndLogs;
+using Hangfire;
 using HealthBanc.DTO.AuthenticationDTOs;
-using HealthBanc.Helpers.Jwt_Authorization;
-using HealthBanc.Helpers.ThirdPartyAPI;
-using HealthBanc.Response;
-using HealthBanc.Services.ADOTP;
-using HealthBanc.Services.AuditAndReport.AuditLog;
-using HealthBanc.ViewModels;
-using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -43,7 +45,6 @@ namespace HealthBanc.Controllers
         private readonly IBackendAdminRepository _adminRepository;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly IAdminLogin_LogoutLogRepository _auditLogin_LogoutLog;
-        private readonly IBackendOTPService _oTPService;
         private readonly AuditLogService _auditLogServices;
         private readonly JwtSettings _jwtsettings;
         private readonly AppEndpoint _appEndpoint;
@@ -51,7 +52,7 @@ namespace HealthBanc.Controllers
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
             ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
             TokenValidationParameters tokenValidationParameters, IOptions<AppEndpoint> optionAccessor, IAdminLogin_LogoutLogRepository auditLogin_LogoutLog,
-            IBackendOTPService oTPService, AuditLogService auditLogServices)
+             AuditLogService auditLogServices)
         {
             _appEndpoint = optionAccessor.Value;
             _userManager = userManager;
@@ -62,7 +63,6 @@ namespace HealthBanc.Controllers
             _adminRepository = adminRepository;
             _tokenValidationParameters = tokenValidationParameters;
             _auditLogin_LogoutLog = auditLogin_LogoutLog;
-            _oTPService = oTPService;
             _auditLogServices = auditLogServices;
             _jwtsettings = jwtsettings.Value;
         }

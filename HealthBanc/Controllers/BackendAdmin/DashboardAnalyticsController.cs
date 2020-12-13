@@ -1,7 +1,9 @@
-﻿using HealthBanc.DataAccess.Interfaces;
-using HealthBanc.Domain.Models;
+﻿using Application.DTO;
+using Application.Services.Admin;
+using DataAccess.General.Interfaces;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using Domain.Models;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
-using HealthBanc.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -17,18 +19,15 @@ namespace HealthBanc.Controllers.BackendAdmin
     [ApiController]
     public class DashboardAnalyticsController : ControllerBase
     {
-        private readonly IApplicationUserRepository _userRepository;
+        private readonly Dashboard_Analytics _dashboardAnalytics;
         private readonly IServiceRepository _serviceRepository;
-        private readonly ILogger<DashboardAnalyticsController> _logger;
 
-        public DashboardAnalyticsController(IApplicationUserRepository userRepository,IServiceRepository serviceRepository,ILogger<DashboardAnalyticsController> logger)
+        public DashboardAnalyticsController(Dashboard_Analytics dashboardAnalytics,IServiceRepository serviceRepository)
         {
-            _userRepository = userRepository;
+            _dashboardAnalytics = dashboardAnalytics;
             _serviceRepository = serviceRepository;
-            _logger = logger;
         }
 
-        //WORKING1
         /// <summary>
         /// Get All Dashboard Analytics
         /// </summary>
@@ -38,22 +37,12 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> DashboardAnalytics()
         {
-            var users = await _userRepository.GetUsersStatus();
-            var signUpAnalytics = await _userRepository.GetSignUpAnalytics(null);
-            var serviceBreakdown = await _userRepository.GetServiceBreakdown(null);
-            var dashbordDTO = new DashboardDTO()
-            {
-                ActiveUsers = users.ActiveUsers,
-                RegisteredUsers = users.RegisteredUsers,
-                InactiveUsers = users.InactiveUsers,
-                ServiceBreakdowns = serviceBreakdown.ServiceBreakdowns,
-                SignUpMonths = signUpAnalytics.SignUpMonths
-            };
+            var allDashboardAnalytics = await _dashboardAnalytics.GetAllDashboardAnalystics();
 
-            return Ok(new ResponseMessage<DashboardDTO> { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });           
+            return Ok(new ResponseMessage<DashboardDTO> { Data = allDashboardAnalytics, Status = true, Message = "All dashboard analytics was fetched successfully" });           
         }
 
-        //WORKING1
+        
         /// <summary>
         /// Get Users Status
         /// </summary>
@@ -63,17 +52,11 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> GetUsersStatus()
         {
-            var users = await _userRepository.GetUsersStatus();
-            var dashbordDTO = new DashboardDTO()
-            {
-                ActiveUsers = users.ActiveUsers,
-                RegisteredUsers = users.RegisteredUsers,
-                InactiveUsers = users.InactiveUsers,
-            };
-            return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
+            var userStatus = await _dashboardAnalytics.GetUsersStatus();
+            return Ok(new ResponseMessage { Data = userStatus, Status = true, Message = "User status was fetched successfully" });
         }
 
-        //WORKING1
+        
         /// <summary>
         /// Get Service Breakdown
         /// </summary>
@@ -85,17 +68,12 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             if ((timeId > 0 && timeId < 3) || timeId is null)
             {
-                var serviceBreakdown = await _userRepository.GetServiceBreakdown(timeId);
-                var dashbordDTO = new DashboardDTO()
-                {
-                    ServiceBreakdowns = serviceBreakdown.ServiceBreakdowns
-                };
-                return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
+                var serviceBreakdown = await _dashboardAnalytics.GetServiceBreakdown(timeId);
+                return Ok(new ResponseMessage { Data = serviceBreakdown, Status = true, Message = "Service breakdown was fetched successfully" });
             }
             return BadRequest(new ResponseMessage { Message = "timeId is invalid" });
         }
 
-        //WORKING1
         /// <summary>
         /// Get SignUp Analytics
         /// </summary>
@@ -107,17 +85,12 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             if (timeId == 1 || timeId is null)
             {
-                var signUpAnalytics = await _userRepository.GetSignUpAnalytics(timeId);
-                var dashbordDTO = new DashboardDTO()
-                {
-                    SignUpMonths = signUpAnalytics.SignUpMonths
-                };
-                return Ok(new ResponseMessage { Data = dashbordDTO, Status = true, Message = "Dashboard DTO was fetched successfully" });
+                var signUpAnalytics = await _dashboardAnalytics.GetSignUpAnalytics(timeId);
+                return Ok(new ResponseMessage { Data = signUpAnalytics, Status = true, Message = "SignUp analytics was fetched successfully" });
             }
             return BadRequest(new ResponseMessage { Message = "timeId is invalid" });
         }
 
-        //WORKING1
         /// <summary>
         /// Get ALl Service
         /// </summary>
@@ -126,8 +99,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> GetServices()
-        {
-            
+        {            
             var services = await _serviceRepository.GetServicesAsync();
             return Ok(new ResponseMessage { Data = services, Status = true, Message = "Service was fetched successfully" });            
         }

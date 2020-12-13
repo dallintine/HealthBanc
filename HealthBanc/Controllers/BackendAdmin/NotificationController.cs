@@ -1,25 +1,26 @@
-﻿using AutoMapper;
+﻿using Application.DTO;
+using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
+using Application.Helpers;
+using Application.Interfaces;
+using Application.ViewModels;
+using AutoMapper;
+using DataAccess;
+using DataAccess.General.Interfaces;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using Domain.Models;
 using Hangfire;
-using HealthBanc.DataAccess.Interfaces;
-using HealthBanc.Domain.Models;
-using HealthBanc.Helpers;
-using HealthBanc.Infrastructure.Mail;
-using HealthBanc.Request;
-using HealthBanc.Response;
-using HealthBanc.Services.AuditAndReport.AuditLog;
-using HealthBanc.Services.ImageService;
-using HealthBanc.ViewModels;
+using Infrastructure.ImageService;
+using Infrastructure.Mail;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using static HealthBanc.Infrastructure.Mail.EmailSender;
+using static Infrastructure.Mail.EmailSender;
 
 namespace HealthBanc.Controllers.BackendAdmin
 {
