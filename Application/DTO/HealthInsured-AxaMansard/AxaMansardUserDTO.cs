@@ -33,5 +33,8 @@ namespace HealthBanc.DTO.HealthInsured_AxaMansard
         public string StateOfResidence { get; set; }
         public string TownOfResidence { get; set; }
         public bool SubscriptionStatus { get; set; }
+        public bool? ActiveStatus { get; set; }
+        public DateTime EndActiveStatusDate { get; set; }
+        public DateTime StartActiveStatusDate { get; set; }
     }
 }

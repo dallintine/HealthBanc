@@ -49,6 +49,7 @@ using DataAccess.Logs.Interfaces;
 using OfficeOpenXml;
 using Application.Services.Admin;
 using Infrastructure.ImageService;
+using Application.Services.Paystack;
 
 namespace HealthBanc
 {
@@ -159,6 +160,7 @@ namespace HealthBanc
             services.AddScoped<IAxaMansardHospitalListRepository, AxaMansardHospitalListRepository>();
             services.AddScoped<AuditLogService>();
             services.AddScoped<TokenizationService>();
+            services.AddScoped<PaystackService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();

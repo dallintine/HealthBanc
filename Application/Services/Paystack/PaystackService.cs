@@ -35,19 +35,17 @@ namespace Application.Services.Paystack
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(chargeCard), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{Options.PayStackChargeCard}", content);
-            // Check if the response was an Ok response
-            if (response.IsSuccessStatusCode)
-            {
-                var chargeCardResponse = new ChargeCardResponse();
-                string apiResponse = await response.Content.ReadAsStringAsync();
-                chargeCardResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
 
+            string apiResponse = await response.Content.ReadAsStringAsync();
+            var chargeCardResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+            if (response.IsSuccessStatusCode)
+            {     
                 // Check if the response from paystack has a status of true
                 if (chargeCardResponse.status is true)
                 {
                     // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
                     var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(chargeCardResponse.data.authorization, chargeCardResponse.data.status,
-                        chargeCardResponse.data.message.ToString());
+                        chargeCardResponse.message);
 
                     // check if status is true
                     if(processSuccessOrFailedResult.Status)
@@ -72,7 +70,8 @@ namespace Application.Services.Paystack
                 var message = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
                 return new TokenizationResponse { Message = chargeCardResponse.message + ", " + message, Status = false };
             }
-            return new TokenizationResponse { Message = "Could not connect with payment service. Please tray again later", Status = false };
+            var errorMessage = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
+            return new TokenizationResponse { Message = chargeCardResponse.message + ", " + errorMessage, Status = false };
         }
 
         public async Task<TokenizationResponse> SendOtp(string otp, string reference,string phoneNumber, DateTime dateOfBirth)
@@ -83,17 +82,16 @@ namespace Application.Services.Paystack
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(otpRequest), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{Options.PayStackSendOtp}", content);
-            // Check if the response was an Ok response
+
+            string apiResponse = await response.Content.ReadAsStringAsync();
+            var otpResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
-            {
-                var otpResponse = new ChargeCardResponse();
-                string apiResponse = await response.Content.ReadAsStringAsync();
-                otpResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+            {               
                 if (otpResponse.status == true)
                 {
                     // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
                     var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(otpResponse.data.authorization, otpResponse.data.status,
-                        otpResponse.data.message.ToString());
+                        otpResponse.message);
 
                     // check if status is true
                     if (processSuccessOrFailedResult.Status)
@@ -116,7 +114,8 @@ namespace Application.Services.Paystack
                 var message = otpResponse.data.message != null ? otpResponse.data.message : "";
                 return new TokenizationResponse { Message = otpResponse.message + ", " + message, Status = false };
             }
-            return new TokenizationResponse { Message = "Couldnt connect with payment service. Please try again later", Status = false };
+            var errorMessage = otpResponse.data.message != null ? otpResponse.data.message : "";
+            return new TokenizationResponse { Message = otpResponse.message + ", " + errorMessage, Status = false };
         }
 
         public async Task<TokenizationResponse> ChargeAuthorization(ChargeAuthorization chargeAuthorization)
@@ -126,12 +125,11 @@ namespace Application.Services.Paystack
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(chargeAuthorization), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{Options.ChargeAuthorization}", content);
-            // Check if the response was an Ok response
+
+            string apiResponse = await response.Content.ReadAsStringAsync();
+            var chargeAuthorizationResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
-            {
-                var chargeAuthorizationResponse = new ChargeCardResponse();
-                string apiResponse = await response.Content.ReadAsStringAsync();
-                chargeAuthorizationResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+            {               
                 if (chargeAuthorizationResponse.status == true)
                 {
                     if(chargeAuthorizationResponse.data.status == "success")
@@ -158,7 +156,7 @@ namespace Application.Services.Paystack
                 var message2 = chargeAuthorizationResponse.data.gateway_response != null ? chargeAuthorizationResponse.data.gateway_response : "";
                 return new TokenizationResponse { Message = chargeAuthorizationResponse.message + ", " + message2, Status = false };
             }
-            return new TokenizationResponse { Message = "Couldnt connect with payment service. Please try again later", Status = false };
+            return new TokenizationResponse { Message = chargeAuthorizationResponse.message, Status = false };
         }
 
         private TokenizationResponse ProcessSuccessOrFailedDataStatus(Authorization authorization, string status, string message)
@@ -232,19 +230,16 @@ namespace Application.Services.Paystack
             HttpContent content = new StringContent(JsonConvert.SerializeObject(birthRequest), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{Options.PayStackSubmitBirthDay}", content);
 
-            // Check if the response was an Ok response
+
+            string apiResponse = await response.Content.ReadAsStringAsync();
+            var birthdayResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
             {
-                var birthdayResponse = new ChargeCardResponse();
-                string apiResponse = await response.Content.ReadAsStringAsync();
-                birthdayResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
-
-                // Check if the response from paystack has a status of true
                 if (birthdayResponse.status == true)
                 {
                     // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
                     var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(birthdayResponse.data.authorization, birthdayResponse.data.status,
-                        birthdayResponse.data.message.ToString());
+                        birthdayResponse.message);
 
                     // check if status is true
                     if (processSuccessOrFailedResult.Status)
@@ -267,7 +262,8 @@ namespace Application.Services.Paystack
                 var message = birthdayResponse.data.message != null ? birthdayResponse.data.message : "";
                 return new TokenizationResponse { Message = birthdayResponse.message + ", " + message, Status = false };
             }
-            return new TokenizationResponse { Message = "Couldnt connect with payment service. Please try again later", Status = false };
+            var errorMessage = birthdayResponse.data.message != null ? birthdayResponse.data.message : "";
+            return new TokenizationResponse { Message = birthdayResponse.message + ", " + errorMessage, Status = false };
         }
 
         private async Task<TokenizationResponse> SubmitPhone(string reference, string phoneNumber, DateTime birthDate)
@@ -277,17 +273,16 @@ namespace Application.Services.Paystack
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneRequest), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{Options.PayStackSubmitPhone}", content);
+
+            string apiResponse = await response.Content.ReadAsStringAsync();
+            var phoneResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
-            {
-                var phoneResponse = new ChargeCardResponse();
-                string apiResponse = await response.Content.ReadAsStringAsync();
-                phoneResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
-                // Check if the response from paystack has a status of true
+            {                
                 if (phoneResponse.status is true)
                 {
                     // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
                     var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(phoneResponse.data.authorization, phoneResponse.data.status,
-                        phoneResponse.data.message.ToString());
+                        phoneResponse.message);
 
                     // check if status is true
                     if (processSuccessOrFailedResult.Status)
@@ -310,7 +305,8 @@ namespace Application.Services.Paystack
                 var message = phoneResponse.data.message != null ? phoneResponse.data.message : "";
                 return new TokenizationResponse { Message = phoneResponse.message + ", " + message, Status = false };
             }
-            return new TokenizationResponse { Message = "Could not connect with payment service. Please try again later", Status = false };
+            var errorMessage = phoneResponse.data.message != null ? phoneResponse.data.message : "";
+            return new TokenizationResponse { Message = phoneResponse.message + ", " + errorMessage, Status = false };
         }
     }
 }

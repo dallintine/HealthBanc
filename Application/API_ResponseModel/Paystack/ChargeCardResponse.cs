@@ -23,8 +23,6 @@ namespace Application.API_ResponseModel.Paystack
         public object message { get; set; }
         public string channel { get; set; }
         public string ip_address { get; set; }
-        public object log { get; set; }
-        public int fees { get; set; }
         public Authorization authorization { get; set; }
         public Customer customer { get; set; }
         public object plan { get; set; }

@@ -151,29 +151,24 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     userAxamansardProfile.SubscriptionStatus = true;
                     userAxamansardProfile.ActiveStatus = true;
                     userAxamansardProfile.StartActiveStatusDate = DateTime.Now;
-                    userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(30);
+                    userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
                     checkprofileComplete.TokenizationCompleted = true;
                     _completionRepository.Update(checkprofileComplete);
 
                     _mansardUserProfileRepository.Update(userAxamansardProfile);
+
+                    //Create Audit thats user subscrption changed 
+                    var auditViewModel2 = new AuditLogViewModel(userAxamansardProfile.UserId, null, "Inactive subscription status", "Subscription Status Changed",
+                        "Active subscription status");
+                    await _auditLogServices.UserCreateAuditLog(auditViewModel2, ipAddress, device);
                 }
 
                 await _mansardUserProfileRepository.Save();
 
                 var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, null, null, "Debit Card Added", null);
-                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
+                await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
 
-                // when all changes are saved successfully, If subscription status was null i.e User is tokenizing for the first time,
-                // means user is neither activated nor deactivated, we Enque auditlog for active
-                //subscrption status
-                if (userAxamansardProfile.SubscriptionStatus == null)
-                {
-                    //Create Audit thats user subscrption changed and run in background process
-                    var auditViewModel2 = new AuditLogViewModel(userAxamansardProfile.UserId, null, "Inactive subscription status", "Subscription Status Changed",
-                        "Active subscription status");
-                    BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel2, ipAddress, device));
-                }
                 return new ResponseMessage
                 {
                     Data = chargeCardResponse.Data,
@@ -327,11 +322,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
 
             var scheduledPaymentJobId = axamansardprofile.PendingJobId;
-            BackgroundJob.Delete(scheduledPaymentJobId);
 
             var scheduledPayment = await _scheduledPayment.GetScheduledPaymentByJobId(scheduledPaymentJobId);
             if(scheduledPayment != null)
             {
+                RecurringJob.RemoveIfExists(scheduledPaymentJobId);
                 scheduledPayment.Status = "Cancelled"; scheduledPayment.Message = "Cancelled";
                 scheduledPayment.ScheduledAxaEnrollment.Status = "Cancelled"; scheduledPayment.ScheduledAxaEnrollment.Message = "Cancelled";
                 _scheduledPayment.Update(scheduledPayment);
@@ -341,23 +336,24 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var scheduledReactivatedPayment = await _paymentOnReactivation.GetScheduledPaymentByJobId(scheduledPaymentJobId);
                 if(scheduledReactivatedPayment != null)
                 {
+                    BackgroundJob.Delete(scheduledPaymentJobId);
                     scheduledReactivatedPayment.Status = "Cancelled"; scheduledReactivatedPayment.Message = "Cancelled";
                     scheduledReactivatedPayment.AxaEnrollmentOnReactivation.Status = "Cancelled";
                     scheduledReactivatedPayment.AxaEnrollmentOnReactivation.Message = "Cancelled";
                     _paymentOnReactivation.Update(scheduledReactivatedPayment);
                 }
-            }           
-
-            axamansardprofile.SubscriptionStatus = false;
-            axamansardprofile.PendingJobId = null;
-            _mansardUserProfileRepository.Update(axamansardprofile);
+            } 
+           
 
             var daysToCancelUserActivityStatus = axamansardprofile.EndActiveStatusDate;
-            BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(axamansardprofile.UserId), daysToCancelUserActivityStatus);
+            var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(axamansardprofile.UserId), daysToCancelUserActivityStatus);
 
+            axamansardprofile.SubscriptionStatus = false;
+            axamansardprofile.PendingJobId = jobId;
+            _mansardUserProfileRepository.Update(axamansardprofile);
             await _scheduledPayment.Save();
             var profileDTO = _mapper.Map<AxaMansardUserDTO>(axamansardprofile);
-            return new ResponseMessage { Data = profileDTO, Message = "Subscription was cancelled successfully,However you remain active till" +
+            return new ResponseMessage { Data = profileDTO, Message = "Subscription was cancelled successfully.However you remain active till " +
                 "your insurance cycle ends.", Status = true };
         }
 
@@ -450,20 +446,23 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             else
             {
+                //Delete ProcessUserActiveStatusCancellation if it exist; Cause user may wanna reactivate before cycle ends.
+                BackgroundJob.Delete(userAxamansardProfile.PendingJobId);
                 var jobId = BackgroundJob.Schedule(() => ProcessScheduledReactivationPayment(userAxamansardProfile.UserId, authorization_Code), reactivationTime.Value);
 
-                var axaEnrollment = new AxaEnrollmentOnReactivation(userAxamansardProfile.UserId, userAxamansardProfile.UserId, reactivationTime.Value, "Processing",
+                var axaEnrollment = new AxaEnrollmentOnReactivation(userAxamansardProfile.UserId, userAxamansardProfile.Id, reactivationTime.Value, "Processing",
                    null);
                 _axaEnrollmentOnReactivation.Create(axaEnrollment);
                 await _axaEnrollmentOnReactivation.Save();
 
-                var paymentOnReactivation = new PaymentOnReactivation(userAxamansardProfile.UserId, userAxamansardProfile.UserId, axaEnrollment.Id, reactivationTime.Value
+                var paymentOnReactivation = new PaymentOnReactivation(userAxamansardProfile.UserId, userAxamansardProfile.Id, axaEnrollment.Id, reactivationTime.Value
                     , "Processing", jobId, null);
                 _paymentOnReactivation.Create(paymentOnReactivation);
 
                 userAxamansardProfile.SubscriptionStatus = true;
                 await _axaEnrollmentOnReactivation.Save();
-                return new ResponseMessage { Data = jobId, Status = true,Message= "Reactivation was successful. You will be debited a the end of your" +
+                return new ResponseMessage { Data = jobId, Status = true,Message= "Reactivation was successful.You will be debited a the end of your" +
+                    "" +
                     "active cycle" };
             }            
         }
