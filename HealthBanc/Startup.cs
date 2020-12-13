@@ -244,8 +244,7 @@ namespace HealthBanc
                     builder =>
                         builder.AllowAnyOrigin()
                             .AllowAnyMethod()
-                            .AllowAnyHeader()
-                            .SetPreflightMaxAge(TimeSpan.FromSeconds(3600)));
+                            .AllowAnyHeader();
             });
 
             //---------------------------- CORS setting---------------------------------------------------------//
