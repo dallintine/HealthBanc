@@ -183,7 +183,9 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 State = state,
                 Cities = townList
             };
-            return new ResponseMessage { Data = townListDTO, Status = true };
+            var newList = new List<CityListDTO>();
+            newList.Add(townListDTO);
+            return new ResponseMessage { Data = newList, Status = true };
         }
 
         private string GetUniqueCode(int nCount)

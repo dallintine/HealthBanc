@@ -47,6 +47,8 @@ using DataAccess.General.Implementation;
 using DataAccess.Logs.Implementation;
 using DataAccess.Logs.Interfaces;
 using OfficeOpenXml;
+using Application.Services.Admin;
+using Infrastructure.ImageService;
 
 namespace HealthBanc
 {
@@ -141,6 +143,7 @@ namespace HealthBanc
             services.AddScoped<IAxaMansardCompletionRepository,AxaMansardCompletionRepository>();
             services.AddScoped<ICardRepository, CardRepository>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
+            services.AddScoped<IImageService, ImageService>();
             services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
             services.AddScoped<IExceptionLogRepository, ExceptionLogRepository>();
             services.AddScoped<IUserAuditLogRepository, UserAuditLogRepository>();
@@ -162,6 +165,7 @@ namespace HealthBanc
             services.Configure<SubscriptionDuration>(Configuration.GetSection("SubscriptionDuration"));
             services.Configure<SendGridTemplateId>(Configuration.GetSection("SendGridTemplateId"));
             services.Configure<Paystack>(Configuration.GetSection("Paystack"));
+            services.AddScoped<Dashboard_Analytics>();
             services.Configure<AxaMansardConfiguration>(Configuration.GetSection("AxaMansardConfiguration"));
             services.Configure<Application.Helpers.Environment>(Configuration.GetSection("Environment"));
             services.Configure<AuthMessageSenderOption>(Configuration);
@@ -322,34 +326,34 @@ namespace HealthBanc
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, UserManager<ApplicationUser> userManger,
             IBackendAdminRepository backendAdminRepository, Serilog.ILogger logger)
         {
-            //if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
-            //{
-            //    ApplicationUser user = new ApplicationUser()
-            //    {
-            //        UniqueUsername = "hassannh",
-            //        UserName = "hassan.hassan@sterling.ng",
-            //        Email = "hassan.hassan@sterling.ng",
-            //        FirstName = "Hassan",
-            //        LastName = "Hassan",
-            //        EmailConfirmed = true
-            //    };
-            //    BackendAdminUser adminUser = new BackendAdminUser()
-            //    {
-            //        Email = "hassan.hassan@sterling.ng",
-            //        FirstName = "Hassan",
-            //        LastName = "Hassan",
-            //        ClassOrRoleId = 6
-            //    };
+            if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
+            {
+                ApplicationUser user = new ApplicationUser()
+                {
+                    UniqueUsername = "hassannh",
+                    UserName = "hassan.hassan@sterling.ng",
+                    Email = "hassan.hassan@sterling.ng",
+                    FirstName = "Hassan",
+                    LastName = "Hassan",
+                    EmailConfirmed = true
+                };
+                BackendAdminUser adminUser = new BackendAdminUser()
+                {
+                    Email = "hassan.hassan@sterling.ng",
+                    FirstName = "Hassan",
+                    LastName = "Hassan",
+                    ClassOrRoleId = 6
+                };
 
-            //    var result = userManger.CreateAsync(user).Result;
+                var result = userManger.CreateAsync(user).Result;
 
-            //    if (result.Succeeded)
-            //    {
-            //        userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
-            //        backendAdminRepository.Create(adminUser);
-            //        backendAdminRepository.Save().Wait();
-            //    }
-            //}
+                if (result.Succeeded)
+                {
+                    userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
+                    backendAdminRepository.Create(adminUser);
+                    backendAdminRepository.Save().Wait();
+                }
+            }
 
             var hangfireSecret = new JwtSettings();
             Configuration.GetSection(nameof(JwtSettings)).Bind(hangfireSecret);
@@ -377,7 +381,7 @@ namespace HealthBanc
                 context.Response.Headers.Add("X-Frame-Options", "DENY");
                 context.Response.Headers.Add("Referrer-Policy", "no-referrer");
                 context.Response.Headers.Add("X-Permitted-Cross-Domain-Policies", "none");
-                //context.Response.Headers.Add("Content-Security-Policy", "unsafe-inline 'self'");
+                context.Response.Headers.Add("Content-Security-Policy", "unsafe-inline 'self'");
                 context.Response.Headers.Add("Feature-Policy", "accelerometer 'none'; camera 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none';");
                 await next();
             });
