@@ -144,6 +144,7 @@ namespace HealthBanc
             services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
             services.AddScoped<IExceptionLogRepository, ExceptionLogRepository>();
             services.AddScoped<IUserAuditLogRepository, UserAuditLogRepository>();
+            services.AddScoped<IEmailSender, EmailSender>();
             services.AddScoped<IPasswordChangeRepository, PasswordChangeRepository>();
             services.AddScoped<IUserLogin_LogoutLogRepository, UserLogin_LogoutLogRepository>();
             services.AddScoped<IAdminLogin_LogoutLogRepository, AdminLogin_LogoutLogRepository>();
