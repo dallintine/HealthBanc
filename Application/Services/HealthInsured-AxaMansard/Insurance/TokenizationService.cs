@@ -390,7 +390,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await _cardRepository.Save();
 
             var auditViewModel = new AuditLogViewModel(userId, null, $"Primary card ID is {presentPrimaryCard.Id}", "Change Primary Card", $"New primary card ID is {newCardId}");
-            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
+            await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
 
             return new ResponseMessage { Message = "Primary card was changed successfully" };
         }                 
@@ -460,9 +460,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 _paymentOnReactivation.Create(paymentOnReactivation);
 
                 userAxamansardProfile.SubscriptionStatus = true;
+                userAxamansardProfile.PendingJobId = jobId;
                 await _axaEnrollmentOnReactivation.Save();
-                return new ResponseMessage { Data = jobId, Status = true,Message= "Reactivation was successful.You will be debited a the end of your" +
-                    "" +
+                return new ResponseMessage {Status = true,Message= "Reactivation was successful.You will be debited a the end of your " +
                     "active cycle" };
             }            
         }
@@ -474,7 +474,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 email = userAxamansardProfile.Email,
                 amount = (userAxamansardProfile.Premium * 100).ToString(),
                 authorization_code = authorization_Code,
-                queue = true
+                queue = false
             };
 
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
