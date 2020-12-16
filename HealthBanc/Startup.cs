@@ -370,7 +370,7 @@ namespace HealthBanc
                 };
 
 
-            app.UseCors("CorsPolicy");
+           
             
             app.ConfigureExceptionHandler(logger);
 
@@ -406,10 +406,11 @@ namespace HealthBanc
             }     
             
 
-            app.UseAuthentication();
+            
 
             app.UseRouting();
-
+            app.UseCors("CorsPolicy");
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
