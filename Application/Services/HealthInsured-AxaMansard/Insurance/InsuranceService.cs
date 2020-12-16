@@ -106,7 +106,8 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             profile.UserId = user.Id;
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
-            profile.AlternateHospital = userProfile.AlternateHospital.Split(":")[0]; profile.TransId = uniqueIdentifier;
+            profile.AlternateHospital = userProfile.AlternateHospital != null ? userProfile.AlternateHospital.Split(":")[0] : " ";
+            profile.TransId = uniqueIdentifier;
 
             var updatedProfile = _mapper.Map(user, profile);
 

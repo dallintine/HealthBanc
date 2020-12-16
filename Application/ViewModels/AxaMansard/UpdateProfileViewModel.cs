@@ -20,7 +20,6 @@ namespace Application.ViewModels.AxaMansard
         public string TownOfResidence { get; set; }
         [Required]
         public string CareProviderName { get; set; }
-        [Required]
         public string AlternateHospital { get; set; }
         [Required]
         public string PlanCode { get; set; }

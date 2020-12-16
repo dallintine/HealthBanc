@@ -35,7 +35,6 @@ namespace Application.ViewModels.AxaMansard
         public string CPAddress { get; set; }
         public string CPCity { get; set; }
         public string CPEmail { get; set; }
-        [Required]
         public string AlternateHospital { get; set; }
         public string MedicalCondition { get; set; }
         [Required]

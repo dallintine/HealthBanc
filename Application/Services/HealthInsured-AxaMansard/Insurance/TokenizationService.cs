@@ -267,9 +267,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _scheduledPayment.Save();
                 await Task.CompletedTask;
             }
+            // Insufficient funds
             else if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
             {
-                scheduledPaymentJob.Status = "Successful"; scheduledPaymentJob.Message = chargeAuthorization.Message;
+                scheduledPaymentJob.Status = "Terminated"; scheduledPaymentJob.Message = chargeAuthorization.Message;
 
                 scheduledPaymentJob.ScheduledAxaEnrollment.Status = "Terminated"; scheduledPaymentJob.ScheduledAxaEnrollment.Message = "Terminated";
 
@@ -283,7 +284,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             else
             {
                 scheduledPaymentJob.Status = "Failed"; scheduledPaymentJob.Message = chargeAuthorization.Message;
-                scheduledPaymentJob.ScheduledAxaEnrollment.Status = "Terminated"; scheduledPaymentJob.ScheduledAxaEnrollment.Message = "Terminated";
+                scheduledPaymentJob.ScheduledAxaEnrollment.Status = "Failed"; scheduledPaymentJob.ScheduledAxaEnrollment.Message = "Failed";
                 _scheduledPayment.Update(scheduledPaymentJob);
 
                 axaMansardProfile.PendingJobId = null; axaMansardProfile.SubscriptionStatus = false;
