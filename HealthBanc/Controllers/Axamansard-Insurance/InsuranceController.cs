@@ -33,6 +33,7 @@ using Application.Helpers;
 using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
 using DataAccess.General.Interfaces;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
+using Microsoft.AspNetCore.Cors;
 
 namespace HealthBanc.Controllers
 {
@@ -79,8 +80,9 @@ namespace HealthBanc.Controllers
             return stateList;
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+        [EnableCors("Cors")]
         [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> AxaMansardCreateUserProfile([FromForm] UserProfileviewModel userProfile)
         {
             if (ModelState.IsValid)
@@ -119,9 +121,10 @@ namespace HealthBanc.Controllers
             return Ok(townList);
         }
 
+
+        [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
-        [HttpGet("[action]")]
         public IActionResult AxaMansardGetHealthPlans()
         {
             var axaListResponse = new List<AxaListResponse>();           
@@ -140,10 +143,11 @@ namespace HealthBanc.Controllers
             return Ok(new ResponseMessage<List<AxaListResponse>> { Data = axaListResponse, Message = "HealthPan was fetched successfully", Status = true });            
         }
 
+
+        [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
-        [HttpGet("[action]")]
         public async Task<IActionResult> GetAxaMansardProfile()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -156,11 +160,11 @@ namespace HealthBanc.Controllers
             }
             return BadRequest(new ResponseMessage<AxaMansardUserDTO> { Message = "Profile was not found" });
         }
-        
 
+
+        [HttpGet("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
-        [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetProfileCompletion()
         {
@@ -177,8 +181,9 @@ namespace HealthBanc.Controllers
             return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileState, Status = true, Message = "Profile completion state was fetched successfully" });
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+
         [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel)
         {
             if (ModelState.IsValid)
@@ -210,8 +215,9 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+
         [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> AxaMansardGetHealthProvider(string state, string city, string healthPlan)
         {
             var healthProvider = await _insuranceService.AxaMansardGetHealthProvider(state, city, healthPlan);

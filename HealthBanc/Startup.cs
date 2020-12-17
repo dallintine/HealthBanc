@@ -242,7 +242,7 @@ namespace HealthBanc
             //---------------------------- CORS setting---------------------------------------------------------//
             services.AddCors(options =>
             {
-                options.AddPolicy("CorsPolicy",
+                options.AddPolicy("Cors",
                     builder =>
                         builder.AllowAnyOrigin()
                             .AllowAnyMethod()
@@ -363,19 +363,8 @@ namespace HealthBanc
                 Authorization = new[] { new MyAuthorizationFilter() }
             });
 
-            ServicePointManager.ServerCertificateValidationCallback +=
-                (sender, certificate, chain, errors) =>
-                {
-                    return true;
-                };
-
-
-
-
-            app.UseCors("CorsPolicy");
+            
             app.ConfigureExceptionHandler(logger);
-
-            app.UseHsts();
 
             app.Use(async (context, next) =>
             {
@@ -410,6 +399,7 @@ namespace HealthBanc
             
 
             app.UseRouting();
+            app.UseCors("Cors");
             app.UseAuthentication();
             app.UseAuthorization();
 
