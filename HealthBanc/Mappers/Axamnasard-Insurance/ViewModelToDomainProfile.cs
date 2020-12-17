@@ -14,7 +14,7 @@ namespace HealthBanc.Mappers.Axamnasard_Insurance
         {
             CreateMap<UserProfileviewModel, AxaMansardUserProfile>()
                 .ForMember(dest => dest.PlanCode, opt => opt.MapFrom(x => x.PlanCode == "7" ? "1" : "2"))
-                .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.PlanCode == "7" ? Decimal.Parse("1000") : Decimal.Parse("Sapphire")))
+                .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.PlanCode == "7" ? Decimal.Parse("1000") : Decimal.Parse("2000")))
                 .ForMember(dest => dest.CareProviderName, opt => opt.Ignore())
                 .ForMember(dest => dest.AlternateHospital, opt => opt.Ignore())
                 .ForMember(dest => dest.CustomerPhoto, opt => opt.Ignore())
@@ -23,7 +23,7 @@ namespace HealthBanc.Mappers.Axamnasard_Insurance
 
             CreateMap<UpdateProfileViewModel, AxaMansardUserProfile>()
                  .ForMember(dest => dest.PlanCode, opt => opt.MapFrom(x => x.PlanCode == "7" ? "1" : "2"))
-                .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.PlanCode == "7" ? Decimal.Parse("1000") : Decimal.Parse("Sapphire")));
+                .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.PlanCode == "7" ? Decimal.Parse("1000") : Decimal.Parse("2000")));
         }
     }
 }
