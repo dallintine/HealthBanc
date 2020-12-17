@@ -194,6 +194,15 @@ namespace HealthBanc.Controllers
                 if (checkIfUserHasBeenProfiled == null) return BadRequest(new ResponseMessage { Message = "User does not have a profile" });
 
                 var updatedProfile = _mapper.Map(updateProfileViewModel, checkIfUserHasBeenProfiled);
+                try
+                {
+                    updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName.Split(':')[0];
+                    updatedProfile.CPAddress = updateProfileViewModel.CareProviderName.Split(':')[1];
+                }
+                catch (Exception ex)
+                {
+                    updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName;
+                }
                 _axaMansard.Update(updatedProfile);
                 await _axaMansard.Save();
 
