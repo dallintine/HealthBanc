@@ -434,7 +434,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 var pendingReactivation= await ProcessReactivationFlow(userAxamansardProfile, primaryCard.Authorization_Code
                     , userAxamansardProfile.EndActiveStatusDate);
-                userAxamansardProfile.PendingJobId = pendingReactivation.Data.ToString();
                 return pendingReactivation;
             }
         }
