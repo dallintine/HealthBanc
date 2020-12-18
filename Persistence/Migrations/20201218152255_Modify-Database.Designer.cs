@@ -10,8 +10,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20201213101618_ModifiedAxaMAnsardCompletionProfileTableProperty")]
-    partial class ModifiedAxaMAnsardCompletionProfileTableProperty
+    [Migration("20201218152255_Modify-Database")]
+    partial class ModifyDatabase
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
