@@ -393,7 +393,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var auditViewModel = new AuditLogViewModel(userId, null, $"Primary card ID is {presentPrimaryCard.Id}", "Change Primary Card", $"New primary card ID is {newCardId}");
             await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
 
-            return new ResponseMessage { Message = "Primary card was changed successfully" };
+            return new ResponseMessage { Message = "Primary card was changed successfully" Status=true };
         }                 
 
         public async Task<ResponseMessage> DeleteCard(int cardId,int userId,string ipAddress,string device)
