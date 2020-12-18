@@ -156,7 +156,7 @@ namespace HealthBanc.Controllers
             if(profile != null)
             {
                 var profileDTO = _mapper.Map<AxaMansardUserDTO>(profile);
-                return Ok(new ResponseMessage<AxaMansardUserDTO> {Data= profileDTO, Message="user profile was fetched successfully",Status=true });
+                return Ok(new ResponseMessage<AxaMansardUserDTO> {Data= profileDTO, Message="User profile was fetched successfully",Status=true });
             }
             return BadRequest(new ResponseMessage<AxaMansardUserDTO> { Message = "Profile was not found" });
         }
