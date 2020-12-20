@@ -65,6 +65,7 @@ namespace Application.Services.Identity
             _passwordHasher = passwordHasher;
             _passwordChangeRepository = passwordChangeRepository;
             _logoutLogRepository = _LogoutLogRepository;
+            
         }
 
         public async Task<ResponseMessage> RegisterSuperAdmin(RegistrationViewModel registrationViewModel)
