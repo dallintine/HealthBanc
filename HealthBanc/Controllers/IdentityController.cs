@@ -162,10 +162,11 @@ namespace HealthBanc.Controllers
                 //get the user
                 var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
 
-                if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "Account with this email does not exist", Status = false });
+                if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "User detail is invalid, please try again with correct details" +
+                    "", Status = false });
 
 
-                if (user.EmailConfirmed == false) return Unauthorized(new ResponseMessage { Message = "Please Confirm Your Email Address", Status = false });
+                if (user.EmailConfirmed == false) return Unauthorized(new ResponseMessage { Message = "Please confirm your email address", Status = false });
 
                 if (user.LockoutEnd != null)
                 {
@@ -186,7 +187,7 @@ namespace HealthBanc.Controllers
                 var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, true);
                 _logoutLogRepository.Create(loginLog);
                 await _logoutLogRepository.Save();
-                return Unauthorized(new ResponseMessage { Message = "Password is invalid, please try again with correct details.", Status = false });
+                return Unauthorized(new ResponseMessage { Message = "User detail is invalid, please try again with correct details.", Status = false });
             }
             //return validation errors
             var errors = new List<ResponseMessage>();
@@ -362,7 +363,7 @@ namespace HealthBanc.Controllers
                                         var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, true, false);
                                         _passwordChangeRepository.Create(passwordChangehistory2);
                                         await _passwordChangeRepository.Save();
-                                        return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
+                                        return Ok(new ResponseMessage { Message = "Password changed successfully", Status = true });
                                     }
                                 }                                
                             }
@@ -371,13 +372,13 @@ namespace HealthBanc.Controllers
                             var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, true, false);
                             _passwordChangeRepository.Create(passwordChangehistory);
                             await _passwordChangeRepository.Save();
-                            return Ok(new ResponseMessage { Message = "Password Changed Succefully", Status = true });
+                            return Ok(new ResponseMessage { Message = "Password changed succesfully", Status = true });
                         }
-                        return BadRequest(new ResponseMessage { Message = "Current Password is Wrong,Please Input Corrrect One,Or Reset Password" });
+                        return BadRequest(new ResponseMessage { Message = "Current password is wrong,please input correct one or reset password" });
                     }
                     else
                     {
-                        return BadRequest(new ResponseMessage { Message = "New Password Cant Be similar with Old Password" });
+                        return BadRequest(new ResponseMessage { Message = "New password can not be similar with old password" });
                     }
                 };
                 return BadRequest(new ResponseMessage { Message = "User does not exist" });

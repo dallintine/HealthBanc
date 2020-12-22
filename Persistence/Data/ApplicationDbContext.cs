@@ -36,8 +36,8 @@ namespace Persistence
         public DbSet<ScheduledAxaEnrollment> ScheduledAxaEnrollments { get; set; }
         public DbSet<AxaEnrollmentOnReactivation> AxaEnrollmentReactivations { get; set; }
         public DbSet<PaymentOnReactivation> PaymentOnReactivations { get; set; }
-        public DbSet<AxaMansardHospitalList> AxaMansardHospitalLists { get; set;
-        }
+        public DbSet<AxaMansardHospitalList> AxaMansardHospitalLists { get; set;}
+        public DbSet<AxaEnrollmentOnOnboarding> AxaEnrollmentOnOnboardings { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

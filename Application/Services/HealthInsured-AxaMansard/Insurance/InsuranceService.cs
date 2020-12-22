@@ -13,6 +13,7 @@ using Domain.Models.AxaMansard_Insurance;
 using Hangfire;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using OfficeOpenXml;
@@ -39,12 +40,13 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private readonly AuditLogService _auditLogServices;
         private readonly ExcelPackage _excelPackage;
         private readonly IAxaMansardHospitalListRepository _hospitalListRepository;
+        private readonly ILogger<InsuranceService> _logger;
 
         private AxaMansardConfiguration Options { get; }
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration>  axaAccessor,IApplicationUserRepository userRepository
             , IAxaMansardUserProfileRepository axaMansard,IMapper mapper,IAxaMansardCompletionRepository completionRepository, AuditLogService auditLogServices,
-            ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository)
+            ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger)
         {
             _httpClientFactory = httpClientFactory;
             _userRepository = userRepository;
@@ -54,6 +56,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             _auditLogServices = auditLogServices;
             _excelPackage = excelPackage;
             _hospitalListRepository = hospitalListRepository;
+            _logger = logger;
             Options = axaAccessor.Value;
         }        
 
@@ -81,32 +84,22 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 return new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" };
             }
 
-            var enrollmentModel = _mapper.Map<EnrollmentModel>(user);
-            var updatedEnrollmentModel = _mapper.Map(userProfile, enrollmentModel);
-            enrollmentModel.EntityCode = Options.EntityCode; enrollmentModel.EnrollmentNo = GetUniqueCode(12);
+            CreateAxamansardUserProfile(userProfile, user);                
 
-            var enrollmentResult = await EnrollUser(enrollmentModel);
+            var auditViewModel = new AuditLogViewModel(userId, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
+            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
 
-            if (enrollmentResult.Status)
-            {
-                CreateAxamansardUserProfile(userProfile, user, enrollmentModel.EnrollmentNo);                
-
-                var auditViewModel = new AuditLogViewModel(userId, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
-                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
-
-                return new ResponseMessage { Data = new AxaResponse() { IsSuccessful = "True", Message = "Profile was created successfully" },
-                    Message = "Profile was created successfully", Status = true };
-            }
-            return enrollmentResult;
+            return new ResponseMessage { Data = new AxaResponse() { IsSuccessful = "True", Message = "Profile was created successfully" },
+                Message = "Profile was created successfully", Status = true };
         }
 
-        private async void CreateAxamansardUserProfile(UserProfileviewModel userProfile,ApplicationUser user,string uniqueIdentifier)
+        private async void CreateAxamansardUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
         {
             var profile = _mapper.Map<AxaMansardUserProfile>(userProfile);
             profile.UserId = user.Id;
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
-            profile.TransId = uniqueIdentifier;
+            profile.TransId = GetUniqueCode(12);
             profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
 
             var updatedProfile = _mapper.Map(user, profile);
@@ -124,27 +117,36 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
         public async Task<ResponseMessage> EnrollUser(EnrollmentModel model)
         {
-            var bearerRequest = await AxaMansardAuthentication();
-            if (bearerRequest.Status)
+            try
             {
-                var httpClient = _httpClientFactory.CreateClient("AxaMansard");
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",bearerRequest.Data.Auth_token);
-                HttpContent content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
-                var response = await httpClient.PostAsync($"{Options.AxaMansardEnrollement}", content);
-
-                if (response.IsSuccessStatusCode)
+                model.EntityCode = Options.EntityCode;
+                var bearerRequest = await AxaMansardAuthentication();
+                if (bearerRequest.Status)
                 {
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
-                    //if (authResponse.success)
-                    //{
-                    //    return new ResponseMessage { Status = true, Message = authResponse.message };
-                    //}
-                    return new ResponseMessage { Status = true, Message = authResponse.message };
+                    var httpClient = _httpClientFactory.CreateClient("AxaMansard");
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerRequest.Data.Auth_token);
+                    HttpContent content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
+                    var response = await httpClient.PostAsync($"{Options.AxaMansardEnrollement}", content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string apiResponse = await response.Content.ReadAsStringAsync();
+                        var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
+                        //if (authResponse.success)
+                        //{
+                        //    return new ResponseMessage { Status = true, Message = authResponse.message };
+                        //}
+                        return new ResponseMessage { Status = true, Message = authResponse.message };
+                    }
+                    return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }
-                return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
+                return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
-            return new ResponseMessage { Status = false, Message = bearerRequest.Message };
+            catch(Exception ex)
+            {
+                _logger.LogCritical("An error occurred while enrolling user to axa-mansard", ex);
+                return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
+            }            
         }
 
         private async Task<ResponseMessage<AuthenticationResponse>> AxaMansardAuthentication()

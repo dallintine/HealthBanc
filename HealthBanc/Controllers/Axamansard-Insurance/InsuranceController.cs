@@ -198,6 +198,7 @@ namespace HealthBanc.Controllers
                 {
                     updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName.Split(':')[0];
                     updatedProfile.CPAddress = updateProfileViewModel.CareProviderName.Split(':')[1];
+                    updatedProfile.CPCity = updateProfileViewModel.CareProviderName.Split(":").Length == 3 ? updateProfileViewModel.CareProviderName.Split(":")[2] : "";
                 }
                 catch (Exception ex)
                 {

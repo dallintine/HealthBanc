@@ -15,19 +15,23 @@ namespace Infrastructure.Mail
     public class EmailSender : IEmailSender
     {
         private readonly ILogger<EmailSender> _logger;
-        public EmailSender(ILogger<EmailSender> logger, IOptions<AuthMessageSenderOption>optionAccessor)
+        public Application.Helpers.Environment _environmentAccessor { get; }
+        public AuthMessageSenderOption Options { get; }
+
+        public EmailSender(ILogger<EmailSender> logger, IOptions<AuthMessageSenderOption>optionAccessor,IOptions<Application.Helpers.Environment>environmentAccessor)
         {
             Options = optionAccessor.Value;
             _logger = logger;
+            _environmentAccessor = environmentAccessor.Value;
         }
-        public AuthMessageSenderOption Options { get; }
 
         public void SendEmail(string email,string templateId, string url,string companyName)
         {
+            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
 
             var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom("healthbancng@gmail.com", "HEALTHBANC");
+            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
             sendGridMessage.AddTo(email, "HEALTHBANC");
             sendGridMessage.SetTemplateId(templateId);
             sendGridMessage.SetTemplateData(new HelloEmail
@@ -41,10 +45,11 @@ namespace Infrastructure.Mail
 
         public void SendEmailWithObject(string email, string templateId, HelloEmail helloEmail)
         {
+            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
 
             var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom("healthbancng@gmail.com", "HEALTHBANC");
+            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
             sendGridMessage.AddTo(email, "HEALTHBANC");
             sendGridMessage.SetTemplateId(templateId);
             sendGridMessage.SetTemplateData(new HelloEmail
@@ -61,10 +66,11 @@ namespace Infrastructure.Mail
 
         public void SendInsurancePaymentReminder(string email, string templateId, string url, string userName,string premiumAmount)
         {
+            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
             var sendGridClient = new SendGridClient(Options.SendGridApiKey);
 
             var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom("healthbancng@gmail.com", "HEALTHBANC");
+            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
             sendGridMessage.AddTo(email, "HEALTHBANC");
             sendGridMessage.SetTemplateId(templateId);
             sendGridMessage.SetTemplateData(new HelloEmail

@@ -54,7 +54,7 @@ namespace HealthBanc.Middleware.GlobalErrorHandling.Extensions
                         await context.Response.WriteAsync(new ResponseMessage()
                         {
                             ResponseCode = context.Response.StatusCode,
-                            Message = "This on us, an error occurred while trying to process your request."
+                            Message = "This on us, an error occurred while trying to process your request.Please try again later"
                         }.ToString());
                     }
                 });

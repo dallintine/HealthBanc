@@ -158,6 +158,7 @@ namespace HealthBanc
             services.AddScoped<IAxaEnrollmentReactivationRepository, AxaEnrollmentReactivationRepository>();
             services.AddScoped<IPaymentOnReactivationRepository, PaymentOnReactivationRepository>();
             services.AddScoped<IAxaMansardHospitalListRepository, AxaMansardHospitalListRepository>();
+            services.AddScoped<IAxaEnrollmentOnOnboardingRepository, AxaEnrollmentOnOnboardingRepository>();
             services.AddScoped<AuditLogService>();
             services.AddScoped<TokenizationService>();
             services.AddScoped<PaystackService>();
