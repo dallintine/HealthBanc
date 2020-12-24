@@ -50,7 +50,7 @@ namespace Application.Services.Paystack
                 {
                     // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
                     var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(chargeCardResponse.data.authorization, chargeCardResponse.data.status,
-                        chargeCardResponse.message);
+                        chargeCardResponse.message, chargeCardResponse.data.reference);
 
                     // check if status is true
                     if(processSuccessOrFailedResult.Status)
@@ -96,7 +96,7 @@ namespace Application.Services.Paystack
                 {
                     // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
                     var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(otpResponse.data.authorization, otpResponse.data.status,
-                        otpResponse.message);
+                        otpResponse.message, otpResponse.data.reference);
 
                     // check if status is true
                     if (processSuccessOrFailedResult.Status)
@@ -149,6 +149,7 @@ namespace Application.Services.Paystack
                                 Signature = chargeAuthorizationResponse.data.authorization.signature,
                                 Message = chargeAuthorizationResponse.data.gateway_response,
                                 Status = true,
+                                Reference = chargeAuthorizationResponse.data.reference,
                                 ResponseCode = 0
                             };
                         }
@@ -172,7 +173,7 @@ namespace Application.Services.Paystack
             }            
         }
 
-        private TokenizationResponse ProcessSuccessOrFailedDataStatus(Authorization authorization, string status, string message)
+        private TokenizationResponse ProcessSuccessOrFailedDataStatus(Authorization authorization, string status, string message,string reference)
         {
             // check if the status is successfully
             if (status == "success")
@@ -185,6 +186,7 @@ namespace Application.Services.Paystack
                     Signature = authorization.signature,
                     Message = "Card was tokenize successfully",
                     Status = true,
+                    Reference = reference,
                     ResponseCode = 0
                 };
             }
@@ -252,7 +254,7 @@ namespace Application.Services.Paystack
                 {
                     // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
                     var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(birthdayResponse.data.authorization, birthdayResponse.data.status,
-                        birthdayResponse.message);
+                        birthdayResponse.message, birthdayResponse.data.reference);
 
                     // check if status is true
                     if (processSuccessOrFailedResult.Status)
@@ -295,7 +297,7 @@ namespace Application.Services.Paystack
                 {
                     // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
                     var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(phoneResponse.data.authorization, phoneResponse.data.status,
-                        phoneResponse.message);
+                        phoneResponse.message, phoneResponse.data.reference);
 
                     // check if status is true
                     if (processSuccessOrFailedResult.Status)

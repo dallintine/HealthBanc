@@ -10,7 +10,8 @@ namespace Domain.Models.AxaMansard_Insurance
         {
 
         }
-        public ScheduledPayment(int userId, int axaMansardUserProfileId, Guid scheduledAxaEnrollmentId, DateTime executionDate, string jobId, string status,string message)
+        public ScheduledPayment(int userId, int axaMansardUserProfileId, Guid scheduledAxaEnrollmentId, DateTime executionDate, string jobId, string status
+            ,string message,string paymentReference)
         {
             UserId = userId;
             AxaMansardUserProfileId = axaMansardUserProfileId;
@@ -20,6 +21,7 @@ namespace Domain.Models.AxaMansard_Insurance
             JobId = jobId;
             Status = status;
             Message = message;
+            PaymentReference = paymentReference;
         }
 
         public int Id { get; set; }
@@ -31,6 +33,7 @@ namespace Domain.Models.AxaMansard_Insurance
         public string JobId { get; set; }
         public string Status { get; set; }
         public string Message { get; set; }
+        public string PaymentReference { get; set; }
         public ScheduledAxaEnrollment ScheduledAxaEnrollment { get; set; }
         public AxaMansardUserProfile AxaMansardUserProfile { get; set; }
     }

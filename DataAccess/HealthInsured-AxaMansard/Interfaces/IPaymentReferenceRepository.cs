@@ -9,7 +9,7 @@ namespace DataAccess.HealthInsured_AxaMansard.Interfaces
 {
     public interface IPaymentReferenceRepository : IBaseRepository<PaymentReference>
     {
-        Task<PaymentReference> GetActivePayment(int userId);
+        Task<PaymentReference> GetByUserId(int userId);
         Task<PaymentReference> GetById(int id);
     }
 }

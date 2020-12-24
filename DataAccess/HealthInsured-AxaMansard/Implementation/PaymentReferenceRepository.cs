@@ -16,9 +16,9 @@ namespace DataAccess.HealthInsured_AxaMansard.Implementation
         {
         }
 
-        public async Task<PaymentReference> GetActivePayment(int userId)
+        public async Task<PaymentReference> GetByUserId(int userId)
         {
-            return await _context.PaymentReferences.FirstOrDefaultAsync(x => x.UserId == userId && x.Active == true);
+            return await _context.PaymentReferences.FirstOrDefaultAsync(x => x.UserId == userId);
         }
         public async Task<PaymentReference> GetById(int id)
         {

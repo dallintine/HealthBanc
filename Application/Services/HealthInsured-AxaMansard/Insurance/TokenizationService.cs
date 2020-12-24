@@ -39,6 +39,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         private readonly IAxaEnrollmentReactivationRepository _axaEnrollmentOnReactivation;
         private readonly IPaymentOnReactivationRepository _paymentOnReactivation;
         private readonly IAxaEnrollmentOnOnboardingRepository _enrollmentOnOnboardingRepository;
+        private readonly IPaymentReferenceRepository _paymentReference;
 
         private SubscriptionDuration _subscriptionAccessor { get; }
 
@@ -46,7 +47,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             ICardRepository cardRepository,IMapper mapper,PaystackService paystackService, AuditLogService auditLogServices, InsuranceService insuranceSerivce,
             IOptions<SubscriptionDuration> subscriptionAccessor, IScheduledPaymentRepository scheduledPayment, IScheduledAxaEnrollmentRepository scheduledAxaEnrollment
             ,IAxaEnrollmentReactivationRepository axaEnrollmentOnReactivation, IPaymentOnReactivationRepository paymentOnReactivation,
-            IAxaEnrollmentOnOnboardingRepository enrollmentOnOnboardingRepository)
+            IAxaEnrollmentOnOnboardingRepository enrollmentOnOnboardingRepository, IPaymentReferenceRepository paymentReference)
         {
             _mansardUserProfileRepository = mansardUserProfileRepository;
             _completionRepository = completionRepository;
@@ -60,6 +61,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _axaEnrollmentOnReactivation = axaEnrollmentOnReactivation;
             _paymentOnReactivation = paymentOnReactivation;
             _enrollmentOnOnboardingRepository = enrollmentOnOnboardingRepository;
+            _paymentReference = paymentReference;
             _subscriptionAccessor = subscriptionAccessor.Value;
         }
 
@@ -133,6 +135,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
+                var paymentReference = new PaymentReference(chargeCardResponse.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
+                    , userAxamansardProfile.Premium);
+                _paymentReference.Create(paymentReference);
+                await _paymentReference.Save();
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
                 //else, card status is 0;
@@ -146,7 +152,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 if (userAxamansardProfile.SubscriptionStatus == null)
                 {
                     //send user details to axamnasard when payment is successfully
-                    await EnrollUserToAxamansardOnOnboarding(userAxamansardProfile, null);
+                    await EnrollUserToAxamansardOnOnboarding(userAxamansardProfile);
 
                     // Schedule Payment for user tokenizing card for the first time.
                     var getScheduledPaymentJobId = await ProcessScheduledPayment(userAxamansardProfile);
@@ -204,15 +210,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             };
         }
 
-        public async Task EnrollUserToAxamansardOnOnboarding(AxaMansardUserProfile userAxamansardProfile, PerformContext context)
+        public async Task EnrollUserToAxamansardOnOnboarding(AxaMansardUserProfile userAxamansardProfile)
         {
             // Send user details to axamansard
             var enrollmentModel = _mapper.Map<EnrollmentModel>(userAxamansardProfile);
             var enrollment = await _insuranceSerivce.EnrollUser(enrollmentModel);
             if (!enrollment.Status)
             {
-                var jobId = context.BackgroundJob.Id;
-                var axaEnrollmentOnOnboarding = new AxaEnrollmentOnOnboarding(userAxamansardProfile.UserId, userAxamansardProfile.Id, jobId, "Failed", enrollment.Message);
+                var axaEnrollmentOnOnboarding = new AxaEnrollmentOnOnboarding(userAxamansardProfile.UserId, userAxamansardProfile.Id, null, "Failed", enrollment.Message);
                 _enrollmentOnOnboardingRepository.Create(axaEnrollmentOnOnboarding);
                 await _enrollmentOnOnboardingRepository.Save();
             }
@@ -230,7 +235,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _scheduledAxaEnrollment.Create(processingAxaEnrollment);
 
             var processingScheduledPayment = new ScheduledPayment(userAxamansardProfile.UserId, userAxamansardProfile.Id, processingAxaEnrollment.Id,
-                executionDate, jobId, "Processing",null);
+                executionDate, jobId, "Processing",null,null);
             _scheduledPayment.Create(processingScheduledPayment);
             await _scheduledPayment.Save();
 
@@ -255,12 +260,18 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             var scheduledPaymentJob = await _scheduledPayment.GetScheduledPaymentByJobId(jobId);
             if (chargeAuthorization.Status)
-            {
+            {   
+                var paymentReference = new PaymentReference(chargeAuthorization.Reference, axaMansardProfile.Id, axaMansardProfile.UserId
+                    , axaMansardProfile.Premium);
+                _paymentReference.Create(paymentReference);
+                await _paymentReference.Save();
+
                 scheduledPaymentJob.Status = "Successful"; scheduledPaymentJob.Message = chargeAuthorization.Message;
+                scheduledPaymentJob.PaymentReference = paymentReference.Refernce;
 
                 axaMansardProfile.SubscriptionStatus = true; axaMansardProfile.ActiveStatus = true;
                 axaMansardProfile.StartActiveStatusDate = DateTime.Now; axaMansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-              
+                
                 var enrollmentModel = _mapper.Map<EnrollmentModel>(axaMansardProfile);
                 var enrollment = await _insuranceSerivce.EnrollUser(enrollmentModel);
                 if (enrollment.Status)
@@ -478,7 +489,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _axaEnrollmentOnReactivation.Save();
 
                 var paymentOnReactivation = new PaymentOnReactivation(userAxamansardProfile.UserId, userAxamansardProfile.Id, axaEnrollment.Id, reactivationTime.Value
-                    , "Processing", jobId, null);
+                    , "Processing", jobId, null,null);
                 _paymentOnReactivation.Create(paymentOnReactivation);
 
                 userAxamansardProfile.SubscriptionStatus = true;
@@ -501,6 +512,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             if (chargeAuthorization.Status)
             {
+                var paymentReference = new PaymentReference(chargeAuthorization.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
+                    , userAxamansardProfile.Premium);
+                _paymentReference.Create(paymentReference);
+                await _paymentReference.Save();
+
                 var immediateAxaEnrollment = new AxaEnrollmentOnReactivation(userAxamansardProfile.UserId, userAxamansardProfile.Id, DateTime.Now, "Processing", null);
                 _axaEnrollmentOnReactivation.Create(immediateAxaEnrollment);
                 await _axaEnrollmentOnReactivation.Save();
@@ -521,7 +537,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                
 
                 var immediatePaymentOnReactivation = new PaymentOnReactivation(userAxamansardProfile.UserId, userAxamansardProfile.Id, immediateAxaEnrollment.Id,
-                 DateTime.Now, "Successful",null, null);
+                 DateTime.Now, "Successful",null, null,null);
                 _paymentOnReactivation.Create(immediatePaymentOnReactivation);
                
                 var getScheduledPaymentJobId = await ProcessScheduledPayment(userAxamansardProfile);
@@ -551,8 +567,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             var paymentOnReactivation = await _paymentOnReactivation.GetScheduledPaymentByStatus("Processing");
             if (chargeAuthorization.Status)
-            {                
+            {
+                var paymentReference = new PaymentReference(chargeAuthorization.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
+                   , userAxamansardProfile.Premium);
+                _paymentReference.Create(paymentReference);
+                await _paymentReference.Save();
+
                 paymentOnReactivation.Status = "Successful"; paymentOnReactivation.Message = chargeAuthorization.Message;
+                paymentOnReactivation.PaymentReference = paymentReference.Refernce;
                 _paymentOnReactivation.Update(paymentOnReactivation);
 
                 var enrollmentModel = _mapper.Map<EnrollmentModel>(userAxamansardProfile);
