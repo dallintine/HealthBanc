@@ -35,6 +35,5 @@ namespace Domain.Models.AxaMansard_Insurance
         public string Message { get; set; }
         public string PaymentReference { get; set; }
         public ScheduledAxaEnrollment ScheduledAxaEnrollment { get; set; }
-        public AxaMansardUserProfile AxaMansardUserProfile { get; set; }
     }
 }

@@ -4,8 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac.Extensions.DependencyInjection;
+using Domain.Models;
 using HealthBanc.Logging;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Azure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
@@ -26,6 +28,7 @@ namespace HealthBanc
             {
                 var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
                 optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
+                //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBancNew;Trusted_Connection=True;MultipleActiveResultSets=true");
 
                 return new ApplicationDbContext(optionsBuilder.Options);
             }
@@ -54,7 +57,9 @@ namespace HealthBanc
                     try
                     {
                         var context = services.GetRequiredService<ApplicationDbContext>();
+                        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
                         context.Database.Migrate();
+                        Seed.SeedData(context, userManager).Wait();
                     }
                     catch (Exception ex)
                     {

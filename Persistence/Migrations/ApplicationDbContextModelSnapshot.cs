@@ -500,8 +500,6 @@ namespace Persistence.Migrations
 
                     b.HasIndex("AxaEnrollmentOnReactivationId");
 
-                    b.HasIndex("AxaMansardUserProfileId");
-
                     b.ToTable("PaymentOnReactivations");
                 });
 
@@ -574,8 +572,6 @@ namespace Persistence.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AxaMansardUserProfileId");
 
                     b.HasIndex("ScheduledAxaEnrollmentId");
 
@@ -1123,12 +1119,6 @@ namespace Persistence.Migrations
                         .HasForeignKey("AxaEnrollmentOnReactivationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
-                        .WithMany()
-                        .HasForeignKey("AxaMansardUserProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.ScheduledAxaEnrollment", b =>
@@ -1142,12 +1132,6 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.ScheduledPayment", b =>
                 {
-                    b.HasOne("Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
-                        .WithMany()
-                        .HasForeignKey("AxaMansardUserProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Domain.Models.AxaMansard_Insurance.ScheduledAxaEnrollment", "ScheduledAxaEnrollment")
                         .WithMany()
                         .HasForeignKey("ScheduledAxaEnrollmentId")

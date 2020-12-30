@@ -74,101 +74,17 @@ namespace HealthBanc
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection")));
-            services.AddHangfireServer();
-
-            services.AddHsts(options =>
-            {
-                //options.IncludeSubDomains = true;
-                //options.MaxAge = TimeSpan.FromDays(365);
-            });
-
-            services.AddControllersWithViews();
-
-            services.AddApplicationInsightsTelemetry();
-
-            services.AddControllers();
-
-            ///////////////Add Swagger Service/////////////////////////
-            services.AddSwaggerGen(x =>
-            {
-                x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
-
-                x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Description =
-                     "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 12345abcdef\"",
-                    Name = "Authorization",
-                    In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.ApiKey,
-                    Scheme = "Bearer"
-                });
-
-                x.AddSecurityRequirement(new OpenApiSecurityRequirement()
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            },
-                            Scheme = "oauth2",
-                            Name = "Bearer",
-                            In = ParameterLocation.Header,
-                        },
-                        new List<string>()
-                    }
-                });
-
-                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                x.IncludeXmlComments(xmlPath);
-            });
-
+            services.AddHangfireServer();            
             
             /////////////////////////////////////Register Services//////////////////////////////
 
             services.AddAutoMapper(typeof(Startup));
 
-            services.AddScoped<IdentityService>();
-            services.AddScoped<IApplicationUserRepository,ApplicationUserRepository>();
-            services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
-            services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();
-            services.AddScoped<IServiceRepository, ServiceRepository>();
-            services.AddScoped<InsuranceService>();
-            services.AddScoped<ExcelPackage>();
-            services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
-            services.AddScoped<INotificationRepository, NotificationRepository>();
-            services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
-            services.AddScoped<IAxaMansardCompletionRepository,AxaMansardCompletionRepository>();
-            services.AddScoped<ICardRepository, CardRepository>();
-            services.AddScoped<IPasswordHasher, PasswordHasher>();
-            services.AddScoped<IImageService, ImageService>();
-            services.AddScoped<IPaymentReferenceRepository, PaymentReferenceRepository>();
-            services.AddScoped<IExceptionLogRepository, ExceptionLogRepository>();
-            services.AddScoped<IUserAuditLogRepository, UserAuditLogRepository>();
-            services.AddScoped<IEmailSender, EmailSender>();
-            services.AddScoped<IPasswordChangeRepository, PasswordChangeRepository>();
-            services.AddScoped<IUserLogin_LogoutLogRepository, UserLogin_LogoutLogRepository>();
-            services.AddScoped<IAdminLogin_LogoutLogRepository, AdminLogin_LogoutLogRepository>();
-            services.AddScoped<IInsufficientChargeTransactionRepository, IInsufficientChargeTransactionRepository>();
-            services.AddScoped<IScheduledAxaEnrollmentRepository, ScheduledAxaEnrollmentRepository>();
-            services.AddScoped<IScheduledPaymentRepository, ScheduledPaymentRepository>();
-            services.AddScoped<IAxaEnrollmentReactivationRepository, AxaEnrollmentReactivationRepository>();
-            services.AddScoped<IPaymentOnReactivationRepository, PaymentOnReactivationRepository>();
-            services.AddScoped<IAxaMansardHospitalListRepository, AxaMansardHospitalListRepository>();
-            services.AddScoped<IAxaEnrollmentOnOnboardingRepository, AxaEnrollmentOnOnboardingRepository>();
-            services.AddScoped<AuditLogService>();
-            services.AddScoped<TokenizationService>();
-            services.AddScoped<PaystackService>();
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-            services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
+            services.AddDataAccessServices();
+
             services.Configure<SubscriptionDuration>(Configuration.GetSection("SubscriptionDuration"));
             services.Configure<SendGridTemplateId>(Configuration.GetSection("SendGridTemplateId"));
             services.Configure<Paystack>(Configuration.GetSection("Paystack"));
-            services.AddScoped<Dashboard_Analytics>();
             services.Configure<AxaMansardConfiguration>(Configuration.GetSection("AxaMansardConfiguration"));
             services.Configure<Application.Helpers.Environment>(Configuration.GetSection("Environment"));
             services.Configure<AuthMessageSenderOption>(Configuration);
@@ -238,19 +154,7 @@ namespace HealthBanc
             })
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
-
-
-            //---------------------------- CORS setting---------------------------------------------------------//
-            services.AddCors(options =>
-            {
-                options.AddPolicy("Cors",
-                    builder =>
-                        builder.AllowAnyOrigin()
-                            .AllowAnyMethod()
-                            .AllowAnyHeader());
-            });
-
-            //---------------------------- CORS setting---------------------------------------------------------//
+            
 
             services.AddAuthorization(options =>
             {
@@ -325,37 +229,8 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, UserManager<ApplicationUser> userManger,
-            IBackendAdminRepository backendAdminRepository, Serilog.ILogger logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, Serilog.ILogger logger)
         {
-            if (userManger.FindByNameAsync("Hassan.Hassan@sterling.ng").Result == null)
-            {
-                ApplicationUser user = new ApplicationUser()
-                {
-                    UniqueUsername = "hassannh",
-                    UserName = "hassan.hassan@sterling.ng",
-                    Email = "hassan.hassan@sterling.ng",
-                    FirstName = "Hassan",
-                    LastName = "Hassan",
-                    EmailConfirmed = true
-                };
-                BackendAdminUser adminUser = new BackendAdminUser()
-                {
-                    Email = "hassan.hassan@sterling.ng",
-                    FirstName = "Hassan",
-                    LastName = "Hassan",
-                    ClassOrRoleId = 6
-                };
-
-                var result = userManger.CreateAsync(user).Result;
-
-                if (result.Succeeded)
-                {
-                    userManger.AddToRoleAsync(user, "Super-Administrator").Wait();
-                    backendAdminRepository.Create(adminUser);
-                    backendAdminRepository.Save().Wait();
-                }
-            }
 
             var hangfireSecret = new JwtSettings();
             Configuration.GetSection(nameof(JwtSettings)).Bind(hangfireSecret);
@@ -394,10 +269,7 @@ namespace HealthBanc
                 {
                     option.SwaggerEndpoint(swaggerOptions.UiEndpoint, swaggerOptions.Description);
                 });
-            }     
-            
-
-            
+            }  
 
             app.UseRouting();
             app.UseCors("Cors");

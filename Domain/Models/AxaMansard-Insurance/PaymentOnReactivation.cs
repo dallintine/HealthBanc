@@ -36,6 +36,5 @@ namespace Domain.Models.AxaMansard_Insurance
         public DateTime Date { get; set; }
         public string PaymentReference { get; set; }
         public AxaEnrollmentOnReactivation AxaEnrollmentOnReactivation { get; set; }
-        public AxaMansardUserProfile AxaMansardUserProfile { get; set; }
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Persistence.Migrations
 {
-    public partial class ModifyDatabase : Migration
+    public partial class modifiedbackendadmin : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -369,6 +369,29 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AxaEnrollmentOnOnboardings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    UserId = table.Column<int>(nullable: false),
+                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
+                    JobId = table.Column<string>(nullable: true),
+                    DateScheduled = table.Column<DateTime>(nullable: false),
+                    Status = table.Column<string>(nullable: true),
+                    Message = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AxaEnrollmentOnOnboardings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AxaEnrollmentOnOnboardings_AxaMansardUserProfile_AxaMansardUserProfileId",
+                        column: x => x.AxaMansardUserProfileId,
+                        principalTable: "AxaMansardUserProfile",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AxaEnrollmentReactivations",
                 columns: table => new
                 {
@@ -447,6 +470,7 @@ namespace Persistence.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Date = table.Column<DateTime>(nullable: false),
                     Channel = table.Column<string>(nullable: true),
+                    Refernce = table.Column<string>(nullable: true),
                     AxaMansardUserProfileId = table.Column<int>(nullable: false),
                     UserId = table.Column<int>(nullable: false),
                     Amount = table.Column<decimal>(nullable: false),
@@ -548,7 +572,8 @@ namespace Persistence.Migrations
                     Status = table.Column<string>(nullable: true),
                     Message = table.Column<string>(nullable: true),
                     JobId = table.Column<string>(nullable: true),
-                    Date = table.Column<DateTime>(nullable: false)
+                    Date = table.Column<DateTime>(nullable: false),
+                    PaymentReference = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -559,12 +584,6 @@ namespace Persistence.Migrations
                         principalTable: "AxaEnrollmentReactivations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PaymentOnReactivations_AxaMansardUserProfile_AxaMansardUserProfileId",
-                        column: x => x.AxaMansardUserProfileId,
-                        principalTable: "AxaMansardUserProfile",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateTable(
@@ -580,17 +599,12 @@ namespace Persistence.Migrations
                     ExecutionDate = table.Column<DateTime>(nullable: false),
                     JobId = table.Column<string>(nullable: true),
                     Status = table.Column<string>(nullable: true),
-                    Message = table.Column<string>(nullable: true)
+                    Message = table.Column<string>(nullable: true),
+                    PaymentReference = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ScheduledPayments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ScheduledPayments_AxaMansardUserProfile_AxaMansardUserProfileId",
-                        column: x => x.AxaMansardUserProfileId,
-                        principalTable: "AxaMansardUserProfile",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
                     table.ForeignKey(
                         name: "FK_ScheduledPayments_ScheduledAxaEnrollments_ScheduledAxaEnrollmentId",
                         column: x => x.ScheduledAxaEnrollmentId,
@@ -703,6 +717,11 @@ namespace Persistence.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AxaEnrollmentOnOnboardings_AxaMansardUserProfileId",
+                table: "AxaEnrollmentOnOnboardings",
+                column: "AxaMansardUserProfileId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AxaEnrollmentReactivations_AxaMansardUserProfileId",
                 table: "AxaEnrollmentReactivations",
                 column: "AxaMansardUserProfileId");
@@ -733,11 +752,6 @@ namespace Persistence.Migrations
                 column: "AxaEnrollmentOnReactivationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentOnReactivations_AxaMansardUserProfileId",
-                table: "PaymentOnReactivations",
-                column: "AxaMansardUserProfileId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PaymentReferences_AxaMansardUserProfileId",
                 table: "PaymentReferences",
                 column: "AxaMansardUserProfileId");
@@ -745,11 +759,6 @@ namespace Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ScheduledAxaEnrollments_AxaMansardUserProfileId",
                 table: "ScheduledAxaEnrollments",
-                column: "AxaMansardUserProfileId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ScheduledPayments_AxaMansardUserProfileId",
-                table: "ScheduledPayments",
                 column: "AxaMansardUserProfileId");
 
             migrationBuilder.CreateIndex(
@@ -780,6 +789,9 @@ namespace Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "AuditLogin_LogoutLogs");
+
+            migrationBuilder.DropTable(
+                name: "AxaEnrollmentOnOnboardings");
 
             migrationBuilder.DropTable(
                 name: "AxaMansardCompletionProfiles");

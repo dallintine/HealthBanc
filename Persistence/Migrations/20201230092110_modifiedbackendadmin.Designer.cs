@@ -10,8 +10,8 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20201218152255_Modify-Database")]
-    partial class ModifyDatabase
+    [Migration("20201230092110_modifiedbackendadmin")]
+    partial class modifiedbackendadmin
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -343,6 +343,37 @@ namespace Persistence.Migrations
                     b.ToTable("AxaMansardUserProfile");
                 });
 
+            modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.AxaEnrollmentOnOnboarding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AxaMansardUserProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateScheduled")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("JobId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AxaMansardUserProfileId");
+
+                    b.ToTable("AxaEnrollmentOnOnboardings");
+                });
+
             modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.AxaEnrollmentOnReactivation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -458,6 +489,9 @@ namespace Persistence.Migrations
                     b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PaymentReference")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)");
 
@@ -467,8 +501,6 @@ namespace Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AxaEnrollmentOnReactivationId");
-
-                    b.HasIndex("AxaMansardUserProfileId");
 
                     b.ToTable("PaymentOnReactivations");
                 });
@@ -529,6 +561,9 @@ namespace Persistence.Migrations
                     b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PaymentReference")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("ScheduledAxaEnrollmentId")
                         .HasColumnType("uniqueidentifier");
 
@@ -539,8 +574,6 @@ namespace Persistence.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AxaMansardUserProfileId");
 
                     b.HasIndex("ScheduledAxaEnrollmentId");
 
@@ -741,6 +774,9 @@ namespace Persistence.Migrations
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Refernce")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -1051,6 +1087,15 @@ namespace Persistence.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
+            modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.AxaEnrollmentOnOnboarding", b =>
+                {
+                    b.HasOne("Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
+                        .WithMany()
+                        .HasForeignKey("AxaMansardUserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.AxaEnrollmentOnReactivation", b =>
                 {
                     b.HasOne("Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
@@ -1076,12 +1121,6 @@ namespace Persistence.Migrations
                         .HasForeignKey("AxaEnrollmentOnReactivationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
-                        .WithMany()
-                        .HasForeignKey("AxaMansardUserProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.ScheduledAxaEnrollment", b =>
@@ -1095,12 +1134,6 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.ScheduledPayment", b =>
                 {
-                    b.HasOne("Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
-                        .WithMany()
-                        .HasForeignKey("AxaMansardUserProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Domain.Models.AxaMansard_Insurance.ScheduledAxaEnrollment", "ScheduledAxaEnrollment")
                         .WithMany()
                         .HasForeignKey("ScheduledAxaEnrollmentId")
@@ -1137,7 +1170,7 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Models.PaymentReference", b =>
                 {
-                    b.HasOne("Domain.Models.AxaMansardUserProfile", "AxaMansardUserProfile")
+                    b.HasOne("Domain.Models.AxaMansardUserProfile", null)
                         .WithMany("PaymentReferences")
                         .HasForeignKey("AxaMansardUserProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
