@@ -363,7 +363,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if(scheduledPayment != null)
             {
                 BackgroundJob.Delete(scheduledJobId);
-                BackgroundJob.Delete(axamansardprofile.PendingEmailJobId);
+                if(axamansardprofile.PendingEmailJobId != null)
+                {
+                    BackgroundJob.Delete(axamansardprofile.PendingEmailJobId);
+                }
                 scheduledPayment.Status = "Cancelled"; scheduledPayment.Message = "Cancelled";
                 scheduledPayment.ScheduledAxaEnrollment.Status = "Cancelled"; scheduledPayment.ScheduledAxaEnrollment.Message = "Cancelled";
                 _scheduledPayment.Update(scheduledPayment);
@@ -374,7 +377,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 if(scheduledReactivatedPayment != null)
                 {
                     BackgroundJob.Delete(scheduledJobId);
-                    BackgroundJob.Delete(axamansardprofile.PendingEmailJobId);
+                    if (axamansardprofile.PendingEmailJobId != null)
+                    {
+                        BackgroundJob.Delete(axamansardprofile.PendingEmailJobId);
+                    }
                     scheduledReactivatedPayment.Status = "Cancelled"; scheduledReactivatedPayment.Message = "Cancelled";
                     scheduledReactivatedPayment.AxaEnrollmentOnReactivation.Status = "Cancelled";
                     scheduledReactivatedPayment.AxaEnrollmentOnReactivation.Message = "Cancelled";
