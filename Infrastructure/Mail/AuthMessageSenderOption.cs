@@ -9,5 +9,6 @@ namespace Infrastructure.Mail
     {
         public string SendGriduser { get; set; }
         public string SendGridApiKey { get; set; }
+        public string SendGridProductionApiKey { get; set; }
     }
 }

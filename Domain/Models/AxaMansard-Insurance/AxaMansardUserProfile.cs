@@ -12,6 +12,7 @@ namespace Domain.Models
         public string TransId { get; set; }
         public string Gender { get; set; }
         public string PendingJobId { get; set; }
+        public string PendingEmailJobId { get; set; }
         public string Surname { get; set; }
         public string Othernames { get; set; }
         public string MaidenName { get; set; }

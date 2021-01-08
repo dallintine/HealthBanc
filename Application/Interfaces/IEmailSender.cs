@@ -9,7 +9,7 @@ namespace Application.Interfaces
     public interface IEmailSender
     {
         void SendEmail(string email,string templateId, string url, string companyName);
-        void SendEmailWithObject(string email, string templateId, HelloEmail helloEmail);
-        void SendInsurancePaymentReminder(string email, string templateId, string url, string userName, string premiumAmount);
+        void SendEmailWithObject(HelloEmail helloEmail);
+        void SendInsurancePaymentReminder(string email, string userName);
     }
 }

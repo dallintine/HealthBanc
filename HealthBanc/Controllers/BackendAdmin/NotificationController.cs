@@ -35,12 +35,10 @@ namespace HealthBanc.Controllers.BackendAdmin
         private readonly ILogger<NotificationController> _logger;
         private readonly AuditLogService _auditLogServices;
         private readonly IBackendAdminRepository _adminRepository;
-        private SendGridTemplateId _emailTemplateAccessor { get; }
 
-        public NotificationController(IEmailSender emailSender,IMapper mapper,INotificationRepository notificationRepository,IImageService imageService,ILogger<NotificationController>logger,
-            AuditLogService auditLogServices, IBackendAdminRepository adminRepository, IOptions<SendGridTemplateId> emailTemplateAccessor)
+        public NotificationController(IEmailSender emailSender,IMapper mapper,INotificationRepository notificationRepository,IImageService imageService
+            ,ILogger<NotificationController>logger,AuditLogService auditLogServices, IBackendAdminRepository adminRepository)
         {
-            _emailTemplateAccessor = emailTemplateAccessor.Value;
             _emailSender = emailSender;
             _mapper = mapper;
             _notificationRepository = notificationRepository;
@@ -62,7 +60,8 @@ namespace HealthBanc.Controllers.BackendAdmin
             if (ModelState.IsValid)
             {
                 var @object = _mapper.Map<HelloEmail>(heliumHealth);
-                _emailSender.SendEmailWithObject("healthbanc@sterling.ng", _emailTemplateAccessor.HeliumHealth, @object);
+
+                _emailSender.SendEmailWithObject(@object);
                 return Ok(new ResponseMessage{ Status = true, Message = "Notification was sent successfully" });                             
             }
             var errors = new List<string>();

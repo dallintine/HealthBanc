@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
 
 namespace Application.Helpers
 {
-    public class SendGridTemplateId
+    public class SendGridProductionTempateId
     {
         public string VerifyEmail { get; set; }
         public string ForgotPassowrd { get; set; }

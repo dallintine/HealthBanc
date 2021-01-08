@@ -84,6 +84,7 @@ namespace HealthBanc
 
             services.Configure<SubscriptionDuration>(Configuration.GetSection("SubscriptionDuration"));
             services.Configure<SendGridTemplateId>(Configuration.GetSection("SendGridTemplateId"));
+            services.Configure<SendGridProductionTempateId>(Configuration.GetSection("SendGridProductionTempateId"));
             services.Configure<Paystack>(Configuration.GetSection("Paystack"));
             services.Configure<AxaMansardConfiguration>(Configuration.GetSection("AxaMansardConfiguration"));
             services.Configure<Application.Helpers.Environment>(Configuration.GetSection("Environment"));

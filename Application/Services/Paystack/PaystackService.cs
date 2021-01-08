@@ -68,7 +68,7 @@ namespace Application.Services.Paystack
                         var user = await _axaMansardUser.GetByUserIdAsync(id);
 
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
-                        var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber, user.DateOfBirth);
+                        var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber, user.DateOfBirth,chargeCard.pin);
                         return processStatusResponse;
                     }  
                 }
@@ -79,7 +79,7 @@ namespace Application.Services.Paystack
             return new TokenizationResponse { Message = chargeCardResponse.message + ", " + errorMessage, Status = false };
         }
 
-        public async Task<TokenizationResponse> SendOtp(string otp, string reference,string phoneNumber, DateTime dateOfBirth)
+        public async Task<TokenizationResponse> SendOtp(string otp, string reference,string phoneNumber, DateTime dateOfBirth,string pin)
         {
             var otpRequest = new SendOtp(otp, reference);
             // call paystack client
@@ -112,7 +112,7 @@ namespace Application.Services.Paystack
                     else
                     { 
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
-                        var processStatusResponse = await ProcessValidDataStatus(otpResponse.data.status, reference, phoneNumber, dateOfBirth);
+                        var processStatusResponse = await ProcessValidDataStatus(otpResponse.data.status, reference, phoneNumber, dateOfBirth,pin);
                         return processStatusResponse;
                     }
                 }
@@ -209,12 +209,12 @@ namespace Application.Services.Paystack
             };
         }
 
-        private async Task<TokenizationResponse> ProcessValidDataStatus(string status, string reference, string phoneNumber, DateTime birthDate)
+        private async Task<TokenizationResponse> ProcessValidDataStatus(string status, string reference, string phoneNumber, DateTime birthDate,string pin)
         {
             //Check if the data.status was send_otp : Means we need user OTP
             if (status == "send_otp")
             {
-                var otpViewModel = new SetOtpViewModel(null, "1234", reference);
+                var otpViewModel = new SetOtpViewModel(null, pin, reference);
                 return new TokenizationResponse { Data = otpViewModel, Message = "Please enter your OTP code", Status = true, ResponseCode = 12, };
             }
 
@@ -222,20 +222,20 @@ namespace Application.Services.Paystack
             if (status == "send_birthday")
             {
                 // if status is Send Birthday, Call SubmitBirthday function.
-                var sendBirthday = await SubmitBirthDay(reference, phoneNumber, birthDate);
+                var sendBirthday = await SubmitBirthDay(reference, phoneNumber, birthDate,pin);
                 return sendBirthday;
             }
 
             if (status == "send_phone")
             {
                 // if status is Submit Phone call submit Phone function
-                var submitPhone = await SubmitPhone(reference, phoneNumber, birthDate);
+                var submitPhone = await SubmitPhone(reference, phoneNumber, birthDate,pin);
                 return submitPhone;
             }
             return new TokenizationResponse { Message = "Please try again later" };
         }
 
-        private async Task<TokenizationResponse> SubmitBirthDay(string reference,string phoneNumber, DateTime birthDate)
+        private async Task<TokenizationResponse> SubmitBirthDay(string reference,string phoneNumber, DateTime birthDate,string pin)
         {
             var birthRequest = new SubmitBirthday(birthDate, reference);
 
@@ -270,7 +270,7 @@ namespace Application.Services.Paystack
                     else
                     {
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
-                        var processStatusResponse = await ProcessValidDataStatus(birthdayResponse.data.status, reference, phoneNumber, birthDate);
+                        var processStatusResponse = await ProcessValidDataStatus(birthdayResponse.data.status, reference, phoneNumber, birthDate,pin);
                         return processStatusResponse;
                     }                   
                 }
@@ -281,7 +281,7 @@ namespace Application.Services.Paystack
             return new TokenizationResponse { Message = birthdayResponse.message + ", " + errorMessage, Status = false };
         }
 
-        private async Task<TokenizationResponse> SubmitPhone(string reference, string phoneNumber, DateTime birthDate)
+        private async Task<TokenizationResponse> SubmitPhone(string reference, string phoneNumber, DateTime birthDate,string pin)
         {
             var phoneRequest = new SubmitPhoneNumber(phoneNumber, reference);
             var httpClient = _httpClientFactory.CreateClient("Paystack");
@@ -313,7 +313,7 @@ namespace Application.Services.Paystack
                     else
                     {
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
-                        var processStatusResponse = await ProcessValidDataStatus(phoneResponse.data.status, reference, phoneNumber, birthDate);
+                        var processStatusResponse = await ProcessValidDataStatus(phoneResponse.data.status, reference, phoneNumber, birthDate,pin);
                         return processStatusResponse;
                     }
                 }
