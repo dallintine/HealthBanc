@@ -57,7 +57,7 @@ namespace DataAccess.General.Implementation
             {
                 var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).AsQueryable();
                 paginatedResponse.Data =  await newQueryable.ToListAsync();
-                var recordCount = await newQueryable.CountAsync();
+                var recordCount = await queryable.CountAsync();
                 paginatedResponse.RecordCount = recordCount;
                 paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
                 return paginatedResponse;
@@ -69,7 +69,7 @@ namespace DataAccess.General.Implementation
                 {
                     var newQueryable = queryable.Where(x => x.ServiceUsed.Contains("HealthMall")).Skip(skip).Take(paginationQuery.PageSize);
                     paginatedResponse.Data = await newQueryable.ToListAsync();
-                    var recordCount = await newQueryable.CountAsync();
+                    var recordCount = await queryable.CountAsync();
                     paginatedResponse.RecordCount = recordCount;
                     paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
                     return paginatedResponse;
@@ -78,7 +78,7 @@ namespace DataAccess.General.Implementation
                 {
                     var newQueryable = queryable.Where(x => x.ServiceUsed.Contains("HealthInsured")).Skip(skip).Take(paginationQuery.PageSize);
                     paginatedResponse.Data = await newQueryable.ToListAsync();
-                    var recordCount = await newQueryable.CountAsync();
+                    var recordCount = await queryable.CountAsync();
                     paginatedResponse.RecordCount = recordCount;
                     paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
                     return paginatedResponse;

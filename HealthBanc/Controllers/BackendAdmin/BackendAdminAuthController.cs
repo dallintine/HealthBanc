@@ -231,7 +231,7 @@ namespace HealthBanc.Controllers
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<BackendAdminUser>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        //[Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetBackendAdminUsers()
         {
