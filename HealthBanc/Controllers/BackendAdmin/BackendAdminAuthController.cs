@@ -170,7 +170,12 @@ namespace HealthBanc.Controllers
 
                 string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
 
-                var checkEmail = await _userManager.FindByEmailAsync(createAdminViewModel.Email);
+                if (!createAdminViewModel.Email.EndsWith("@sterling.ng"))
+                {
+                    return BadRequest(new ResponseMessage { Message = "Email is not a valid sterling email" });
+                }
+
+                var checkEmail = await _userManager.FindByEmailAsync($"{createAdminViewModel.Email}.admin");
                 if (checkEmail != null) return BadRequest(new ResponseMessage{ Message = "Email Already Exist" });
                 var checkIfUserExist = await _userRepository.FindByUniqueUsername(createAdminViewModel.UserName);
                 if (checkIfUserExist != null) return BadRequest(new ResponseMessage { Message = "Username Already Exist" });
@@ -181,8 +186,8 @@ namespace HealthBanc.Controllers
                 {
                     FirstName = createAdminViewModel.FirstName,
                     LastName = createAdminViewModel.LastName,
-                    Email = createAdminViewModel.Email,
-                    UserName = createAdminViewModel.Email,
+                    Email = createAdminViewModel.Email+ ".admin",
+                    UserName = createAdminViewModel.Email+ ".admin",
                     UniqueUsername = createAdminViewModel.UserName,
                     EmailConfirmed = true
                 };
@@ -226,7 +231,7 @@ namespace HealthBanc.Controllers
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<BackendAdminUser>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        //[Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetBackendAdminUsers()
         {
@@ -251,7 +256,8 @@ namespace HealthBanc.Controllers
             string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
             var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
 
-            var user = await _userManager.FindByEmailAsync(email);
+            var adminUserMail = email + ".admin";
+            var user = await _userManager.FindByEmailAsync(adminUserMail);
             var admin = await _adminRepository.GetAdminByEmail(email);
             if(user != null)
             {
@@ -305,7 +311,8 @@ namespace HealthBanc.Controllers
             string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
             var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
 
-            var user = await _userManager.FindByEmailAsync(email);
+            var adminUserMail = email + ".admin";
+            var user = await _userManager.FindByEmailAsync(adminUserMail);
             if (user != null)
             {
                 var result = _userManager.DeleteAsync(user).Result;

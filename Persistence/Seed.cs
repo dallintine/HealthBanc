@@ -12,13 +12,13 @@ namespace Persistence
     {
         public static async Task SeedData(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
-            if(userManager.FindByEmailAsync("hassan.hassan@sterling.ng") != null)
+            if(userManager.FindByEmailAsync("hassan.hassan@sterling.ng.admin") != null)
             {
                 ApplicationUser user = new ApplicationUser()
                 {
                     UniqueUsername = "hassannh",
-                    UserName = "hassan.hassan@sterling.ng",
-                    Email = "hassan.hassan@sterling.ng",
+                    UserName = "hassan.hassan@sterling.ng.admin",
+                    Email = "hassan.hassan@sterling.ng.admin",
                     FirstName = "Hassan",
                     LastName = "Hassan",
                     EmailConfirmed = true
@@ -40,13 +40,13 @@ namespace Persistence
                     await context.SaveChangesAsync();
                 }
             }
-            if (userManager.FindByEmailAsync("Esther.nwowo@sterling.ng") != null)
+            if (userManager.FindByEmailAsync("Esther.nwowo@sterling.ng.admin") != null)
             {
                 ApplicationUser user = new ApplicationUser()
                 {
                     UniqueUsername = "nwowore",
-                    UserName = "Esther.nwowo@sterling.ng",
-                    Email = "Esther.nwowo@sterling.ng",
+                    UserName = "Esther.nwowo@sterling.ng.admin",
+                    Email = "Esther.nwowo@sterling.ng.admin",
                     FirstName = "Esther",
                     LastName = "Nwowo",
                     EmailConfirmed = true
@@ -68,13 +68,13 @@ namespace Persistence
                     await context.SaveChangesAsync();
                 }
             }
-            if (userManager.FindByEmailAsync("constance.okosodo@sterling.ng") != null)
+            if (userManager.FindByEmailAsync("constance.okosodo@sterling.ng.admin") != null)
             {
                 ApplicationUser user = new ApplicationUser()
                 {
                     UniqueUsername = "Okosodoec",
-                    UserName = "constance.okosodo@sterling.ng",
-                    Email = "constance.okosodo@sterling.ng",
+                    UserName = "constance.okosodo@sterling.ng.admin",
+                    Email = "constance.okosodo@sterling.ng.admin",
                     FirstName = "Constance",
                     LastName = "Okosodo",
                     EmailConfirmed = true
