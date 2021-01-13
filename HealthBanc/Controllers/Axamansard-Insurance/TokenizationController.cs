@@ -58,6 +58,10 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
                 var device = _auditLogServices.GetDevice(agent);
 
                 var chargeCardResponse = await _tokenizationService.TokenizeCard(chargeCard, id,ipAddress,device);
+                if(chargeCardResponse.Status && chargeCardResponse.ResponseCode == 13)
+                {
+                    return Redirect(chargeCardResponse.Message);
+                }
                 if (chargeCardResponse.Status)
                 {
                     return Ok(chargeCardResponse);

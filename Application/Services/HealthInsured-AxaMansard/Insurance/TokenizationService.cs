@@ -132,7 +132,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
         }
 
-        private async Task<ResponseMessage> ProcessPaystackChargeCardResponse(TokenizationResponse chargeCardResponse, AxaMansardUserProfile userAxamansardProfile,
+        public async Task<ResponseMessage> ProcessPaystackChargeCardResponse(TokenizationResponse chargeCardResponse, AxaMansardUserProfile userAxamansardProfile,
            AxaMansardCompletionProfile checkprofileComplete, string cardReference, string ipAddress, string device)
         {
             // if charge card was successfully
@@ -205,6 +205,16 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 return new ResponseMessage
                 {
                     Data = chargeCardResponse.Data,
+                    Message = chargeCardResponse.Message,
+                    Status = chargeCardResponse.Status,
+                    ResponseCode = chargeCardResponse.ResponseCode
+                };
+            }
+            // If charge card response wants to redirect
+            else if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 13)
+            {
+                return new ResponseMessage
+                {
                     Message = chargeCardResponse.Message,
                     Status = chargeCardResponse.Status,
                     ResponseCode = chargeCardResponse.ResponseCode

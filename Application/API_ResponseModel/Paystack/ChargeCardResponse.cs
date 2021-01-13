@@ -26,6 +26,7 @@ namespace Application.API_ResponseModel.Paystack
         public Authorization authorization { get; set; }
         public Customer customer { get; set; }
         public object plan { get; set; }
+        public string url { get; set; }
     }
 
     public class Authorization

@@ -3,6 +3,7 @@ using Application.API_ResponseModel.Paystack;
 using Application.Helpers.ThirdPartyAPI;
 using Application.ViewModels.Paystack;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using Domain.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -62,13 +63,18 @@ namespace Application.Services.Paystack
                     {
                         return processSuccessOrFailedResult;
                     }
+                    else if(chargeCardResponse.data.status == "open_url")
+                    {
+                        return new TokenizationResponse { Message = chargeCardResponse.data.url, Status = true, ResponseCode = 13 };
+                    }
                     // check if sucess is neither failes, success or timeout means response code is 13
                     else
                     {
                         var user = await _axaMansardUser.GetByUserIdAsync(id);
 
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
-                        var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber, user.DateOfBirth,chargeCard.pin);
+                        var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber
+                            , user.DateOfBirth,chargeCard.pin);
                         return processStatusResponse;
                     }  
                 }
@@ -225,7 +231,6 @@ namespace Application.Services.Paystack
                 var sendBirthday = await SubmitBirthDay(reference, phoneNumber, birthDate,pin);
                 return sendBirthday;
             }
-
             if (status == "send_phone")
             {
                 // if status is Submit Phone call submit Phone function
@@ -322,6 +327,67 @@ namespace Application.Services.Paystack
             }
             var errorMessage = phoneResponse.data.message != null ? phoneResponse.data.message : "";
             return new TokenizationResponse { Message = phoneResponse.message + ", " + errorMessage, Status = false };
+        }
+
+        public async Task<TokenizationResponse> VerifyTransaction(string reference)
+        {
+            var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+            var response = await httpClient.GetAsync($"{Options.VerifyTransaction}/{reference}");
+            if (response.IsSuccessStatusCode)
+            {
+                var verifyResponse = new ChargeCardResponse();
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                verifyResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+                if (verifyResponse.status == true)
+                {
+                    if(verifyResponse.data.status == "success")
+                    {
+                        return new TokenizationResponse
+                        {
+                            Type = verifyResponse.data.authorization.card_type,
+                            LastDigit = verifyResponse.data.authorization.last4,
+                            AuthorizationCode = verifyResponse.data.authorization.authorization_code,
+                            Signature = verifyResponse.data.authorization.signature,
+                            Message = "Card was tokenize successfully",
+                            Status = true,
+                            Reference = reference,
+                            ResponseCode = 0
+                        };
+                    }
+                    else
+                    {
+                        return new TokenizationResponse
+                        {
+                            Type = verifyResponse.data.authorization.card_type,
+                            LastDigit = verifyResponse.data.authorization.last4,
+                            AuthorizationCode = verifyResponse.data.authorization.authorization_code,
+                            Signature = verifyResponse.data.authorization.signature,
+                            Message = verifyResponse.data.gateway_response,
+                            Status = false,
+                            Reference = reference,
+                            ResponseCode = 10
+                        };
+                    }
+                }
+                return new TokenizationResponse
+                {
+                    Type = verifyResponse.data.authorization.card_type,
+                    LastDigit = verifyResponse.data.authorization.last4,
+                    AuthorizationCode = verifyResponse.data.authorization.authorization_code,
+                    Signature = verifyResponse.data.authorization.signature,
+                    Message = verifyResponse.data.gateway_response,
+                    Status = false,
+                    Reference = reference,
+                    ResponseCode = 5
+                };
+            }
+            return new TokenizationResponse
+            {
+                Message = "Could not connect to paystack service, please try again later",
+                Status = false,
+                Reference = reference,
+                ResponseCode = 5
+            };
         }
     }
 }

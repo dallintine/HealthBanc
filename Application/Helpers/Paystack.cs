@@ -12,8 +12,9 @@ namespace Application.Helpers
         public string PayStackChargeCard { get; set; }
         public string PayStackSendOtp { get; set; }
         public string PayStackSubmitPhone { get; set; }
-        public string PayStackSubmitBirthDay { get; set; }     
+        public string PayStackSubmitBirthDay { get; set; }   
         
         public string ChargeAuthorization { get; set; }
+        public string VerifyTransaction { get; set; }
     }
 }
