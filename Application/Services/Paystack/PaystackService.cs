@@ -75,10 +75,6 @@ namespace Application.Services.Paystack
                         if(processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
                         {
                             processStatusResponse.RedirectUrl = chargeCardResponse.data.url;
-                            processStatusResponse.Type = chargeCardResponse.data.authorization.card_type;
-                            processStatusResponse.LastDigit = chargeCardResponse.data.authorization.last4;
-                            processStatusResponse.AuthorizationCode = chargeCardResponse.data.authorization.authorization_code;
-                            processStatusResponse.Signature = chargeCardResponse.data.authorization.signature;
                             return processStatusResponse;
                         }
                         return processStatusResponse;
@@ -129,10 +125,6 @@ namespace Application.Services.Paystack
                         if (processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
                         {
                             processStatusResponse.RedirectUrl = otpResponse.data.url;
-                            processStatusResponse.Type = otpResponse.data.authorization.card_type;
-                            processStatusResponse.LastDigit = otpResponse.data.authorization.last4;
-                            processStatusResponse.AuthorizationCode = otpResponse.data.authorization.authorization_code;
-                            processStatusResponse.Signature = otpResponse.data.authorization.signature;
                             return processStatusResponse;
                         }
                         return processStatusResponse;
@@ -307,10 +299,6 @@ namespace Application.Services.Paystack
                         if (processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
                         {
                             processStatusResponse.RedirectUrl = birthdayResponse.data.url;
-                            processStatusResponse.Type = birthdayResponse.data.authorization.card_type;
-                            processStatusResponse.LastDigit = birthdayResponse.data.authorization.last4;
-                            processStatusResponse.AuthorizationCode = birthdayResponse.data.authorization.authorization_code;
-                            processStatusResponse.Signature = birthdayResponse.data.authorization.signature;
                             return processStatusResponse;
                         }
                         return processStatusResponse;
@@ -360,10 +348,6 @@ namespace Application.Services.Paystack
                         if (processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
                         {
                             processStatusResponse.RedirectUrl = phoneResponse.data.url;
-                            processStatusResponse.Type = phoneResponse.data.authorization.card_type;
-                            processStatusResponse.LastDigit = phoneResponse.data.authorization.last4;
-                            processStatusResponse.AuthorizationCode = phoneResponse.data.authorization.authorization_code;
-                            processStatusResponse.Signature = phoneResponse.data.authorization.signature;
                             return processStatusResponse;
                         }
                         return processStatusResponse;
