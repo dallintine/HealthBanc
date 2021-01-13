@@ -44,34 +44,36 @@ namespace HealthBanc.Controllers
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> PaystackWebHook(PaystackWebHookResponse webHookResponse)
+        public ActionResult PaystackWebHook(PaystackWebHookResponse webHookResponse)
         {
+            _logger.LogWarning("Hit Pasytackwebhook.Successfully"+webHookResponse.data.status);
             return Ok(new ResponseMessage { Data = webHookResponse, Status = true });
         }
 
-        [HttpGet("[action]")]
-        public async Task<IActionResult> PaystackCallback(string reference)
-        {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-            var device = _auditLogServices.GetDevice(agent);
+        //[HttpGet("[action]")]
+        //public async Task<IActionResult> PaystackCallback(string reference)
+        //{
+        //    _logger.LogWarning("Hit PaystackCallback");
+        //    string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+        //    int id = int.Parse(userId);
+        //    var device = _auditLogServices.GetDevice(agent);
 
-            var userAxamansardProfile = await _mansardUserProfileRepository.GetByUserIdAsync(id);
-            var checkprofileComplete = await _completionRepository.GetCompletionStateByUserId(id);
+        //    var userAxamansardProfile = await _mansardUserProfileRepository.GetByUserIdAsync(id);
+        //    var checkprofileComplete = await _completionRepository.GetCompletionStateByUserId(id);
 
-            var verifyTransaction = await _paystackService.VerifyTransaction(reference);
-            var processVerifyTransactionResponse = await _tokkenizationService.ProcessPaystackChargeCardResponse(verifyTransaction, userAxamansardProfile,
-                checkprofileComplete, reference, ipAddress, device);
+        //    var verifyTransaction = await _paystackService.VerifyTransaction(reference);
+        //    var processVerifyTransactionResponse = await _tokkenizationService.ProcessPaystackChargeCardResponse(verifyTransaction, userAxamansardProfile,
+        //        checkprofileComplete, reference, ipAddress, device);
 
-            if(processVerifyTransactionResponse.Status == true && !checkprofileComplete.TokenizationCompleted)
-            {
-                return Redirect("https://pharmmall.azurewebsites.net/health_profile");
-            }
-            else if(processVerifyTransactionResponse.Status == true && checkprofileComplete.TokenizationCompleted)
-            {
-                return Redirect("https://pharmmall.azurewebsites.net/health_card");
-            }
-            return Redirect("https://pharmmall.azurewebsites.net/health_care_provider");
-        }
+        //    if(processVerifyTransactionResponse.Status == true && !checkprofileComplete.TokenizationCompleted)
+        //    {
+        //        return Redirect("https://pharmmall.azurewebsites.net/health_profile");
+        //    }
+        //    else if(processVerifyTransactionResponse.Status == true && checkprofileComplete.TokenizationCompleted)
+        //    {
+        //        return Redirect("https://pharmmall.azurewebsites.net/health_card");
+        //    }
+        //    return Redirect("https://pharmmall.azurewebsites.net/health_care_provider");
+        //}
     }
 }
