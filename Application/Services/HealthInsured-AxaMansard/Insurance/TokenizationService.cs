@@ -193,7 +193,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                 return new ResponseMessage
                 {
-                    Data = chargeCardResponse.Data,
+                    Data = chargeCardResponse,
                     Status = chargeCardResponse.Status,
                     ResponseCode = chargeCardResponse.ResponseCode,
                     Message = chargeCardResponse.Message
@@ -217,7 +217,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     Message = chargeCardResponse.Message,
                     Status = chargeCardResponse.Status,
-                    ResponseCode = chargeCardResponse.ResponseCode
+                    ResponseCode = chargeCardResponse.ResponseCode,
+                    Data = chargeCardResponse
                 };
             }
             // If theres is an error
