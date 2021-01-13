@@ -40,10 +40,11 @@ namespace HealthBanc.Controllers
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
 
-        [HttpPost("[action]")]
-        public async Task<IActionResult> PaystackWebHook(PaystackWebHookResponse webHookResponse)
+        [HttpGet("[action]")]
+        public async Task<IActionResult> PaystackWebHook()
         {
-            return Ok(new ResponseMessage { Data = webHookResponse, Status = true });
+            //return Ok(new ResponseMessage { Data = webHookResponse, Status = true });
+            return Redirect("https://google.com");
         }
 
         [HttpGet("[action]")]
