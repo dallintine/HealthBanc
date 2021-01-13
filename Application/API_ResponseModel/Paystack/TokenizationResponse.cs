@@ -15,5 +15,6 @@ namespace Application.API_ResponseModel.Paystack
         public string Signature { get; set; }
         public string Type { get; set; }
         public string Reference { get; set; }
+        public string RedirectUrl { get; set; }
     }
 }

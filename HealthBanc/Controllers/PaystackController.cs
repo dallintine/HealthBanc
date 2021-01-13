@@ -7,6 +7,7 @@ using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
@@ -25,26 +26,27 @@ namespace HealthBanc.Controllers
         private readonly TokenizationService _tokkenizationService;
         private readonly IAxaMansardUserProfileRepository _mansardUserProfileRepository;
         private readonly IAxaMansardCompletionRepository _completionRepository;
+        private readonly ILogger<PaystackController> _logger;
         public string ipAddress;
         public StringValues agent;
 
         public PaystackController(PaystackService paystackService,IHttpContextAccessor accessor, AuditLogService auditLogServices,TokenizationService tokkenizationService
-            ,IAxaMansardUserProfileRepository mansardUserProfileRepository, IAxaMansardCompletionRepository completionRepository)
+            ,IAxaMansardUserProfileRepository mansardUserProfileRepository, IAxaMansardCompletionRepository completionRepository,ILogger<PaystackController> logger)
         {
             _paystackService = paystackService;
             _auditLogServices = auditLogServices;
             _tokkenizationService = tokkenizationService;
             _mansardUserProfileRepository = mansardUserProfileRepository;
             _completionRepository = completionRepository;
+            _logger = logger;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
 
-        [HttpGet("[action]")]
-        public async Task<IActionResult> PaystackWebHook()
+        [HttpPost("[action]")]
+        public async Task<IActionResult> PaystackWebHook(PaystackWebHookResponse webHookResponse)
         {
-            //return Ok(new ResponseMessage { Data = webHookResponse, Status = true });
-            return Redirect("https://google.com");
+            return Ok(new ResponseMessage { Data = webHookResponse, Status = true });
         }
 
         [HttpGet("[action]")]

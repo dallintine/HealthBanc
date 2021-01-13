@@ -1,4 +1,5 @@
-﻿using Application.DTO;
+﻿using Application.API_ResponseModel.Paystack;
+using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.ViewModels;
@@ -45,8 +46,8 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
         /// </summary>
         /// <param name="chargeCard"></param>
         /// <returns></returns>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<TokenizationResponse>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
         public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard)
@@ -58,10 +59,6 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
                 var device = _auditLogServices.GetDevice(agent);
 
                 var chargeCardResponse = await _tokenizationService.TokenizeCard(chargeCard, id,ipAddress,device);
-                if(chargeCardResponse.Status && chargeCardResponse.ResponseCode == 13)
-                {
-                    return Redirect(chargeCardResponse.Message);
-                }
                 if (chargeCardResponse.Status)
                 {
                     return Ok(chargeCardResponse);

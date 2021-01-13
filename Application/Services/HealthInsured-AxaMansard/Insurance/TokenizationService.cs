@@ -211,7 +211,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 };
             }
             // If charge card response wants to redirect
-            else if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 13)
+            else if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 20)
             {
                 return new ResponseMessage
                 {

@@ -63,10 +63,6 @@ namespace Application.Services.Paystack
                     {
                         return processSuccessOrFailedResult;
                     }
-                    else if(chargeCardResponse.data.status == "open_url")
-                    {
-                        return new TokenizationResponse { Message = chargeCardResponse.data.url, Status = true, ResponseCode = 13 };
-                    }
                     // check if sucess is neither failes, success or timeout means response code is 13
                     else
                     {
@@ -75,6 +71,16 @@ namespace Application.Services.Paystack
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
                         var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber
                             , user.DateOfBirth,chargeCard.pin);
+                        //Check if reposne is open_url
+                        if(processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
+                        {
+                            processStatusResponse.RedirectUrl = chargeCardResponse.data.url;
+                            processStatusResponse.Type = chargeCardResponse.data.authorization.card_type;
+                            processStatusResponse.LastDigit = chargeCardResponse.data.authorization.last4;
+                            processStatusResponse.AuthorizationCode = chargeCardResponse.data.authorization.authorization_code;
+                            processStatusResponse.Signature = chargeCardResponse.data.authorization.signature;
+                            return processStatusResponse;
+                        }
                         return processStatusResponse;
                     }  
                 }
@@ -119,6 +125,16 @@ namespace Application.Services.Paystack
                     { 
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
                         var processStatusResponse = await ProcessValidDataStatus(otpResponse.data.status, reference, phoneNumber, dateOfBirth,pin);
+                        //Check if reposne is open_url
+                        if (processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
+                        {
+                            processStatusResponse.RedirectUrl = otpResponse.data.url;
+                            processStatusResponse.Type = otpResponse.data.authorization.card_type;
+                            processStatusResponse.LastDigit = otpResponse.data.authorization.last4;
+                            processStatusResponse.AuthorizationCode = otpResponse.data.authorization.authorization_code;
+                            processStatusResponse.Signature = otpResponse.data.authorization.signature;
+                            return processStatusResponse;
+                        }
                         return processStatusResponse;
                     }
                 }
@@ -231,6 +247,17 @@ namespace Application.Services.Paystack
                 var sendBirthday = await SubmitBirthDay(reference, phoneNumber, birthDate,pin);
                 return sendBirthday;
             }
+            if (status == "open_url")
+            {
+                // if status is open url
+                return new TokenizationResponse
+                {
+                    Message = "Redirect to Redirect Url",
+                    Status = true,
+                    Reference = reference,
+                    ResponseCode = 20,
+                };
+            }
             if (status == "send_phone")
             {
                 // if status is Submit Phone call submit Phone function
@@ -276,6 +303,16 @@ namespace Application.Services.Paystack
                     {
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
                         var processStatusResponse = await ProcessValidDataStatus(birthdayResponse.data.status, reference, phoneNumber, birthDate,pin);
+                        //Check if reposne is open_url
+                        if (processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
+                        {
+                            processStatusResponse.RedirectUrl = birthdayResponse.data.url;
+                            processStatusResponse.Type = birthdayResponse.data.authorization.card_type;
+                            processStatusResponse.LastDigit = birthdayResponse.data.authorization.last4;
+                            processStatusResponse.AuthorizationCode = birthdayResponse.data.authorization.authorization_code;
+                            processStatusResponse.Signature = birthdayResponse.data.authorization.signature;
+                            return processStatusResponse;
+                        }
                         return processStatusResponse;
                     }                   
                 }
@@ -319,6 +356,16 @@ namespace Application.Services.Paystack
                     {
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
                         var processStatusResponse = await ProcessValidDataStatus(phoneResponse.data.status, reference, phoneNumber, birthDate,pin);
+                        //Check if reposne is open_url
+                        if (processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
+                        {
+                            processStatusResponse.RedirectUrl = phoneResponse.data.url;
+                            processStatusResponse.Type = phoneResponse.data.authorization.card_type;
+                            processStatusResponse.LastDigit = phoneResponse.data.authorization.last4;
+                            processStatusResponse.AuthorizationCode = phoneResponse.data.authorization.authorization_code;
+                            processStatusResponse.Signature = phoneResponse.data.authorization.signature;
+                            return processStatusResponse;
+                        }
                         return processStatusResponse;
                     }
                 }
@@ -328,7 +375,6 @@ namespace Application.Services.Paystack
             var errorMessage = phoneResponse.data.message != null ? phoneResponse.data.message : "";
             return new TokenizationResponse { Message = phoneResponse.message + ", " + errorMessage, Status = false };
         }
-
         public async Task<TokenizationResponse> VerifyTransaction(string reference)
         {
             var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
