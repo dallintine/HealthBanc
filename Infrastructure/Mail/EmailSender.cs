@@ -92,7 +92,7 @@ namespace Infrastructure.Mail
 
             var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
         }
-        public void SendSuccessfulSubscriptionMail(string email, string userName)
+        public void SendSuccessfulSubscriptionMail(string email, string userName,string enroleeNumber, string healthCareProvider)
         {
             var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
             var apiKey = _environmentAccessor.Staging ? Options.SendGridApiKey : Options.SendGridProductionApiKey;
@@ -106,6 +106,8 @@ namespace Infrastructure.Mail
             sendGridMessage.SetTemplateData(new HelloEmail
             {
                 UserName = userName,
+                HealthServiceProviderName = healthCareProvider,
+                EnroleeNumber = enroleeNumber
             });
 
             var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;

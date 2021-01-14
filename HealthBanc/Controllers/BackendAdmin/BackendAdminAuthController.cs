@@ -92,30 +92,46 @@ namespace HealthBanc.Controllers
                     var loginCredentials = new ADCredentialsRoot();
                     loginCredentials.AD_Credentials = aDCredentials;
                     HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
-                    var authentication = await httpClient.PostAsync(_appEndpoint.APIUri.FiorianoADAuthentication, content);
-                    if (authentication.IsSuccessStatusCode)
+                    try
                     {
-                        string apiResponse = await authentication.Content.ReadAsStringAsync();
-                        var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
-                        if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
+                        var authentication = await httpClient.PostAsync(_appEndpoint.APIUri.FiorianoADAuthentication, content);
+                        if (authentication.IsSuccessStatusCode)
                         {
-                            var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-                            var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
-                            _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
-                            await _userRepository.Save();
-                            var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                            return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
-                        }
-                        else
-                        {
-                            var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-                            var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email,true,false,true,false, loginOutHours);
-                            _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
-                            await _userRepository.Save();
-                            return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
+                            try
+                            {
+                                string apiResponse = await authentication.Content.ReadAsStringAsync();
+                                var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
+                                if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
+                                {
+                                    var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
+                                    var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
+                                    _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
+                                    await _userRepository.Save();
+                                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                                    return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
+                                }
+                                else
+                                {
+                                    var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
+                                    var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, true, false, loginOutHours);
+                                    _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
+                                    await _userRepository.Save();
+                                    return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
+                                }
+                            }
+                            catch(Exception ex)
+                            {
+                                _logger.LogError($"Something went wrong: {ex.Message}", ex);
+                                return BadRequest(new ResponseMessage { Message = "This on us, an error occurred while trying to process your request.Please try again later" });
+                            }                            
                         }
                     }
-                    return BadRequest(new ResponseMessage { Message = "An error occurred when connecting to core ADService" });
+                    catch(Exception ex)
+                    {
+                        _logger.LogCritical("Could not connect tp AD service", ex);
+                        return BadRequest(new ResponseMessage { Message = "Could not connect  to core ADService" });
+                    }
+
                 }
             }
             //return validation errors

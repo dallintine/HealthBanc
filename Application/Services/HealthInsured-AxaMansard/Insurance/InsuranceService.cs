@@ -151,23 +151,32 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
         private async Task<ResponseMessage<AuthenticationResponse>> AxaMansardAuthentication()
         {
-            var httpClient = _httpClientFactory.CreateClient("AxaMansard");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-key", $"{Options.Apikey}");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-secret", $"{Options.ApiSecret}");
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-client-key", $"{Options.ClientKey}");
-
-            var response = await httpClient.GetAsync($"{Options.AxaMansardToken}");
-            if (response.IsSuccessStatusCode)
+            try
             {
-                string apiResponse = await response.Content.ReadAsStringAsync();
-                var authResponse = JsonConvert.DeserializeObject<AuthenticationResponse>(apiResponse);
-                if (authResponse.Succeeded)
+                var httpClient = _httpClientFactory.CreateClient("AxaMansard");
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-key", $"{Options.Apikey}");
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-secret", $"{Options.ApiSecret}");
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-client-key", $"{Options.ClientKey}");
+
+                var response = await httpClient.GetAsync($"{Options.AxaMansardToken}");
+                if (response.IsSuccessStatusCode)
                 {
-                    return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = true, Message = "Request was processed successfully" };
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    var authResponse = JsonConvert.DeserializeObject<AuthenticationResponse>(apiResponse);
+                    if (authResponse.Succeeded)
+                    {
+                        return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = true, Message = "Request was processed successfully" };
+                    }
+                    return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = false, Message = authResponse.Message.ToString() };
                 }
-                return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = false, Message = authResponse.Message.ToString() };
+                return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
             }
-            return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
+            catch(Exception ex)
+            {
+                _logger.LogCritical("Error occured while trying to get axamansard auth token",ex);
+                return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
+            }
+
         }
 
         public async Task<ResponseMessage> AxaMansardGetHealthProvider(string state, string city, string healthPlan)
