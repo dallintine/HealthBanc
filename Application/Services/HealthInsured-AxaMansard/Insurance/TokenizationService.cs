@@ -181,7 +181,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     _completionRepository.Update(checkprofileComplete);
 
                     _mansardUserProfileRepository.Update(userAxamansardProfile);
-                    _paymentReference.Update(paymentReference);
 
                     //Create Audit thats user subscrption changed 
                     var auditViewModel2 = new AuditLogViewModel(userAxamansardProfile.UserId, null, "Inactive subscription status", "Subscription Status Changed",
