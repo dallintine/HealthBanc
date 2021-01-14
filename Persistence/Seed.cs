@@ -12,7 +12,7 @@ namespace Persistence
     {
         public static async Task SeedData(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
-            if(userManager.FindByEmailAsync("hassan.hassan@sterling.ng.admin") != null)
+            if (await userManager.FindByEmailAsync("hassan.hassan@sterling.ng.admin") == null)
             {
                 ApplicationUser user = new ApplicationUser()
                 {
@@ -40,7 +40,7 @@ namespace Persistence
                     await context.SaveChangesAsync();
                 }
             }
-            if (userManager.FindByEmailAsync("Esther.nwowo@sterling.ng.admin") != null)
+            if (await userManager.FindByEmailAsync("Esther.nwowo@sterling.ng.admin") == null)
             {
                 ApplicationUser user = new ApplicationUser()
                 {
@@ -68,7 +68,7 @@ namespace Persistence
                     await context.SaveChangesAsync();
                 }
             }
-            if (userManager.FindByEmailAsync("constance.okosodo@sterling.ng.admin") != null)
+            if (await userManager.FindByEmailAsync("constance.okosodo@sterling.ng.admin") == null)
             {
                 ApplicationUser user = new ApplicationUser()
                 {

@@ -6,6 +6,7 @@ using Application.Services.Paystack;
 using DataAccess.HealthInsured_AxaMansard.Implementation;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -47,10 +48,11 @@ namespace HealthBanc.Controllers
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
 
+        [EnableCors("Cors")]
         [HttpPost("[action]")]
         public async Task<IActionResult> PaystackWebHook(PaystackWebHookResponse webHookResponse)
         {
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully");
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully"+ipAddress);
             _logger.LogCritical("Hit Pasytackwebhook.Successfully"+ipAddress+":"+webHookResponse.data.log.authentication);
             var paymentReference = await _paymentReferenceRepository.GetByReference(webHookResponse.data.reference);
             if(webHookResponse.data.log.authentication == "open_url")
