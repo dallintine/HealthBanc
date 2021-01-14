@@ -58,7 +58,7 @@ namespace HealthBanc
                     {
                         var context = services.GetRequiredService<ApplicationDbContext>();
                         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-                        context.Database.Migrate();
+                        //context.Database.Migrate();
                         Seed.SeedData(context, userManager).Wait();
                     }
                     catch (Exception ex)

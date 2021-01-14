@@ -53,7 +53,7 @@ namespace HealthBanc.Controllers
             _logger.LogCritical("Hit Pasytackwebhook.Successfully");
             _logger.LogCritical("Hit Pasytackwebhook.Successfully"+ipAddress+":"+webHookResponse.data.log.authentication);
             var paymentReference = await _paymentReferenceRepository.GetByReference(webHookResponse.data.reference);
-            if(paymentReference.Status == "open_url")
+            if(webHookResponse.data.log.authentication == "open_url")
             {
                 var device = _auditLogServices.GetDevice(agent);
                 var userAxamansardProfile = await _mansardUserProfileRepository.GetByUserIdAsync(paymentReference.UserId);

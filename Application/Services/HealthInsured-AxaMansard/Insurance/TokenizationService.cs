@@ -125,7 +125,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var chargeCardResponse = await _paystackService.ChargeCard(card, id);
 
                     var paymentReference = new PaymentReference(chargeCardResponse.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
-                    , userAxamansardProfile.Premium,"pending");
+                    , userAxamansardProfile.Premium);
                     _paymentReference.Create(paymentReference);
                     await _paymentReference.Save();
 
@@ -144,11 +144,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
-                paymentReference.Status = "success";
-                //var paymentReference = new PaymentReference(chargeCardResponse.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
-                //    , userAxamansardProfile.Premium);
-                //_paymentReference.Create(paymentReference);
-                //await _paymentReference.Save();
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
                 //else, card status is 0;
@@ -210,9 +205,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // If charge card response request for OTP
             else if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 12)
             {
-                paymentReference.Status = "otp_request";
-                _paymentReference.Update(paymentReference);
-                await _paymentReference.Save();
                 return new ResponseMessage
                 {
                     Data = chargeCardResponse.Data,
@@ -224,9 +216,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // If charge card response wants to redirect
             else if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 20)
             {
-                paymentReference.Status = "open_url";
-                _paymentReference.Update(paymentReference);
-                await _paymentReference.Save();
                 return new ResponseMessage
                 {
                     Message = chargeCardResponse.Message,
@@ -236,9 +225,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 };
             }
             // If theres is an error
-            paymentReference.Status = "failed";
-            _paymentReference.Update(paymentReference);
-            await _paymentReference.Save();
             return new ResponseMessage
             {
                 Data = chargeCardResponse.Data,
@@ -300,7 +286,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if (chargeAuthorization.Status)
             {   
                 var paymentReference = new PaymentReference(chargeAuthorization.Reference, axaMansardProfile.Id, axaMansardProfile.UserId
-                    , axaMansardProfile.Premium,"success");
+                    , axaMansardProfile.Premium);
                 _paymentReference.Create(paymentReference);
                 await _paymentReference.Save();
 
@@ -332,11 +318,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // Insufficient funds
             else if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
             {
-                var paymentReference = new PaymentReference(chargeAuthorization.Reference, axaMansardProfile.Id, axaMansardProfile.UserId
-                   , axaMansardProfile.Premium, "failed");
-                _paymentReference.Create(paymentReference);
-                await _paymentReference.Save();
-
                 scheduledPaymentJob.Status = "Terminated"; scheduledPaymentJob.Message = chargeAuthorization.Message;
 
                 scheduledPaymentJob.ScheduledAxaEnrollment.Status = "Terminated"; scheduledPaymentJob.ScheduledAxaEnrollment.Message = "Terminated";
@@ -350,11 +331,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             else
             {
-                var paymentReference = new PaymentReference(chargeAuthorization.Reference, axaMansardProfile.Id, axaMansardProfile.UserId
-                  , axaMansardProfile.Premium, "failed");
-                _paymentReference.Create(paymentReference);
-                await _paymentReference.Save();
-
                 scheduledPaymentJob.Status = "Failed"; scheduledPaymentJob.Message = chargeAuthorization.Message;
                 scheduledPaymentJob.ScheduledAxaEnrollment.Status = "Failed"; scheduledPaymentJob.ScheduledAxaEnrollment.Message = "Failed";
                 _scheduledPayment.Update(scheduledPaymentJob);
@@ -571,7 +547,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if (chargeAuthorization.Status)
             {
                 var paymentReference = new PaymentReference(chargeAuthorization.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
-                    , userAxamansardProfile.Premium,"success");
+                    , userAxamansardProfile.Premium);
                 _paymentReference.Create(paymentReference);
                 await _paymentReference.Save();
 
@@ -614,10 +590,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _mansardUserProfileRepository.Save();
                 return new ResponseMessage { Message = "Reactivation was successful." , Status = true, ResponseCode = chargeAuthorization.ResponseCode };
             }
-            var failedPaymentReference = new PaymentReference(chargeAuthorization.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
-                   , userAxamansardProfile.Premium, "failed");
-            _paymentReference.Create(failedPaymentReference);
-            await _paymentReference.Save();
             return new ResponseMessage { Message = chargeAuthorization.Message, Status =false, ResponseCode = chargeAuthorization.ResponseCode };
         }
 
@@ -639,7 +611,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 // if user card was debit successfully during charge process
                 var paymentReference = new PaymentReference(chargeAuthorization.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
-                   , userAxamansardProfile.Premium,"success");
+                   , userAxamansardProfile.Premium);
                 _paymentReference.Create(paymentReference);
                 await _paymentReference.Save();
 
@@ -675,10 +647,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             else if(!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
             {
-                var paymentReference = new PaymentReference(chargeAuthorization.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
-                   , userAxamansardProfile.Premium, "failed");
-                _paymentReference.Create(paymentReference);
-
                 // if user has insufficient funds during charge process
                 paymentOnReactivation.Status = "Successful"; paymentOnReactivation.Message = chargeAuthorization.Message;
                 paymentOnReactivation.AxaEnrollmentOnReactivation.Status = "Terminated"; paymentOnReactivation.AxaEnrollmentOnReactivation.Message = "Terminated";
@@ -690,9 +658,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             else
             {
-                var paymentReference = new PaymentReference(chargeAuthorization.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
-                   , userAxamansardProfile.Premium, "failed");
-                _paymentReference.Create(paymentReference);
                 // if error occurrs.
                 paymentOnReactivation.Status = "Failed"; paymentOnReactivation.Message = chargeAuthorization.Message;
                 paymentOnReactivation.AxaEnrollmentOnReactivation.Status = "Terminated"; paymentOnReactivation.AxaEnrollmentOnReactivation.Message = "Terminated";
