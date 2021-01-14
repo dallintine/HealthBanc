@@ -50,7 +50,8 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> PaystackWebHook(PaystackWebHookResponse webHookResponse)
         {
-            _logger.LogWarning("Hit Pasytackwebhook.Successfully"+ipAddress+":"+webHookResponse.data.log.authentication);
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully");
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully"+ipAddress+":"+webHookResponse.data.log.authentication);
             var paymentReference = await _paymentReferenceRepository.GetByReference(webHookResponse.data.reference);
             if(paymentReference.Status == "open_url")
             {
