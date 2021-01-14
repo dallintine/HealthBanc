@@ -28,13 +28,13 @@ namespace HealthBanc.Controllers
         private readonly IAxaMansardUserProfileRepository _mansardUserProfileRepository;
         private readonly IAxaMansardCompletionRepository _completionRepository;
         private readonly ILogger<PaystackController> _logger;
-        private readonly PaymentReferenceRepository _paymentReferenceRepository;
+        private readonly IPaymentReferenceRepository _paymentReferenceRepository;
         public string ipAddress;
         public StringValues agent;
 
         public PaystackController(PaystackService paystackService,IHttpContextAccessor accessor, AuditLogService auditLogServices,TokenizationService tokkenizationService
             ,IAxaMansardUserProfileRepository mansardUserProfileRepository, IAxaMansardCompletionRepository completionRepository,ILogger<PaystackController> logger,
-            PaymentReferenceRepository paymentReference)
+            IPaymentReferenceRepository paymentReferenceRepository)
         {
             _paystackService = paystackService;
             _auditLogServices = auditLogServices;
@@ -42,7 +42,7 @@ namespace HealthBanc.Controllers
             _mansardUserProfileRepository = mansardUserProfileRepository;
             _completionRepository = completionRepository;
             _logger = logger;
-            _paymentReferenceRepository = paymentReference;
+            _paymentReferenceRepository = paymentReferenceRepository;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
