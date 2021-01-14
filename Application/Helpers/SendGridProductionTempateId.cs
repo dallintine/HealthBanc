@@ -10,5 +10,7 @@ namespace Application.Helpers
         public string ForgotPassowrd { get; set; }
         public string HealthInsured_PaymentReminder { get; set; }
         public string HeliumHealth { get; set; }
+        public string SuccessfulSubscription { get; set; }
+
     }
 }

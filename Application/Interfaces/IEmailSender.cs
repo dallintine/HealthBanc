@@ -11,5 +11,6 @@ namespace Application.Interfaces
         void SendEmail(string email,string templateId, string url, string companyName);
         void SendEmailWithObject(HelloEmail helloEmail);
         void SendInsurancePaymentReminder(string email, string userName);
+        void SendSuccessfulSubscriptionMail(string email, string userName);
     }
 }

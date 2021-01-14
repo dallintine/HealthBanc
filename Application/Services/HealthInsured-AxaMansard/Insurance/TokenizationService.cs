@@ -194,6 +194,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, null, null, "Debit Card Added", null);
                 await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
 
+                SendSuccesfulSubscriptionMail(userAxamansardProfile.Email, userAxamansardProfile.Surname);
+
                 return new ResponseMessage
                 {
                     Data = chargeCardResponse,
@@ -672,8 +674,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         }        
 
         public void SendEmailReminder(string email,string userName, PerformContext context)
-        {
+        {            
             _emailSender.SendInsurancePaymentReminder(email, userName);
+        }
+
+        public void SendSuccesfulSubscriptionMail(string email, string userName)
+        {
+            _emailSender.SendSuccessfulSubscriptionMail(email, userName);
         }
     } 
 }
