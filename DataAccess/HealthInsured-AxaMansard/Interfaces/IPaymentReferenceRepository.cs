@@ -11,5 +11,6 @@ namespace DataAccess.HealthInsured_AxaMansard.Interfaces
     {
         Task<PaymentReference> GetByUserId(int userId);
         Task<PaymentReference> GetById(int id);
+        Task<PaymentReference> GetByReference(string reference);
     }
 }

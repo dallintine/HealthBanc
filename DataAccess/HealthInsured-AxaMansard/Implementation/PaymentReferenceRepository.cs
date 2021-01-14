@@ -24,5 +24,10 @@ namespace DataAccess.HealthInsured_AxaMansard.Implementation
         {
             return await _context.PaymentReferences.FirstOrDefaultAsync(x => x.Id == id);
         }
+
+        public async Task<PaymentReference> GetByReference(string reference)
+        {
+            return await _context.PaymentReferences.FirstOrDefaultAsync(x => x.Refernce == reference);
+        }
     }
 }

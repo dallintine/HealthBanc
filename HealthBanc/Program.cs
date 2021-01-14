@@ -22,17 +22,17 @@ namespace HealthBanc
 {
     public class Program
     {
-        //public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
-        //{
-        //    public ApplicationDbContext CreateDbContext(string[] args)
-        //    {
-        //        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        //        optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
-        //        //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBancNew;Trusted_Connection=True;MultipleActiveResultSets=true");
+        public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+        {
+            public ApplicationDbContext CreateDbContext(string[] args)
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+                optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
+                //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBancNew;Trusted_Connection=True;MultipleActiveResultSets=true");
 
-        //        return new ApplicationDbContext(optionsBuilder.Options);
-        //    }
-        //}
+                return new ApplicationDbContext(optionsBuilder.Options);
+            }
+        }
 
         public static void Main(string[] args)
         {
@@ -58,7 +58,7 @@ namespace HealthBanc
                     {
                         var context = services.GetRequiredService<ApplicationDbContext>();
                         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-                        //context.Database.Migrate();
+                        context.Database.Migrate();
                         Seed.SeedData(context, userManager).Wait();
                     }
                     catch (Exception ex)
