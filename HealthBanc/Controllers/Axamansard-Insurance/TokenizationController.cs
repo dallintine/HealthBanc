@@ -10,6 +10,7 @@ using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
@@ -27,16 +28,18 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
         private readonly AuditLogService _auditLogServices;
         private readonly IAxaMansardUserProfileRepository _mansardUserProfileRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<TokenizationController> _logger;
         public string ipAddress;
         public StringValues agent;
 
         public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices,
-            IAxaMansardUserProfileRepository mansardUserProfileRepository,IMapper mapper)
+            IAxaMansardUserProfileRepository mansardUserProfileRepository,IMapper mapper,ILogger<TokenizationController>logger)
         {
             _tokenizationService = tokenizationService;
             _auditLogServices = auditLogServices;
             _mansardUserProfileRepository = mansardUserProfileRepository;
             _mapper = mapper;
+            _logger = logger;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
