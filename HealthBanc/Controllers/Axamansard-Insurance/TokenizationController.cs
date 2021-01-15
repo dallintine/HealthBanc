@@ -53,6 +53,7 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [Authorize(Roles = "SuperAdmin")]
+        [EnableCors("Cors")]
         [HttpPost("[action]")]
         public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard)
         {
@@ -66,7 +67,7 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
                 if (chargeCardResponse.Status && chargeCardResponse.ResponseCode == 20)
                 {
                     var tokenization = chargeCardResponse.Data as TokenizationResponse;
-                    return RedirectToAction("SendUrl", new {url = tokenization.RedirectUrl});
+                    return RedirectToAction("SendUrl");
                 }
                 if (chargeCardResponse.Status)
                 {
@@ -86,11 +87,11 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
-        [DisableCors]
+        [EnableCors("Cors")]
         [HttpGet("[action]")]
-        public ActionResult SendUrl(string url)
+        public ActionResult SendUrl()
         {
-            return Redirect("https://www.google.com");
+            return Ok();
         }
 
         [Authorize(Roles = "SuperAdmin")]
