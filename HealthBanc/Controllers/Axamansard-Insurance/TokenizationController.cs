@@ -67,7 +67,7 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
                 if (chargeCardResponse.Status && chargeCardResponse.ResponseCode == 20)
                 {
                     var tokenization = chargeCardResponse.Data as TokenizationResponse;
-                    return RedirectToAction("SendUrl");
+                    return Redirect("https://www.google.com");
                 }
                 if (chargeCardResponse.Status)
                 {
@@ -87,12 +87,12 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
-        [EnableCors("Cors")]
-        [HttpGet("[action]")]
-        public ActionResult SendUrl()
-        {
-            return Ok();
-        }
+        //[EnableCors("Cors")]
+        //[HttpGet("[action]")]
+        //public ActionResult SendUrl()
+        //{
+        //    return Ok();
+        //}
 
         [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
