@@ -8,6 +8,7 @@ using AutoMapper;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -85,6 +86,7 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        [DisableCors]
         [HttpGet("[action]")]
         public ActionResult SendUrl(string url)
         {
