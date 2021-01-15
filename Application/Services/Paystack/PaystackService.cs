@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Application.Services.Paystack
@@ -250,6 +251,12 @@ namespace Application.Services.Paystack
                     ResponseCode = 20,
                 };
             }
+            if(status == "pending")
+            {
+                Thread.Sleep(11000);
+                var pending = await CheckPendingCharge(reference, phoneNumber, birthDate, pin);
+                return pending;
+            }
             if (status == "send_phone")
             {
                 // if status is Submit Phone call submit Phone function
@@ -418,6 +425,53 @@ namespace Application.Services.Paystack
                 Reference = reference,
                 ResponseCode = 5
             };
+        }
+        private async Task<TokenizationResponse> CheckPendingCharge(string reference,string phoneNumber, DateTime birthDate,string pin)
+        {
+            var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+            var response = await httpClient.GetAsync($"{Options.PayStackChargeCard}/{reference}");
+
+            var verifyResponse = new ChargeCardResponse();
+            string apiResponse = await response.Content.ReadAsStringAsync();
+            verifyResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+
+            if (response.IsSuccessStatusCode)
+            {               
+                if (verifyResponse.status == true)
+                {
+                    // call ProcessSuccessOrFailedResult function to process failed,timeout or succees response
+                    var processSuccessOrFailedResult = ProcessSuccessOrFailedDataStatus(verifyResponse.data.authorization, verifyResponse.data.status,
+                        verifyResponse.message, verifyResponse.data.reference);
+
+                    // check if status is true
+                    if (processSuccessOrFailedResult.Status)
+                    {
+                        return processSuccessOrFailedResult;
+                    }
+                    // check if status is failed or timeout
+                    else if (!processSuccessOrFailedResult.Status && processSuccessOrFailedResult.ResponseCode != 13)
+                    {
+                        return processSuccessOrFailedResult;
+                    }
+                    // check if sucess is neither failes, success or timeout means response code is 13
+                    else
+                    {
+                        // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber,pending}
+                        var processStatusResponse = await ProcessValidDataStatus(verifyResponse.data.status, reference, phoneNumber, birthDate, pin);
+                        //Check if reposne is open_url
+                        if (processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
+                        {
+                            processStatusResponse.RedirectUrl = verifyResponse.data.url;
+                            return processStatusResponse;
+                        }
+                        return processStatusResponse;
+                    }
+                }
+                var message = verifyResponse.data.message != null ? verifyResponse.data.message : "";
+                return new TokenizationResponse { Message = verifyResponse.message + ", " + message, Status = false };
+            }
+            var errorMessage = verifyResponse.data.message != null ? verifyResponse.data.message : "";
+            return new TokenizationResponse { Message = verifyResponse.message + ", " + errorMessage, Status = false };
         }
     }
 }
