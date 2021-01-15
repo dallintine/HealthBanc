@@ -59,6 +59,11 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
                 var device = _auditLogServices.GetDevice(agent);
 
                 var chargeCardResponse = await _tokenizationService.TokenizeCard(chargeCard, id,ipAddress,device);
+                if (chargeCardResponse.Status && chargeCardResponse.ResponseCode == 20)
+                {
+                    var tokenization = chargeCardResponse.Data as TokenizationResponse;
+                    return RedirectToAction("SendUrl", new {url = tokenization.RedirectUrl});
+                }
                 if (chargeCardResponse.Status)
                 {
                     return Ok(chargeCardResponse);
@@ -75,6 +80,12 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
+        [HttpGet("[action]")]
+        public ActionResult SendUrl(string url)
+        {
+            return Redirect(url);
         }
 
         [Authorize(Roles = "SuperAdmin")]
