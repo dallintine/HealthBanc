@@ -88,7 +88,7 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
         [HttpGet("[action]")]
         public ActionResult SendUrl(string url)
         {
-            return Redirect(url);
+            return Redirect("https://www.google.com");
         }
 
         [Authorize(Roles = "SuperAdmin")]
