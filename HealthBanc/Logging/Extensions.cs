@@ -26,7 +26,7 @@ namespace HealthBanc.Logging
                     .MinimumLevel.Is(level)
                     .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
                     .Enrich.WithProperty("ApplicationName", applicationName);
-                Configure(loggerConfiguration, level, seqOptions, serilogOptions,azureBlobOptions, applicationInsightsOptions);
+                Configure(loggerConfiguration, Serilog.Events.LogEventLevel.Warning, seqOptions, serilogOptions,azureBlobOptions, applicationInsightsOptions);
             });
 
         private static void Configure(LoggerConfiguration loggerConfiguration, LogEventLevel level,SeqOptions seqOptions, SerilogOptions serilogOptions,AzureBlobOptions azureBlobOptions,
@@ -45,7 +45,7 @@ namespace HealthBanc.Logging
 
             if (azureBlobOptions.Enabled)
             {
-                loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, Serilog.Events.LogEventLevel.Warning, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName, azureBlobOptions.OutputTemplate);
+                loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, level, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName, azureBlobOptions.OutputTemplate);
             }
 
             if (applicationInsightsOptions.Enabled)

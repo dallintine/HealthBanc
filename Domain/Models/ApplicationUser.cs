@@ -17,8 +17,6 @@ namespace Domain.Models
         [Required]
         public DateTime DateOfRegistration { get; set; }
         public bool IsDeleted { get; set; }
-        public int? SuperAdminId { get; set; }
-        public int? AdminId { get; set; }
         public DateTime LastLoginDate { get; set; }
         public string ServiceUsed { get; set; }
         public string UniqueUsername { get; set; }

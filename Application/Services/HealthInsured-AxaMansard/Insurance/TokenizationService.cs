@@ -115,20 +115,24 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                             card.amount = (userAxamansardProfile.Premium * 100).ToString();
                         }
                     }
-                    // if the user has an activate or deactivated subscription status, we do a test charge of 100 naria, we send amount in Kobo
+                    // if the user has an activa or deactivated subscription status i.e userAxamansardProfile.SubscriptionStatus != null , 
+                    // we do a test charge of 100 naria, we send amount in Kobo
                     // Since user is just adding a new card.
                     else
                     {
                         card.amount = (100 * 100).ToString();
                     }
                     
+                    // Paystack service to charge user card
                     var chargeCardResponse = await _paystackService.ChargeCard(card, id);
 
+                    // Create payment reference for the charge.
                     var paymentReference = new PaymentReference(chargeCardResponse.Reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
                     , userAxamansardProfile.Premium);
                     _paymentReference.Create(paymentReference);
                     await _paymentReference.Save();
 
+                    // function to process response from paystack
                     return await ProcessPaystackChargeCardResponse(chargeCardResponse, userAxamansardProfile, checkprofileComplete
                        ,paymentReference, card.reference, ipAddress, device);
 

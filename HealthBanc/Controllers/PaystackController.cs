@@ -12,9 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace HealthBanc.Controllers
@@ -52,8 +49,9 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> PaystackWebHook(PaystackWebHookResponse webHookResponse)
         {
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully"+ipAddress);
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully"+ipAddress+":"+webHookResponse.data.log.authentication);
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress);
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + ":" + webHookResponse.data.log.authentication);
+            throw new Exception("Hit Pasytackwebhook.Successfully" + ipAddress + ":" + webHookResponse.data.log.authentication);
             var paymentReference = await _paymentReferenceRepository.GetByReference(webHookResponse.data.reference);
             if(webHookResponse.data.log.authentication == "open_url")
             {

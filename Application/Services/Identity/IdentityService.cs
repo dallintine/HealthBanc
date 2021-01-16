@@ -93,7 +93,6 @@ namespace Application.Services.Identity
                 var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
                 if (result.Succeeded)
                 {
-                    user.SuperAdminId = user.Id;
                     await _userManager.UpdateAsync(user);
                     await _userManager.AddToRoleAsync(user, "SuperAdmin");
                     var confirmResult = await SendUserEmailVerificationAsync(user);
@@ -188,8 +187,6 @@ namespace Application.Services.Identity
                 {
                     new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim("SuperAdminId", user.SuperAdminId.ToString()),
-                    new Claim("AdminId", user.AdminId == null ? user.SuperAdminId.ToString() : user.AdminId.ToString()),
                     new Claim(ClaimTypes.Name, user.Id.ToString()),
                     new Claim("FirstName",user.FirstName??"Not Available"),
                     new Claim("LastName",user.LastName??"Not Available"),

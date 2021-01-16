@@ -34,7 +34,7 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
         public StringValues agent;
 
         public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices,
-            IAxaMansardUserProfileRepository mansardUserProfileRepository,IMapper mapper,ILogger<TokenizationController>logger)
+            IAxaMansardUserProfileRepository mansardUserProfileRepository,IMapper mapper, ILogger<TokenizationController> logger)
         {
             _tokenizationService = tokenizationService;
             _auditLogServices = auditLogServices;
@@ -53,7 +53,6 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [Authorize(Roles = "SuperAdmin")]
-        [EnableCors("Cors")]
         [HttpPost("[action]")]
         public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard)
         {
@@ -64,11 +63,6 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
                 var device = _auditLogServices.GetDevice(agent);
 
                 var chargeCardResponse = await _tokenizationService.TokenizeCard(chargeCard, id,ipAddress,device);
-                if (chargeCardResponse.Status && chargeCardResponse.ResponseCode == 20)
-                {
-                    var tokenization = chargeCardResponse.Data as TokenizationResponse;
-                    return Redirect("https://www.google.com");
-                }
                 if (chargeCardResponse.Status)
                 {
                     return Ok(chargeCardResponse);
@@ -86,13 +80,6 @@ namespace HealthBanc.Controllers.Axamansard_Insurance
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
-
-        //[EnableCors("Cors")]
-        //[HttpGet("[action]")]
-        //public ActionResult SendUrl()
-        //{
-        //    return Ok();
-        //}
 
         [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
