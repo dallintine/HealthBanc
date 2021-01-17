@@ -175,7 +175,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     //Save scheduled email jobId
                     userAxamansardProfile.PendingEmailJobId = emailReminderJobId;
 
-
                     userAxamansardProfile.SubscriptionStatus = true;
                     userAxamansardProfile.ActiveStatus = true;
                     userAxamansardProfile.StartActiveStatusDate = DateTime.Now;
@@ -185,6 +184,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     _completionRepository.Update(checkprofileComplete);
 
                     _mansardUserProfileRepository.Update(userAxamansardProfile);
+
+                    SendSuccesfulSubscriptionMail(userAxamansardProfile.Email, userAxamansardProfile.Surname, userAxamansardProfile.TransId, userAxamansardProfile.CareProviderName);
 
                     //Create Audit thats user subscrption changed 
                     var auditViewModel2 = new AuditLogViewModel(userAxamansardProfile.UserId, null, "Inactive subscription status", "Subscription Status Changed",
@@ -197,7 +198,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var auditViewModel = new AuditLogViewModel(userAxamansardProfile.UserId, null, null, "Debit Card Added", null);
                 await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
 
-                SendSuccesfulSubscriptionMail(userAxamansardProfile.Email, userAxamansardProfile.Surname,userAxamansardProfile.TransId,userAxamansardProfile.CareProviderName);
 
                 return new ResponseMessage
                 {

@@ -3,6 +3,7 @@ using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services.Paystack;
+using Application.ViewModels;
 using DataAccess.HealthInsured_AxaMansard.Implementation;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models;
@@ -45,42 +46,42 @@ namespace HealthBanc.Controllers
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
 
-        [EnableCors("Cors")]
+
         [HttpPost("[action]")]
-        public async Task<IActionResult> PaystackWebHook(PaystackWebHookResponse webHookResponse)
+        public IActionResult PaystackWebHook([FromBody]PaystackWebHookResponse webHookResponse)
         {
             _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress);
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + ":" + webHookResponse.data.log.authentication);
-            throw new Exception("Hit Pasytackwebhook.Successfully" + ipAddress + ":" + webHookResponse.data.log.authentication);
-            var paymentReference = await _paymentReferenceRepository.GetByReference(webHookResponse.data.reference);
-            if(webHookResponse.data.log.authentication == "open_url")
-            {
-                var device = _auditLogServices.GetDevice(agent);
-                var userAxamansardProfile = await _mansardUserProfileRepository.GetByUserIdAsync(paymentReference.UserId);
-                var checkprofileComplete = await _completionRepository.GetCompletionStateByUserId(paymentReference.UserId);
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + ":");
+            throw new Exception("Hit Pasytackwebhook.Successfully" + ipAddress + ":test");
+            //var paymentReference = await _paymentReferenceRepository.GetByReference(webHookResponse.data.reference);
+            //if(webHookResponse.data.log.authentication == "open_url")
+            //{
+            //    var device = _auditLogServices.GetDevice(agent);
+            //    var userAxamansardProfile = await _mansardUserProfileRepository.GetByUserIdAsync(paymentReference.UserId);
+            //    var checkprofileComplete = await _completionRepository.GetCompletionStateByUserId(paymentReference.UserId);
 
-                var tokenizationResponse =  new TokenizationResponse
-                {
-                    Type = webHookResponse.data.authorization.card_type,
-                    LastDigit = webHookResponse.data.authorization.last4,
-                    AuthorizationCode = webHookResponse.data.authorization.authorization_code,
-                    Message = "Card was tokenize successfully",
-                    Status = true,
-                    Reference = paymentReference.Refernce,
-                    ResponseCode = 0
-                };
-                var processVerifyTransactionResponse = await _tokkenizationService.ProcessPaystackChargeCardResponse(tokenizationResponse, userAxamansardProfile,
-                    checkprofileComplete,paymentReference, paymentReference.Refernce, ipAddress, device);
+            //    var tokenizationResponse =  new TokenizationResponse
+            //    {
+            //        Type = webHookResponse.data.authorization.card_type,
+            //        LastDigit = webHookResponse.data.authorization.last4,
+            //        AuthorizationCode = webHookResponse.data.authorization.authorization_code,
+            //        Message = "Card was tokenize successfully",
+            //        Status = true,
+            //        Reference = paymentReference.Refernce,
+            //        ResponseCode = 0
+            //    };
+            //    var processVerifyTransactionResponse = await _tokkenizationService.ProcessPaystackChargeCardResponse(tokenizationResponse, userAxamansardProfile,
+            //        checkprofileComplete,paymentReference, paymentReference.Refernce, ipAddress, device);
 
-                if(processVerifyTransactionResponse.Status == true)
-                {
-                    return Ok();
-                }
-                else
-                {
-                    return BadRequest();
-                }
-            }
+            //    if(processVerifyTransactionResponse.Status == true)
+            //    {
+            //        return Ok();
+            //    }
+            //    else
+            //    {
+            //        return BadRequest();
+            //    }
+            //}
             return Ok(new ResponseMessage { Data = webHookResponse, Status = true });
         }        
     }
