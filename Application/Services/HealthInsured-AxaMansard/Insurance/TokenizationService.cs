@@ -784,7 +784,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <param name="last4"></param>
         /// <param name="card_type"></param>
         /// <returns></returns>
-        public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type)
+        public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type,string ipAddress)
         {
             if (@event == "charge.success")
             {
@@ -809,7 +809,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                                 ResponseCode = 0
                             };
                             await ProcessPaystackChargeCardResponse(tokenizationResponse, userAxamansardProfile,
-                                checkprofileComplete, paymentReference, paymentReference.Refernce, ":", null);
+                                checkprofileComplete, paymentReference, paymentReference.Refernce, ipAddress, "nil");
                             paymentReference.Status = "Successful";
                             _paymentReference.Update(paymentReference);
                             await _paymentReference.Save();

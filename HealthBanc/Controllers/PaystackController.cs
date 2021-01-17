@@ -49,8 +49,8 @@ namespace HealthBanc.Controllers
             _logger.LogCritical("Hit Pasytackwebhook.Successfully" + webHookResponse.data.authorization.authorization_code + " "+
                  webHookResponse.data.customer.email);
 
-            //BackgroundJob.Enqueue(() => _tokenizationService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
-            //    webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type));
+            BackgroundJob.Enqueue(() => _tokenizationService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
+                webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type,ipAddress));
             return Ok();
         }          
     }
