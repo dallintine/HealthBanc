@@ -25,6 +25,7 @@ namespace Application.API_ResponseModel.Paystack
         public string ip_address { get; set; }
         public Authorization authorization { get; set; }
         public Customer customer { get; set; }
+        public Log log { get; set; }
         public object plan { get; set; }
         public string url { get; set; }
     }
@@ -56,5 +57,16 @@ namespace Application.API_ResponseModel.Paystack
         public object phone { get; set; }
         public object metadata { get; set; }
         public string risk_action { get; set; }
-    }    
+    }
+
+    public class Log
+    {
+        public int time_spent { get; set; }
+        public int attempts { get; set; }
+        public string authentication { get; set; }
+        public int errors { get; set; }
+        public bool success { get; set; }
+        public bool mobile { get; set; }
+        public object channel { get; set; }
+    }
 }
