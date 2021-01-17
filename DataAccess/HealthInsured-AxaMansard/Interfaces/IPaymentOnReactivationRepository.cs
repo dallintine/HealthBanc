@@ -9,7 +9,6 @@ namespace DataAccess.HealthInsured_AxaMansard.Interfaces
 {
     public interface IPaymentOnReactivationRepository : IBaseRepository<PaymentOnReactivation>
     {
-        Task<PaymentOnReactivation> GetScheduledPaymentByJobId(string jobId);
-        Task<PaymentOnReactivation> GetScheduledPaymentByStatus(string status);
+        Task<PaymentOnReactivation> GetScheduledPaymentByJobId(string jobId, int userId);
     }
 }

@@ -10,6 +10,5 @@ namespace DataAccess.HealthInsured_AxaMansard.Interfaces
     public interface IScheduledAxaEnrollmentRepository : IBaseRepository<ScheduledAxaEnrollment>
     {
         Task<ScheduledAxaEnrollment> GetScheduledAxaEnrollmenttByJobId(string jobId);
-        Task<ScheduledAxaEnrollment> GetScheduledAxaEnrollmenttByStatus(string status);
     }
 }

@@ -9,9 +9,8 @@ namespace DataAccess.HealthInsured_AxaMansard.Interfaces
 {
     public interface IAxaMansardUserProfileRepository : IBaseRepository<AxaMansardUserProfile>
     {
-        Task<PaymentReference> ActivePaymentReference(int id);
         Task<AxaMansardUserProfile> GetByUserIdAsync(int id);
         Task<AxaMansardUserProfile> GetByIdAsync(int id);
-        Task<AxaMansardUserProfile> UserAndPaymentReference(int id);
+        Task<AxaMansardUserProfile> GetByEmail(string email);
     }
 }

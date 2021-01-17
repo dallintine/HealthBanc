@@ -12,7 +12,7 @@ namespace Domain.Models
         {
 
         }
-        public PaymentReference(string refernce, int axaMansardUserProfileId, int userId, decimal amount)
+        public PaymentReference(string refernce, int axaMansardUserProfileId, int userId, decimal amount,string status)
         {
             Date = DateTime.Now;
             Channel = "HealthBanc-Axamansard";
@@ -20,7 +20,7 @@ namespace Domain.Models
             AxaMansardUserProfileId = axaMansardUserProfileId;
             UserId = userId;
             Amount = amount;
-            Active = true;
+            Status = status;
         }
 
         public int Id { get; set; }
@@ -30,6 +30,6 @@ namespace Domain.Models
         public int AxaMansardUserProfileId { get; set; }
         public int UserId { get; set; }
         public Decimal Amount { get; set; }
-        public bool Active { get; set; }
+        public string Status { get; set; }
     }
 }

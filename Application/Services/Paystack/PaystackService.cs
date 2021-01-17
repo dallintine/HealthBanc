@@ -1,6 +1,7 @@
 ﻿using Application.API_RequestModel.Paystack;
 using Application.API_ResponseModel.Paystack;
 using Application.Helpers.ThirdPartyAPI;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.ViewModels.Paystack;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models;
@@ -23,7 +24,6 @@ namespace Application.Services.Paystack
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IAxaMansardUserProfileRepository _axaMansardUser;
         private readonly ILogger<PaystackService> _logger;
-
         private Helpers.Paystack Options { get; }
 
         public PaystackService(IHttpClientFactory httpClientFactory,IAxaMansardUserProfileRepository axaMansardUser, IOptions<Helpers.Paystack> paystackAccessor,
@@ -368,7 +368,8 @@ namespace Application.Services.Paystack
         }
         public async Task<TokenizationResponse> VerifyTransaction(string reference)
         {
-            var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+            var httpClient = _httpClientFactory.CreateClient("Paystack");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             var response = await httpClient.GetAsync($"{Options.VerifyTransaction}/{reference}");
             if (response.IsSuccessStatusCode)
             {
@@ -428,7 +429,8 @@ namespace Application.Services.Paystack
         }
         private async Task<TokenizationResponse> CheckPendingCharge(string reference,string phoneNumber, DateTime birthDate,string pin)
         {
-            var httpClient = _httpClientFactory.CreateClient("PaystackPayment");
+            var httpClient = _httpClientFactory.CreateClient("Paystack");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             var response = await httpClient.GetAsync($"{Options.PayStackChargeCard}/{reference}");
 
             var verifyResponse = new ChargeCardResponse();
@@ -473,5 +475,6 @@ namespace Application.Services.Paystack
             var errorMessage = verifyResponse.data.message != null ? verifyResponse.data.message : "";
             return new TokenizationResponse { Message = verifyResponse.message + ", " + errorMessage, Status = false };
         }
+        
     }
 }

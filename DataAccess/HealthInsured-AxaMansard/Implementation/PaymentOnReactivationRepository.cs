@@ -15,14 +15,10 @@ namespace DataAccess.HealthInsured_AxaMansard.Implementation
         public PaymentOnReactivationRepository(ApplicationDbContext context) : base(context)
         {
         }
-        public async Task<PaymentOnReactivation> GetScheduledPaymentByJobId(string jobId)
+        public async Task<PaymentOnReactivation> GetScheduledPaymentByJobId(string jobId,int userId)
         {
             return await _context.PaymentOnReactivations.Include(x => x.AxaEnrollmentOnReactivation)
-                .FirstOrDefaultAsync(x =>x.Status == "Processing" && x.JobId == jobId);
-        }
-        public async Task<PaymentOnReactivation> GetScheduledPaymentByStatus(string status)
-        {
-            return await _context.PaymentOnReactivations.Include(x => x.AxaEnrollmentOnReactivation).FirstOrDefaultAsync(x => x.Status == "Processing");
+                .FirstOrDefaultAsync(x =>x.JobId == jobId && x.UserId == userId);
         }
     }
 }
