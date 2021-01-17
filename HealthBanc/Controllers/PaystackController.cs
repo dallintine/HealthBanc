@@ -52,8 +52,7 @@ namespace HealthBanc.Controllers
         {
             _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress);
             _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + ":");
-            throw new Exception("Hit Pasytackwebhook.Successfully" + ipAddress + ":test");
-            //var paymentReference = await _paymentReferenceRepository.GetByReference(webHookResponse.data.reference);
+            throw new Exception("Hit Pasytackwebhook.Successfully" + ipAddress + ":test"+ webHookResponse.data.log.authentication);
             //if(webHookResponse.data.log.authentication == "open_url")
             //{
             //    var device = _auditLogServices.GetDevice(agent);
