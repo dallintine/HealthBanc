@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
 
@@ -50,11 +51,8 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public IActionResult PaystackWebHook([FromBody]PaystackWebHookResponse webHookResponse)
         {
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress);
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + ":"+webHookResponse.ToString());
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + "authenticate" + ":" + webHookResponse.@event);
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + "authenticate" + ":" + webHookResponse.data.log.authentication);
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + "authenticate" + ":" + webHookResponse.data.ip_address);
+            string json = JsonConvert.SerializeObject(webHookResponse);
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + ":" + json);
             //if(webHookResponse.data.log.authentication == "open_url")
             //{
             //    var device = _auditLogServices.GetDevice(agent);
@@ -83,7 +81,7 @@ namespace HealthBanc.Controllers
             //        return BadRequest();
             //    }
             //}
-            return Ok(new ResponseMessage { Data = webHookResponse, Status = true });
+            return Ok();
         }        
     }
 }
