@@ -51,8 +51,8 @@ namespace HealthBanc.Controllers
         public IActionResult PaystackWebHook([FromBody]PaystackWebHookResponse webHookResponse)
         {
             _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress);
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + ":");
-            throw new Exception("Hit Pasytackwebhook.Successfully" + ipAddress + ":test"+ webHookResponse.data.log.authentication);
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + ":"+webHookResponse.@event+webHookResponse.ToString());
+            throw new Exception("Hit Pasytackwebhook.Successfully" + ipAddress + ":test");
             //if(webHookResponse.data.log.authentication == "open_url")
             //{
             //    var device = _auditLogServices.GetDevice(agent);
