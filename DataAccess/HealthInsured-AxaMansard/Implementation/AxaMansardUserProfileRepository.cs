@@ -23,7 +23,7 @@ namespace DataAccess.HealthInsured_AxaMansard.Implementation
 
         public async Task<AxaMansardUserProfile> GetByEmail(string email)
         {
-            return await _context.AxaMansardUserProfile.FirstOrDefaultAsync(x => x.Email == email);
+            return await _context.AxaMansardUserProfile.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Email == email);
         }
 
         public async Task<AxaMansardUserProfile> GetByIdAsync(int id)

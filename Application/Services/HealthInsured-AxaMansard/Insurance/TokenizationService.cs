@@ -796,7 +796,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     {
                         if (paymentReference.Status == "Send_Url")
                         {
-                            var checkprofileComplete = await _completionRepository.GetCompletionStateByUserId(paymentReference.UserId);
+                            var checkprofileComplete = await _completionRepository.GetCompletionStateByUserId(userAxamansardProfile.UserId);
 
                             var tokenizationResponse = new TokenizationResponse
                             {
