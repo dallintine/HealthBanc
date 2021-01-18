@@ -171,7 +171,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     //    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
                     var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile.Email, userAxamansardProfile.Surname, null),
-                       DateTime.Now.AddMinutes(7));
+                       DateTime.Now.AddMinutes(5));
 
                     // Save scheduled debit job Id
                     userAxamansardProfile.PendingJobId = getScheduledPaymentJobId;
@@ -309,8 +309,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
 
                 axaMansardProfile.SubscriptionStatus = true; axaMansardProfile.ActiveStatus = true;
-                axaMansardProfile.StartActiveStatusDate = DateTime.Now; axaMansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-                
+                //axaMansardProfile.StartActiveStatusDate = DateTime.Now; axaMansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                axaMansardProfile.StartActiveStatusDate = DateTime.Now; axaMansardProfile.EndActiveStatusDate = DateTime.Now.AddMinutes(7);
+
                 var enrollmentModel = _mapper.Map<EnrollmentModel>(axaMansardProfile);
                 var enrollment = await _insuranceSerivce.EnrollUser(enrollmentModel);
                 if (enrollment.Status)
@@ -323,8 +324,15 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 }
                 _scheduledPayment.Update(scheduledPaymentJob);
 
+                // Schedule debit email reminder for user 
+                //var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile.Email, userAxamansardProfile.Surname, null),
+                //    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+                var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(axaMansardProfile.Email, axaMansardProfile.Surname, null),
+                   DateTime.Now.AddMinutes(5));
+
                 var newJobId = await ProcessScheduledPayment(axaMansardProfile);
-                axaMansardProfile.PendingJobId = newJobId;
+                axaMansardProfile.PendingJobId = newJobId; axaMansardProfile.PendingEmailJobId = emailReminderJobId;
                 _mansardUserProfileRepository.Update(axaMansardProfile);
 
                 await _scheduledPayment.Save();
