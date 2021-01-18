@@ -167,8 +167,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var getScheduledPaymentJobId = await ProcessScheduledPayment(userAxamansardProfile);
 
                     // Schedule debit email reminder for user 
+                    //var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile.Email, userAxamansardProfile.Surname, null),
+                    //    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
                     var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile.Email, userAxamansardProfile.Surname, null),
-                        DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                       DateTime.Now.AddMinutes(7));
 
                     // Save scheduled debit job Id
                     userAxamansardProfile.PendingJobId = getScheduledPaymentJobId;
@@ -178,7 +181,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     userAxamansardProfile.SubscriptionStatus = true;
                     userAxamansardProfile.ActiveStatus = true;
                     userAxamansardProfile.StartActiveStatusDate = DateTime.Now;
-                    userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                    //userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                    userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddMinutes(7);
 
                     checkprofileComplete.TokenizationCompleted = true;
                     _completionRepository.Update(checkprofileComplete);
@@ -264,7 +268,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public async Task<string> ProcessScheduledPayment(AxaMansardUserProfile userAxamansardProfile)
         {
-            var executionDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+            //var executionDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+            var executionDate = DateTime.Now.AddMinutes(7);
+
 
             var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(userAxamansardProfile.UserId,
                  userAxamansardProfile.Id, null), executionDate);
@@ -429,11 +435,19 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     scheduledReactivatedPayment.AxaEnrollmentOnReactivation.Message = "Cancelled";
                     _paymentOnReactivation.Update(scheduledReactivatedPayment);
                 }
-            }            
+            }
 
-            var daysToCancelUserActivityStatus = axamansardprofile.EndActiveStatusDate;
+            //var daysToCancelUserActivityStatus = axamansardprofile.EndActiveStatusDate;
+            //// check if date active cycle will end correspond with present date. if so set active cycle to false.
+            //if(daysToCancelUserActivityStatus.Date == DateTime.Now.Date)
+            //{
+            //    axamansardprofile.ActiveStatus = false;
+            //    axamansardprofile.PendingJobId = null;
+            //    axamansardprofile.PendingEmailJobId = null;
+            //}
+            var timeToCancelUserActivityStatus = axamansardprofile.EndActiveStatusDate;
             // check if date active cycle will end correspond with present date. if so set active cycle to false.
-            if(daysToCancelUserActivityStatus.Date == DateTime.Now.Date)
+            if (timeToCancelUserActivityStatus == DateTime.Now.Date)
             {
                 axamansardprofile.ActiveStatus = false;
                 axamansardprofile.PendingJobId = null;
@@ -442,7 +456,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             else
             {
                 // Schedule task to render user status inactive when cycle ends
-                var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(axamansardprofile.UserId), daysToCancelUserActivityStatus);
+                //var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(axamansardprofile.UserId), daysToCancelUserActivityStatus);
+                var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(axamansardprofile.UserId), timeToCancelUserActivityStatus);
                 axamansardprofile.PendingJobId = jobId;
                 axamansardprofile.PendingEmailJobId = null;
             }
@@ -663,8 +678,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                 userAxamansardProfile.PendingEmailJobId = emailReminderJobId;
                 userAxamansardProfile.SubscriptionStatus = true;userAxamansardProfile.PendingJobId = getScheduledPaymentJobId;
+                //userAxamansardProfile.ActiveStatus = true; userAxamansardProfile.StartActiveStatusDate = DateTime.Now;
+                //userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
                 userAxamansardProfile.ActiveStatus = true; userAxamansardProfile.StartActiveStatusDate = DateTime.Now;
-                userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddMinutes(7);
                 _mansardUserProfileRepository.Update(userAxamansardProfile);
 
                 await _mansardUserProfileRepository.Save();
@@ -727,14 +744,18 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var getScheduledPaymentJobId = await ProcessScheduledPayment(userAxamansardProfile);
 
                 // Schedule debit email reminder for user 
+                //var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile.Email, userAxamansardProfile.Surname, null),
+                //    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
                 var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile.Email, userAxamansardProfile.Surname, null),
-                    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-                
+                   DateTime.Now.AddMinutes(5));
 
                 userAxamansardProfile.PendingEmailJobId = emailReminderJobId;
+                //userAxamansardProfile.PendingJobId = getScheduledPaymentJobId; userAxamansardProfile.StartActiveStatusDate = DateTime.Now;
+                //userAxamansardProfile.SubscriptionStatus = true; userAxamansardProfile.ActiveStatus = true;
+                //userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
                 userAxamansardProfile.PendingJobId = getScheduledPaymentJobId; userAxamansardProfile.StartActiveStatusDate = DateTime.Now;
                 userAxamansardProfile.SubscriptionStatus = true; userAxamansardProfile.ActiveStatus = true;
-                userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                userAxamansardProfile.EndActiveStatusDate = DateTime.Now.AddMinutes(7);
                 _mansardUserProfileRepository.Update(userAxamansardProfile);
             }
             // if user has insufficient funds during charge process
