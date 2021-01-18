@@ -112,5 +112,26 @@ namespace Infrastructure.Mail
 
             var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
         }
+
+        public void SendFailedDebitMail(string email, string userName, string premium, string reason)
+        {
+            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
+            var apiKey = _environmentAccessor.Staging ? Options.SendGridApiKey : Options.SendGridProductionApiKey;
+            var templateId = _environmentAccessor.Staging ? _emailTemplateAccessor.FailedDebit : _productionEmailTemplateAccessor.FailedDebit;
+
+            var sendGridClient = new SendGridClient(apiKey);
+            var sendGridMessage = new SendGridMessage();
+            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
+            sendGridMessage.AddTo(email, "HEALTHBANC");
+            sendGridMessage.SetTemplateId(templateId);
+            sendGridMessage.SetTemplateData(new HelloEmail
+            {
+                UserName = userName,
+                PremiumAmount = premium,
+                FailedReason = reason
+            });
+
+            var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
+        }
     }
 }

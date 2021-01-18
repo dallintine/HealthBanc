@@ -17,5 +17,6 @@ namespace Application.DTO
         public string UserName { get; set; }
         public string PremiumAmount { get; set; }
         public string EnroleeNumber { get; set; }
+        public string FailedReason { get; set; }
     }
 }

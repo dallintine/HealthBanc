@@ -346,6 +346,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 _paymentReference.Create(paymentReference);
 
                 scheduledPaymentJob.Status = "Terminated"; scheduledPaymentJob.Message = chargeAuthorization.Message;
+                scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
 
                 scheduledPaymentJob.ScheduledAxaEnrollment.Status = "Terminated"; scheduledPaymentJob.ScheduledAxaEnrollment.Message = "Terminated";
                 scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
@@ -355,6 +356,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 _mansardUserProfileRepository.Update(axaMansardProfile);
                 await _mansardUserProfileRepository.Save();
                 BackgroundJob.Delete(jobId);
+
+                SendEmailOnFailedDebit(axaMansardProfile.Email, axaMansardProfile.Surname, axaMansardProfile.Premium.ToString(), chargeAuthorization.Message);
                 await Task.CompletedTask;
             }
             // Failed
@@ -374,6 +377,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 _mansardUserProfileRepository.Update(axaMansardProfile);
                 await _mansardUserProfileRepository.Save();
                 BackgroundJob.Delete(jobId);
+
+                SendEmailOnFailedDebit(axaMansardProfile.Email, axaMansardProfile.Surname, axaMansardProfile.Premium.ToString(), chargeAuthorization.Message);
+
                 await Task.CompletedTask;
             }
             await Task.CompletedTask;
@@ -681,8 +687,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var getScheduledPaymentJobId = await ProcessScheduledPayment(userAxamansardProfile);
 
                 // Schedule debit email reminder for user 
+                //var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile.Email, userAxamansardProfile.Surname, null),
+                //    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
                 var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(userAxamansardProfile.Email, userAxamansardProfile.Surname, null),
-                    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                   DateTime.Now.AddMinutes(5));
 
                 userAxamansardProfile.PendingEmailJobId = emailReminderJobId;
                 userAxamansardProfile.SubscriptionStatus = true;userAxamansardProfile.PendingJobId = getScheduledPaymentJobId;
@@ -776,12 +785,15 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _paymentReference.Save();
 
                 paymentOnReactivation.Status = "Terminated"; paymentOnReactivation.Message = chargeAuthorization.Message;
+                paymentOnReactivation.PaymentReference = chargeAuthorization.Reference;
                 paymentOnReactivation.AxaEnrollmentOnReactivation.Status = "Terminated"; paymentOnReactivation.AxaEnrollmentOnReactivation.Message = "Terminated";
                 _paymentOnReactivation.Update(paymentOnReactivation);
 
                 userAxamansardProfile.PendingJobId = null; userAxamansardProfile.SubscriptionStatus = false;
                 userAxamansardProfile.ActiveStatus = false;
                 _mansardUserProfileRepository.Update(userAxamansardProfile);
+
+                SendEmailOnFailedDebit(userAxamansardProfile.Email, userAxamansardProfile.Surname, userAxamansardProfile.Premium.ToString(), chargeAuthorization.Message);
             }
             else
             {
@@ -792,12 +804,15 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _paymentReference.Save();
 
                 paymentOnReactivation.Status = "Failed"; paymentOnReactivation.Message = chargeAuthorization.Message;
+                paymentOnReactivation.PaymentReference = chargeAuthorization.Reference;
                 paymentOnReactivation.AxaEnrollmentOnReactivation.Status = "Terminated"; paymentOnReactivation.AxaEnrollmentOnReactivation.Message = "Terminated";
                 _paymentOnReactivation.Update(paymentOnReactivation);
 
                 userAxamansardProfile.PendingJobId = null; userAxamansardProfile.SubscriptionStatus = false;
                 userAxamansardProfile.ActiveStatus = false; 
                 _mansardUserProfileRepository.Update(userAxamansardProfile);
+
+                SendEmailOnFailedDebit(userAxamansardProfile.Email, userAxamansardProfile.Surname, userAxamansardProfile.Premium.ToString(), chargeAuthorization.Message);
             }
             await _mansardUserProfileRepository.Save();
             await Task.CompletedTask;
@@ -813,7 +828,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <param name="last4"></param>
         /// <param name="card_type"></param>
         /// <returns></returns>
-        public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type,string ipAddress)
+        public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type,string ipAddress,string amount)
         {
             if (@event == "charge.success")
             {
@@ -854,7 +869,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     {
                         // Create payment reference for the charge.
                         var paymentReference2 = new PaymentReference(reference, userAxamansardProfile.Id, userAxamansardProfile.UserId
-                        , userAxamansardProfile.Premium, "Successful");
+                        , decimal.Parse(amount), "Successful");
                         _paymentReference.Create(paymentReference2);
                         await _paymentReference.Save();
                     }
@@ -884,6 +899,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         public void SendSuccesfulSubscriptionMail(string email, string userName,string enroleeNumber,string healthCareProvider)
         {
             _emailSender.SendSuccessfulSubscriptionMail(email, userName,enroleeNumber, healthCareProvider);
+        }
+        public void SendEmailOnFailedDebit(string email,string userName,string premium,string reason)
+        {
+            _emailSender.SendFailedDebitMail(email, userName, premium, reason);
         }
     } 
 }
