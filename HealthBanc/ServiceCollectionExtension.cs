@@ -105,7 +105,6 @@ namespace HealthBanc
             services.AddScoped<IPasswordChangeRepository, PasswordChangeRepository>();
             services.AddScoped<IUserLogin_LogoutLogRepository, UserLogin_LogoutLogRepository>();
             services.AddScoped<IAdminLogin_LogoutLogRepository, AdminLogin_LogoutLogRepository>();
-            services.AddScoped<IInsufficientChargeTransactionRepository, IInsufficientChargeTransactionRepository>();
             services.AddScoped<IScheduledAxaEnrollmentRepository, ScheduledAxaEnrollmentRepository>();
             services.AddScoped<IScheduledPaymentRepository, ScheduledPaymentRepository>();
             services.AddScoped<IAxaEnrollmentReactivationRepository, AxaEnrollmentReactivationRepository>();

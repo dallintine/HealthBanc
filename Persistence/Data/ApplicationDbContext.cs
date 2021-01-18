@@ -31,7 +31,6 @@ namespace Persistence
         public DbSet<AdminLogin_LogoutLog> AuditLogin_LogoutLogs { get; set; }
         public DbSet<UserLogin_LogoutLog> UserLogin_LogoutLogs { get; set; }
         public DbSet<PasswordChangeHistory> PasswordChangeHistories { get; set; }
-        public DbSet<InsufficientChargeTransaction> InsufficientChargeTransactions { get; set; }
         public DbSet<ScheduledPayment> ScheduledPayments { get; set; }
         public DbSet<ScheduledAxaEnrollment> ScheduledAxaEnrollments { get; set; }
         public DbSet<AxaEnrollmentOnReactivation> AxaEnrollmentReactivations { get; set; }
