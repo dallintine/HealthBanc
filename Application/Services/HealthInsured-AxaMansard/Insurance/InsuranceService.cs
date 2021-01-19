@@ -84,16 +84,23 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 return new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" };
             }
 
-            CreateAxamansardUserProfile(userProfile, user);                
+            var creatResponse = await CreateAxamansardUserProfile(userProfile, user);
+            if (creatResponse.Status)
+            {
+                var auditViewModel = new AuditLogViewModel(userId, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
+                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
 
-            var auditViewModel = new AuditLogViewModel(userId, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
-            BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
-
-            return new ResponseMessage { Data = new AxaResponse() { IsSuccessful = "True", Message = "Profile was created successfully" },
-                Message = "Profile was created successfully", Status = true };
+                return new ResponseMessage
+                {
+                    Data = new AxaResponse() { IsSuccessful = "True", Message = "Profile was created successfully" },
+                    Message = "Profile was created successfully",
+                    Status = true
+                };
+            }
+            return new ResponseMessage { Status = false, Message = "Could not create profile,please try again later" };
         }
 
-        private async void CreateAxamansardUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
+        public async Task<ResponseMessage> CreateAxamansardUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
         {
             var profile = _mapper.Map<AxaMansardUserProfile>(userProfile);
             profile.UserId = user.Id;
@@ -113,6 +120,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             user.ServiceUsed = newServiceString;
             _userRepository.Update(user);
             await _userRepository.Save();
+            return new ResponseMessage { Status = true};
         }
 
         public async Task<ResponseMessage> EnrollUser(EnrollmentModel model)
