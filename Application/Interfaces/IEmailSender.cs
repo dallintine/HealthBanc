@@ -8,10 +8,11 @@ namespace Application.Interfaces
 {
     public interface IEmailSender
     {
-        void SendEmail(string email,string templateId, string url, string companyName);
-        void SendEmailWithObject(HelloEmail helloEmail);
-        void SendFailedDebitMail(string email, string userName, string premium, string reason);
-        void SendInsurancePaymentReminder(string email, string userName);
-        void SendSuccessfulSubscriptionMail(string email, string userName, string enroleeNumber, string healthCareProvider);
+        void HealthInsuredFailedDebit(string email, string subject, string userName, string premium);
+        void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider);
+        void SendHealthInsuredPaymentReminder(string email, string subject, string userName);
+        void SendHeliumNotification(string subject, string healthProvider, string providerType, string phonenumber, string providerEmail);
+        void SendUserResetPasswordMail(string email, string subject, string resetUrl);
+        void SendUserVerificationMail(string email, string subject, string verificationUrl);
     }
 }

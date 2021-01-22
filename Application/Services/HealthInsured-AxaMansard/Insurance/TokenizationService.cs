@@ -857,7 +857,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <param name="context"></param>
         public void SendEmailReminder(string email,string userName, PerformContext context)
         {            
-            _emailSender.SendInsurancePaymentReminder(email, userName);
+            _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
         }
 
         /// <summary>
@@ -869,12 +869,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <param name="healthCareProvider"></param>
         public void SendSuccesfulSubscriptionMail(string email, string userName,string enroleeNumber,string healthCareProvider)
         {
-            _emailSender.SendSuccessfulSubscriptionMail(email, userName,enroleeNumber, healthCareProvider);
+            _emailSender.HealthInsuredSubscriptionMail(email,"Active Free Trial",userName,enroleeNumber,healthCareProvider);
         }
 
         public void SendEmailOnFailedDebit(string email,string userName,string premium,string reason)
         {
-            _emailSender.SendFailedDebitMail(email, userName, premium, reason);
+            _emailSender.HealthInsuredFailedDebit(email, "Failed Transaction", userName, premium);
         }
     } 
 }

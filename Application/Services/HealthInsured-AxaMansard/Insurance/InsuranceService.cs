@@ -115,6 +115,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             var completionProfile = new AxaMansardCompletionProfile(user.Id, true, false);
             _completionRepository.Create(completionProfile);
+            await _completionRepository.Save();
 
             var newServiceString = user.ServiceUsed + "HealthInsured,";
             user.ServiceUsed = newServiceString;

@@ -82,7 +82,8 @@ namespace Application.Services.Paystack
                     }  
                 }
                 var message = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
-                return new TokenizationResponse { Message = chargeCardResponse.message + ", " + message, Status = false };
+                var gatewayResponse = chargeCardResponse.data.gateway_response != null ? chargeCardResponse.data.gateway_response : "";
+                return new TokenizationResponse { Message = chargeCardResponse.message + ", " + message+","+ gatewayResponse, Status = false };
             }
             var errorMessage = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
             return new TokenizationResponse { Message = chargeCardResponse.message + ", " + errorMessage, Status = false };
@@ -132,7 +133,8 @@ namespace Application.Services.Paystack
                     }
                 }
                 var message = otpResponse.data.message != null ? otpResponse.data.message : "";
-                return new TokenizationResponse { Message = otpResponse.message + ", " + message, Status = false };
+                var gatewayResponse = otpResponse.data.gateway_response != null ? otpResponse.data.gateway_response : "";
+                return new TokenizationResponse { Message = otpResponse.message + ", " + message+","+gatewayResponse, Status = false };
             }
             var errorMessage = otpResponse.data.message != null ? otpResponse.data.message : "";
             return new TokenizationResponse { Message = otpResponse.message + ", " + errorMessage, Status = false };
@@ -470,7 +472,8 @@ namespace Application.Services.Paystack
                     }
                 }
                 var message = verifyResponse.data.message != null ? verifyResponse.data.message : "";
-                return new TokenizationResponse { Message = verifyResponse.message + ", " + message, Status = false };
+                var gatewayResponse = verifyResponse.data.gateway_response != null ? verifyResponse.data.gateway_response : "";
+                return new TokenizationResponse { Message = verifyResponse.message + ", " + message+","+gatewayResponse, Status = false };
             }
             var errorMessage = verifyResponse.data.message != null ? verifyResponse.data.message : "";
             return new TokenizationResponse { Message = verifyResponse.message + ", " + errorMessage, Status = false };

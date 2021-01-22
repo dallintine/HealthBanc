@@ -36,7 +36,6 @@ namespace HealthBanc
         public static void Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder(args)
-           .UseServiceProviderFactory(new AutofacServiceProviderFactory())
            .ConfigureWebHostDefaults(webHostBuilder =>
            {
                webHostBuilder

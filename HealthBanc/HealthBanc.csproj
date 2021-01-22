@@ -25,7 +25,6 @@
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.4.0" />
     <PackageReference Include="Hangfire" Version="1.7.12" />
     <PackageReference Include="Hangfire.Dashboard.Authorization" Version="3.0.0" />
-    <PackageReference Include="Jaeger" Version="0.4.1" />
     <PackageReference Include="MediatR" Version="8.0.1" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OData" Version="7.4.1" />
@@ -64,7 +63,6 @@
 
   <ItemGroup>
     <Folder Include="Connected Services\" />
-    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 

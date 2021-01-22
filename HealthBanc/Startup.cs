@@ -8,19 +8,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using AutoMapper;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
-using DataAccess.HealthInsured_AxaMansard.Implementation;
 using Hangfire;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,40 +31,18 @@ using Infrastructure.PasswordManager;
 using Domain.Models;
 using Persistence;
 using Application.Helpers.Jwt_Authorization;
-using Application.Services.Identity;
-using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
-using Application.HealthInsured_AxaMansard_Service.Insurance;
-using Application.Interfaces;
-using Application.Services.HealthInsured_AxaMansard.Insurance;
-using DataAccess.General.Interfaces;
-using DataAccess.General.Implementation;
-using DataAccess.Logs.Implementation;
-using DataAccess.Logs.Interfaces;
-using OfficeOpenXml;
-using Application.Services.Admin;
-using Infrastructure.ImageService;
-using Application.Services.Paystack;
 
 namespace HealthBanc
 {
     public class Startup
     {
-        public Startup(IWebHostEnvironment env)
+        public Startup(IConfiguration configuration)
         {
-            // In ASP.NET Core 3.0 `env` will be an IWebHostEnvironment, not IHostingEnvironment.
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-                .AddEnvironmentVariables();
-            this.Configuration = builder.Build();
+            Configuration = configuration;
         }
 
-        public IConfigurationRoot Configuration { get; private set; }
+        public IConfiguration Configuration { get; }
 
-        public ILifetimeScope AutofacContainer { get; private set; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection")));
@@ -83,15 +55,13 @@ namespace HealthBanc
             services.AddDataAccessServices();
 
             services.Configure<SubscriptionDuration>(Configuration.GetSection("SubscriptionDuration"));
-            services.Configure<SendGridTemplateId>(Configuration.GetSection("SendGridTemplateId"));
-            services.Configure<SendGridProductionTempateId>(Configuration.GetSection("SendGridProductionTempateId"));
             services.Configure<Paystack>(Configuration.GetSection("Paystack"));
             services.Configure<AxaMansardConfiguration>(Configuration.GetSection("AxaMansardConfiguration"));
             services.Configure<Application.Helpers.Environment>(Configuration.GetSection("Environment"));
-            services.Configure<AuthMessageSenderOption>(Configuration);
             services.Configure<SterlingOtp>(Configuration);
             services.Configure<AppEndpoint>(Configuration);
             services.Configure<ImageStorage>(Configuration.GetSection("ImageStorage"));
+            services.Configure<EmailAuth>(Configuration.GetSection("EmailAuth"));
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -140,6 +110,17 @@ namespace HealthBanc
             services.AddHttpClient("Paystack", client =>
             {
                 client.BaseAddress = new Uri(paystackUrlValues.PayStackBaseAddress);
+            })
+              .AddTransientHttpErrorPolicy(x =>
+              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+            var email = Configuration.GetSection("EmailAuth");
+            services.Configure<EmailAuth>(email);
+            var emailValues = email.Get<EmailAuth>();
+
+            services.AddHttpClient("EmailSender", client =>
+            {
+                client.BaseAddress = new Uri(emailValues.EmailNotificationBaseUrl);
             })
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
@@ -209,13 +190,6 @@ namespace HealthBanc
             //------------------------------------JWT Authentication Settings--------------------------------------//
         }
 
-        public void ConfigureContainer(ContainerBuilder builder)
-        {
-            // Register your own things directly with Autofac, like:
-            builder.RegisterAssemblyTypes(Assembly.GetEntryAssembly())
-                   .AsImplementedInterfaces();           
-        }
-
         public static class TokenLifetimeValidator
         {
             public static bool Validate(
@@ -230,7 +204,7 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime, Serilog.ILogger logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger)
         {
 
             var hangfireSecret = new JwtSettings();
@@ -280,11 +254,6 @@ namespace HealthBanc
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-            });
-
-            applicationLifetime.ApplicationStopped.Register(() =>
-            {
-                AutofacContainer.Dispose();
             });
         }
     }

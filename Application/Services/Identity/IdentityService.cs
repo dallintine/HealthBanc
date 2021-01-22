@@ -45,8 +45,6 @@ namespace Application.Services.Identity
         private readonly IPasswordChangeRepository _passwordChangeRepository;
         private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
         private AppEndpoint Options { get; }
-        private SendGridTemplateId _emailTemplateAccessor { get; }
-        private SendGridProductionTempateId _productionEmailTemplateAccessor { get; }
         private Application.Helpers.Environment _environmentAccessor { get; }
 
 
@@ -54,12 +52,9 @@ namespace Application.Services.Identity
         public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
              IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
               TokenValidationParameters tokenValidationParameters,IPasswordHasher passwordHasher,IPasswordChangeRepository passwordChangeRepository,
-              IUserLogin_LogoutLogRepository _LogoutLogRepository, IOptions<AppEndpoint> optionAccessor, IOptions<SendGridTemplateId> emailTemplateAccessor,
-              IOptions<SendGridProductionTempateId> productionEmailTemplateAccessor, IOptions<Application.Helpers.Environment> environmentAccessor)
+              IUserLogin_LogoutLogRepository _LogoutLogRepository, IOptions<AppEndpoint> optionAccessor, IOptions<Application.Helpers.Environment> environmentAccessor)
         {
             Options = optionAccessor.Value;
-            _emailTemplateAccessor = emailTemplateAccessor.Value;
-            _productionEmailTemplateAccessor = productionEmailTemplateAccessor.Value;
             _environmentAccessor = environmentAccessor.Value;
             _logger = logger;
             _userManager = userManager;
@@ -278,10 +273,8 @@ namespace Application.Services.Identity
 
                 var passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
-                var templateId = _environmentAccessor.Staging ? _emailTemplateAccessor.ForgotPassowrd : _productionEmailTemplateAccessor.ForgotPassowrd;
-
                 // Email the user the verification code
-                _emailSender.SendEmail(forgotPassword.Username, templateId, passwordResetLink,null);
+                _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
                 return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
             }
             return new ResponseMessage { Message = "Username Does Not Exist", Status = false };
@@ -372,9 +365,8 @@ namespace Application.Services.Identity
 
                 var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
 
-                var templateId = _environmentAccessor.Staging ? _emailTemplateAccessor.VerifyEmail : _productionEmailTemplateAccessor.VerifyEmail;
                 // Email the user the verification code
-                _emailSender.SendEmail(user.UserName, templateId, confirmationUrl,null);
+                _emailSender.SendUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
                 return new ResponseMessage { Status = true };
             }
             return new ResponseMessage { Status = true, Message = "User does not exist.coukd not fetch user" };

@@ -6,6 +6,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -15,7 +16,6 @@ namespace Infrastructure.ImageService
     public class ImageService : IImageService
     {
         public ImageStorage ImageAzureConnectionString { get; }
-
 
         public ImageService(IOptions<ImageStorage> imageAccessor)
         {            

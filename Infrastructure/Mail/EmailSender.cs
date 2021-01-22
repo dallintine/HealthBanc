@@ -1,6 +1,9 @@
-﻿using Application.DTO;
+﻿using Application.API_RequestModel;
+using Application.DTO;
 using Application.Helpers;
 using Application.Interfaces;
+using Infrastructure.Helpers;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -8,7 +11,10 @@ using SendGrid;
 using SendGrid.Helpers.Mail;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Infrastructure.Mail
@@ -16,122 +22,84 @@ namespace Infrastructure.Mail
     public class EmailSender : IEmailSender
     {
         private readonly ILogger<EmailSender> _logger;
+        private readonly IWebHostEnvironment _environment;
+        private readonly IHttpClientFactory _httpClientFactory;
+
         public Application.Helpers.Environment _environmentAccessor { get; }
-        public AuthMessageSenderOption Options { get; }
-        private SendGridTemplateId _emailTemplateAccessor { get; }
-        private SendGridProductionTempateId _productionEmailTemplateAccessor { get; }
-
-        public EmailSender(ILogger<EmailSender> logger, IOptions<AuthMessageSenderOption>optionAccessor,IOptions<Application.Helpers.Environment>environmentAccessor,
-             IOptions<SendGridTemplateId> emailTemplateAccessor, IOptions<SendGridProductionTempateId> productionEmailTemplateAccessor)
+        private EmailAuth _emailAccessor { get; }
+        public EmailSender(ILogger<EmailSender> logger,IOptions<Application.Helpers.Environment>environmentAccessor
+            ,IWebHostEnvironment environment, IHttpClientFactory httpClientFactory,IOptions<EmailAuth> emailAccessor)
         {
-            Options = optionAccessor.Value;
             _logger = logger;
+            _environment = environment;
+            _httpClientFactory = httpClientFactory;
+            _emailAccessor = emailAccessor.Value;
             _environmentAccessor = environmentAccessor.Value;
-            _emailTemplateAccessor = emailTemplateAccessor.Value;
-            _productionEmailTemplateAccessor = productionEmailTemplateAccessor.Value;
         }
 
-        public void SendEmail(string email,string templateId, string url,string companyName)
+
+        public void SendUserVerificationMail(string email,string subject,string verificationUrl)
         {
-            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
-            var apiKey = _environmentAccessor.Staging ? Options.SendGridApiKey : Options.SendGridProductionApiKey;
-
-            var sendGridClient = new SendGridClient(apiKey);
-            var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
-            sendGridMessage.AddTo(email, "HEALTHBANC");
-            sendGridMessage.SetTemplateId(templateId);
-            sendGridMessage.SetTemplateData(new HelloEmail
-            {
-                token = url,
-                company = companyName
-            });
-
-            var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\verify.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml =  html.Replace("token", verificationUrl);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
         }
 
-        public void SendEmailWithObject(HelloEmail helloEmail)
+        public void SendUserResetPasswordMail(string email, string subject, string resetUrl)
         {
-            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
-            var email = _environmentAccessor.Staging ? "healthbancng@sterling.ng" : "healthbancng@gmail.com";
-            var apiKey = _environmentAccessor.Staging ? Options.SendGridApiKey : Options.SendGridProductionApiKey;
-            var templateId = _environmentAccessor.Staging ? _emailTemplateAccessor.HeliumHealth : _productionEmailTemplateAccessor.HeliumHealth;
-
-            var sendGridClient = new SendGridClient(apiKey);
-            var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
-            sendGridMessage.AddTo(email, "HEALTHBANC");
-            sendGridMessage.SetTemplateId(templateId);
-            sendGridMessage.SetTemplateData(new HelloEmail
-            {
-                token = helloEmail.token,
-                HealthServiceProviderName = helloEmail.HealthServiceProviderName,
-                HealthServiveProviderType = helloEmail.HealthServiveProviderType,
-                EmailAddress = helloEmail.EmailAddress,
-                PhoneNumber = helloEmail.PhoneNumber
-            });
-
-            var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\password_reset.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("token", resetUrl);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
         }
 
-        public void SendInsurancePaymentReminder(string email,string userName)
+        public void HealthInsuredSubscriptionMail(string email,string subject,string userName, string enroleeNumber, string healthCareProvider)
         {
-            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
-            var apiKey = _environmentAccessor.Staging ? Options.SendGridApiKey : Options.SendGridProductionApiKey;
-            var templateId = _environmentAccessor.Staging ? _emailTemplateAccessor.HealthInsured_PaymentReminder : _productionEmailTemplateAccessor.HealthInsured_PaymentReminder;
-
-            var sendGridClient = new SendGridClient(apiKey);
-            var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
-            sendGridMessage.AddTo(email, "HEALTHBANC");
-            sendGridMessage.SetTemplateId(templateId);
-            sendGridMessage.SetTemplateData(new HelloEmail
-            {
-                UserName = userName,
-            });
-
-            var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
-        }
-        public void SendSuccessfulSubscriptionMail(string email, string userName,string enroleeNumber, string healthCareProvider)
-        {
-            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
-            var apiKey = _environmentAccessor.Staging ? Options.SendGridApiKey : Options.SendGridProductionApiKey;
-            var templateId = _environmentAccessor.Staging ? _emailTemplateAccessor.SuccessfulSubscription : _productionEmailTemplateAccessor.SuccessfulSubscription;
-
-            var sendGridClient = new SendGridClient(apiKey);
-            var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
-            sendGridMessage.AddTo(email, "HEALTHBANC");
-            sendGridMessage.SetTemplateId(templateId);
-            sendGridMessage.SetTemplateData(new HelloEmail
-            {
-                UserName = userName,
-                HealthServiceProviderName = healthCareProvider,
-                EnroleeNumber = enroleeNumber
-            });
-
-            var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthinsured_subscription.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("UserName", userName).Replace("HealthServiceProviderName", healthCareProvider).Replace("EnroleeNumber", enroleeNumber);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
         }
 
-        public void SendFailedDebitMail(string email, string userName, string premium, string reason)
+        public void SendHealthInsuredPaymentReminder(string email, string subject, string userName)
         {
-            var fromEmail = _environmentAccessor.Staging ? "healthbancng@gmail.com" : "healthbancng@sterling.ng";
-            var apiKey = _environmentAccessor.Staging ? Options.SendGridApiKey : Options.SendGridProductionApiKey;
-            var templateId = _environmentAccessor.Staging ? _emailTemplateAccessor.FailedDebit : _productionEmailTemplateAccessor.FailedDebit;
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthinsured_paymentreminder.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("UserName", userName);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
+        }
 
-            var sendGridClient = new SendGridClient(apiKey);
-            var sendGridMessage = new SendGridMessage();
-            sendGridMessage.SetFrom(fromEmail, "HEALTHBANC");
-            sendGridMessage.AddTo(email, "HEALTHBANC");
-            sendGridMessage.SetTemplateId(templateId);
-            sendGridMessage.SetTemplateData(new HelloEmail
-            {
-                UserName = userName,
-                PremiumAmount = premium,
-                FailedReason = reason
-            });
+        public void SendHeliumNotification(string subject,string healthProvider,string providerType,string phonenumber,string providerEmail)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\heliumNotification.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("HealthServiceProviderName", healthProvider).Replace("PhoneNumber", phonenumber)
+                .Replace("HealthServiveProviderType", providerType).Replace("EmailAddress", providerEmail);
+            var emailRequest = new EmailRequest("healthbanc@sterling.ng", newHtml, subject, providerEmail);
+            EmailRequest(emailRequest);
+        }
 
-            var response = sendGridClient.SendEmailAsync(sendGridMessage).Result;
+        public void HealthInsuredFailedDebit(string email, string subject, string userName,string premium)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\faileddebit.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
+        }
+
+        public async void EmailRequest(EmailRequest emailRequest)
+        {
+            var httpClient = _httpClientFactory.CreateClient("EmailSender");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(emailRequest), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync($"{_emailAccessor.EmailNotificationNotify}", content);
+
+            await response.Content.ReadAsStringAsync();
         }
     }
 }
