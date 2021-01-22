@@ -1,6 +1,6 @@
 ﻿using Application.API_ResponseModel;
 using Application.DTO;
-using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
+using Application.AuditAndReport.AuditLog;
 using Application.Helpers.Jwt_Authorization;
 using Application.Helpers.ThirdPartyAPI;
 using Application.ViewModels;

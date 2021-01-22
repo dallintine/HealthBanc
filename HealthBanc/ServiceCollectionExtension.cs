@@ -1,4 +1,4 @@
-﻿using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
+﻿using Application.AuditAndReport.AuditLog;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Interfaces;
 using Application.Services.Admin;

@@ -1,7 +1,7 @@
 ﻿using Application.API_RequestModel.HealthInsured_AxaMansard;
 using Application.API_ResponseModel.HealthInsured_AxaMansard;
 using Application.DTO;
-using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
+using Application.AuditAndReport.AuditLog;
 using Application.Helpers;
 using Application.ViewModels;
 using Application.ViewModels.AxaMansard;

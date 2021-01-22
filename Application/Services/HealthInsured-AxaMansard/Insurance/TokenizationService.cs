@@ -2,7 +2,7 @@
 using Application.API_RequestModel.Paystack;
 using Application.API_ResponseModel.Paystack;
 using Application.DTO;
-using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
+using Application.AuditAndReport.AuditLog;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Helpers;
 using Application.Interfaces;

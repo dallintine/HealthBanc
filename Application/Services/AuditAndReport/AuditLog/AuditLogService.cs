@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UAParser;
 
-namespace Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog
+namespace Application.AuditAndReport.AuditLog
 {
     public class AuditLogService
     {

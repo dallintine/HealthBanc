@@ -30,10 +30,10 @@ using Domain.Models;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Application.Helpers;
-using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
 using DataAccess.General.Interfaces;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Cors;
+using Application.AuditAndReport.AuditLog;
 
 namespace HealthBanc.Controllers
 {

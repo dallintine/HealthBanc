@@ -1,6 +1,6 @@
 ﻿using Application.API_ResponseModel.Paystack;
 using Application.DTO;
-using Application.HealthInsured_AxaMansard_Service.AuditAndReport.AuditLog;
+using Application.AuditAndReport.AuditLog;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services.Paystack;
 using Application.ViewModels;
