@@ -36,7 +36,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private readonly IApplicationUserRepository _userRepository;
         private readonly IAxaMansardUserProfileRepository _axaMansard;
         private readonly IMapper _mapper;
-        private readonly IAxaMansardCompletionRepository _completionRepository;
+        private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly ExcelPackage _excelPackage;
         private readonly IAxaMansardHospitalListRepository _hospitalListRepository;
@@ -45,7 +45,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private AxaMansardConfiguration Options { get; }
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration>  axaAccessor,IApplicationUserRepository userRepository
-            , IAxaMansardUserProfileRepository axaMansard,IMapper mapper,IAxaMansardCompletionRepository completionRepository, AuditLogService auditLogServices,
+            , IAxaMansardUserProfileRepository axaMansard,IMapper mapper,IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
             ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger)
         {
             _httpClientFactory = httpClientFactory;
@@ -113,7 +113,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             _axaMansard.Create(updatedProfile);
 
-            var completionProfile = new AxaMansardCompletionProfile(user.Id, true, false);
+            var completionProfile = new InsuranceCompletionProfile(user.Id, true, false,"AxaMansard");
             _completionRepository.Create(completionProfile);
             await _completionRepository.Save();
 

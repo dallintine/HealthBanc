@@ -22,7 +22,7 @@ namespace Persistence
         public DbSet<BackendAdminUser> BackendAdminUsers { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<AxaMansardUserProfile> AxaMansardUserProfile { get; set; }
-        public DbSet<AxaMansardCompletionProfile> AxaMansardCompletionProfiles { get; set; }
+        public DbSet<InsuranceCompletionProfile> InsuranceCompletionProfiles { get; set; }
         public DbSet<DebitCard> Cards { get; set; }
         public DbSet<PaymentReference> PaymentReferences { get; set; }
         public DbSet<UserAuditLog> UserAuditLogs { get; set; }

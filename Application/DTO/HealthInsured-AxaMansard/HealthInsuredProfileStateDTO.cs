@@ -11,13 +11,15 @@ namespace HealthBanc.DTO.HealthInsured_AxaMansard
         {
 
         }
-        public HealthInsuredProfileStateDTO(bool profileCompleted, bool tokenizationCompleted)
+        public HealthInsuredProfileStateDTO(bool profileCompleted, bool tokenizationCompleted,string serviceUsed)
         {
             ProfileCompleted = profileCompleted;
             TokenizationCompleted = tokenizationCompleted;
+            ServiceUsed = serviceUsed;
         }
 
         public bool ProfileCompleted { get; set; }
         public bool TokenizationCompleted { get; set; }
+        public string ServiceUsed { get; set; }
     }
 }

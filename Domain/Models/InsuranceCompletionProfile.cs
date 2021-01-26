@@ -5,22 +5,24 @@ using System.Threading.Tasks;
 
 namespace Domain.Models
 {
-    public class AxaMansardCompletionProfile
+    public class InsuranceCompletionProfile
     {
-        public AxaMansardCompletionProfile()
+        public InsuranceCompletionProfile()
         {
 
         }
-        public AxaMansardCompletionProfile(int userId, bool profileCompleted, bool tokenizationCompleted)
+        public InsuranceCompletionProfile(int userId, bool profileCompleted, bool tokenizationCompleted,string serviceUsed)
         {
             UserId = userId;
             ProfileCompleted = profileCompleted;
             TokenizationCompleted = tokenizationCompleted;
+            ServiceUsed = serviceUsed;
         }
 
         public int Id { get; set; }
         public int UserId { get; set; }
         public bool ProfileCompleted { get; set; }
         public bool TokenizationCompleted { get; set; }
+        public string ServiceUsed { get; set; }
     }
 }

@@ -29,7 +29,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
     public class TokenizationService
     {
         private readonly IAxaMansardUserProfileRepository _mansardUserProfileRepository;
-        private readonly IAxaMansardCompletionRepository _completionRepository;
+        private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly ICardRepository _cardRepository;
         private readonly IMapper _mapper;
         private readonly PaystackService _paystackService;
@@ -45,7 +45,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         private SubscriptionDuration _subscriptionAccessor { get; }
 
-        public TokenizationService(IAxaMansardUserProfileRepository mansardUserProfileRepository,IAxaMansardCompletionRepository completionRepository,
+        public TokenizationService(IAxaMansardUserProfileRepository mansardUserProfileRepository,IInsuranceCompletionProfileRepository completionRepository,
             ICardRepository cardRepository,IMapper mapper,PaystackService paystackService, AuditLogService auditLogServices, InsuranceService insuranceSerivce,
             IOptions<SubscriptionDuration> subscriptionAccessor, IScheduledPaymentRepository scheduledPayment, IScheduledAxaEnrollmentRepository scheduledAxaEnrollment
             ,IAxaEnrollmentReactivationRepository axaEnrollmentOnReactivation, IPaymentOnReactivationRepository paymentOnReactivation,IEmailSender emailSender,
@@ -143,7 +143,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         }
 
         public async Task<ResponseMessage> ProcessPaystackChargeCardResponse(TokenizationResponse chargeCardResponse, AxaMansardUserProfile userAxamansardProfile,
-           AxaMansardCompletionProfile checkprofileComplete,PaymentReference paymentReference, string cardReference, string ipAddress, string device)
+           InsuranceCompletionProfile checkprofileComplete,PaymentReference paymentReference, string cardReference, string ipAddress, string device)
         {           
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)

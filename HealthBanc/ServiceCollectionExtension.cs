@@ -94,7 +94,7 @@ namespace HealthBanc
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
-            services.AddScoped<IAxaMansardCompletionRepository, AxaMansardCompletionRepository>();
+            services.AddScoped<IInsuranceCompletionProfileRepository, InsuranceCompletionProfileRepository>();
             services.AddScoped<ICardRepository, CardRepository>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IImageService, ImageService>();

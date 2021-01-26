@@ -46,14 +46,14 @@ namespace HealthBanc.Controllers
         private readonly IAxaMansardUserProfileRepository _axaMansard;
         private readonly ILogger<InsuranceController> _logger;
         private readonly IApplicationUserRepository _userRepository;
-        private readonly IAxaMansardCompletionRepository _completionRepository;
+        private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly IHttpContextAccessor _accessor;
         public string IpAddress;
         public StringValues agent;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger,
-            IApplicationUserRepository userRepository, IAxaMansardCompletionRepository completionRepository, AuditLogService auditLogServices,
+            IApplicationUserRepository userRepository, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
             IHttpContextAccessor accessor)
         {
             _insuranceService = insuranceService;
@@ -174,10 +174,10 @@ namespace HealthBanc.Controllers
             var profile = await _completionRepository.GetCompletionStateByUserId(Id);
             if (profile == null)
             {
-                var notFoundProfileState = new HealthInsuredProfileStateDTO(false, false);
+                var notFoundProfileState = new HealthInsuredProfileStateDTO(false, false,null);
                 return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = notFoundProfileState, Status = true, Message = "Profile completion state was fetched successfully" });
             }
-            var profileState = new HealthInsuredProfileStateDTO(profile.ProfileCompleted, profile.TokenizationCompleted);
+            var profileState = new HealthInsuredProfileStateDTO(profile.ProfileCompleted, profile.TokenizationCompleted,profile.ServiceUsed);
             return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileState, Status = true, Message = "Profile completion state was fetched successfully" });
         }
 

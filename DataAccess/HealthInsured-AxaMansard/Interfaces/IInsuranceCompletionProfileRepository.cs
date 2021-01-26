@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace DataAccess.HealthInsured_AxaMansard.Interfaces
 {
-    public interface IAxaMansardCompletionRepository : IBaseRepository<AxaMansardCompletionProfile>
+    public interface IInsuranceCompletionProfileRepository : IBaseRepository<InsuranceCompletionProfile>
     {
-        Task<AxaMansardCompletionProfile> GetCompletionStateByUserId(int id);
+        Task<InsuranceCompletionProfile> GetCompletionStateByUserId(int id);
     }
 }
