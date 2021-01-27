@@ -34,8 +34,10 @@ using DataAccess.General.Interfaces;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Cors;
 using Application.AuditAndReport.AuditLog;
+using Application.Services.HealthInsured_Hygeia;
+using Application.API_RequestModel.HealthInsured_Hygeia;
 
-namespace HealthBanc.Controllers
+namespace HealthBanc.Controllers.Insurance
 {
     [Route("v1/api/[controller]")]
     [ApiController]
@@ -49,12 +51,13 @@ namespace HealthBanc.Controllers
         private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly IHttpContextAccessor _accessor;
+        private readonly Hygeia_Insurance _hygeia_Insurance;
         public string IpAddress;
         public StringValues agent;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger,
             IApplicationUserRepository userRepository, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            IHttpContextAccessor accessor)
+            IHttpContextAccessor accessor, Hygeia_Insurance hygeia_Insurance)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
@@ -64,6 +67,7 @@ namespace HealthBanc.Controllers
             _completionRepository = completionRepository;
             _auditLogServices = auditLogServices;
             _accessor = accessor;
+            _hygeia_Insurance = hygeia_Insurance;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -239,6 +243,35 @@ namespace HealthBanc.Controllers
         {
             var result = await _insuranceService.AxaHospitalList(file);
             return Ok();
+        }
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> HygeiaCreateUserProfile([FromForm]UserProfileviewModel userProfile)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var device = _auditLogServices.GetDevice(agent);
+
+                var creatProfileResponse = await _hygeia_Insurance.HygeiaOnboarding(userProfile, Id, IpAddress, device);
+
+                if (creatProfileResponse.Status)
+                {
+                    return Ok(creatProfileResponse);
+                }
+                return BadRequest(creatProfileResponse);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
     }

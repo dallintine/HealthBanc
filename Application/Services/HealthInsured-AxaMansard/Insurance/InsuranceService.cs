@@ -27,6 +27,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Application.Interfaces;
 
 namespace Application.HealthInsured_AxaMansard_Service.Insurance
 {
@@ -41,12 +42,13 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private readonly ExcelPackage _excelPackage;
         private readonly IAxaMansardHospitalListRepository _hospitalListRepository;
         private readonly ILogger<InsuranceService> _logger;
+        private readonly IUniqueIdentifier _uniqueIdentifier;
 
         private AxaMansardConfiguration Options { get; }
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration>  axaAccessor,IApplicationUserRepository userRepository
             , IAxaMansardUserProfileRepository axaMansard,IMapper mapper,IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger)
+            ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger,IUniqueIdentifier uniqueIdentifier)
         {
             _httpClientFactory = httpClientFactory;
             _userRepository = userRepository;
@@ -57,6 +59,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             _excelPackage = excelPackage;
             _hospitalListRepository = hospitalListRepository;
             _logger = logger;
+            _uniqueIdentifier = uniqueIdentifier;
             Options = axaAccessor.Value;
         }        
 
@@ -106,7 +109,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             profile.UserId = user.Id;
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
-            profile.TransId = GetUniqueCode(12);
+            profile.TransId = _uniqueIdentifier.GetUniqueCode(12);
             profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
 
             var updatedProfile = _mapper.Map(user, profile);
@@ -205,39 +208,6 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var newList = new List<CityListDTO>();
             newList.Add(townListDTO);
             return new ResponseMessage { Data = newList, Status = true };
-        }
-
-        private string GetUniqueCode(int nCount)
-        {
-            string uniqueNumber = string.Empty;
-            while (uniqueNumber.Length < nCount)
-            {
-                string varWW0 = uniqueNumber;
-                Guid guid = Guid.NewGuid();
-                uniqueNumber = varWW0 + RefineString(guid.ToString().Replace("-", ""));
-            }
-
-            if (uniqueNumber.Length > nCount)
-            {
-                uniqueNumber = uniqueNumber.Substring(0, nCount);
-            }
-            return uniqueNumber;
-        }
-
-        private static string RefineString(string input)
-        {
-            string str_ = string.Empty;
-            char[] arr_ = input.ToCharArray();
-            for (int i = 0; i < arr_.Length; i++)
-            {
-                char chr_ = arr_[i];
-                if (char.IsDigit(chr_))
-                {
-                    str_ += chr_;
-                }
-            }
-
-            return str_;
         }
 
         public async Task<List<AxaMansardHospitalList>> AxaHospitalList(IFormFile formFile)

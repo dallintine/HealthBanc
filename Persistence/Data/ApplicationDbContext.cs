@@ -1,6 +1,7 @@
 ﻿using Domain.Models;
 using Domain.Models.AxaMansard_Insurance;
 using Domain.Models.ExceptionLog;
+using Domain.Models.Hygeia_Insurance;
 using Domain.Models.ReportAndLogs;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,8 @@ namespace Persistence
         public DbSet<PaymentOnReactivation> PaymentOnReactivations { get; set; }
         public DbSet<AxaMansardHospitalList> AxaMansardHospitalLists { get; set;}
         public DbSet<AxaEnrollmentOnOnboarding> AxaEnrollmentOnOnboardings { get; set; }
+        public DbSet<HygeiaUserProfile> HygeiaUserProfiles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

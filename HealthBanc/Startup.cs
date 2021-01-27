@@ -62,6 +62,7 @@ namespace HealthBanc
             services.Configure<AppEndpoint>(Configuration);
             services.Configure<ImageStorage>(Configuration.GetSection("ImageStorage"));
             services.Configure<EmailAuth>(Configuration.GetSection("EmailAuth"));
+            services.Configure<HygeiaConfiguration>(Configuration.GetSection("HygeiaConfiguration"));
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -136,7 +137,18 @@ namespace HealthBanc
             })
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
-            
+
+            var Hygeia = Configuration.GetSection("HygeiaConfiguration");
+            services.Configure<HygeiaConfiguration>(Hygeia);
+            var hygeiaValues = Hygeia.Get<HygeiaConfiguration>();
+
+            services.AddHttpClient("Hygeia", client =>
+            {
+                client.BaseAddress = new Uri(hygeiaValues.HygeiaBaseAddress);
+            })
+             .AddTransientHttpErrorPolicy(x =>
+             x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
 
             services.AddAuthorization(options =>
             {

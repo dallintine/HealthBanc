@@ -19,7 +19,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace HealthBanc.Controllers.Axamansard_Insurance
+namespace HealthBanc.Controllers.Insurance
 {
     [Route("v1/api/[controller]")]
     [ApiController]
