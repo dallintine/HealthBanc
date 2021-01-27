@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace DataAccess.HealthInsured_AxaMansard.Interfaces
 {
-    public interface IAxaMansardUserProfileRepository : IBaseRepository<AxaMansardUserProfile>
+    public interface IAxaMansardUserProfileRepository : IBaseRepository<InsuranceUserProfile>
     {
-        Task<AxaMansardUserProfile> GetByUserIdAsync(int id);
-        Task<AxaMansardUserProfile> GetByIdAsync(int id);
-        Task<AxaMansardUserProfile> GetByEmail(string email);
+        Task<InsuranceUserProfile> GetByUserIdAsync(int id);
+        Task<InsuranceUserProfile> GetByIdAsync(int id);
+        Task<InsuranceUserProfile> GetByEmail(string email);
     }
 }

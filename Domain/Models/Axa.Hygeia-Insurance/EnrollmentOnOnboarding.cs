@@ -4,18 +4,18 @@ using System.Text;
 
 namespace Domain.Models.AxaMansard_Insurance
 {
-    public class AxaEnrollmentOnOnboarding
+    public class EnrollmentOnOnboarding
     {
-        public AxaEnrollmentOnOnboarding()
+        public EnrollmentOnOnboarding()
         {
 
         }
 
-        public AxaEnrollmentOnOnboarding(int userId, int axaMansardUserProfileId, string jobId , string status, string message)
+        public EnrollmentOnOnboarding(int userId, int insuranceUserProfileId, string jobId , string status, string message)
         {
             Id = Guid.NewGuid();
             UserId = userId;
-            AxaMansardUserProfileId = axaMansardUserProfileId;
+            InsuranceUserProfileId = insuranceUserProfileId;
             JobId = jobId;
             DateScheduled = DateTime.Now;
             Status = status;
@@ -24,11 +24,12 @@ namespace Domain.Models.AxaMansard_Insurance
 
         public Guid Id { get; set; }
         public int UserId { get; set; }
-        public int AxaMansardUserProfileId { get; set; }
+        public int InsuranceUserProfileId { get; set; }
         public string JobId { get; set; }
         public DateTime DateScheduled { get; set; }
         public string Status { get; set; }
         public string Message { get; set; }
-        public AxaMansardUserProfile AxaMansardUserProfile { get; set; }
+        public string Serviceused { get; set; }
+        public InsuranceUserProfile InsuranceUserProfile { get; set; }
     }
 }

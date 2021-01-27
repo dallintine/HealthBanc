@@ -18,7 +18,7 @@ namespace HealthBanc.Mappers.Axamnasard_Insurance
                .ForMember(dest => dest.MobileNo, opt => opt.MapFrom(x => x.PhoneNumber))
                .ForMember(dest => dest.Email, opt => opt.MapFrom(x => x.Email));
 
-            CreateMap<AxaMansardUserProfile, EnrollmentModel>()
+            CreateMap<InsuranceUserProfile, EnrollmentModel>()
               .ForMember(dest => dest.Surname, opt => opt.MapFrom(x => x.Surname))
               .ForMember(dest => dest.FirstName, opt => opt.MapFrom(x => x.Othernames))
               .ForMember(dest => dest.MiddleName, opt => opt.MapFrom(x => ""))

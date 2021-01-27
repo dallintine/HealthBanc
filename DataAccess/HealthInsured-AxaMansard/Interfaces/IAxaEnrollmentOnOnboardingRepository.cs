@@ -6,7 +6,7 @@ using System.Text;
 
 namespace DataAccess.HealthInsured_AxaMansard.Interfaces
 {
-    public interface IAxaEnrollmentOnOnboardingRepository : IBaseRepository<AxaEnrollmentOnOnboarding>
+    public interface IAxaEnrollmentOnOnboardingRepository : IBaseRepository<EnrollmentOnOnboarding>
     {
     }
 }

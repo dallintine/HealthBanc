@@ -105,12 +105,13 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
         public async Task<ResponseMessage> CreateAxamansardUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
         {
-            var profile = _mapper.Map<AxaMansardUserProfile>(userProfile);
+            var profile = _mapper.Map<InsuranceUserProfile>(userProfile);
             profile.UserId = user.Id;
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
             profile.TransId = _uniqueIdentifier.GetUniqueCode(12);
             profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
+            profile.InsuranceService = "Axa-Mansard";
 
             var updatedProfile = _mapper.Map(user, profile);
 

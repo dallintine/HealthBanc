@@ -12,10 +12,10 @@ namespace Domain.Models
         {
 
         }
-        public DebitCard(int userId, int axaMansardUserProfileId, int status, string lastFourDigit,string type,string cardReference,string authorization_Code)
+        public DebitCard(int userId, int insuranceUserProfileId, int status, string lastFourDigit,string type,string cardReference,string authorization_Code)
         {
             UserId = userId;
-            AxaMansardUserProfileId = axaMansardUserProfileId;
+            InsuranceUserProfileId = insuranceUserProfileId;
             Status = status;
             LastFourDigit = lastFourDigit;
             Type = type;
@@ -25,10 +25,8 @@ namespace Domain.Models
 
         public int Id { get; set; }
         public int UserId { get; set; }
-        public int AxaMansardUserProfileId { get; set; }
+        public int InsuranceUserProfileId { get; set; }
         public int Status { get; set; }
-        [JsonIgnore]
-        public AxaMansardUserProfile AxaMansardUserProfile {get;set;}
         public string LastFourDigit { get; set; }
         public string Type { get; set; }
         public string CardReference { get; set; }

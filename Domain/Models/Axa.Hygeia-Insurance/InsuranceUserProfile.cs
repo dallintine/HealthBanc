@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Models
 {
-    public class AxaMansardUserProfile
+    public class InsuranceUserProfile
     {
         public int Id { get; set; }
         public int UserId { get; set; }
@@ -50,6 +50,7 @@ namespace Domain.Models
         public DateTime EndActiveStatusDate { get; set; }
         public DateTime StartActiveStatusDate { get; set; }
         public bool? SubscriptionStatus { get; set; }
+        public string InsuranceService { get; set; }
         public List<DebitCard> Cards { get; set; }
         public List<PaymentReference> PaymentReferences { get; set; }
     }

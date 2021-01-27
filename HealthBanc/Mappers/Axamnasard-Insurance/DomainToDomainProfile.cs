@@ -10,7 +10,7 @@ namespace HealthBanc.Mappers.Axamnasard_Insurance
     {
         public DomainToDomainProfile()
         {
-            CreateMap<ApplicationUser, AxaMansardUserProfile>()
+            CreateMap<ApplicationUser, InsuranceUserProfile>()
                .ForMember(dest => dest.Surname, opt => opt.MapFrom(x => x.LastName))
                .ForMember(dest => dest.Othernames, opt => opt.MapFrom(x => x.FirstName))
                .ForMember(dest => dest.Email, opt => opt.MapFrom(x => x.Email))

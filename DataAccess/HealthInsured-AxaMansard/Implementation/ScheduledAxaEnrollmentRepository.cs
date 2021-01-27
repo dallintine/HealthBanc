@@ -10,15 +10,15 @@ using System.Threading.Tasks;
 
 namespace DataAccess.HealthInsured_AxaMansard.Implementation
 {
-    public class ScheduledAxaEnrollmentRepository : BaseRepository<ScheduledAxaEnrollment>, IScheduledAxaEnrollmentRepository
+    public class ScheduledAxaEnrollmentRepository : BaseRepository<ScheduledEnrollment>, IScheduledAxaEnrollmentRepository
     {
         public ScheduledAxaEnrollmentRepository(ApplicationDbContext context) : base(context)
         {
         }
 
-        public async Task<ScheduledAxaEnrollment> GetScheduledAxaEnrollmenttByJobId(string jobId)
+        public async Task<ScheduledEnrollment> GetScheduledAxaEnrollmenttByJobId(string jobId)
         {
-            return await _context.ScheduledAxaEnrollments.FirstOrDefaultAsync(x => x.JobId == jobId);
+            return await _context.ScheduledEnrollments.FirstOrDefaultAsync(x => x.JobId == jobId);
         }
     }
 }

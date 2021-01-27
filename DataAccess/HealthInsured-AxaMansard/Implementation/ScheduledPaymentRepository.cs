@@ -19,7 +19,7 @@ namespace DataAccess.HealthInsured_AxaMansard.Implementation
 
         public async Task<ScheduledPayment> GetScheduledPaymentByJobId(string jobId)
         {
-            return await _context.ScheduledPayments.Include(x => x.ScheduledAxaEnrollment).FirstOrDefaultAsync(x => x.JobId == jobId && x.Status == "Processing");
+            return await _context.ScheduledPayments.Include(x => x.ScheduledEnrollment).FirstOrDefaultAsync(x => x.JobId == jobId && x.Status == "Processing");
         }
     }
 }

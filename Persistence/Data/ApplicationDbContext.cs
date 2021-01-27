@@ -22,7 +22,7 @@ namespace Persistence
         public DbSet<Service> Services { get; set; }
         public DbSet<BackendAdminUser> BackendAdminUsers { get; set; }
         public DbSet<Notification> Notifications { get; set; }
-        public DbSet<AxaMansardUserProfile> AxaMansardUserProfile { get; set; }
+        public DbSet<InsuranceUserProfile> InsuranceUserProfiles { get; set; }
         public DbSet<InsuranceCompletionProfile> InsuranceCompletionProfiles { get; set; }
         public DbSet<DebitCard> Cards { get; set; }
         public DbSet<PaymentReference> PaymentReferences { get; set; }
@@ -33,13 +33,11 @@ namespace Persistence
         public DbSet<UserLogin_LogoutLog> UserLogin_LogoutLogs { get; set; }
         public DbSet<PasswordChangeHistory> PasswordChangeHistories { get; set; }
         public DbSet<ScheduledPayment> ScheduledPayments { get; set; }
-        public DbSet<ScheduledAxaEnrollment> ScheduledAxaEnrollments { get; set; }
-        public DbSet<AxaEnrollmentOnReactivation> AxaEnrollmentReactivations { get; set; }
+        public DbSet<ScheduledEnrollment> ScheduledEnrollments { get; set; }
+        public DbSet<EnrollmentOnReactivation> EnrollmentOnReactivations { get; set; }
         public DbSet<PaymentOnReactivation> PaymentOnReactivations { get; set; }
         public DbSet<AxaMansardHospitalList> AxaMansardHospitalLists { get; set;}
-        public DbSet<AxaEnrollmentOnOnboarding> AxaEnrollmentOnOnboardings { get; set; }
-        public DbSet<HygeiaUserProfile> HygeiaUserProfiles { get; set; }
-
+        public DbSet<EnrollmentOnOnboarding> EnrollmentOnOnboardings { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

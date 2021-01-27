@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Persistence.Migrations
 {
-    public partial class modifiedbackendadmin : Migration
+    public partial class addedServiceused_to_insuranceProfile : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -47,8 +47,6 @@ namespace Persistence.Migrations
                     HashedPasswordHistory = table.Column<string>(nullable: true),
                     DateOfRegistration = table.Column<DateTime>(nullable: false),
                     IsDeleted = table.Column<bool>(nullable: false),
-                    SuperAdminId = table.Column<int>(nullable: true),
-                    AdminId = table.Column<int>(nullable: true),
                     LastLoginDate = table.Column<DateTime>(nullable: false),
                     ServiceUsed = table.Column<string>(nullable: true),
                     UniqueUsername = table.Column<string>(nullable: true),
@@ -80,21 +78,6 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AxaMansardCompletionProfiles",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(nullable: false),
-                    ProfileCompleted = table.Column<bool>(nullable: false),
-                    TokenizationCompleted = table.Column<bool>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AxaMansardCompletionProfiles", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AxaMansardHospitalLists",
                 columns: table => new
                 {
@@ -112,7 +95,55 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AxaMansardUserProfile",
+                name: "ClassOrRoles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ClassOrRoles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ExceptionLogs",
+                columns: table => new
+                {
+                    Id = table.Column<long>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ErrorCode = table.Column<string>(nullable: true),
+                    ErrorMessage = table.Column<string>(nullable: true),
+                    Source = table.Column<string>(nullable: true),
+                    Link = table.Column<string>(nullable: true),
+                    ErrorDate = table.Column<DateTime>(nullable: false),
+                    StackTrace = table.Column<string>(nullable: true),
+                    Path = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExceptionLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InsuranceCompletionProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(nullable: false),
+                    ProfileCompleted = table.Column<bool>(nullable: false),
+                    TokenizationCompleted = table.Column<bool>(nullable: false),
+                    ServiceUsed = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InsuranceCompletionProfiles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InsuranceUserProfiles",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
@@ -121,6 +152,7 @@ namespace Persistence.Migrations
                     TransId = table.Column<string>(nullable: true),
                     Gender = table.Column<string>(nullable: true),
                     PendingJobId = table.Column<string>(nullable: true),
+                    PendingEmailJobId = table.Column<string>(nullable: true),
                     Surname = table.Column<string>(nullable: true),
                     Othernames = table.Column<string>(nullable: true),
                     MaidenName = table.Column<string>(nullable: true),
@@ -157,43 +189,12 @@ namespace Persistence.Migrations
                     ActiveStatus = table.Column<bool>(nullable: true),
                     EndActiveStatusDate = table.Column<DateTime>(nullable: false),
                     StartActiveStatusDate = table.Column<DateTime>(nullable: false),
-                    SubscriptionStatus = table.Column<bool>(nullable: true)
+                    SubscriptionStatus = table.Column<bool>(nullable: true),
+                    InsuranceService = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AxaMansardUserProfile", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ClassOrRoles",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ClassOrRoles", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ExceptionLogs",
-                columns: table => new
-                {
-                    Id = table.Column<long>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ErrorCode = table.Column<string>(nullable: true),
-                    ErrorMessage = table.Column<string>(nullable: true),
-                    Source = table.Column<string>(nullable: true),
-                    Link = table.Column<string>(nullable: true),
-                    ErrorDate = table.Column<DateTime>(nullable: false),
-                    StackTrace = table.Column<string>(nullable: true),
-                    Path = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ExceptionLogs", x => x.Id);
+                    table.PrimaryKey("PK_InsuranceUserProfiles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -369,149 +370,6 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AxaEnrollmentOnOnboardings",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(nullable: false),
-                    UserId = table.Column<int>(nullable: false),
-                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
-                    JobId = table.Column<string>(nullable: true),
-                    DateScheduled = table.Column<DateTime>(nullable: false),
-                    Status = table.Column<string>(nullable: true),
-                    Message = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AxaEnrollmentOnOnboardings", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AxaEnrollmentOnOnboardings_AxaMansardUserProfile_AxaMansardUserProfileId",
-                        column: x => x.AxaMansardUserProfileId,
-                        principalTable: "AxaMansardUserProfile",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AxaEnrollmentReactivations",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(nullable: false),
-                    UserId = table.Column<int>(nullable: false),
-                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
-                    DateScheduled = table.Column<DateTime>(nullable: false),
-                    ExecutionDate = table.Column<DateTime>(nullable: false),
-                    Status = table.Column<string>(nullable: true),
-                    Message = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AxaEnrollmentReactivations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AxaEnrollmentReactivations_AxaMansardUserProfile_AxaMansardUserProfileId",
-                        column: x => x.AxaMansardUserProfileId,
-                        principalTable: "AxaMansardUserProfile",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Cards",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(nullable: false),
-                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
-                    Status = table.Column<int>(nullable: false),
-                    LastFourDigit = table.Column<string>(nullable: true),
-                    Type = table.Column<string>(nullable: true),
-                    CardReference = table.Column<string>(nullable: true),
-                    Authorization_Code = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Cards", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Cards_AxaMansardUserProfile_AxaMansardUserProfileId",
-                        column: x => x.AxaMansardUserProfileId,
-                        principalTable: "AxaMansardUserProfile",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "InsufficientChargeTransactions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(nullable: false),
-                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
-                    DateScheduled = table.Column<DateTime>(nullable: false),
-                    MatureDate = table.Column<DateTime>(nullable: false),
-                    JobId = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_InsufficientChargeTransactions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_InsufficientChargeTransactions_AxaMansardUserProfile_AxaMansardUserProfileId",
-                        column: x => x.AxaMansardUserProfileId,
-                        principalTable: "AxaMansardUserProfile",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PaymentReferences",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Date = table.Column<DateTime>(nullable: false),
-                    Channel = table.Column<string>(nullable: true),
-                    Refernce = table.Column<string>(nullable: true),
-                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
-                    UserId = table.Column<int>(nullable: false),
-                    Amount = table.Column<decimal>(nullable: false),
-                    Active = table.Column<bool>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PaymentReferences", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PaymentReferences_AxaMansardUserProfile_AxaMansardUserProfileId",
-                        column: x => x.AxaMansardUserProfileId,
-                        principalTable: "AxaMansardUserProfile",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ScheduledAxaEnrollments",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(nullable: false),
-                    UserId = table.Column<int>(nullable: false),
-                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
-                    DateScheduled = table.Column<DateTime>(nullable: false),
-                    ExecutionDate = table.Column<DateTime>(nullable: false),
-                    JobId = table.Column<string>(nullable: true),
-                    Status = table.Column<string>(nullable: true),
-                    Message = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ScheduledAxaEnrollments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ScheduledAxaEnrollments_AxaMansardUserProfile_AxaMansardUserProfileId",
-                        column: x => x.AxaMansardUserProfileId,
-                        principalTable: "AxaMansardUserProfile",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "BackendAdminUsers",
                 columns: table => new
                 {
@@ -529,6 +387,127 @@ namespace Persistence.Migrations
                         name: "FK_BackendAdminUsers_ClassOrRoles_ClassOrRoleId",
                         column: x => x.ClassOrRoleId,
                         principalTable: "ClassOrRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Cards",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(nullable: false),
+                    InsuranceUserProfileId = table.Column<int>(nullable: false),
+                    Status = table.Column<int>(nullable: false),
+                    LastFourDigit = table.Column<string>(nullable: true),
+                    Type = table.Column<string>(nullable: true),
+                    CardReference = table.Column<string>(nullable: true),
+                    Authorization_Code = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Cards", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Cards_InsuranceUserProfiles_InsuranceUserProfileId",
+                        column: x => x.InsuranceUserProfileId,
+                        principalTable: "InsuranceUserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EnrollmentOnOnboardings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    UserId = table.Column<int>(nullable: false),
+                    InsuranceUserProfileId = table.Column<int>(nullable: false),
+                    JobId = table.Column<string>(nullable: true),
+                    DateScheduled = table.Column<DateTime>(nullable: false),
+                    Status = table.Column<string>(nullable: true),
+                    Message = table.Column<string>(nullable: true),
+                    Serviceused = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EnrollmentOnOnboardings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EnrollmentOnOnboardings_InsuranceUserProfiles_InsuranceUserProfileId",
+                        column: x => x.InsuranceUserProfileId,
+                        principalTable: "InsuranceUserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EnrollmentOnReactivations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    UserId = table.Column<int>(nullable: false),
+                    InsuranceUserProfileId = table.Column<int>(nullable: false),
+                    DateScheduled = table.Column<DateTime>(nullable: false),
+                    ExecutionDate = table.Column<DateTime>(nullable: false),
+                    Status = table.Column<string>(nullable: true),
+                    Message = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EnrollmentOnReactivations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EnrollmentOnReactivations_InsuranceUserProfiles_InsuranceUserProfileId",
+                        column: x => x.InsuranceUserProfileId,
+                        principalTable: "InsuranceUserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentReferences",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Date = table.Column<DateTime>(nullable: false),
+                    Channel = table.Column<string>(nullable: true),
+                    Refernce = table.Column<string>(nullable: true),
+                    InsuranceUserProfileId = table.Column<int>(nullable: false),
+                    UserId = table.Column<int>(nullable: false),
+                    Amount = table.Column<decimal>(nullable: false),
+                    Status = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentReferences", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentReferences_InsuranceUserProfiles_InsuranceUserProfileId",
+                        column: x => x.InsuranceUserProfileId,
+                        principalTable: "InsuranceUserProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ScheduledEnrollments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(nullable: false),
+                    UserId = table.Column<int>(nullable: false),
+                    InsuranceUserProfileId = table.Column<int>(nullable: false),
+                    DateScheduled = table.Column<DateTime>(nullable: false),
+                    ExecutionDate = table.Column<DateTime>(nullable: false),
+                    JobId = table.Column<string>(nullable: true),
+                    Status = table.Column<string>(nullable: true),
+                    Message = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScheduledEnrollments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ScheduledEnrollments_InsuranceUserProfiles_InsuranceUserProfileId",
+                        column: x => x.InsuranceUserProfileId,
+                        principalTable: "InsuranceUserProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -559,61 +538,6 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PaymentOnReactivations",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(nullable: false),
-                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
-                    AxaEnrollmentOnReactivationId = table.Column<Guid>(nullable: false),
-                    DateScheduled = table.Column<DateTime>(nullable: false),
-                    ExecutionDate = table.Column<DateTime>(nullable: false),
-                    Status = table.Column<string>(nullable: true),
-                    Message = table.Column<string>(nullable: true),
-                    JobId = table.Column<string>(nullable: true),
-                    Date = table.Column<DateTime>(nullable: false),
-                    PaymentReference = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PaymentOnReactivations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PaymentOnReactivations_AxaEnrollmentReactivations_AxaEnrollmentOnReactivationId",
-                        column: x => x.AxaEnrollmentOnReactivationId,
-                        principalTable: "AxaEnrollmentReactivations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ScheduledPayments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(nullable: false),
-                    AxaMansardUserProfileId = table.Column<int>(nullable: false),
-                    ScheduledAxaEnrollmentId = table.Column<Guid>(nullable: false),
-                    DateScheduled = table.Column<DateTime>(nullable: false),
-                    ExecutionDate = table.Column<DateTime>(nullable: false),
-                    JobId = table.Column<string>(nullable: true),
-                    Status = table.Column<string>(nullable: true),
-                    Message = table.Column<string>(nullable: true),
-                    PaymentReference = table.Column<string>(nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ScheduledPayments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ScheduledPayments_ScheduledAxaEnrollments_ScheduledAxaEnrollmentId",
-                        column: x => x.ScheduledAxaEnrollmentId,
-                        principalTable: "ScheduledAxaEnrollments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AdminAuditLogs",
                 columns: table => new
                 {
@@ -635,6 +559,61 @@ namespace Persistence.Migrations
                         name: "FK_AdminAuditLogs_BackendAdminUsers_BackendAdminUserId",
                         column: x => x.BackendAdminUserId,
                         principalTable: "BackendAdminUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentOnReactivations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(nullable: false),
+                    InsuranceUserProfileId = table.Column<int>(nullable: false),
+                    EnrollmentOnReactivationId = table.Column<Guid>(nullable: false),
+                    DateScheduled = table.Column<DateTime>(nullable: false),
+                    ExecutionDate = table.Column<DateTime>(nullable: false),
+                    Status = table.Column<string>(nullable: true),
+                    Message = table.Column<string>(nullable: true),
+                    JobId = table.Column<string>(nullable: true),
+                    Date = table.Column<DateTime>(nullable: false),
+                    PaymentReference = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentOnReactivations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentOnReactivations_EnrollmentOnReactivations_EnrollmentOnReactivationId",
+                        column: x => x.EnrollmentOnReactivationId,
+                        principalTable: "EnrollmentOnReactivations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ScheduledPayments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(nullable: false),
+                    InsuranceUserProfileId = table.Column<int>(nullable: false),
+                    ScheduledEnrollmentId = table.Column<Guid>(nullable: false),
+                    DateScheduled = table.Column<DateTime>(nullable: false),
+                    ExecutionDate = table.Column<DateTime>(nullable: false),
+                    JobId = table.Column<string>(nullable: true),
+                    Status = table.Column<string>(nullable: true),
+                    Message = table.Column<string>(nullable: true),
+                    PaymentReference = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ScheduledPayments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ScheduledPayments_ScheduledEnrollments_ScheduledEnrollmentId",
+                        column: x => x.ScheduledEnrollmentId,
+                        principalTable: "ScheduledEnrollments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -717,29 +696,24 @@ namespace Persistence.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AxaEnrollmentOnOnboardings_AxaMansardUserProfileId",
-                table: "AxaEnrollmentOnOnboardings",
-                column: "AxaMansardUserProfileId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AxaEnrollmentReactivations_AxaMansardUserProfileId",
-                table: "AxaEnrollmentReactivations",
-                column: "AxaMansardUserProfileId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_BackendAdminUsers_ClassOrRoleId",
                 table: "BackendAdminUsers",
                 column: "ClassOrRoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Cards_AxaMansardUserProfileId",
+                name: "IX_Cards_InsuranceUserProfileId",
                 table: "Cards",
-                column: "AxaMansardUserProfileId");
+                column: "InsuranceUserProfileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InsufficientChargeTransactions_AxaMansardUserProfileId",
-                table: "InsufficientChargeTransactions",
-                column: "AxaMansardUserProfileId");
+                name: "IX_EnrollmentOnOnboardings_InsuranceUserProfileId",
+                table: "EnrollmentOnOnboardings",
+                column: "InsuranceUserProfileId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EnrollmentOnReactivations_InsuranceUserProfileId",
+                table: "EnrollmentOnReactivations",
+                column: "InsuranceUserProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_ServiceId",
@@ -747,24 +721,24 @@ namespace Persistence.Migrations
                 column: "ServiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentOnReactivations_AxaEnrollmentOnReactivationId",
+                name: "IX_PaymentOnReactivations_EnrollmentOnReactivationId",
                 table: "PaymentOnReactivations",
-                column: "AxaEnrollmentOnReactivationId");
+                column: "EnrollmentOnReactivationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PaymentReferences_AxaMansardUserProfileId",
+                name: "IX_PaymentReferences_InsuranceUserProfileId",
                 table: "PaymentReferences",
-                column: "AxaMansardUserProfileId");
+                column: "InsuranceUserProfileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScheduledAxaEnrollments_AxaMansardUserProfileId",
-                table: "ScheduledAxaEnrollments",
-                column: "AxaMansardUserProfileId");
+                name: "IX_ScheduledEnrollments_InsuranceUserProfileId",
+                table: "ScheduledEnrollments",
+                column: "InsuranceUserProfileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScheduledPayments_ScheduledAxaEnrollmentId",
+                name: "IX_ScheduledPayments_ScheduledEnrollmentId",
                 table: "ScheduledPayments",
-                column: "ScheduledAxaEnrollmentId");
+                column: "ScheduledEnrollmentId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -791,22 +765,19 @@ namespace Persistence.Migrations
                 name: "AuditLogin_LogoutLogs");
 
             migrationBuilder.DropTable(
-                name: "AxaEnrollmentOnOnboardings");
-
-            migrationBuilder.DropTable(
-                name: "AxaMansardCompletionProfiles");
-
-            migrationBuilder.DropTable(
                 name: "AxaMansardHospitalLists");
 
             migrationBuilder.DropTable(
                 name: "Cards");
 
             migrationBuilder.DropTable(
+                name: "EnrollmentOnOnboardings");
+
+            migrationBuilder.DropTable(
                 name: "ExceptionLogs");
 
             migrationBuilder.DropTable(
-                name: "InsufficientChargeTransactions");
+                name: "InsuranceCompletionProfiles");
 
             migrationBuilder.DropTable(
                 name: "Notifications");
@@ -842,16 +813,16 @@ namespace Persistence.Migrations
                 name: "Services");
 
             migrationBuilder.DropTable(
-                name: "AxaEnrollmentReactivations");
+                name: "EnrollmentOnReactivations");
 
             migrationBuilder.DropTable(
-                name: "ScheduledAxaEnrollments");
+                name: "ScheduledEnrollments");
 
             migrationBuilder.DropTable(
                 name: "ClassOrRoles");
 
             migrationBuilder.DropTable(
-                name: "AxaMansardUserProfile");
+                name: "InsuranceUserProfiles");
         }
     }
 }
