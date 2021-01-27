@@ -28,8 +28,7 @@ namespace HealthBanc
         //    {
         //        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
         //        optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
-        //        //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBancNew;Trusted_Connection=True;MultipleActiveResultSets=true");
-
+        //        optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBanc;Trusted_Connection=True;MultipleActiveResultSets=true");
         //        return new ApplicationDbContext(optionsBuilder.Options);
         //    }
         //}
