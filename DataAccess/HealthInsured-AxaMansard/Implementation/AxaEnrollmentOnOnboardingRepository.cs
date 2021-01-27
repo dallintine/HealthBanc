@@ -8,7 +8,7 @@ using System.Text;
 
 namespace DataAccess.HealthInsured_AxaMansard.Implementation
 {
-    public class AxaEnrollmentOnOnboardingRepository : BaseRepository<AxaEnrollmentOnOnboarding>, IAxaEnrollmentOnOnboardingRepository
+    public class AxaEnrollmentOnOnboardingRepository : BaseRepository<EnrollmentOnOnboarding>, IAxaEnrollmentOnOnboardingRepository
     {
         public AxaEnrollmentOnOnboardingRepository(ApplicationDbContext context) : base(context)
         {

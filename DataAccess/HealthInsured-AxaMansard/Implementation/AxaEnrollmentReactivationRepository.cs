@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace DataAccess.HealthInsured_AxaMansard.Implementation
 {
-    public class AxaEnrollmentReactivationRepository : BaseRepository<AxaEnrollmentOnReactivation> , IAxaEnrollmentReactivationRepository
+    public class AxaEnrollmentReactivationRepository : BaseRepository<EnrollmentOnReactivation> , IAxaEnrollmentReactivationRepository
     {
         public AxaEnrollmentReactivationRepository(ApplicationDbContext context) : base(context)
         {
         }
-        public async Task<AxaEnrollmentOnReactivation> GetScheduledAxaEnrollmenttByStatus(string status)
+        public async Task<EnrollmentOnReactivation> GetScheduledAxaEnrollmenttByStatus(string status)
         {
-            return await _context.AxaEnrollmentReactivations.FirstOrDefaultAsync(x => x.Status == "Processing");
+            return await _context.EnrollmentOnReactivations.FirstOrDefaultAsync(x => x.Status == "Processing");
         }
     }
 }

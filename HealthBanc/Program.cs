@@ -22,17 +22,17 @@ namespace HealthBanc
 {
     public class Program
     {
-        //public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
-        //{
-        //    public ApplicationDbContext CreateDbContext(string[] args)
-        //    {
-        //        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        //        optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
-        //        //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBancNew;Trusted_Connection=True;MultipleActiveResultSets=true");
+        public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+        {
+            public ApplicationDbContext CreateDbContext(string[] args)
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+                optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBanc; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
+                //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBanc;Trusted_Connection=True;MultipleActiveResultSets=true");
 
-        //        return new ApplicationDbContext(optionsBuilder.Options);
-        //    }
-        //}
+                return new ApplicationDbContext(optionsBuilder.Options);
+            }
+        }
         public static void Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder(args)

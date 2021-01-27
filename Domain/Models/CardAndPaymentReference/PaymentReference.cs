@@ -12,12 +12,12 @@ namespace Domain.Models
         {
 
         }
-        public PaymentReference(string refernce, int axaMansardUserProfileId, int userId, decimal amount,string status)
+        public PaymentReference(string refernce, int insuranceUserProfileId, int userId, decimal amount,string status)
         {
             Date = DateTime.Now;
             Channel = "HealthBanc-Axamansard";
             Refernce = refernce;
-            AxaMansardUserProfileId = axaMansardUserProfileId;
+            InsuranceUserProfileId = insuranceUserProfileId;
             UserId = userId;
             Amount = amount;
             Status = status;
@@ -27,7 +27,7 @@ namespace Domain.Models
         public DateTime Date { get; set; }
         public string Channel { get; set; }
         public string Refernce { get; set; }
-        public int AxaMansardUserProfileId { get; set; }
+        public int InsuranceUserProfileId { get; set; }
         public int UserId { get; set; }
         public Decimal Amount { get; set; }
         public string Status { get; set; }

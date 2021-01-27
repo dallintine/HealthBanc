@@ -10,12 +10,12 @@ namespace Domain.Models.AxaMansard_Insurance
         {
 
         }
-        public ScheduledPayment(int userId, int axaMansardUserProfileId, Guid scheduledAxaEnrollmentId, DateTime executionDate, string jobId, string status
+        public ScheduledPayment(int userId, int insuranceUserProfileId, Guid scheduledEnrollmentId, DateTime executionDate, string jobId, string status
             ,string message,string paymentReference)
         {
             UserId = userId;
-            AxaMansardUserProfileId = axaMansardUserProfileId;
-            ScheduledAxaEnrollmentId = scheduledAxaEnrollmentId;
+            InsuranceUserProfileId = insuranceUserProfileId;
+            ScheduledEnrollmentId = scheduledEnrollmentId;
             DateScheduled = DateTime.Now;
             ExecutionDate = executionDate;
             JobId = jobId;
@@ -26,14 +26,14 @@ namespace Domain.Models.AxaMansard_Insurance
 
         public int Id { get; set; }
         public int UserId { get; set; }
-        public int AxaMansardUserProfileId { get; set; }
-        public Guid ScheduledAxaEnrollmentId { get; set; }
+        public int InsuranceUserProfileId { get; set; }
+        public Guid ScheduledEnrollmentId { get; set; }
         public DateTime DateScheduled { get; set; }
         public DateTime ExecutionDate { get; set; }
         public string JobId { get; set; }
         public string Status { get; set; }
         public string Message { get; set; }
         public string PaymentReference { get; set; }
-        public ScheduledAxaEnrollment ScheduledAxaEnrollment { get; set; }
+        public ScheduledEnrollment ScheduledEnrollment { get; set; }
     }
 }

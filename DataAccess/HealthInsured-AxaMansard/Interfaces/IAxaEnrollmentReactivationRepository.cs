@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace DataAccess.HealthInsured_AxaMansard.Interfaces
 {
-    public interface IAxaEnrollmentReactivationRepository : IBaseRepository<AxaEnrollmentOnReactivation>
+    public interface IAxaEnrollmentReactivationRepository : IBaseRepository<EnrollmentOnReactivation>
     {
-        Task<AxaEnrollmentOnReactivation> GetScheduledAxaEnrollmenttByStatus(string status);
+        Task<EnrollmentOnReactivation> GetScheduledAxaEnrollmenttByStatus(string status);
     }
 }
