@@ -1,5 +1,5 @@
 ﻿using DataAccess.General.Interfaces;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Persistence;

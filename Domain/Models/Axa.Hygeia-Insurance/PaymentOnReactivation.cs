@@ -11,7 +11,7 @@ namespace Domain.Models.AxaMansard_Insurance
 
         }
         public PaymentOnReactivation(int userId, int insuranceUserProfileId, Guid enrollmentOnReactivationId, DateTime executionDate, string status, string jobId,
-            string message,string paymentReference)
+            string message,string paymentReference,string insuranceService)
         {
             UserId = userId;
             InsuranceUserProfileId = insuranceUserProfileId;
@@ -23,6 +23,7 @@ namespace Domain.Models.AxaMansard_Insurance
             JobId = jobId;
             Date = DateTime.Now;
             PaymentReference = paymentReference;
+            InsuranceService = insuranceService;
         }
         public int Id { get; set; }
         public int UserId { get; set; }
@@ -35,6 +36,7 @@ namespace Domain.Models.AxaMansard_Insurance
         public string JobId { get; set; }
         public DateTime Date { get; set; }
         public string PaymentReference { get; set; }
+        public string InsuranceService { get; set; }
         public EnrollmentOnReactivation EnrollmentOnReactivation { get; set; }
     }
 }

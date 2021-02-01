@@ -6,7 +6,7 @@ using Application.Helpers.ThirdPartyAPI;
 using Application.ViewModels;
 using Application.ViewModels.UserReg_Login;
 using DataAccess.General.Interfaces;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;

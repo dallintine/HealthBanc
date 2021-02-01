@@ -1,11 +1,10 @@
 ﻿using Application.API_ResponseModel.Paystack;
 using Application.DTO;
 using Application.AuditAndReport.AuditLog;
-using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services.Paystack;
 using Application.ViewModels;
-using DataAccess.HealthInsured_AxaMansard.Implementation;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Implementation;
+using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
 using Hangfire;
 using Microsoft.AspNetCore.Cors;
@@ -16,6 +15,7 @@ using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
+using Application.Services.HealthInsured;
 
 namespace HealthBanc.Controllers
 {

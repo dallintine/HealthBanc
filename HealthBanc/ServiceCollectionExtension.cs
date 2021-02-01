@@ -1,17 +1,13 @@
 ﻿using Application.AuditAndReport.AuditLog;
-using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Interfaces;
 using Application.Services.Admin;
-using Application.Services.HealthInsured_AxaMansard.Insurance;
-using Application.Services.HealthInsured_Hygeia;
+using Application.Services.HealthInsured;
 using Application.Services.Identity;
 using Application.Services.Paystack;
 using DataAccess.General.Implementation;
 using DataAccess.General.Interfaces;
-using DataAccess.HealthInsured_AxaMansard.Implementation;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
-using DataAccess.HealthInsured_Hygeia.Implementation;
-using DataAccess.HealthInsured_Hygeia.Interface;
+using DataAccess.HealthInsured.Implementation;
+using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Implementation;
 using DataAccess.Logs.Interfaces;
 using Infrastructure.EncryptionService;
@@ -97,7 +93,7 @@ namespace HealthBanc
             services.AddScoped<ExcelPackage>();
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
-            services.AddScoped<IAxaMansardUserProfileRepository, AxaMansardUserProfileRepository>();
+            services.AddScoped<IInsuranceProfileRepository, InsuranceProfileRepository>();
             services.AddScoped<IInsuranceCompletionProfileRepository, InsuranceCompletionProfileRepository>();
             services.AddScoped<ICardRepository, CardRepository>();
             services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -110,20 +106,18 @@ namespace HealthBanc
             services.AddScoped<IPasswordChangeRepository, PasswordChangeRepository>();
             services.AddScoped<IUserLogin_LogoutLogRepository, UserLogin_LogoutLogRepository>();
             services.AddScoped<IAdminLogin_LogoutLogRepository, AdminLogin_LogoutLogRepository>();
-            services.AddScoped<IScheduledAxaEnrollmentRepository, ScheduledAxaEnrollmentRepository>();
+            services.AddScoped<IScheduledEnrollmentRepository, ScheduledEnrollmentRepository>();
             services.AddScoped<IScheduledPaymentRepository, ScheduledPaymentRepository>();
-            services.AddScoped<IAxaEnrollmentReactivationRepository, AxaEnrollmentReactivationRepository>();
+            services.AddScoped<IEnrollmentReactivationRepository, EnrollmentReactivationRepository>();
             services.AddScoped<IPaymentOnReactivationRepository, PaymentOnReactivationRepository>();
             services.AddScoped<IAxaMansardHospitalListRepository, AxaMansardHospitalListRepository>();
-            services.AddScoped<IAxaEnrollmentOnOnboardingRepository, AxaEnrollmentOnOnboardingRepository>();
+            services.AddScoped<IEnrollmentOnOnboardingRepository, EnrollmentOnOnboardingRepository>();
             services.AddScoped<AuditLogService>();
             services.AddScoped<TokenizationService>();
             services.AddScoped<PaystackService>();
-            services.AddScoped<Hygeia_Insurance>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
-            services.AddScoped<IHygeiaUserProfileRepository, HygeiaUserProfileRepository>();
             services.AddScoped<Dashboard_Analytics>();
 
             //---------------------------- CORS setting---------------------------------------------------------//

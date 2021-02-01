@@ -1,6 +1,6 @@
 ﻿using Application.ViewModels;
 using AutoMapper;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
 using Domain.Models.ReportAndLogs;
 using Microsoft.AspNetCore.Http;

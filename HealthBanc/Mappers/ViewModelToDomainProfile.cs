@@ -1,6 +1,4 @@
-﻿using Application.API_RequestModel.HealthInsured_AxaMansard;
-using Application.ViewModels;
-using Application.ViewModels.AxaMansard;
+﻿using Application.ViewModels;
 using AutoMapper;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;

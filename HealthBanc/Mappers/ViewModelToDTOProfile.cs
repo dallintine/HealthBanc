@@ -1,7 +1,5 @@
-﻿using Application.API_RequestModel.HealthInsured_AxaMansard;
-using Application.DTO;
+﻿using Application.DTO;
 using Application.ViewModels;
-using Application.ViewModels.AxaMansard;
 using AutoMapper;
 using System;
 using System.Collections.Generic;

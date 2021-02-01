@@ -10,7 +10,7 @@ namespace Domain.Models.AxaMansard_Insurance
         {
 
         }
-        public EnrollmentOnReactivation(int userId, int insuranceUserProfileId, DateTime executionDate, string status, string message)
+        public EnrollmentOnReactivation(int userId, int insuranceUserProfileId, DateTime executionDate, string status, string message,string insuranceService)
         {
             Id = Guid.NewGuid();
             UserId = userId;
@@ -19,6 +19,7 @@ namespace Domain.Models.AxaMansard_Insurance
             ExecutionDate = executionDate;
             Status = status;
             Message = message;
+            InsuranceService = insuranceService;
         }
 
         public Guid Id { get; set; }
@@ -28,6 +29,7 @@ namespace Domain.Models.AxaMansard_Insurance
         public DateTime ExecutionDate { get; set; }
         public string Status { get; set; }
         public string Message { get; set; }
+        public string InsuranceService { get; set; }
         public InsuranceUserProfile InsuranceUserProfile { get; set; }
     }
 }

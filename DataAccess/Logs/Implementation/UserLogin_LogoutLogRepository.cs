@@ -1,5 +1,5 @@
 ﻿using DataAccess.General.Implementation;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
 using Domain.Models.ReportAndLogs;
 using Persistence;

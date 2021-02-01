@@ -21,21 +21,19 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Hangfire;
 using Microsoft.Extensions.Primitives;
-using Application.ViewModels.AxaMansard;
 using Application.DTO;
-using Application.API_ResponseModel.HealthInsured_AxaMansard;
 using HealthBanc.DTO.ApplicationUserDTOs;
 using Application.ViewModels;
 using Domain.Models;
-using Application.HealthInsured_AxaMansard_Service.Insurance;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Interfaces;
 using Application.Helpers;
 using DataAccess.General.Interfaces;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Cors;
 using Application.AuditAndReport.AuditLog;
-using Application.Services.HealthInsured_Hygeia;
-using Application.API_RequestModel.HealthInsured_Hygeia;
+using Application.API_ResponseModel.HealthInsured;
+using Application.Services.HealthInsured;
+using Application.ViewModels.HealthInsured;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -45,29 +43,27 @@ namespace HealthBanc.Controllers.Insurance
     {
         private readonly InsuranceService _insuranceService;
         private readonly IMapper _mapper;
-        private readonly IAxaMansardUserProfileRepository _axaMansard;
+        private readonly IInsuranceProfileRepository _insuranceProfileRepository;
         private readonly ILogger<InsuranceController> _logger;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly IHttpContextAccessor _accessor;
-        private readonly Hygeia_Insurance _hygeia_Insurance;
         public string IpAddress;
         public StringValues agent;
 
-        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IAxaMansardUserProfileRepository axaMansard,ILogger<InsuranceController> logger,
+        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IInsuranceProfileRepository insuranceProfileRepository,ILogger<InsuranceController> logger,
             IApplicationUserRepository userRepository, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            IHttpContextAccessor accessor, Hygeia_Insurance hygeia_Insurance)
+            IHttpContextAccessor accessor)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
-            _axaMansard = axaMansard;
+            _insuranceProfileRepository = insuranceProfileRepository;
             _logger = logger;
             _userRepository = userRepository;
             _completionRepository = completionRepository;
             _auditLogServices = auditLogServices;
             _accessor = accessor;
-            _hygeia_Insurance = hygeia_Insurance;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -95,7 +91,7 @@ namespace HealthBanc.Controllers.Insurance
                 int Id = int.Parse(userId);
                 var device = _auditLogServices.GetDevice(agent);
 
-                var creatProfileResponse = await _insuranceService.AxaMansardOnboarding(userProfile, Id, IpAddress, device);
+                var creatProfileResponse = await _insuranceService.UserOnboarding(userProfile, Id, IpAddress, device);
 
                 if (creatProfileResponse.Status)
                 {
@@ -156,7 +152,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            var profile = await _axaMansard.GetByUserIdAsync(Id);
+            var profile = await _insuranceProfileRepository.GetByUserIdAsync(Id);
             if(profile != null)
             {
                 var profileDTO = _mapper.Map<AxaMansardUserDTO>(profile);
@@ -194,7 +190,7 @@ namespace HealthBanc.Controllers.Insurance
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
-                var checkIfUserHasBeenProfiled = await _axaMansard.GetByUserIdAsync(Id);
+                var checkIfUserHasBeenProfiled = await _insuranceProfileRepository.GetByUserIdAsync(Id);
                 if (checkIfUserHasBeenProfiled == null) return BadRequest(new ResponseMessage { Message = "User does not have a profile" });
 
                 var updatedProfile = _mapper.Map(updateProfileViewModel, checkIfUserHasBeenProfiled);
@@ -208,8 +204,8 @@ namespace HealthBanc.Controllers.Insurance
                 {
                     updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName;
                 }
-                _axaMansard.Update(updatedProfile);
-                await _axaMansard.Save();
+                _insuranceProfileRepository.Update(updatedProfile);
+                await _insuranceProfileRepository.Save();
 
                 var auditViewModel = new AuditLogViewModel(Id, null, null, "Updated HealthInsured Profile", "Updated HealthInsured profile");
                 var device = _auditLogServices.GetDevice(agent);
@@ -244,36 +240,6 @@ namespace HealthBanc.Controllers.Insurance
             var result = await _insuranceService.AxaHospitalList(file);
             return Ok();
         }
-
-        [HttpPost("[action]")]
-        public async Task<IActionResult> HygeiaCreateUserProfile([FromForm]UserProfileviewModel userProfile)
-        {
-            if (ModelState.IsValid)
-            {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-                var device = _auditLogServices.GetDevice(agent);
-
-                var creatProfileResponse = await _hygeia_Insurance.HygeiaOnboarding(userProfile, Id, IpAddress, device);
-
-                if (creatProfileResponse.Status)
-                {
-                    return Ok(creatProfileResponse);
-                }
-                return BadRequest(creatProfileResponse);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
-
     }
 }
 

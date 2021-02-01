@@ -11,7 +11,7 @@ namespace Domain.Models.AxaMansard_Insurance
 
         }
 
-        public EnrollmentOnOnboarding(int userId, int insuranceUserProfileId, string jobId , string status, string message)
+        public EnrollmentOnOnboarding(int userId, int insuranceUserProfileId, string jobId , string status, string message,string insuranceService)
         {
             Id = Guid.NewGuid();
             UserId = userId;
@@ -20,6 +20,8 @@ namespace Domain.Models.AxaMansard_Insurance
             DateScheduled = DateTime.Now;
             Status = status;
             Message = message;
+            InsuranceService = insuranceService;
+
         }
 
         public Guid Id { get; set; }
@@ -30,6 +32,7 @@ namespace Domain.Models.AxaMansard_Insurance
         public string Status { get; set; }
         public string Message { get; set; }
         public string Serviceused { get; set; }
+        public string InsuranceService { get; set; }
         public InsuranceUserProfile InsuranceUserProfile { get; set; }
     }
 }

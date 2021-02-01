@@ -10,7 +10,7 @@ using Application.Interfaces;
 using Application.Services.Identity;
 using Application.ViewModels.UserReg_Login;
 using DataAccess.General.Interfaces;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;

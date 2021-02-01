@@ -1,9 +1,8 @@
 ﻿using Application.API_RequestModel.Paystack;
 using Application.API_ResponseModel.Paystack;
 using Application.Helpers.ThirdPartyAPI;
-using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.ViewModels.Paystack;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,11 +21,11 @@ namespace Application.Services.Paystack
     public class PaystackService
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IAxaMansardUserProfileRepository _axaMansardUser;
+        private readonly IInsuranceProfileRepository _axaMansardUser;
         private readonly ILogger<PaystackService> _logger;
         private Helpers.Paystack Options { get; }
 
-        public PaystackService(IHttpClientFactory httpClientFactory,IAxaMansardUserProfileRepository axaMansardUser, IOptions<Helpers.Paystack> paystackAccessor,
+        public PaystackService(IHttpClientFactory httpClientFactory,IInsuranceProfileRepository axaMansardUser, IOptions<Helpers.Paystack> paystackAccessor,
             ILogger<PaystackService> logger)
         {
             _httpClientFactory = httpClientFactory;
@@ -177,10 +176,10 @@ namespace Application.Services.Paystack
                             return new TokenizationResponse { Message = chargeAuthorizationResponse.message + ", " + message1, Status = false, ResponseCode = 10 };
                         }
                     }
-                    // Authorization code error
                     var message2 = chargeAuthorizationResponse.data.gateway_response != null ? chargeAuthorizationResponse.data.gateway_response : "";
                     return new TokenizationResponse { Message = chargeAuthorizationResponse.message + ", " + message2, Status = false };
                 }
+                // Authorization code error
                 return new TokenizationResponse { Message = chargeAuthorizationResponse.message, Status = false };
             }
             catch(Exception ex)

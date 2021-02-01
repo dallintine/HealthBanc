@@ -1,11 +1,10 @@
 ﻿using Application.API_ResponseModel.Paystack;
 using Application.DTO;
 using Application.AuditAndReport.AuditLog;
-using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.ViewModels;
 using Application.ViewModels.Paystack;
 using AutoMapper;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
@@ -18,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Application.Services.HealthInsured;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -27,18 +27,18 @@ namespace HealthBanc.Controllers.Insurance
     {
         private readonly TokenizationService _tokenizationService;
         private readonly AuditLogService _auditLogServices;
-        private readonly IAxaMansardUserProfileRepository _mansardUserProfileRepository;
+        private readonly IInsuranceProfileRepository _insuranceProfileRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<TokenizationController> _logger;
         public string ipAddress;
         public StringValues agent;
 
         public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices,
-            IAxaMansardUserProfileRepository mansardUserProfileRepository,IMapper mapper, ILogger<TokenizationController> logger)
+            IInsuranceProfileRepository insuranceProfileRepository,IMapper mapper, ILogger<TokenizationController> logger)
         {
             _tokenizationService = tokenizationService;
             _auditLogServices = auditLogServices;
-            _mansardUserProfileRepository = mansardUserProfileRepository;
+            _insuranceProfileRepository = insuranceProfileRepository;
             _mapper = mapper;
             _logger = logger;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
@@ -139,7 +139,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var cards = await _mansardUserProfileRepository.GetByUserIdAsync(Id);
+            var cards = await _insuranceProfileRepository.GetByUserIdAsync(Id);
             if (cards != null)
             {
                 if (cards.Cards.Count > 0)

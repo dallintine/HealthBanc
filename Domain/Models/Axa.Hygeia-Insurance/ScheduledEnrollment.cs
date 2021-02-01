@@ -10,7 +10,7 @@ namespace Domain.Models.AxaMansard_Insurance
         {
         }
 
-        public ScheduledEnrollment(int userId, int insuranceUserProfileId, DateTime executionDate, string jobId, string status, string message)
+        public ScheduledEnrollment(int userId, int insuranceUserProfileId, DateTime executionDate, string jobId, string status, string message,string insuranceService)
         {
             Id = Guid.NewGuid();
             UserId = userId;
@@ -20,6 +20,7 @@ namespace Domain.Models.AxaMansard_Insurance
             JobId = jobId;
             Status = status;
             Message = message;
+            InsuranceService = insuranceService;
         }
 
         public Guid Id { get; set; }
@@ -30,6 +31,7 @@ namespace Domain.Models.AxaMansard_Insurance
         public string JobId { get; set; }
         public string Status { get; set; }
         public string Message { get; set; }
+        public string InsuranceService { get; set; }
         public InsuranceUserProfile InsuranceUserProfile { get; set; }
     }
 }
