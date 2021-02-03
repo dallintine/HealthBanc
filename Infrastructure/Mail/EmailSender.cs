@@ -92,6 +92,14 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
+        public void CorporateInsuranceOnboarding(string email, string subject, string otp)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\corporate_onboarding.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("OTPCODE", otp);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
+        }
 
         public async void EmailRequest(EmailRequest emailRequest)
         {

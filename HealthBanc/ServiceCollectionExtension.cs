@@ -8,6 +8,8 @@ using DataAccess.General.Implementation;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Implementation;
 using DataAccess.HealthInsured.Interfaces;
+using DataAccess.HealthInsured_AxaMansard.Implementation;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using DataAccess.Logs.Implementation;
 using DataAccess.Logs.Interfaces;
 using Infrastructure.EncryptionService;
@@ -118,6 +120,7 @@ namespace HealthBanc
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
+            services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
             services.AddScoped<Dashboard_Analytics>();
 
             //---------------------------- CORS setting---------------------------------------------------------//

@@ -8,6 +8,7 @@ namespace Application.Interfaces
 {
     public interface IEmailSender
     {
+        void CorporateInsuranceOnboarding(string email, string subject, string otp);
         void HealthInsuredFailedDebit(string email, string subject, string userName, string premium);
         void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider);
         void SendHealthInsuredPaymentReminder(string email, string subject, string userName);

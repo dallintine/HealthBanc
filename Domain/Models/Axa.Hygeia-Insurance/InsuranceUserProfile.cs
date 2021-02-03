@@ -9,6 +9,7 @@ namespace Domain.Models
     {
         public int Id { get; set; }
         public int UserId { get; set; }
+        public int? CompanyProfileId { get; set; }
         public string TransId { get; set; }
         public string Gender { get; set; }
         public string PendingJobId { get; set; }

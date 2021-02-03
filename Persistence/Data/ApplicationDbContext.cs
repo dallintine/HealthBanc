@@ -1,4 +1,5 @@
 ﻿using Domain.Models;
+using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.AxaMansard_Insurance;
 using Domain.Models.ExceptionLog;
 using Domain.Models.ReportAndLogs;
@@ -37,6 +38,7 @@ namespace Persistence
         public DbSet<PaymentOnReactivation> PaymentOnReactivations { get; set; }
         public DbSet<AxaMansardHospitalList> AxaMansardHospitalLists { get; set;}
         public DbSet<EnrollmentOnOnboarding> EnrollmentOnOnboardings { get; set; }
+        public DbSet<CompanyProfile> CompanyProfiles { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

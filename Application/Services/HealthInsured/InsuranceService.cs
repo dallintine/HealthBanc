@@ -2,6 +2,7 @@
 using Application.AuditAndReport.AuditLog;
 using Application.Helpers;
 using Application.ViewModels;
+using Application.ViewModels.HealthInsured;
 using AutoMapper;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
@@ -27,7 +28,8 @@ using System.Xml;
 using Application.Interfaces;
 using Application.API_RequestModel.HealthInsured;
 using Application.API_ResponseModel.HealthInsured;
-using Application.ViewModels.HealthInsured;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using Domain.Models.Axa.Hygeia_Insurance;
 
 namespace Application.Services.HealthInsured
 {
@@ -43,13 +45,15 @@ namespace Application.Services.HealthInsured
         private readonly IAxaMansardHospitalListRepository _hospitalListRepository;
         private readonly ILogger<InsuranceService> _logger;
         private readonly IUniqueIdentifier _uniqueIdentifier;
+        private readonly ICompanyProfileRepository _companyProfileRepository;
+        private readonly IEmailSender _emailSender;
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration>  axaAccessor,IApplicationUserRepository userRepository
             , IInsuranceProfileRepository insurance,IMapper mapper,IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
             ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger,IUniqueIdentifier uniqueIdentifier,
-             IOptions<HygeiaConfiguration> hygeiaAccessor)
+             IOptions<HygeiaConfiguration> hygeiaAccessor, ICompanyProfileRepository companyProfileRepository, IEmailSender emailSender)
         {
             _httpClientFactory = httpClientFactory;
             _userRepository = userRepository;
@@ -61,6 +65,8 @@ namespace Application.Services.HealthInsured
             _hospitalListRepository = hospitalListRepository;
             _logger = logger;
             _uniqueIdentifier = uniqueIdentifier;
+            _companyProfileRepository = companyProfileRepository;
+            _emailSender = emailSender;
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
         }        
@@ -135,6 +141,96 @@ namespace Application.Services.HealthInsured
             _userRepository.Update(user);
             await _userRepository.Save();
             return new ResponseMessage { Status = true};
+        }
+
+        public async Task<ResponseMessage> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel,int userId)
+        {
+            var company = await _companyProfileRepository.GetCompanyProfileByEmail(corporateRegViewModel.Email);
+            if(company != null)
+            { 
+                return new ResponseMessage { Message = "Company profile with this email already exist" };
+            }
+            var otp = _uniqueIdentifier.GetUniqueCode(6);
+            company = new CompanyProfile();
+            company.OTPCode = otp;
+            company.UserId = userId;
+            company.CompanyEmail = corporateRegViewModel.Email;
+            company.CompanyName = corporateRegViewModel.Name;
+
+            // Schedule otp removal after 5 minutes
+            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId),DateTime.Now.AddMinutes(5));
+
+            company.OTPJobId = otpJobId;
+            _companyProfileRepository.Create(company);
+            await _companyProfileRepository.Save();
+            _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporating Onboarding", otp);
+            return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
+        }
+
+        public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
+        {
+            var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+
+            if (corporateUser.OTPCode != null)
+            {
+                if (corporateUser.EmailConfirmed)
+                {
+                    return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
+                }
+                if (otp == corporateUser.OTPCode)
+                {
+                    corporateUser.EmailConfirmed = true;
+                    corporateUser.OTPCode = null;
+                    BackgroundJob.Delete(corporateUser.OTPJobId);
+                    corporateUser.OTPJobId = null;
+                    _companyProfileRepository.Update(corporateUser);
+                    await _companyProfileRepository.Save();
+                    return new ResponseMessage { Message = "Email was confirmed successfully", Status = true };
+                }
+                return new ResponseMessage { Message = "OTP code does not match", Status = false };
+            }
+            return new ResponseMessage { Message = "OTP code has expired, please resend OTP", Status = false };
+        }
+
+        public async Task<ResponseMessage> ResendOtp(int userId)
+        {
+            var company = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+            if (company == null)
+            {
+                return new ResponseMessage { Message = "Company profile does not exist, please register as a corporate entity.",Status=false };
+            }
+            else if (company.EmailConfirmed)
+            {
+                return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
+            }
+            var otp = _uniqueIdentifier.GetUniqueCode(6);
+            company.OTPCode = otp;
+            if(company.OTPJobId != null)
+            {
+                BackgroundJob.Delete(company.OTPJobId);
+            }
+            // Schedule otp removal after 5 minutes
+            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId), DateTime.Now.AddMinutes(5));
+
+            company.OTPJobId = otpJobId;
+            _companyProfileRepository.Update(company);
+            await _companyProfileRepository.Save();
+            _emailSender.CorporateInsuranceOnboarding(company.CompanyEmail, "Corporating Onboarding", otp);
+            return new ResponseMessage { Message = "OTP was sent successfully", Status = true };
+        }
+
+        public async Task<ResponseMessage> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel,int Id)
+        {
+            var company = await _companyProfileRepository.GetCompanyProfileByUserId(Id);
+            if(company is null)
+            {
+                return new ResponseMessage { Message = "Company does not exist", Status = false };
+            }
+            company.Industry = updateCorporateUserViewModel.Industry;
+            company.CompanySize = updateCorporateUserViewModel.CompanySize;
+            _companyProfileRepository.Update(company);
+            await _companyProfileRepository.Save();
+            return new ResponseMessage { Message = "Company profile was updated successfully", Status = true };
         }
 
         public async Task<ResponseMessage> AxamansardRegisterUser(EnrollmentModel model)
@@ -295,6 +391,15 @@ namespace Application.Services.HealthInsured
             _hospitalListRepository.CreateRange(hospitalList);
             await _hospitalListRepository.Save();
             return excelModels;
+        }
+
+        public async Task RemoveOTP(int userId)
+        {
+            var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+            corporateUser.OTPCode = null;
+            corporateUser.OTPJobId = null;
+            _companyProfileRepository.Update(corporateUser);
+            await _companyProfileRepository.Save();
         }
     }
 }

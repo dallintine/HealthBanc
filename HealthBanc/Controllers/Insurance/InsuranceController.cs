@@ -111,6 +111,80 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var corporateRegistration = await _insuranceService.CreateCorporateUser(corporateRegViewModel,Id);
+                return Ok(corporateRegistration);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> ConfirmOtp(string otp)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var confirmOtp = await _insuranceService.ConfirmOtp(otp, Id);
+            if (confirmOtp.Status)
+            {
+                return Ok(confirmOtp);
+            }
+            return BadRequest(confirmOtp);
+        }
+
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> ResendOTP()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var resendOtp = await _insuranceService.ResendOtp(Id);
+            if (resendOtp.Status)
+            {
+                return Ok(resendOtp);
+            }
+            return BadRequest(resendOtp);
+        }
+
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var corporateUser = await _insuranceService.UpdateCorporateUser(updateCorporateUserViewModel,Id);
+                return Ok(corporateUser);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
 
         //[Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CityListDTO>>))]
