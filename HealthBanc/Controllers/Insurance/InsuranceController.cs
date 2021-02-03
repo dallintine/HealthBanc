@@ -34,6 +34,7 @@ using Application.AuditAndReport.AuditLog;
 using Application.API_ResponseModel.HealthInsured;
 using Application.Services.HealthInsured;
 using Application.ViewModels.HealthInsured;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -83,7 +84,7 @@ namespace HealthBanc.Controllers.Insurance
         [EnableCors("Cors")]
         [HttpPost("[action]")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> AxaMansardCreateUserProfile([FromForm] UserProfileviewModel userProfile)
+        public async Task<IActionResult> CreateUserInsuranceProfile([FromForm] UserProfileviewModel userProfile)
         {
             if (ModelState.IsValid)
             {
@@ -222,7 +223,7 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
-        public async Task<IActionResult> GetAxaMansardProfile()
+        public async Task<IActionResult> GetUserInsuranceProfile()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);

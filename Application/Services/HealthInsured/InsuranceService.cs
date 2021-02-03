@@ -30,6 +30,7 @@ using Application.API_RequestModel.HealthInsured;
 using Application.API_ResponseModel.HealthInsured;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models.Axa.Hygeia_Insurance;
+using Microsoft.AspNetCore.Identity;
 
 namespace Application.Services.HealthInsured
 {
@@ -37,7 +38,7 @@ namespace Application.Services.HealthInsured
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IApplicationUserRepository _userRepository;
-        private readonly IInsuranceProfileRepository _insurance;
+        private readonly IInsuranceProfileRepository _insuranceProfileRepository;
         private readonly IMapper _mapper;
         private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly AuditLogService _auditLogServices;
@@ -47,17 +48,20 @@ namespace Application.Services.HealthInsured
         private readonly IUniqueIdentifier _uniqueIdentifier;
         private readonly ICompanyProfileRepository _companyProfileRepository;
         private readonly IEmailSender _emailSender;
+        private readonly UserManager<ApplicationUser> _userManager;
+
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration>  axaAccessor,IApplicationUserRepository userRepository
             , IInsuranceProfileRepository insurance,IMapper mapper,IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
             ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger,IUniqueIdentifier uniqueIdentifier,
-             IOptions<HygeiaConfiguration> hygeiaAccessor, ICompanyProfileRepository companyProfileRepository, IEmailSender emailSender)
+             IOptions<HygeiaConfiguration> hygeiaAccessor, ICompanyProfileRepository companyProfileRepository, IEmailSender emailSender,
+              UserManager<ApplicationUser> userManager)
         {
             _httpClientFactory = httpClientFactory;
             _userRepository = userRepository;
-            _insurance = insurance;
+            _insuranceProfileRepository = insurance;
             _mapper = mapper;
             _completionRepository = completionRepository;
             _auditLogServices = auditLogServices;
@@ -67,6 +71,7 @@ namespace Application.Services.HealthInsured
             _uniqueIdentifier = uniqueIdentifier;
             _companyProfileRepository = companyProfileRepository;
             _emailSender = emailSender;
+            _userManager = userManager;
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
         }        
@@ -75,7 +80,7 @@ namespace Application.Services.HealthInsured
         {
             var user = await _userRepository.FindByIdAsync(userId);
 
-            var checkIfUserHasBeenProfiled = await _insurance.GetByUserIdAsync(userId);
+            var checkIfUserHasBeenProfiled = await _insuranceProfileRepository.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled != null) return new ResponseMessage { Message = "User has a profile already" };
 
 
@@ -127,7 +132,7 @@ namespace Application.Services.HealthInsured
 
             var updatedProfile = _mapper.Map(user, profile);
 
-            _insurance.Create(updatedProfile);
+            _insuranceProfileRepository.Create(updatedProfile);
 
             userProfile.InsuranceService = userProfile.InsuranceService == null ? userProfile.InsuranceService = "AxaMansad" 
                 : userProfile.InsuranceService = userProfile.InsuranceService;

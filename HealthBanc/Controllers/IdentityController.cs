@@ -67,7 +67,7 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                var response = await _identityService.RegisterSuperAdmin(registrationViewModel);
+                var response = await _identityService.RegisterUser(registrationViewModel);
                 if (response.Status == true)
                 {
                     return Ok(response);

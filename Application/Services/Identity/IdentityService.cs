@@ -70,7 +70,7 @@ namespace Application.Services.Identity
             _logoutLogRepository = _LogoutLogRepository;            
         }
 
-        public async Task<ResponseMessage> RegisterSuperAdmin(RegistrationViewModel registrationViewModel)
+        public async Task<ResponseMessage> RegisterUser(RegistrationViewModel registrationViewModel)
         {
             var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
             if (checkUserEmail == null)
