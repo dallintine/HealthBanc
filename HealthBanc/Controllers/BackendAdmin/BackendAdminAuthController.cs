@@ -94,6 +94,7 @@ namespace HealthBanc.Controllers
                 {
                     var httpClient = _httpClientFactory.CreateClient("Fiorano");
                     var loginCredentials = new ADCredentialsRoot();
+                    loginCredentials.AD_Credentials = new ADCredentials();
                     loginCredentials.AD_Credentials.AD_Username = aDCredentials.AD_Username;
                     loginCredentials.AD_Credentials.AD_Password = aDCredentials.AD_Password;
                     HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
