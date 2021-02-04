@@ -214,7 +214,12 @@ namespace HealthBanc
                 Authorization = new[] { new MyAuthorizationFilter() }
             });
 
-            
+            ServicePointManager.ServerCertificateValidationCallback +=
+               (sender, certificate, chain, errors) =>
+               {
+                   return true;
+               };
+
             app.ConfigureExceptionHandler(logger);
 
             app.Use(async (context, next) =>
