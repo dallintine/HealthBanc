@@ -29,6 +29,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Application.Services.Admin;
+using Application.API_RequestModel;
 
 namespace HealthBanc.Controllers
 {
@@ -46,13 +48,14 @@ namespace HealthBanc.Controllers
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly IAdminLogin_LogoutLogRepository _auditLogin_LogoutLog;
         private readonly AuditLogService _auditLogServices;
+        private readonly OTPService _otpService;
         private readonly JwtSettings _jwtsettings;
         private readonly AppEndpoint _appEndpoint;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
             ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
             TokenValidationParameters tokenValidationParameters, IOptions<AppEndpoint> optionAccessor, IAdminLogin_LogoutLogRepository auditLogin_LogoutLog,
-             AuditLogService auditLogServices)
+             AuditLogService auditLogServices, OTPService otpService)
         {
             _appEndpoint = optionAccessor.Value;
             _userManager = userManager;
@@ -64,6 +67,7 @@ namespace HealthBanc.Controllers
             _tokenValidationParameters = tokenValidationParameters;
             _auditLogin_LogoutLog = auditLogin_LogoutLog;
             _auditLogServices = auditLogServices;
+            _otpService = otpService;
             _jwtsettings = jwtsettings.Value;
         }
 
@@ -77,7 +81,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> BackendLogin([FromBody] ADCredentials aDCredentials)
+        public async Task<IActionResult> BackendLogin([FromBody] ADCredentialsViewModel aDCredentials)
         {
             if (ModelState.IsValid)
             {
@@ -90,7 +94,9 @@ namespace HealthBanc.Controllers
                 {
                     var httpClient = _httpClientFactory.CreateClient("Fiorano");
                     var loginCredentials = new ADCredentialsRoot();
-                    loginCredentials.AD_Credentials = aDCredentials;
+                    loginCredentials.AD_Credentials = new ADCredentials();
+                    loginCredentials.AD_Credentials.AD_Username = aDCredentials.AD_Username;
+                    loginCredentials.AD_Credentials.AD_Password = aDCredentials.AD_Password;
                     HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
                     try
                     {
@@ -103,6 +109,15 @@ namespace HealthBanc.Controllers
                                 var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
                                 if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                                 {
+                                    var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
+                                    if (checkOTP == "")
+                                    {
+                                        return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
+                                    }
+                                    if(checkOTP == "false")
+                                    {
+                                        return Unauthorized(new ResponseMessage { Message = "Could not connect with OTP Service" });
+                                    }
                                     var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
                                     var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
                                     _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
@@ -144,6 +159,14 @@ namespace HealthBanc.Controllers
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage{ Data = errors,Status=false,Message="Please check for validation errors" });
+        }
+
+
+        [HttpGet("[action]")]
+        public IActionResult ConsumeOTPSoapService(string username,string otp)
+        {
+            var x = _otpService.SOAPManual(otp, username);
+            return Ok(x);
         }
 
         [HttpGet("[action]")]

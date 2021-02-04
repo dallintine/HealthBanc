@@ -93,6 +93,7 @@ namespace HealthBanc
             services.AddScoped<IServiceRepository, ServiceRepository>();
             services.AddScoped<InsuranceService>();
             services.AddScoped<ExcelPackage>();
+            services.AddScoped<OTPService>();
             services.AddScoped<IBackendAdminRepository, BackendAdminRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IInsuranceProfileRepository, InsuranceProfileRepository>();
