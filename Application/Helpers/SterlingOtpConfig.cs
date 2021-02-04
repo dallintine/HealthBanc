@@ -5,13 +5,10 @@ using System.Threading.Tasks;
 
 namespace Application.Helpers
 {
-    public class SterlingOtp
-    {
-        public SterlingOtpConfig SterlingOtpConfig { get; set; }
-    }
-
     public class SterlingOtpConfig
     {
         public string Hashkey { get; set; }
+        public string Url { get; set; }
+        public string Action { get; set; }
     }
 }

@@ -29,6 +29,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Application.Services.Admin;
 
 namespace HealthBanc.Controllers
 {
@@ -46,13 +47,14 @@ namespace HealthBanc.Controllers
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly IAdminLogin_LogoutLogRepository _auditLogin_LogoutLog;
         private readonly AuditLogService _auditLogServices;
+        private readonly OTPService _otpService;
         private readonly JwtSettings _jwtsettings;
         private readonly AppEndpoint _appEndpoint;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
             ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
             TokenValidationParameters tokenValidationParameters, IOptions<AppEndpoint> optionAccessor, IAdminLogin_LogoutLogRepository auditLogin_LogoutLog,
-             AuditLogService auditLogServices)
+             AuditLogService auditLogServices, OTPService otpService)
         {
             _appEndpoint = optionAccessor.Value;
             _userManager = userManager;
@@ -64,6 +66,7 @@ namespace HealthBanc.Controllers
             _tokenValidationParameters = tokenValidationParameters;
             _auditLogin_LogoutLog = auditLogin_LogoutLog;
             _auditLogServices = auditLogServices;
+            _otpService = otpService;
             _jwtsettings = jwtsettings.Value;
         }
 
@@ -144,6 +147,14 @@ namespace HealthBanc.Controllers
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage{ Data = errors,Status=false,Message="Please check for validation errors" });
+        }
+
+
+        [HttpGet("[action]")]
+        public IActionResult ConsumeOTPSoapService(string username,string otp)
+        {
+            var x = _otpService.SOAPManual(otp, username);
+            return Ok(x);
         }
 
         [HttpGet("[action]")]

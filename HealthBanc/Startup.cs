@@ -58,7 +58,7 @@ namespace HealthBanc
             services.Configure<Paystack>(Configuration.GetSection("Paystack"));
             services.Configure<AxaMansardConfiguration>(Configuration.GetSection("AxaMansardConfiguration"));
             services.Configure<Application.Helpers.Environment>(Configuration.GetSection("Environment"));
-            services.Configure<SterlingOtp>(Configuration);
+            services.Configure<SterlingOtpConfig>(Configuration.GetSection("SterlingOtpConfig"));
             services.Configure<AppEndpoint>(Configuration);
             services.Configure<ImageStorage>(Configuration.GetSection("ImageStorage"));
             services.Configure<EmailAuth>(Configuration.GetSection("EmailAuth"));
