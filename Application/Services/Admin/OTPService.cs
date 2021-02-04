@@ -41,19 +41,15 @@ namespace Application.Services.Admin
                 using WebResponse response = webRequest.GetResponse();
                 using StreamReader rd = new StreamReader(response.GetResponseStream());
                 result = rd.ReadToEnd();
-                //using (WebResponse response = webRequest.GetResponse())
-                //{
-                //    using (StreamReader rd = new StreamReader(response.GetResponseStream()))
-                //    {
-                //        result = rd.ReadToEnd();
-                //    }
-                //}
-                return result;
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.LoadXml(result);
+                var resultResponse = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;
+                return resultResponse;
             }
             catch (Exception ex)
             {
-                _logger.LogError("This happened in the SoapManual: " + ex.ToString());
-                return ex.ToString();
+                _logger.LogError("Could not connect to OTP Service " + ex.ToString());
+                return "false";
             }
 
         }

@@ -30,6 +30,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Application.Services.Admin;
+using Application.API_RequestModel;
 
 namespace HealthBanc.Controllers
 {
@@ -80,7 +81,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [ProducesResponseType(401, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> BackendLogin([FromBody] ADCredentials aDCredentials)
+        public async Task<IActionResult> BackendLogin([FromBody] ADCredentialsViewModel aDCredentials)
         {
             if (ModelState.IsValid)
             {
@@ -93,7 +94,8 @@ namespace HealthBanc.Controllers
                 {
                     var httpClient = _httpClientFactory.CreateClient("Fiorano");
                     var loginCredentials = new ADCredentialsRoot();
-                    loginCredentials.AD_Credentials = aDCredentials;
+                    loginCredentials.AD_Credentials.AD_Username = aDCredentials.AD_Username;
+                    loginCredentials.AD_Credentials.AD_Password = aDCredentials.AD_Password;
                     HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
                     try
                     {
@@ -106,6 +108,15 @@ namespace HealthBanc.Controllers
                                 var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
                                 if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                                 {
+                                    var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
+                                    if (checkOTP == "")
+                                    {
+                                        return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
+                                    }
+                                    if(checkOTP == "false")
+                                    {
+                                        return Unauthorized(new ResponseMessage { Message = "Could not connect with OTP Service" });
+                                    }
                                     var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
                                     var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
                                     _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
