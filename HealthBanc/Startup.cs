@@ -136,7 +136,29 @@ namespace HealthBanc
             })
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
-            
+
+            var sterlingOTPConfig = Configuration.GetSection("SterlingOtpConfig");
+            services.Configure<SterlingOtpConfig>(sterlingOTPConfig);
+            var sterlingOTPConfigValues = sterlingOTPConfig.Get<SterlingOtpConfig>();
+
+
+            //////////////////////////////////////////////////////////////////////////////////
+
+
+            //---------------------------- CORS setting---------------------------------------------------------//
+            services.AddCors(options =>
+            {
+                options.AddPolicy("Cors",
+                    builder =>
+                        builder.WithOrigins(baseUrlValues.HealthBancFrontendBase, paystackUrlValues.PayStackBaseAddress, axaMansardValues.AxaMansardBaseAddress
+                        , sterlingOTPConfigValues.Url, baseUrlValues.FiorianoBaseAddress,emailValues.EmailNotificationBaseUrl)
+                            .AllowAnyMethod()
+                            .AllowAnyHeader());
+            });
+
+            //---------------------------- CORS setting---------------------------------------------------------//
+
+
 
             services.AddAuthorization(options =>
             {
