@@ -35,6 +35,7 @@ using Application.API_ResponseModel.HealthInsured;
 using Application.Services.HealthInsured;
 using Application.ViewModels.HealthInsured;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using Infrastructure.UploadService;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -50,12 +51,13 @@ namespace HealthBanc.Controllers.Insurance
         private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly IHttpContextAccessor _accessor;
+        private readonly IFileProcessor _fileProcessor;
         public string IpAddress;
         public StringValues agent;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IInsuranceProfileRepository insuranceProfileRepository,ILogger<InsuranceController> logger,
             IApplicationUserRepository userRepository, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            IHttpContextAccessor accessor)
+            IHttpContextAccessor accessor, IFileProcessor fileProcessor)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
@@ -67,6 +69,7 @@ namespace HealthBanc.Controllers.Insurance
             _accessor = accessor;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
+            _fileProcessor = fileProcessor;
         }
 
         [HttpGet("[action]")]
@@ -315,6 +318,66 @@ namespace HealthBanc.Controllers.Insurance
             var result = await _insuranceService.AxaHospitalList(file);
             return Ok();
         }
+
+        /// <summary>
+        /// Upload an excel file
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        //[Authorize]
+        [AllowAnonymous]
+        [HttpPost()]
+        [Route(nameof(UploadExcel))]
+        public async Task<IActionResult> UploadExcel([FromForm]UploadViewModel file)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+           //string companyId = User.FindFirst("CompanyProfileId")?.Value;
+           // int id = int.Parse(companyId);
+
+            var excelModel = await _fileProcessor.ProcessExcelFile(file.FileUpload);
+
+         
+            var insuranceUserProfiles = new List<InsuranceUserProfile>();
+            foreach (var item in excelModel)
+            {
+           
+                var insuranceUserProfile = new InsuranceUserProfile
+                {
+                    DateOfBirth = DateTime.Parse(item.DateOfBirth),
+                    UserId = 2,
+                    SubscriptionStatus = false,
+                    TransId = default,
+                    StartActiveStatusDate = DateTime.UtcNow,             
+                    PendingJobId = default,                 
+                    ActiveStatus = false,
+                    Surname = item.LastName,
+                    Othernames = item.FirstName,
+                    Gender = item.Gender,
+                    PhoneNumber = item.PhoneNumber,
+                    Premium = decimal.Parse(item.PremiumFee),
+                  // CompanyProfileId = id,
+                   
+                };
+                
+                insuranceUserProfiles.Add(insuranceUserProfile);
+            }
+
+            await _insuranceProfileRepository.InsertEntities(insuranceUserProfiles);
+
+           
+                return Ok(new ResponseMessage
+                {
+                    Data = insuranceUserProfiles,
+                    Message = "Uploaded Successfully",
+                    Status = true
+                });
+            
+        }
+      
+
     }
 }
 

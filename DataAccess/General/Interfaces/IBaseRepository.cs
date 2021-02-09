@@ -15,5 +15,6 @@ namespace DataAccess.General.Interfaces
         IEnumerable<T> Filter(Func<T, bool> predicate);
         T Find(Func<T, bool> predicate);
         void CreateRange(List<T> entity);
+        Task InsertEntities(List<T> entities);
     }
 }

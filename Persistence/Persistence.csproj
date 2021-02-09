@@ -11,6 +11,8 @@
   <ItemGroup>
     <Compile Remove="Migrations\20210203191326_added_companyUserIdTO_InuranceuserProfielTable.cs" />
     <Compile Remove="Migrations\20210203191326_added_companyUserIdTO_InuranceuserProfielTable.Designer.cs" />
+    <Compile Remove="Migrations\20210205102100_First_Localdb.cs" />
+    <Compile Remove="Migrations\20210205102100_First_Localdb.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.0" />
