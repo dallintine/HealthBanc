@@ -121,20 +121,7 @@ namespace HealthBanc
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
-            services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
-            services.AddScoped<Dashboard_Analytics>();
-
-            //---------------------------- CORS setting---------------------------------------------------------//
-            services.AddCors(options =>
-            {
-                options.AddPolicy("Cors",
-                    builder =>
-                        builder.AllowAnyOrigin()
-                            .AllowAnyMethod()
-                            .AllowAnyHeader());
-            });
-
-            //---------------------------- CORS setting---------------------------------------------------------//
+            services.AddScoped<Dashboard_Analytics>();          
         }
     }
 }

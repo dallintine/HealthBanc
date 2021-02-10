@@ -11,6 +11,7 @@ namespace Application.Helpers.ThirdPartyAPI
     }
     public class APIUri
     {
+        public string HealthBancFrontendBase { get; set; }
         public string HealthBancSignIn { get; set; }
         public string HealthBancResendEmail { get; set; }
         public string HealthBancForgotPassword { get; set; }
