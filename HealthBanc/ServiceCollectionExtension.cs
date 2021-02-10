@@ -122,7 +122,9 @@ namespace HealthBanc
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
-            services.AddScoped<Dashboard_Analytics>();          
+            services.AddScoped<Dashboard_Analytics>();
+            services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
+            services.AddScoped<IFileProcessor, FileProcessor>();
         }
     }
 }

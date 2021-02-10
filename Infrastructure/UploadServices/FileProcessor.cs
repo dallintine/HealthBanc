@@ -60,7 +60,6 @@ namespace Infrastructure.UploadService
                     excelModel.Address = ws.Cells[r, 3].Value?.ToString();
                     excelModel.Gender = ws.Cells[r, 4].Value?.ToString();
                     excelModel.DateOfBirth = ws.Cells[r, 5].Value?.ToString();
-                    //Changed premium to email, please account for it in the excel doc
                     excelModel.Email = ws.Cells[r, 6].Value?.ToString();
                     excelModel.PhoneNumber = ws.Cells[r, 7].Value?.ToString();
                     excelModels.Add(excelModel);
