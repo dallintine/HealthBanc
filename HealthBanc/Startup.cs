@@ -31,8 +31,6 @@ using Infrastructure.PasswordManager;
 using Domain.Models;
 using Persistence;
 using Application.Helpers.Jwt_Authorization;
-using Infrastructure.UploadService;
-using Infrastructure.UploadService.Implementation;
 
 namespace HealthBanc
 {
@@ -53,7 +51,6 @@ namespace HealthBanc
             /////////////////////////////////////Register Services//////////////////////////////
 
             services.AddAutoMapper(typeof(Startup));
-            services.AddScoped<IFileProcessor, FileProcessor>();
             services.AddDataAccessServices();
 
             services.Configure<SubscriptionDuration>(Configuration.GetSection("SubscriptionDuration"));

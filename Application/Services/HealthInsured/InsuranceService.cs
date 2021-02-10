@@ -31,6 +31,7 @@ using Application.API_ResponseModel.HealthInsured;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Microsoft.AspNetCore.Identity;
+using Application.Services.Identity;
 
 namespace Application.Services.HealthInsured
 {
@@ -49,6 +50,8 @@ namespace Application.Services.HealthInsured
         private readonly ICompanyProfileRepository _companyProfileRepository;
         private readonly IEmailSender _emailSender;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IFileProcessor _fileProcessor;
+        private readonly IdentityService _identityService;
 
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
@@ -57,7 +60,7 @@ namespace Application.Services.HealthInsured
             , IInsuranceProfileRepository insurance,IMapper mapper,IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
             ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger,IUniqueIdentifier uniqueIdentifier,
              IOptions<HygeiaConfiguration> hygeiaAccessor, ICompanyProfileRepository companyProfileRepository, IEmailSender emailSender,
-              UserManager<ApplicationUser> userManager)
+              UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor,IdentityService identityService)
         {
             _httpClientFactory = httpClientFactory;
             _userRepository = userRepository;
@@ -72,6 +75,8 @@ namespace Application.Services.HealthInsured
             _companyProfileRepository = companyProfileRepository;
             _emailSender = emailSender;
             _userManager = userManager;
+            _fileProcessor = fileProcessor;
+            _identityService = identityService;
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
         }        
@@ -170,6 +175,34 @@ namespace Application.Services.HealthInsured
             await _companyProfileRepository.Save();
             _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporating Onboarding", otp);
             return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
+        }
+
+        public async Task<ResponseMessage> UploadUserProfileFromExcelFile(IFormFile file,int companyProfileId)
+        {
+            var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
+
+            var insuranceUserProfiles = new List<InsuranceUserProfile>();
+            foreach (var item in excelModel)
+            {
+                var user = _mapper.Map<ApplicationUser>(item);
+                var createdUser = await _identityService.RegisterUserWithoutPassword(user);
+                if (createdUser.Status)
+                {
+                    var userId = createdUser.Data.Id;
+                    var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
+                    insuranceUserProfile.CompanyProfileId = companyProfileId;
+                    insuranceUserProfile.UserId = userId;
+                    insuranceUserProfiles.Add(insuranceUserProfile);
+                }                
+            }
+
+            await _insuranceProfileRepository.InsertEntities(insuranceUserProfiles);
+            return new ResponseMessage
+            {
+                Data = insuranceUserProfiles,
+                Message = "Uploaded Successfully",
+                Status = true
+            };
         }
 
         public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
@@ -367,35 +400,12 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Data = newList, Status = true };
         }
 
-        public async Task<List<AxaMansardHospitalList>> AxaHospitalList(IFormFile formFile)
+        public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
         {
-            var excelModels = new List<AxaMansardHospitalList>();
-            using (var fileStream = new MemoryStream())
-            {
-                await formFile.CopyToAsync(fileStream);
-                fileStream.Position = 0;
-                _excelPackage.Load(fileStream);
-                var ws = _excelPackage.Workbook.Worksheets[0];
-                for (int r = 2; r < 2000; r++)
-                {
-                    if (ws.Cells[r, 3].Value?.ToString() == "" || ws.Cells[r, 3].Value?.ToString() == null)
-                    {
-                        break;
-                    }
-                    var hosiptal = new AxaMansardHospitalList();
-                    hosiptal.State = ws.Cells[r, 1].Value?.ToString();
-                    hosiptal.City = ws.Cells[r, 2].Value?.ToString();
-                    hosiptal.HospitalName = ws.Cells[r, 3].Value?.ToString();
-                    hosiptal.Address = ws.Cells[r, 4].Value?.ToString();
-                    hosiptal.Specialisation = ws.Cells[r, 5].Value?.ToString();
-
-                    excelModels.Add(hosiptal);
-                }
-            }
-            var hospitalList = excelModels;
+            var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
             _hospitalListRepository.CreateRange(hospitalList);
             await _hospitalListRepository.Save();
-            return excelModels;
+            return new ResponseMessage { Status = true,Message="Upload was successful" };
         }
 
         public async Task RemoveOTP(int userId)

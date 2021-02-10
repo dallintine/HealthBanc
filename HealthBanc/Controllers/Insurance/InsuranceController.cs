@@ -51,13 +51,12 @@ namespace HealthBanc.Controllers.Insurance
         private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly IHttpContextAccessor _accessor;
-        private readonly IFileProcessor _fileProcessor;
         public string IpAddress;
         public StringValues agent;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IInsuranceProfileRepository insuranceProfileRepository,ILogger<InsuranceController> logger,
             IApplicationUserRepository userRepository, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            IHttpContextAccessor accessor, IFileProcessor fileProcessor)
+            IHttpContextAccessor accessor)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
@@ -69,7 +68,6 @@ namespace HealthBanc.Controllers.Insurance
             _accessor = accessor;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
-            _fileProcessor = fileProcessor;
         }
 
         [HttpGet("[action]")]
@@ -313,68 +311,36 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        public async Task<IActionResult> UploadAxamansardHospitalList(IFormFile file)
         {
-            var result = await _insuranceService.AxaHospitalList(file);
-            return Ok();
+            var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
+            if (result.Status)
+            {
+                return Ok(result);
+            }
+            return BadRequest();
         }
 
         /// <summary>
-        /// Upload an excel file
+        /// Upload excel file containing insurance details for user under a corporate org.
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        //[Authorize]
-        [AllowAnonymous]
-        [HttpPost()]
-        [Route(nameof(UploadExcel))]
-        public async Task<IActionResult> UploadExcel([FromForm]UploadViewModel file)
+        [Authorize]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> UploadUserProfileFromExcelFile([FromForm]UploadViewModel file)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-           //string companyId = User.FindFirst("CompanyProfileId")?.Value;
-           // int id = int.Parse(companyId);
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
 
-            var excelModel = await _fileProcessor.ProcessExcelFile(file.FileUpload);
-
-         
-            var insuranceUserProfiles = new List<InsuranceUserProfile>();
-            foreach (var item in excelModel)
-            {
-           
-                var insuranceUserProfile = new InsuranceUserProfile
-                {
-                    DateOfBirth = DateTime.Parse(item.DateOfBirth),
-                    UserId = 2,
-                    SubscriptionStatus = false,
-                    TransId = default,
-                    StartActiveStatusDate = DateTime.UtcNow,             
-                    PendingJobId = default,                 
-                    ActiveStatus = false,
-                    Surname = item.LastName,
-                    Othernames = item.FirstName,
-                    Gender = item.Gender,
-                    PhoneNumber = item.PhoneNumber,
-                    Premium = decimal.Parse(item.PremiumFee),
-                  // CompanyProfileId = id,
-                   
-                };
-                
-                insuranceUserProfiles.Add(insuranceUserProfile);
-            }
-
-            await _insuranceProfileRepository.InsertEntities(insuranceUserProfiles);
-
-           
-                return Ok(new ResponseMessage
-                {
-                    Data = insuranceUserProfiles,
-                    Message = "Uploaded Successfully",
-                    Status = true
-                });
+            var response = await _insuranceService.UploadUserProfileFromExcelFile(file.FileUpload, Id);
+            return Ok(response);
             
+                      
         }
       
 

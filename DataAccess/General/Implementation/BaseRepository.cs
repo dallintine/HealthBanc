@@ -59,22 +59,10 @@ namespace DataAccess.General.Implementation
             _context.Entry(entity).State = EntityState.Modified;
         }
 
-        //private DbSet<T> Entities
-        //{
-        //    get
-        //    {
-        //        if (_entities == null)
-        //        {
-        //            _entities = _context.Set<T>();
-        //        }
-        //        return _entities;
-        //    }
-        //}
         public async Task InsertEntities(List<T> entities)
         {
             if (entities == null || entities.Count == 0)
                 throw new ArgumentNullException("entities");
-
 
             await _context.AddRangeAsync(entities);
             await _context.SaveChangesAsync();

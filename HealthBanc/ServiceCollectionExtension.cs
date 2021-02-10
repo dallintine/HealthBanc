@@ -17,6 +17,7 @@ using Infrastructure.ImageService;
 using Infrastructure.Mail;
 using Infrastructure.PasswordManager;
 using Infrastructure.ProcessUniqueIdentifier;
+using Infrastructure.UploadService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
