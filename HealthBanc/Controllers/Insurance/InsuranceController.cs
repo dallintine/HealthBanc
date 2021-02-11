@@ -35,6 +35,7 @@ using Application.API_ResponseModel.HealthInsured;
 using Application.Services.HealthInsured;
 using Application.ViewModels.HealthInsured;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using Infrastructure.UploadService;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -310,11 +311,39 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        public async Task<IActionResult> UploadAxamansardHospitalList(IFormFile file)
         {
-            var result = await _insuranceService.AxaHospitalList(file);
-            return Ok();
+            var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
+            if (result.Status)
+            {
+                return Ok(result);
+            }
+            return BadRequest();
         }
+
+        /// <summary>
+        /// Upload excel file containing insurance details for user under a corporate org.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [Authorize]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> UploadUserProfileFromExcelFile([FromForm]UploadViewModel file)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var response = await _insuranceService.UploadUserProfileFromExcelFile(file.FileUpload, Id);
+            return Ok(response);
+            
+                      
+        }
+      
+
     }
 }
 

@@ -17,6 +17,7 @@ using Infrastructure.ImageService;
 using Infrastructure.Mail;
 using Infrastructure.PasswordManager;
 using Infrastructure.ProcessUniqueIdentifier;
+using Infrastructure.UploadService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -121,7 +122,9 @@ namespace HealthBanc
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
-            services.AddScoped<Dashboard_Analytics>();          
+            services.AddScoped<Dashboard_Analytics>();
+            services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
+            services.AddScoped<IFileProcessor, FileProcessor>();
         }
     }
 }

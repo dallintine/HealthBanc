@@ -58,5 +58,14 @@ namespace DataAccess.General.Implementation
             _context.Update(entity);
             _context.Entry(entity).State = EntityState.Modified;
         }
+
+        public async Task InsertEntities(List<T> entities)
+        {
+            if (entities == null || entities.Count == 0)
+                throw new ArgumentNullException("entities");
+
+            await _context.AddRangeAsync(entities);
+            await _context.SaveChangesAsync();
+        }
     }
 }

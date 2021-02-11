@@ -112,6 +112,24 @@ namespace Application.Services.Identity
             return new ResponseMessage { Message = "Email Already Exist",Status = false };
         }
 
+        public async Task<ResponseMessage<ApplicationUser>> RegisterUserWithoutPassword(ApplicationUser appUser)
+        {
+            var result = await _userManager.CreateAsync(appUser);
+            if (result.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(appUser, "SuperAdmin");
+                await _userManager.UpdateAsync(appUser);
+                return new ResponseMessage<ApplicationUser>
+                {
+                    Data = appUser,
+                    Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
+                    Status = true
+                };
+            }
+            return new ResponseMessage<ApplicationUser> { Message = result.Errors.FirstOrDefault().Description, Status = false };
+
+        }
+
         public async Task<ResponseMessage> ConfirmEmail(string userId, string emailToken)
         {
             var decryptedUserId = _encryptAndDecrypt.DecryptString(userId, "hfahkbak78r32rg87griva..");
