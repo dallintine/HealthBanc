@@ -13,6 +13,8 @@
     <Compile Remove="Migrations\20210203191326_added_companyUserIdTO_InuranceuserProfielTable.Designer.cs" />
     <Compile Remove="Migrations\20210205102100_First_Localdb.cs" />
     <Compile Remove="Migrations\20210205102100_First_Localdb.Designer.cs" />
+    <Compile Remove="Migrations\20210210154403_modified_insuranceuserProfile_table.cs" />
+    <Compile Remove="Migrations\20210210154403_modified_insuranceuserProfile_table.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

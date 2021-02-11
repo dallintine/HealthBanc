@@ -139,9 +139,6 @@ namespace Application.Services.HealthInsured
 
             _insuranceProfileRepository.Create(updatedProfile);
 
-            userProfile.InsuranceService = userProfile.InsuranceService == null ? userProfile.InsuranceService = "AxaMansad" 
-                : userProfile.InsuranceService = userProfile.InsuranceService;
-
             var completionProfile = new InsuranceCompletionProfile(user.Id, true, false,userProfile.InsuranceService);
             _completionRepository.Create(completionProfile);
             await _completionRepository.Save();
@@ -177,32 +174,44 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
         }
 
-        public async Task<ResponseMessage> UploadUserProfileFromExcelFile(IFormFile file,int companyProfileId)
+        public async Task<ResponseMessage> UploadUserProfileFromExcelFile(IFormFile file,int companyUserId)
         {
-            var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
+            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
 
-            var insuranceUserProfiles = new List<InsuranceUserProfile>();
-            foreach (var item in excelModel)
+            if (companyProfile.EmailConfirmed)
             {
-                var user = _mapper.Map<ApplicationUser>(item);
-                var createdUser = await _identityService.RegisterUserWithoutPassword(user);
-                if (createdUser.Status)
-                {
-                    var userId = createdUser.Data.Id;
-                    var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
-                    insuranceUserProfile.CompanyProfileId = companyProfileId;
-                    insuranceUserProfile.UserId = userId;
-                    insuranceUserProfiles.Add(insuranceUserProfile);
-                }                
-            }
+                var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
 
-            await _insuranceProfileRepository.InsertEntities(insuranceUserProfiles);
+                var insuranceUserProfiles = new List<InsuranceUserProfile>();
+                foreach (var item in excelModel)
+                {
+                    var user = _mapper.Map<ApplicationUser>(item);
+                    var createdUser = await _identityService.RegisterUserWithoutPassword(user);
+                    if (createdUser.Status)
+                    {
+                        var userId = createdUser.Data.Id;
+                        var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
+                        insuranceUserProfile.CompanyProfileId = companyProfile.Id;
+                        insuranceUserProfile.InsuranceService = "Hygeia";
+                        insuranceUserProfile.UserId = userId;
+                        insuranceUserProfiles.Add(insuranceUserProfile);
+                    }
+                }
+
+                await _insuranceProfileRepository.InsertEntities(insuranceUserProfiles);
+                return new ResponseMessage
+                {
+                    Data = insuranceUserProfiles,
+                    Message = "Uploaded Successfully",
+                    Status = true
+                };
+            }
             return new ResponseMessage
             {
-                Data = insuranceUserProfiles,
-                Message = "Uploaded Successfully",
-                Status = true
+                Message = "Please confirm company email address",
+                Status = false
             };
+
         }
 
         public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
