@@ -32,6 +32,8 @@ using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Microsoft.AspNetCore.Identity;
 using Application.Services.Identity;
+using DataAccess;
+using Application.DTO.HealthInsured_AxaMansard;
 
 namespace Application.Services.HealthInsured
 {
@@ -52,6 +54,7 @@ namespace Application.Services.HealthInsured
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IFileProcessor _fileProcessor;
         private readonly IdentityService _identityService;
+        private readonly ICompanyInsuranceUserRepository _companyInsuranceUserRepository;
 
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
@@ -60,7 +63,8 @@ namespace Application.Services.HealthInsured
             , IInsuranceProfileRepository insurance,IMapper mapper,IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
             ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger,IUniqueIdentifier uniqueIdentifier,
              IOptions<HygeiaConfiguration> hygeiaAccessor, ICompanyProfileRepository companyProfileRepository, IEmailSender emailSender,
-              UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor,IdentityService identityService)
+              UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor,IdentityService identityService
+            , ICompanyInsuranceUserRepository companyInsuranceUserRepository)
         {
             _httpClientFactory = httpClientFactory;
             _userRepository = userRepository;
@@ -77,6 +81,7 @@ namespace Application.Services.HealthInsured
             _userManager = userManager;
             _fileProcessor = fileProcessor;
             _identityService = identityService;
+            _companyInsuranceUserRepository = companyInsuranceUserRepository;
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
         }        
@@ -131,7 +136,7 @@ namespace Application.Services.HealthInsured
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
 
-            profile.TransId = userProfile.InsuranceService == null | userProfile.InsuranceService == "AxaMansard" ? _uniqueIdentifier.GetUniqueCode(12) : "";
+            profile.TransId = (userProfile.InsuranceService == null | userProfile.InsuranceService == "AxaMansard") ? _uniqueIdentifier.GetUniqueCode(12) : "";
             profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
             profile.InsuranceService = userProfile.InsuranceService;
 
@@ -148,136 +153,6 @@ namespace Application.Services.HealthInsured
             _userRepository.Update(user);
             await _userRepository.Save();
             return new ResponseMessage { Status = true};
-        }
-
-        public async Task<ResponseMessage> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel,int userId)
-        {
-            var company = await _companyProfileRepository.GetCompanyProfileByEmail(corporateRegViewModel.Email);
-            if(company != null)
-            { 
-                return new ResponseMessage { Message = "Company profile with this email already exist" };
-            }
-            var otp = _uniqueIdentifier.GetUniqueCode(6);
-            company = new CompanyProfile();
-            company.OTPCode = otp;
-            company.UserId = userId;
-            company.CompanyEmail = corporateRegViewModel.Email;
-            company.CompanyName = corporateRegViewModel.Name;
-
-            // Schedule otp removal after 5 minutes
-            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId),DateTime.Now.AddMinutes(5));
-
-            company.OTPJobId = otpJobId;
-            _companyProfileRepository.Create(company);
-            await _companyProfileRepository.Save();
-            _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporating Onboarding", otp);
-            return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
-        }
-
-        public async Task<ResponseMessage> UploadUserProfileFromExcelFile(IFormFile file,int companyUserId)
-        {
-            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
-
-            if (companyProfile.EmailConfirmed)
-            {
-                var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
-
-                var insuranceUserProfiles = new List<InsuranceUserProfile>();
-                foreach (var item in excelModel)
-                {
-                    var user = _mapper.Map<ApplicationUser>(item);
-                    var createdUser = await _identityService.RegisterUserWithoutPassword(user);
-                    if (createdUser.Status)
-                    {
-                        var userId = createdUser.Data.Id;
-                        var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
-                        insuranceUserProfile.CompanyProfileId = companyProfile.Id;
-                        insuranceUserProfile.InsuranceService = "Hygeia";
-                        insuranceUserProfile.UserId = userId;
-                        insuranceUserProfiles.Add(insuranceUserProfile);
-                    }
-                }
-
-                await _insuranceProfileRepository.InsertEntities(insuranceUserProfiles);
-                return new ResponseMessage
-                {
-                    Data = insuranceUserProfiles,
-                    Message = "Uploaded Successfully",
-                    Status = true
-                };
-            }
-            return new ResponseMessage
-            {
-                Message = "Please confirm company email address",
-                Status = false
-            };
-
-        }
-
-        public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
-        {
-            var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
-
-            if (corporateUser.OTPCode != null)
-            {
-                if (corporateUser.EmailConfirmed)
-                {
-                    return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
-                }
-                if (otp == corporateUser.OTPCode)
-                {
-                    corporateUser.EmailConfirmed = true;
-                    corporateUser.OTPCode = null;
-                    BackgroundJob.Delete(corporateUser.OTPJobId);
-                    corporateUser.OTPJobId = null;
-                    _companyProfileRepository.Update(corporateUser);
-                    await _companyProfileRepository.Save();
-                    return new ResponseMessage { Message = "Email was confirmed successfully", Status = true };
-                }
-                return new ResponseMessage { Message = "OTP code does not match", Status = false };
-            }
-            return new ResponseMessage { Message = "OTP code has expired, please resend OTP", Status = false };
-        }
-
-        public async Task<ResponseMessage> ResendOtp(int userId)
-        {
-            var company = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
-            if (company == null)
-            {
-                return new ResponseMessage { Message = "Company profile does not exist, please register as a corporate entity.",Status=false };
-            }
-            else if (company.EmailConfirmed)
-            {
-                return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
-            }
-            var otp = _uniqueIdentifier.GetUniqueCode(6);
-            company.OTPCode = otp;
-            if(company.OTPJobId != null)
-            {
-                BackgroundJob.Delete(company.OTPJobId);
-            }
-            // Schedule otp removal after 5 minutes
-            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId), DateTime.Now.AddMinutes(5));
-
-            company.OTPJobId = otpJobId;
-            _companyProfileRepository.Update(company);
-            await _companyProfileRepository.Save();
-            _emailSender.CorporateInsuranceOnboarding(company.CompanyEmail, "Corporating Onboarding", otp);
-            return new ResponseMessage { Message = "OTP was sent successfully", Status = true };
-        }
-
-        public async Task<ResponseMessage> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel,int Id)
-        {
-            var company = await _companyProfileRepository.GetCompanyProfileByUserId(Id);
-            if(company is null)
-            {
-                return new ResponseMessage { Message = "Company does not exist", Status = false };
-            }
-            company.Industry = updateCorporateUserViewModel.Industry;
-            company.CompanySize = updateCorporateUserViewModel.CompanySize;
-            _companyProfileRepository.Update(company);
-            await _companyProfileRepository.Save();
-            return new ResponseMessage { Message = "Company profile was updated successfully", Status = true };
         }
 
         public async Task<ResponseMessage> AxamansardRegisterUser(EnrollmentModel model)
@@ -307,17 +182,18 @@ namespace Application.Services.HealthInsured
                 }
                 return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogCritical("An error occurred while enrolling user to axa-mansard", ex);
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
-            }            
+            }
         }
 
         public async Task<ResponseMessage> HygeiaRegisterUser(RegistrationModel model)
         {
             try
             {
+                model.PlanId = _hygeiaAccessor.HygeiaPlanCode;
                 var httpClient = _httpClientFactory.CreateClient("Hygeia");
                 var dictionObj = model.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(model).ToString());
                 HttpContent content = new FormUrlEncodedContent(dictionObj);
@@ -330,7 +206,7 @@ namespace Application.Services.HealthInsured
                     {
                         return new ResponseMessage { Status = true, Message = authResponse.MemberId };
                     }
-                    return new ResponseMessage { Status = false,Message=""};
+                    return new ResponseMessage { Status = false, Message = "" };
                 }
                 return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
             }
@@ -344,7 +220,7 @@ namespace Application.Services.HealthInsured
         public async Task<ResponseMessage> HygeiaDeactivateUser(string enrollNumber)
         {
             var httpClient = _httpClientFactory.CreateClient("Hygeia");
-            var response = await httpClient.PutAsync($"{_hygeiaAccessor.HygeiaDeactivate}/{enrollNumber}",null);
+            var response = await httpClient.PutAsync($"{_hygeiaAccessor.HygeiaDeactivate}/{enrollNumber}", null);
 
             var deactivateResponse = new HygeiaDeactivateResponse();
             string apiResponse = await response.Content.ReadAsStringAsync();
@@ -382,9 +258,9 @@ namespace Application.Services.HealthInsured
                 }
                 return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                _logger.LogCritical("Error occured while trying to get axamansard auth token",ex);
+                _logger.LogCritical("Error occured while trying to get axamansard auth token", ex);
                 return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
             }
 
@@ -414,8 +290,139 @@ namespace Application.Services.HealthInsured
             var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
             _hospitalListRepository.CreateRange(hospitalList);
             await _hospitalListRepository.Save();
-            return new ResponseMessage { Status = true,Message="Upload was successful" };
+            return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
+
+        public async Task<ResponseMessage> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel,int userId)
+        {
+            var company = await _companyProfileRepository.GetCompanyProfileByEmail(corporateRegViewModel.Email);
+            if(company != null)
+            { 
+                return new ResponseMessage { Message = "Company profile with this email already exist" };
+            }
+            var otp = _uniqueIdentifier.GetUniqueCode(6);
+            company = new CompanyProfile();
+            company.OTPCode = otp;
+            company.UserId = userId;
+            company.CompanyEmail = corporateRegViewModel.Email;
+            company.CompanyName = corporateRegViewModel.Name;
+            company.InsuranceService = "Hygeia";
+
+            // Schedule otp removal after 5 minutes
+            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId),DateTime.Now.AddMinutes(5));
+
+            company.OTPJobId = otpJobId;
+            _companyProfileRepository.Create(company);
+            await _companyProfileRepository.Save();
+            _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporating Onboarding", otp);
+            return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
+        }
+
+        public async Task<ResponseMessage> UploadUserProfileFromExcelFile(IFormFile file,int companyUserId)
+        {
+            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+
+            if (companyProfile.EmailConfirmed)
+            {
+                var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
+
+                var companyInsuranceUsers = _mapper.Map<List<FileModel>, List<CompanyInsuranceUser>>(excelModel);
+                foreach(var item in companyInsuranceUsers)
+                {
+                    item.CompanyProfileId = companyProfile.Id;
+                }
+                await _companyInsuranceUserRepository.InsertEntities(companyInsuranceUsers);
+
+                var paginatedResponse = new PagedResponse<CompanyInsuranceUser>
+                {
+                    Data = companyInsuranceUsers,
+                    PageNumber = 1,
+                    PageSize = 50,
+                    RecordCount = companyInsuranceUsers.Count,
+                    PageCount = Convert.ToInt32(Math.Ceiling((double)companyInsuranceUsers.Count / (double)50))
+                };
+                return new ResponseMessage
+                {
+                    Data = paginatedResponse,
+                    Message = "Uploaded Successfully",
+                    Status = true
+                };
+            };
+            
+            return new ResponseMessage
+            {
+                Message = "Please confirm company email address",
+                Status = false
+            };
+
+        }
+
+        public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
+        {
+            var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+
+            if (corporateUser.OTPCode != null)
+            {
+                if (corporateUser.EmailConfirmed)
+                {
+                    return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
+                }
+                if (otp == corporateUser.OTPCode)
+                {
+                    corporateUser.EmailConfirmed = true;
+                    corporateUser.OTPCode = null;
+                    BackgroundJob.Delete(corporateUser.OTPJobId);
+                    corporateUser.OTPJobId = null;
+                    _companyProfileRepository.Update(corporateUser);
+                    await _companyProfileRepository.Save();
+                    return new ResponseMessage { Message = "Email was confirmed successfully", Status = true };
+                }
+                return new ResponseMessage { Message = "OTP code does not match", Status = false };
+            }
+            return new ResponseMessage { Message = "OTP code has expired, please resend OTP", Status = false };
+        }
+         
+        public async Task<ResponseMessage> ResendOtp(int userId)
+        {
+            var company = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+            if (company == null)
+            {
+                return new ResponseMessage { Message = "Company profile does not exist, please register as a corporate entity.",Status=false };
+            }
+            else if (company.EmailConfirmed)
+            {
+                return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
+            }
+            var otp = _uniqueIdentifier.GetUniqueCode(6);
+            company.OTPCode = otp;
+            if(company.OTPJobId != null)
+            {
+                BackgroundJob.Delete(company.OTPJobId);
+            }
+            // Schedule otp removal after 5 minutes
+            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId), DateTime.Now.AddMinutes(5));
+
+            company.OTPJobId = otpJobId;
+            _companyProfileRepository.Update(company);
+            await _companyProfileRepository.Save();
+            _emailSender.CorporateInsuranceOnboarding(company.CompanyEmail, "Corporating Onboarding", otp);
+            return new ResponseMessage { Message = "OTP was sent successfully", Status = true };
+        }
+
+        public async Task<ResponseMessage> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel,int Id)
+        {
+            var company = await _companyProfileRepository.GetCompanyProfileByUserId(Id);
+            if(company is null)
+            {
+                return new ResponseMessage { Message = "Company does not exist", Status = false };
+            }
+            company.Industry = updateCorporateUserViewModel.Industry;
+            company.CompanySize = updateCorporateUserViewModel.CompanySize;
+            company.ProfileCompleted = true;
+            _companyProfileRepository.Update(company);
+            await _companyProfileRepository.Save();
+            return new ResponseMessage { Message = "Company profile was updated successfully", Status = true };
+        }        
 
         public async Task RemoveOTP(int userId)
         {
@@ -425,5 +432,73 @@ namespace Application.Services.HealthInsured
             _companyProfileRepository.Update(corporateUser);
             await _companyProfileRepository.Save();
         }
+
+        public async Task<ResponseMessage> GetCompanyBeneficiaries(PaginationQuery paginationQuery,int companyUserId)
+        {
+            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+
+            var beneficiaries = await _insuranceProfileRepository.GetAllInsuranceProfileUnderCompany(paginationQuery, companyProfile.Id);
+            var beneficiariesDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>, List<InsuranceBeneficiaryDTO>>(beneficiaries.Data);
+
+            var paginatedResponse = new PagedResponse<InsuranceBeneficiaryDTO>
+            {
+                Data = beneficiariesDTO,
+                Amount = beneficiariesDTO.Select(x => x.Amount).Sum(),
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = beneficiaries.RecordCount,
+                PageCount = beneficiaries.PageCount
+            };
+            return new ResponseMessage { Data = paginatedResponse, Status = true, Message = "Beneficiaries was fetched successfully" };
+        }
+
+        public async Task<ResponseMessage> CorporateSubscribersAnalytics(int companyUserId)
+        {
+            var companyProfile = await _insuranceProfileRepository.QueryableCompanyProfile(companyUserId);
+
+            var activeBeneficiaryCount = companyProfile.Where(x => x.ActiveStatus == true).Count();
+            var inactiveBeneficairyCount = companyProfile.Where(x => x.SubscriptionStatus == false && x.ActiveStatus == false).Count();
+
+            var companyProfileBeneficiaryAnalyticDTO = new CompanyProfileBeneficiaryAnalyticDTO
+            {
+                ActiveBeneficiaryCount = activeBeneficiaryCount,
+                InactiveBeneficiaryCount = inactiveBeneficairyCount,
+                NextPaymentDate = DateTime.Now
+            };
+            return new ResponseMessage { Status = true, Data = companyProfileBeneficiaryAnalyticDTO, Message = "Analytics was fetched successfully" };
+        }
+
+        public async Task<ResponseMessage> GetCompanyProfileDetails(int companyUserId)
+        {
+            var company = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+
+            var companyProfileDTO = _mapper.Map<CompanyProfileDTO>(company);
+
+            return new ResponseMessage { Data = companyProfileDTO, Status = true, Message = "Company profile was fetched successfully" };
+        }
+
+        //public async Task<ResponseMessage> ChangeCompanyRegisterdUserStatus(int companyUserId,int companySubscriberUserId,int status) 
+        //{
+        //    var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+        //    var companySubscriber = await _insuranceProfileRepository.GetByUserIdAsync(companySubscriberUserId);
+        //    if(companySubscriber.CompanyProfileId == companyProfile.Id)
+        //    {
+        //        // Change Status to Inactive
+        //        if(status == 1)
+        //        {
+        //            if((companySubscriber.ActiveStatus == false || companySubscriber.ActiveStatus == null) && companySubscriber.CompanySubscribedStatus == "pending")
+        //            {
+        //                companySubscriber.CompanySubscribedStatus = "inactive";
+        //                return new ResponseMessage { Status = false, Message = "Status cannot be change to Inactive" };
+        //            }
+        //                return new ResponseMessage { Status = false, Message = "Status cannot be change to Inactive" };
+        //        }
+        //        // Change Status to Pending
+        //        else if(status == 2)
+        //        {
+
+        //        }
+        //    }
+        //}
     }
 }

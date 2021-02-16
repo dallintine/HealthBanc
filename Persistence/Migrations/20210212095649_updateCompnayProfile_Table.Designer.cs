@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
 namespace Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210212095649_updateCompnayProfile_Table")]
+    partial class updateCompnayProfile_Table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -179,44 +181,6 @@ namespace Persistence.Migrations
                     b.ToTable("AspNetUsers");
                 });
 
-            modelBuilder.Entity("Domain.Models.Axa.Hygeia_Insurance.CompanyInsuranceUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CompanyProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("DateOfBirth")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FirstName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Gender")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LastName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyProfileId");
-
-                    b.ToTable("CompanyInsuranceUsers");
-                });
-
             modelBuilder.Entity("Domain.Models.Axa.Hygeia_Insurance.CompanyProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -242,29 +206,11 @@ namespace Persistence.Migrations
                     b.Property<string>("InsuranceService")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal?>("NextCyclePremiumFee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("NextPaymentDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("OTPCode")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("OTPJobId")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PendingJobId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("PresentCyclePremiumFee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("ProfileCompleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("TokenizationCompleted")
-                        .HasColumnType("bit");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -463,9 +409,6 @@ namespace Persistence.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int?>("CompanyProfileId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("DateScheduled")
                         .HasColumnType("datetime2");
 
@@ -475,7 +418,7 @@ namespace Persistence.Migrations
                     b.Property<string>("InsuranceService")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("InsuranceUserProfileId")
+                    b.Property<int>("InsuranceUserProfileId")
                         .HasColumnType("int");
 
                     b.Property<string>("JobId")
@@ -487,7 +430,7 @@ namespace Persistence.Migrations
                     b.Property<string>("PaymentReference")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("ScheduledEnrollmentId")
+                    b.Property<Guid>("ScheduledEnrollmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Status")
@@ -584,10 +527,7 @@ namespace Persistence.Migrations
                     b.Property<string>("CardReference")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("CompanyProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InsuranceUserProfileId")
+                    b.Property<int>("InsuranceUserProfileId")
                         .HasColumnType("int");
 
                     b.Property<string>("LastFourDigit")
@@ -603,8 +543,6 @@ namespace Persistence.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CompanyProfileId");
 
                     b.HasIndex("InsuranceUserProfileId");
 
@@ -675,6 +613,9 @@ namespace Persistence.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<string>("AccountNo")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool?>("ActiveStatus")
                         .HasColumnType("bit");
 
@@ -684,10 +625,25 @@ namespace Persistence.Migrations
                     b.Property<string>("AlternateHospitalAddress")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("BVN")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BloodGroup")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CPAddress")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CPCity")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CPEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CPPhone")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CareProviderName")
@@ -695,9 +651,6 @@ namespace Persistence.Migrations
 
                     b.Property<int?>("CompanyProfileId")
                         .HasColumnType("int");
-
-                    b.Property<string>("CompanySubscribedStatus")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ContactAddress")
                         .HasColumnType("nvarchar(max)");
@@ -720,6 +673,15 @@ namespace Persistence.Migrations
                     b.Property<string>("Gender")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Genotype")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Height")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Hobbies")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Identification")
                         .HasColumnType("nvarchar(max)");
 
@@ -733,6 +695,9 @@ namespace Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MaritalStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MedicalCondition")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Occupation")
@@ -756,6 +721,9 @@ namespace Persistence.Migrations
                     b.Property<decimal>("Premium")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("Religion")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("StartActiveStatusDate")
                         .HasColumnType("datetime2");
 
@@ -776,6 +744,9 @@ namespace Persistence.Migrations
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("Weight")
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -834,13 +805,10 @@ namespace Persistence.Migrations
                     b.Property<string>("Channel")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("CompanyProfileId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("InsuranceUserProfileId")
+                    b.Property<int>("InsuranceUserProfileId")
                         .HasColumnType("int");
 
                     b.Property<string>("Refernce")
@@ -1158,15 +1126,6 @@ namespace Persistence.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
-            modelBuilder.Entity("Domain.Models.Axa.Hygeia_Insurance.CompanyInsuranceUser", b =>
-                {
-                    b.HasOne("Domain.Models.Axa.Hygeia_Insurance.CompanyProfile", null)
-                        .WithMany("CompanyInsuranceUsers")
-                        .HasForeignKey("CompanyProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Domain.Models.AxaMansard_Insurance.EnrollmentOnOnboarding", b =>
                 {
                     b.HasOne("Domain.Models.InsuranceUserProfile", "InsuranceUserProfile")
@@ -1207,7 +1166,9 @@ namespace Persistence.Migrations
                 {
                     b.HasOne("Domain.Models.AxaMansard_Insurance.ScheduledEnrollment", "ScheduledEnrollment")
                         .WithMany()
-                        .HasForeignKey("ScheduledEnrollmentId");
+                        .HasForeignKey("ScheduledEnrollmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Models.BackendAdminUser", b =>
@@ -1221,13 +1182,11 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Models.DebitCard", b =>
                 {
-                    b.HasOne("Domain.Models.Axa.Hygeia_Insurance.CompanyProfile", null)
-                        .WithMany("Cards")
-                        .HasForeignKey("CompanyProfileId");
-
                     b.HasOne("Domain.Models.InsuranceUserProfile", null)
                         .WithMany("Cards")
-                        .HasForeignKey("InsuranceUserProfileId");
+                        .HasForeignKey("InsuranceUserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Models.InsuranceUserProfile", b =>
@@ -1250,7 +1209,9 @@ namespace Persistence.Migrations
                 {
                     b.HasOne("Domain.Models.InsuranceUserProfile", null)
                         .WithMany("PaymentReferences")
-                        .HasForeignKey("InsuranceUserProfileId");
+                        .HasForeignKey("InsuranceUserProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Models.ReportAndLogs.AdminAuditLog", b =>

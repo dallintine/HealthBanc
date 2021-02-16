@@ -36,6 +36,9 @@ using Application.Services.HealthInsured;
 using Application.ViewModels.HealthInsured;
 using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Infrastructure.UploadService;
+using DataAccess;
+using Application.DTO.HealthInsured_AxaMansard;
+using Domain.Models.Axa.Hygeia_Insurance;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -311,7 +314,18 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> UploadAxamansardHospitalList(IFormFile file)
+        public async Task<IActionResult> UploadAxamansardHospitalListToDb(IFormFile file)
+        {
+            var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
+            if (result.Status)
+            {
+                return Ok(result);
+            }
+            return BadRequest();
+        }
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> UploadHygeiaHospitalListToDb(IFormFile file)
         {
             var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
             if (result.Status)
@@ -322,11 +336,14 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Upload excel file containing insurance details for user under a corporate org.
+        /// Upload excel file containing insurance details for users under a corporate organization.
+        /// Uploaded details create application users and insurance user profile for users
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
         [Authorize]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<CompanyInsuranceUser>>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
         public async Task<IActionResult> UploadUserProfileFromExcelFile([FromForm]UploadViewModel file)
         {
@@ -338,11 +355,66 @@ namespace HealthBanc.Controllers.Insurance
             int Id = int.Parse(userId);
 
             var response = await _insuranceService.UploadUserProfileFromExcelFile(file.FileUpload, Id);
-            return Ok(response);
-            
-                      
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);  
         }
-      
+       
+        [Authorize]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<InsuranceBeneficiaryDTO>>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetCompanyBeneficiaries(PaginationQuery paginationQuery)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var beneficiariesResponse = await _insuranceService.GetCompanyBeneficiaries(paginationQuery, Id);
+            if (beneficiariesResponse.Status)
+            {
+                return Ok(beneficiariesResponse);
+            }
+            else
+            {
+                return BadRequest(beneficiariesResponse);
+            }
+        }
+
+        [Authorize]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<CompanyProfileBeneficiaryAnalyticDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> CorporateSubscribersAnalytics()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var analytics = await _insuranceService.CorporateSubscribersAnalytics(Id);
+            if (analytics.Status)
+            {
+                return Ok(analytics);
+            }
+            return BadRequest(analytics);
+        }
+
+        [Authorize]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<CompanyProfileDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetCompanyProfileDetails()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var companyProfile = await _insuranceService.GetCompanyProfileDetails(Id);
+            if (companyProfile.Status)
+            {
+                return Ok(companyProfile);
+            }
+            return BadRequest(companyProfile);
+        }
 
     }
 }

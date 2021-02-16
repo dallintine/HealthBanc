@@ -39,6 +39,7 @@ namespace Persistence
         public DbSet<AxaMansardHospitalList> AxaMansardHospitalLists { get; set;}
         public DbSet<EnrollmentOnOnboarding> EnrollmentOnOnboardings { get; set; }
         public DbSet<CompanyProfile> CompanyProfiles { get; set; }
+        public DbSet<CompanyInsuranceUser> CompanyInsuranceUsers { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

@@ -11,6 +11,7 @@ namespace Domain.Models
         public int Id { get; set; }
         public int UserId { get; set; }
         public int? CompanyProfileId { get; set; }
+        public string CompanySubscribedStatus { get; set; }
         public string TransId { get; set; }
         public string Gender { get; set; }
         public string PendingJobId { get; set; }
@@ -24,24 +25,12 @@ namespace Domain.Models
         public string ContactAddress { get; set; }
         public string Occupation { get; set; }
         public string MaritalStatus { get; set; }
-        public string BankName { get; set; }
-        public string AccountNo { get; set; }
-        public string BVN { get; set; }
-        public Decimal? Weight { get; set; }
-        public Decimal? Height { get; set; }
-        public string BloodGroup { get; set; }
-        public string Genotype { get; set; }
         public string Identification { get; set; }
-        public int? Religion { get; set; }
-        public string Hobbies { get; set; }
         public string CareProviderName { get; set; }
-        public string CPPhone { get; set; }
         public string CPAddress { get; set; }
         public string CPCity { get; set; }
-        public string CPEmail { get; set; }
         public string AlternateHospital { get; set; }
         public string AlternateHospitalAddress { get; set; }
-        public string MedicalCondition { get; set; }
         public string PlanCode { get; set; }
         public Decimal Premium { get; set; }
         public string CustomerPhoto { get; set; }
@@ -53,6 +42,7 @@ namespace Domain.Models
         public DateTime StartActiveStatusDate { get; set; }
         public bool? SubscriptionStatus { get; set; }
         public string InsuranceService { get; set; }
+        public DateTime? DateCreated { get; set; }
         public List<DebitCard> Cards { get; set; }
         public List<PaymentReference> PaymentReferences { get; set; }
     }

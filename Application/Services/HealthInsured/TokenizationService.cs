@@ -123,7 +123,7 @@ namespace Application.Services.HealthInsured
                     }
 
                     // Create payment reference for the charge.
-                    var paymentReference = new PaymentReference(card.reference, insuranceProfile.Id, insuranceProfile.UserId
+                    var paymentReference = new PaymentReference(card.reference, insuranceProfile.Id,null, insuranceProfile.UserId
                     , insuranceProfile.Premium, "Pending");
                     _paymentReference.Create(paymentReference);
                     await _paymentReference.Save();
@@ -152,7 +152,7 @@ namespace Application.Services.HealthInsured
                 //else, card status is 0;
                 var cardStatus = insuranceUserProfile.Cards.Count == 0 ? 1 : 0;
 
-                var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
+                var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id,null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
                 _cardRepository.Create(debitCard);
 
@@ -305,7 +305,7 @@ namespace Application.Services.HealthInsured
                 var processingAxaEnrollment = new ScheduledEnrollment(insuranceProfile.UserId, insuranceProfile.Id, executionDate, jobId, "Processing", null,"Hygeia");
                 _scheduledEnrollment.Create(processingAxaEnrollment);
 
-                var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId, insuranceProfile.Id, processingAxaEnrollment.Id,
+                var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId, insuranceProfile.Id, processingAxaEnrollment.Id,null,
                 executionDate, jobId, "Processing", null, null, "Hygeia");
                 _scheduledPayment.Create(processingScheduledPayment);
             }
@@ -314,7 +314,7 @@ namespace Application.Services.HealthInsured
                 var processingAxaEnrollment = new ScheduledEnrollment(insuranceProfile.UserId, insuranceProfile.Id, executionDate, jobId, "Processing", null, "Axamansard");
                 _scheduledEnrollment.Create(processingAxaEnrollment);
 
-                var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId, insuranceProfile.Id, processingAxaEnrollment.Id,
+                var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId, insuranceProfile.Id, processingAxaEnrollment.Id, null,
                 executionDate, jobId, "Processing", null, null, "Axamansard");
                 _scheduledPayment.Create(processingScheduledPayment);
             } 
@@ -381,7 +381,7 @@ namespace Application.Services.HealthInsured
             // Insufficient funds
             else if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
             {
-                var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id, insuranceProfile.UserId
+                var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                     , insuranceProfile.Premium, "Failed");
                 _paymentReference.Create(paymentReference);
 
@@ -403,7 +403,7 @@ namespace Application.Services.HealthInsured
             // Failed
             else
             {
-                var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id, insuranceProfile.UserId
+                var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, "Failed");
                 _paymentReference.Create(paymentReference);
 
@@ -770,7 +770,7 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Message = "Reactivation was successful." , Status = true, ResponseCode = chargeAuthorization.ResponseCode };
             }
             // Set payment reference for transacation;
-            var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id, insuranceProfile.UserId
+            var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium,"Failed");
             _paymentReference.Create(paymentReference);
             await _paymentReference.Save();
@@ -856,7 +856,7 @@ namespace Application.Services.HealthInsured
             else if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
             {
                 // Set payment reference for failed transacation;
-                var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id, insuranceProfile.UserId
+                var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, "Failed");
                 _paymentReference.Create(paymentReference);
                 await _paymentReference.Save();
@@ -875,7 +875,7 @@ namespace Application.Services.HealthInsured
             else
             {
                 // Set payment reference for failed transacation;
-                var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id, insuranceProfile.UserId
+                var paymentReference = new PaymentReference(chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, "Failed");
                 _paymentReference.Create(paymentReference);
                 await _paymentReference.Save();
@@ -945,7 +945,7 @@ namespace Application.Services.HealthInsured
                     else
                     {
                         // Create payment reference for the charge.
-                        var paymentReference2 = new PaymentReference(reference, insuranceProfile.Id, insuranceProfile.UserId
+                        var paymentReference2 = new PaymentReference(reference, insuranceProfile.Id,null, insuranceProfile.UserId
                         , decimal.Parse(amount), "Successful");
                         _paymentReference.Create(paymentReference2);
                         await _paymentReference.Save();

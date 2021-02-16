@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Models
+namespace Domain.Models.Axa.Hygeia_Insurance
 {
-    public class FileModel
+    public class CompanyInsuranceUser
     {
+        public int Id { get; set; }
+        public int CompanyProfileId {get;set;}
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
