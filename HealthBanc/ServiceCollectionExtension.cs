@@ -125,6 +125,7 @@ namespace HealthBanc
             services.AddScoped<Dashboard_Analytics>();
             services.AddScoped<ICompanyProfileRepository, CompanyProfileRepository>();
             services.AddScoped<ICompanyInsuranceUserRepository, CompanyInsuranceUserRepository>();
+            services.AddScoped<IHygeiaHospitalListRepository, HygeiaHospitalListRepository>();
             services.AddScoped<IFileProcessor, FileProcessor>();
         }
     }

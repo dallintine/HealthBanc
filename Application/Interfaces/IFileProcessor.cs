@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa.Hygeia_Insurance;
 
 namespace Application.Interfaces
 {
@@ -14,5 +15,6 @@ namespace Application.Interfaces
         Task<List<FileModel>> ProcessUserProfileFromExcelFile(IFormFile formFile);
 
         Task<List<AxaMansardHospitalList>> UploadAxaHospitalListFromExcel(IFormFile formFile);
+        Task<List<HygeiaHospitalList>> UploadHygeiaHospitalListFromExcel(IFormFile formFile);
     }
 }

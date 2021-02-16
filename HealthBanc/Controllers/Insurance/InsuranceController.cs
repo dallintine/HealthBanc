@@ -73,6 +73,10 @@ namespace HealthBanc.Controllers.Insurance
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
 
+        /// <summary>
+        /// Get State in Nigeria
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("[action]")]
         public List<string> GetState()
         {
@@ -85,6 +89,11 @@ namespace HealthBanc.Controllers.Insurance
             return stateList;
         }
 
+        /// <summary>
+        /// Create Insurance profile for inc=divivuals
+        /// </summary>
+        /// <param name="userProfile"></param>
+        /// <returns></returns>
         [EnableCors("Cors")]
         [HttpPost("[action]")]
         [Authorize(Roles = "SuperAdmin")]
@@ -114,84 +123,14 @@ namespace HealthBanc.Controllers.Insurance
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
+        }       
 
-        [HttpPost("[action]")]
+        /// <summary>
+        /// Get Towns with HMO coverge
+        /// </summary>
+        /// <param name="state"></param>
+        /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel)
-        {
-            if (ModelState.IsValid)
-            {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-                var corporateRegistration = await _insuranceService.CreateCorporateUser(corporateRegViewModel,Id);
-                return Ok(corporateRegistration);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
-
-        [HttpGet("[action]")]
-        [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> ConfirmOtp(string otp)
-        {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int Id = int.Parse(userId);
-            var confirmOtp = await _insuranceService.ConfirmOtp(otp, Id);
-            if (confirmOtp.Status)
-            {
-                return Ok(confirmOtp);
-            }
-            return BadRequest(confirmOtp);
-        }
-
-        [HttpGet("[action]")]
-        [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> ResendOTP()
-        {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int Id = int.Parse(userId);
-            var resendOtp = await _insuranceService.ResendOtp(Id);
-            if (resendOtp.Status)
-            {
-                return Ok(resendOtp);
-            }
-            return BadRequest(resendOtp);
-        }
-
-        [HttpPost("[action]")]
-        [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel)
-        {
-            if (ModelState.IsValid)
-            {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-                var corporateUser = await _insuranceService.UpdateCorporateUser(updateCorporateUserViewModel,Id);
-                return Ok(corporateUser);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
-
-
-        //[Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CityListDTO>>))]
         [HttpGet("[action]")]
         public IActionResult AxaMansardGetTowns(string state)
@@ -200,7 +139,10 @@ namespace HealthBanc.Controllers.Insurance
             return Ok(townList);
         }
 
-
+        /// <summary>
+        /// Get Health insurance plans
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
@@ -222,7 +164,10 @@ namespace HealthBanc.Controllers.Insurance
             return Ok(new ResponseMessage<List<AxaListResponse>> { Data = axaListResponse, Message = "HealthPan was fetched successfully", Status = true });            
         }
 
-
+        /// <summary>
+        /// Get Insurance profile details
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
@@ -240,7 +185,10 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage<AxaMansardUserDTO> { Message = "Profile was not found" });
         }
 
-
+        /// <summary>
+        /// Get indivisula completion profile details
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
@@ -260,7 +208,11 @@ namespace HealthBanc.Controllers.Insurance
             return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileState, Status = true, Message = "Profile completion state was fetched successfully" });
         }
 
-
+        /// <summary>
+        /// Update individual insurance profile
+        /// </summary>
+        /// <param name="updateProfileViewModel"></param>
+        /// <returns></returns>
         [HttpPost("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel)
@@ -304,7 +256,13 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
-
+        /// <summary>
+        /// Get Axamansard Health care providers based on state,city and healthplans
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="city"></param>
+        /// <param name="healthPlan"></param>
+        /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> AxaMansardGetHealthProvider(string state, string city, string healthPlan)
@@ -313,31 +271,102 @@ namespace HealthBanc.Controllers.Insurance
             return Ok(healthProvider);
         }
 
+        /// <summary>
+        /// Create Corporate insurance 
+        /// </summary>
+        /// <param name="corporateRegViewModel"></param>
+        /// <returns></returns>
         [HttpPost("[action]")]
-        public async Task<IActionResult> UploadAxamansardHospitalListToDb(IFormFile file)
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel)
         {
-            var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
-            if (result.Status)
+            if (ModelState.IsValid)
             {
-                return Ok(result);
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var corporateRegistration = await _insuranceService.CreateCorporateUser(corporateRegViewModel, Id);
+                return Ok(corporateRegistration);
             }
-            return BadRequest();
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
-        [HttpPost("[action]")]
-        public async Task<IActionResult> UploadHygeiaHospitalListToDb(IFormFile file)
+        /// <summary>
+        /// Confirm Otp for corporate insurance registration
+        /// </summary>
+        /// <param name="otp"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> ConfirmOtp(string otp)
         {
-            var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
-            if (result.Status)
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var confirmOtp = await _insuranceService.ConfirmOtp(otp, Id);
+            if (confirmOtp.Status)
             {
-                return Ok(result);
+                return Ok(confirmOtp);
             }
-            return BadRequest();
+            return BadRequest(confirmOtp);
+        }
+
+        /// <summary>
+        /// Resend otp for corporate insurance registration
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> ResendOTP()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var resendOtp = await _insuranceService.ResendOtp(Id);
+            if (resendOtp.Status)
+            {
+                return Ok(resendOtp);
+            }
+            return BadRequest(resendOtp);
+        }
+
+        /// <summary>
+        /// Update Corporate insurance details
+        /// </summary>
+        /// <param name="updateCorporateUserViewModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var corporateUser = await _insuranceService.UpdateCorporateUser(updateCorporateUserViewModel, Id);
+                return Ok(corporateUser);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
         /// Upload excel file containing insurance details for users under a corporate organization.
-        /// Uploaded details create application users and insurance user profile for users
+        /// Uploaded details create CompanyInsuranceUsers
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
@@ -362,6 +391,11 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(response);  
         }
        
+        /// <summary>
+        /// Get Company insurance beneficiaries
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <returns></returns>
         [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<InsuranceBeneficiaryDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
@@ -382,6 +416,10 @@ namespace HealthBanc.Controllers.Insurance
             }
         }
 
+        /// <summary>
+        /// Get corporate insurance dashboard analytics
+        /// </summary>
+        /// <returns></returns>
         [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<CompanyProfileBeneficiaryAnalyticDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
@@ -399,6 +437,10 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(analytics);
         }
 
+        /// <summary>
+        /// Get corporate insurance profile details
+        /// </summary>
+        /// <returns></returns>
         [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<CompanyProfileDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
@@ -416,133 +458,35 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(companyProfile);
         }
 
+        [HttpPost("[action]")]
+        public async Task<IActionResult> UploadAxamansardHospitalListToDb(IFormFile file,string passcode)
+        {
+            if(passcode == "docUpload1963.")
+            {
+                var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
+                if (result.Status)
+                {
+                    return Ok(result);
+                }
+                return BadRequest();
+            }            
+            return BadRequest(new ResponseMessage { Message="Wrong passcode"});
+        }
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> UploadHygeiaHospitalListToDb(IFormFile file,string passcode)
+        {
+            if (passcode == "docUpload1963.")
+            {
+                var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
+                if (result.Status)
+                {
+                    return Ok(result);
+                }
+                return BadRequest();
+            }
+            return BadRequest(new ResponseMessage { Message = "Wrong passcode" });
+        }
+
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//[HttpGet("[action]")]
-//public async Task<IActionResult> Test()
-//{
-//    var axamansardProfile = new AxaMansardUserProfile()
-//    {
-//        TransId = "123456712345",
-//        SubscriptionStatus = false,
-//        TownOfResidence = "Lag",
-//        StateOfResidence = "Lag",
-//        IdentityPhoto = "Lag",
-//        CustomerPhoto = "Lag",
-//        Premium = Decimal.Parse("1000"),
-//        PlanCode = "Lag",
-//        AlternateHospital = "Lag",
-//        CPEmail = "Lag",
-//        CPCity = "Lag",
-//        CPAddress = "Lag",
-//        CPPhone = "Lag",
-//        CareProviderName = "Lag",
-//        Identification = "ID",
-//        MaritalStatus = "Single",
-//        Occupation = "Lag",
-//        ContactAddress = "Lag",
-//        Email = "Lag@gmail.com",
-//        PhoneNumber = "07034770338",
-//        DateOfBirth = DateTime.Now,
-//        Othernames = "Lag",
-//        Surname = "Lag",
-//        Gender = "Male",
-//    };
-//    var listDTO = _mapper.Map<InactiveUsersDTO>(axamansardProfile);
-//    await _liveExcelList.WriteAsync(listDTO);
-//    return Ok();
-//}
-
-
-//[HttpGet("[action]")]
-//public IActionResult AxaMansardGetToken()
-//{
-//    try
-//    {               
-//        var result = _insuranceService.AxaMansardGetToken();
-//        if (result.Status != false)
-//        {
-//            XmlDocument xmlDoc2 = new XmlDocument();
-//            xmlDoc2.LoadXml(result.Data);
-
-//            var getResponse = new AxaResponse();
-//            getResponse.IsSuccessful = xmlDoc2.GetElementsByTagName("IsSuccessful").Item(0).InnerText;
-//            getResponse.Message = xmlDoc2.GetElementsByTagName("message").Item(0).InnerText;
-
-//            return Ok(new ResponseMessage<AxaResponse> { Data = getResponse, Message = getResponse.Message, Status = true });
-
-//        }
-//        return BadRequest(new ResponseMessage { Message = "An error occurred while connecting to aza mansard. Time Out" });
-//    }
-//    catch (Exception ex)
-//    {
-//        return BadRequest(new ResponseMessage { Message = "An error occurred while connecting to aza mansard" });
-//    }
-//}

@@ -37,6 +37,7 @@ namespace Persistence
         public DbSet<EnrollmentOnReactivation> EnrollmentOnReactivations { get; set; }
         public DbSet<PaymentOnReactivation> PaymentOnReactivations { get; set; }
         public DbSet<AxaMansardHospitalList> AxaMansardHospitalLists { get; set;}
+        public DbSet<HygeiaHospitalList> HygeiaHospitalLists { get; set; }
         public DbSet<EnrollmentOnOnboarding> EnrollmentOnOnboardings { get; set; }
         public DbSet<CompanyProfile> CompanyProfiles { get; set; }
         public DbSet<CompanyInsuranceUser> CompanyInsuranceUsers { get; set; }

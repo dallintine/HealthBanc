@@ -47,6 +47,7 @@ namespace Application.Services.HealthInsured
         private readonly AuditLogService _auditLogServices;
         private readonly ExcelPackage _excelPackage;
         private readonly IAxaMansardHospitalListRepository _hospitalListRepository;
+        private readonly IHygeiaHospitalListRepository _hygeiaHospitalListRepository;
         private readonly ILogger<InsuranceService> _logger;
         private readonly IUniqueIdentifier _uniqueIdentifier;
         private readonly ICompanyProfileRepository _companyProfileRepository;
@@ -59,12 +60,12 @@ namespace Application.Services.HealthInsured
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
 
-        public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration>  axaAccessor,IApplicationUserRepository userRepository
-            , IInsuranceProfileRepository insurance,IMapper mapper,IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository,ILogger<InsuranceService> logger,IUniqueIdentifier uniqueIdentifier,
+        public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IApplicationUserRepository userRepository
+            , IInsuranceProfileRepository insurance, IMapper mapper, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
+            ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository, ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier,
              IOptions<HygeiaConfiguration> hygeiaAccessor, ICompanyProfileRepository companyProfileRepository, IEmailSender emailSender,
-              UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor,IdentityService identityService
-            , ICompanyInsuranceUserRepository companyInsuranceUserRepository)
+              UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor, IdentityService identityService
+            , ICompanyInsuranceUserRepository companyInsuranceUserRepository, IHygeiaHospitalListRepository hygeiaHospitalListRepository)
         {
             _httpClientFactory = httpClientFactory;
             _userRepository = userRepository;
@@ -84,7 +85,8 @@ namespace Application.Services.HealthInsured
             _companyInsuranceUserRepository = companyInsuranceUserRepository;
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
-        }        
+            _hygeiaHospitalListRepository = hygeiaHospitalListRepository;
+        }
 
         public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId,string ipAddress,string device)
         {
@@ -289,6 +291,14 @@ namespace Application.Services.HealthInsured
         {
             var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
             _hospitalListRepository.CreateRange(hospitalList);
+            await _hospitalListRepository.Save();
+            return new ResponseMessage { Status = true, Message = "Upload was successful" };
+        }
+
+        public async Task<ResponseMessage> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
+        {
+            var hospitalList = await _fileProcessor.UploadHygeiaHospitalListFromExcel(formFile);
+            _hygeiaHospitalListRepository.CreateRange(hospitalList);
             await _hospitalListRepository.Save();
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Persistence;
 using Application.Interfaces;
 using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa.Hygeia_Insurance;
 
 namespace Infrastructure.UploadService
 {
@@ -86,6 +87,34 @@ namespace Infrastructure.UploadService
                         break;
                     }
                     var hosiptal = new AxaMansardHospitalList();
+                    hosiptal.State = ws.Cells[r, 1].Value?.ToString();
+                    hosiptal.City = ws.Cells[r, 2].Value?.ToString();
+                    hosiptal.HospitalName = ws.Cells[r, 3].Value?.ToString();
+                    hosiptal.Address = ws.Cells[r, 4].Value?.ToString();
+                    hosiptal.Specialisation = ws.Cells[r, 5].Value?.ToString();
+                    excelModels.Add(hosiptal);
+                }
+            }
+            return excelModels;
+        }
+
+        public async Task<List<HygeiaHospitalList>> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
+        {
+            var excelModels = new List<HygeiaHospitalList>();
+            using (var fileStream = new MemoryStream())
+            {
+                await formFile.CopyToAsync(fileStream);
+                fileStream.Position = 0;
+                _excelPackage.Load(fileStream);
+                var ws = _excelPackage.Workbook.Worksheets[0];
+
+                for (int r = 2; r < 5000; r++)
+                {
+                    if (String.IsNullOrWhiteSpace(ws.Cells[r, 3].Value?.ToString()))
+                    {
+                        break;
+                    }
+                    var hosiptal = new HygeiaHospitalList();
                     hosiptal.State = ws.Cells[r, 1].Value?.ToString();
                     hosiptal.City = ws.Cells[r, 2].Value?.ToString();
                     hosiptal.HospitalName = ws.Cells[r, 3].Value?.ToString();
