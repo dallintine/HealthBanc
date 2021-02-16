@@ -13,7 +13,7 @@ namespace HealthBanc.Mappers.Insurance
     {
         public DomainToDTOProfile()
         {
-            CreateMap<InsuranceUserProfile, AxaMansardUserDTO>()
+            CreateMap<InsuranceUserProfile, IndividualProfileDTO>()
                .ForMember(dest => dest.PlanCode, opt => opt.MapFrom(x => x.PlanCode == "1" ? "7" : "8"))
                .ForMember(dest => dest.EnrolleeNumber, opt => opt.MapFrom(x => x.TransId));
 

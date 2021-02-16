@@ -274,6 +274,24 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Data = hospitalList, Status = true };
         }
 
+        public async Task<ResponseMessage> CheckIfUserisCorporateOrIndividualUser(int userId)
+        {
+            var individualUser = await _insuranceProfileRepository.GetByUserIdAsync(userId);
+            var individualOrCorporateUserDTO = new IndividualOrCorporateUserDTO();
+            if (individualUser == null)
+            {
+                var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+                if(corporateUser == null)
+                {
+                    return new ResponseMessage { Message = "User is not registered under an insurance service",Status=true,Data= individualOrCorporateUserDTO};
+                }
+                individualOrCorporateUserDTO.CorporateUser = true ;
+                return new ResponseMessage { Message = "Corporate user", Status = true, Data = individualOrCorporateUserDTO };
+            }
+            individualOrCorporateUserDTO.IndiviaulaUser = true;
+            return new ResponseMessage {Message="Indivivual user",Status=true,Data = individualOrCorporateUserDTO };
+        }
+
         public ResponseMessage GetTowns(string state)
         {
             var townList = _hospitalListRepository.GetTowns(state).Select(x => x.City).Distinct().ToList();
@@ -431,7 +449,8 @@ namespace Application.Services.HealthInsured
             company.ProfileCompleted = true;
             _companyProfileRepository.Update(company);
             await _companyProfileRepository.Save();
-            return new ResponseMessage { Message = "Company profile was updated successfully", Status = true };
+            var corporateprofileDTO = _mapper.Map<CompanyProfileDTO>(company);
+            return new ResponseMessage { Message = "Company profile was updated successfully", Status = true,Data= corporateprofileDTO };
         }        
 
         public async Task RemoveOTP(int userId)

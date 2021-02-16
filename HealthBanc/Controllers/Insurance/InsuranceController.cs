@@ -78,6 +78,7 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(List<string>))]
         public List<string> GetState()
         {
             var stateList = new List<string>()
@@ -96,6 +97,8 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [EnableCors("Cors")]
         [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> CreateUserInsuranceProfile([FromForm] UserProfileviewModel userProfile)
         {
@@ -170,8 +173,8 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage<AxaMansardUserDTO>))]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualProfileDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public async Task<IActionResult> GetUserInsuranceProfile()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -179,10 +182,10 @@ namespace HealthBanc.Controllers.Insurance
             var profile = await _insuranceProfileRepository.GetByUserIdAsync(Id);
             if(profile != null)
             {
-                var profileDTO = _mapper.Map<AxaMansardUserDTO>(profile);
-                return Ok(new ResponseMessage<AxaMansardUserDTO> {Data= profileDTO, Message="User profile was fetched successfully",Status=true });
+                var profileDTO = _mapper.Map<IndividualProfileDTO>(profile);
+                return Ok(new ResponseMessage {Data= profileDTO, Message="User profile was fetched successfully",Status=true });
             }
-            return BadRequest(new ResponseMessage<AxaMansardUserDTO> { Message = "Profile was not found" });
+            return BadRequest(new ResponseMessage { Message = "Profile was not found" });
         }
 
         /// <summary>
@@ -191,7 +194,6 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpGet("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetProfileCompletion()
         {
@@ -277,6 +279,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="corporateRegViewModel"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel)
         {
@@ -300,11 +303,28 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
+        /// Get if user is a corporate or individual user
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualOrCorporateUserDTO>))]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> CheckIfUserisCorporateOrIndividualUser()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var checkIfUserisCorporateOrIndividualUser = await _insuranceService.CheckIfUserisCorporateOrIndividualUser(Id);
+            return Ok(checkIfUserisCorporateOrIndividualUser);
+        }
+
+        /// <summary>
         /// Confirm Otp for corporate insurance registration
         /// </summary>
         /// <param name="otp"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> ConfirmOtp(string otp)
         {
@@ -323,6 +343,8 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> ResendOTP()
         {
@@ -342,11 +364,13 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="updateCorporateUserViewModel"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<CompanyProfileDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel)
         {
             if (ModelState.IsValid)
-            {
+            {                
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
                 var corporateUser = await _insuranceService.UpdateCorporateUser(updateCorporateUserViewModel, Id);

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.DTO.HealthInsured_AxaMansard
 {
-    public class AxaMansardUserDTO
+    public class IndividualProfileDTO
     {
         public string TransId { get; set; }
         public string EnrolleeNumber { get; set; }

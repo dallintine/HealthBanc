@@ -511,7 +511,7 @@ namespace Application.Services.HealthInsured
             insuranceProfile.SubscriptionStatus = false;
             _insuranceProfileRepository.Update(insuranceProfile);
             await _scheduledPayment.Save();
-            var profileDTO = _mapper.Map<AxaMansardUserDTO>(insuranceProfile);
+            var profileDTO = _mapper.Map<IndividualProfileDTO>(insuranceProfile);
             return new ResponseMessage { Data = profileDTO, Message = "Subscription was canceled successfully.However you remain active till " +
                 "your insurance cycle ends.", Status = true };
         }
