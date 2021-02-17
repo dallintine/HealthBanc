@@ -91,7 +91,7 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Create Insurance profile for inc=divivuals
+        /// Create Insurance profile for indivivuals. hygeia or axamansard is passed as insurance provider in the model
         /// </summary>
         /// <param name="userProfile"></param>
         /// <returns></returns>
@@ -126,19 +126,20 @@ namespace HealthBanc.Controllers.Insurance
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }       
+        }
 
         /// <summary>
-        /// Get Towns with HMO coverge
+        /// Get Towns with HMO coverge with state and insurance provider.insurance provider is either hygeia or axamansard 
         /// </summary>
         /// <param name="state"></param>
+        /// <param name="insurancePovider"></param> 
         /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CityListDTO>>))]
         [HttpGet("[action]")]
-        public IActionResult AxaMansardGetTowns(string state)
+        public IActionResult GetTowns(string state,string insurancePovider)
         {
-            var townList = _insuranceService.GetTowns(state);
+            var townList = _insuranceService.GetTowns(state, insurancePovider);
             return Ok(townList);
         }
 
@@ -168,7 +169,7 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Get Insurance profile details
+        /// Get Indiviadual Insurance profile details
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
@@ -189,7 +190,7 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Get indivisula completion profile details
+        /// Get individual completion profile details
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
@@ -259,17 +260,17 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Get Axamansard Health care providers based on state,city and healthplans
+        /// Get Axamansard Health care providers based on state,city and insurance provider.Insurance provider is either hygeia or axamansard 
         /// </summary>
         /// <param name="state"></param>
         /// <param name="city"></param>
-        /// <param name="healthPlan"></param>
+        /// <param name="insuranceProvider"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> AxaMansardGetHealthProvider(string state, string city, string healthPlan)
+        public async Task<IActionResult> GetHealthProvider(string state, string city,string insuranceProvider)
         {
-            var healthProvider = await _insuranceService.AxaMansardGetHealthProvider(state, city, healthPlan);
+            var healthProvider = await _insuranceService.GetHealthProvider(state, city, insuranceProvider);
             return Ok(healthProvider);
         }
 
@@ -511,6 +512,5 @@ namespace HealthBanc.Controllers.Insurance
             }
             return BadRequest(new ResponseMessage { Message = "Wrong passcode" });
         }
-
     }
 }

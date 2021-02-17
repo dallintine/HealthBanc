@@ -21,22 +21,14 @@ namespace Application.ViewModels.HealthInsured
         public string Occupation { get; set; }
         [Required]
         public string MaritalStatus { get; set; }
-        public string BankName { get; set; }
-        public string AccountNo { get; set; }
-        public string BVN { get; set; }
-        public string BloodGroup { get; set; }
-        public string Genotype { get; set; }
         [Required]
         public string Identification { get; set; }
-        public string Hobbies { get; set; }
         [Required]
         public string CareProviderName { get; set; }
         public string CPPhone { get; set; }
         public string CPAddress { get; set; }
         public string CPCity { get; set; }
-        public string CPEmail { get; set; }
         public string AlternateHospital { get; set; }
-        public string MedicalCondition { get; set; }
         [Required]
         public string PlanCode { get; set; }
         [Required]

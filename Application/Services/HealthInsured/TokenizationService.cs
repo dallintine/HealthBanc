@@ -160,7 +160,7 @@ namespace Application.Services.HealthInsured
                 if (insuranceUserProfile.SubscriptionStatus == null)
                 {
                     //send user details to insurance provider when payment is successfully
-                    if(insuranceUserProfile.InsuranceService == "AxaMansard")
+                    if(insuranceUserProfile.InsuranceService.ToLower() == "axamansard")
                     {
                         await EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
                     }
@@ -270,7 +270,7 @@ namespace Application.Services.HealthInsured
             if (!enrollment.Status)
             {
                 var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed"
-                    , enrollment.Message,"Axamansard");
+                    , enrollment.Message,"axamansard");
                 _enrollmentOnOnboardingRepository.Create(axaEnrollmentOnOnboarding);
                 await _enrollmentOnOnboardingRepository.Save();
             }
@@ -285,7 +285,7 @@ namespace Application.Services.HealthInsured
             if (!registration.Status)
             {
                 var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed", registration.Message,
-                    "Hygeia");
+                    "hygeia");
                 _enrollmentOnOnboardingRepository.Create(enrollmentOnOnboarding);
                 await _enrollmentOnOnboardingRepository.Save();
                 return registration;
@@ -300,22 +300,22 @@ namespace Application.Services.HealthInsured
             var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(insuranceProfile.UserId,
                  insuranceProfile.Id, null), executionDate);
 
-            if(insuranceProfile.InsuranceService == "Hygeia")
+            if(insuranceProfile.InsuranceService.ToLower() == "hygeia")
             {
-                var processingAxaEnrollment = new ScheduledEnrollment(insuranceProfile.UserId, insuranceProfile.Id, executionDate, jobId, "Processing", null,"Hygeia");
+                var processingAxaEnrollment = new ScheduledEnrollment(insuranceProfile.UserId, insuranceProfile.Id, executionDate, jobId, "Processing", null,"hygeia");
                 _scheduledEnrollment.Create(processingAxaEnrollment);
 
                 var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId, insuranceProfile.Id, processingAxaEnrollment.Id,null,
-                executionDate, jobId, "Processing", null, null, "Hygeia");
+                executionDate, jobId, "Processing", null, null, "hygeia");
                 _scheduledPayment.Create(processingScheduledPayment);
             }
             else
             {
-                var processingAxaEnrollment = new ScheduledEnrollment(insuranceProfile.UserId, insuranceProfile.Id, executionDate, jobId, "Processing", null, "Axamansard");
+                var processingAxaEnrollment = new ScheduledEnrollment(insuranceProfile.UserId, insuranceProfile.Id, executionDate, jobId, "Processing", null, "axamansard");
                 _scheduledEnrollment.Create(processingAxaEnrollment);
 
                 var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId, insuranceProfile.Id, processingAxaEnrollment.Id, null,
-                executionDate, jobId, "Processing", null, null, "Axamansard");
+                executionDate, jobId, "Processing", null, null, "axamansard");
                 _scheduledPayment.Create(processingScheduledPayment);
             } 
             await _scheduledPayment.Save();
@@ -348,7 +348,7 @@ namespace Application.Services.HealthInsured
                 insuranceProfile.SubscriptionStatus = true; insuranceProfile.ActiveStatus = true;
                 insuranceProfile.StartActiveStatusDate = DateTime.Now; insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
-                if(insuranceProfile.InsuranceService == "Axamansard" || insuranceProfile.InsuranceService == null)
+                if(insuranceProfile.InsuranceService.ToLower() == "axamansard" || insuranceProfile.InsuranceService == null)
                 {
                     var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceProfile);
                     var enrollment = await _insuranceSerivce.AxamansardRegisterUser(enrollmentModel);
@@ -524,7 +524,7 @@ namespace Application.Services.HealthInsured
         public async Task ProcessUserActiveStatusCancellation(int userId)
         {
             var insuranceProfile = await _insuranceProfileRepository.GetByUserIdAsync(userId);
-            if (insuranceProfile.InsuranceService == "Hygeia")
+            if (insuranceProfile.InsuranceService.ToLower() == "hygeia")
             {
                 var response = await _insuranceSerivce.HygeiaDeactivateUser(insuranceProfile.TransId);
             }
@@ -657,28 +657,28 @@ namespace Application.Services.HealthInsured
                 // Scheduled Subscription Reactivation
                 var jobId = BackgroundJob.Schedule(() => ProcessScheduledReactivationPayment(insuranceProfile.UserId, authorization_Code), reactivationTime.Value);
 
-                if(insuranceProfile.InsuranceService == "Hygeia")
+                if(insuranceProfile.InsuranceService.ToLower() == "hygeia")
                 {
                     // Set enrollment and payment to processing. Check Model to see wat data is used for
                     var enrollment = new EnrollmentOnReactivation(insuranceProfile.UserId, insuranceProfile.Id, reactivationTime.Value, "Processing",
-                       null,"Hygeia");
+                       null,"hygeia");
                     _enrollmentOnReactivation.Create(enrollment);
                     await _enrollmentOnReactivation.Save();
 
                     var paymentOnReactivation = new PaymentOnReactivation(insuranceProfile.UserId, insuranceProfile.Id, enrollment.Id, reactivationTime.Value
-                        , "Processing", jobId, null, null,"Hygeia");
+                        , "Processing", jobId, null, null,"hygeia");
                     _paymentOnReactivation.Create(paymentOnReactivation);
                 }
                 else
                 {
                     // Set enrollment and payment to processing. Check Model to see wat data is used for
                     var enrollment = new EnrollmentOnReactivation(insuranceProfile.UserId, insuranceProfile.Id, reactivationTime.Value, "Processing",
-                       null, "Axamasard");
+                       null, "axamasard");
                     _enrollmentOnReactivation.Create(enrollment);
                     await _enrollmentOnReactivation.Save();
 
                     var paymentOnReactivation = new PaymentOnReactivation(insuranceProfile.UserId, insuranceProfile.Id, enrollment.Id, reactivationTime.Value
-                        , "Processing", jobId, null, null, "Axamasard");
+                        , "Processing", jobId, null, null, "axamasard");
                     _paymentOnReactivation.Create(paymentOnReactivation);
                 }
 
@@ -715,19 +715,19 @@ namespace Application.Services.HealthInsured
                 _enrollmentOnReactivation.Create(immediateEnrollment);
                 await _enrollmentOnReactivation.Save();
 
-                if(insuranceProfile.InsuranceService == "Hygeia")
+                if(insuranceProfile.InsuranceService.ToLower() == "hygeia")
                 {
                     // Send user details to hygeia
                     var registrationModel = _mapper.Map<RegistrationModel>(insuranceProfile);
                     var registration = await _insuranceSerivce.HygeiaRegisterUser(registrationModel);
                     if (registration.Status)
                     {
-                        immediateEnrollment.Status = "Successful"; immediateEnrollment.Message = registration.Message; immediateEnrollment.InsuranceService = "Hygeia";
+                        immediateEnrollment.Status = "Successful"; immediateEnrollment.Message = registration.Message; immediateEnrollment.InsuranceService = "hygeia";
                         _enrollmentOnReactivation.Update(immediateEnrollment);
                     }
                     else
                     {
-                        immediateEnrollment.Status = "Failed"; immediateEnrollment.Message = registration.Message; immediateEnrollment.InsuranceService = "Hygeia";
+                        immediateEnrollment.Status = "Failed"; immediateEnrollment.Message = registration.Message; immediateEnrollment.InsuranceService = "hygeia";
                         _enrollmentOnReactivation.Update(immediateEnrollment);
                     }
                 }
@@ -739,12 +739,12 @@ namespace Application.Services.HealthInsured
 
                     if (enrollment.Status)
                     {
-                        immediateEnrollment.Status = "Successful"; immediateEnrollment.Message = enrollment.Message;immediateEnrollment.InsuranceService = "Axamansard";
+                        immediateEnrollment.Status = "Successful"; immediateEnrollment.Message = enrollment.Message;immediateEnrollment.InsuranceService = "axamansard";
                         _enrollmentOnReactivation.Update(immediateEnrollment);
                     }
                     else
                     {
-                        immediateEnrollment.Status = "Failed"; immediateEnrollment.Message = enrollment.Message; immediateEnrollment.InsuranceService = "Axamansard";
+                        immediateEnrollment.Status = "Failed"; immediateEnrollment.Message = enrollment.Message; immediateEnrollment.InsuranceService = "axamansard";
                         _enrollmentOnReactivation.Update(immediateEnrollment);
                     }
                 }        
@@ -807,7 +807,7 @@ namespace Application.Services.HealthInsured
                 paymentOnReactivation.PaymentReference = chargeAuthorization.Reference;
                 _paymentOnReactivation.Update(paymentOnReactivation);
 
-                if(insuranceProfile.InsuranceService == "Hygeia")
+                if(insuranceProfile.InsuranceService.ToLower() == "hygeia")
                 {
                     // Send user details to hygeia
                     var registrationModel = _mapper.Map<RegistrationModel>(insuranceProfile);

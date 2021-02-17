@@ -130,7 +130,7 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
         {
-            userProfile.InsuranceService = userProfile.InsuranceService == null ? userProfile.InsuranceService = "AxaMansad"
+            userProfile.InsuranceService = userProfile.InsuranceService == null ? userProfile.InsuranceService = "axamansard"
                : userProfile.InsuranceService = userProfile.InsuranceService;
 
             var profile = _mapper.Map<InsuranceUserProfile>(userProfile);
@@ -138,7 +138,7 @@ namespace Application.Services.HealthInsured
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
 
-            profile.TransId = (userProfile.InsuranceService == null | userProfile.InsuranceService == "AxaMansard") ? _uniqueIdentifier.GetUniqueCode(12) : "";
+            profile.TransId = (userProfile.InsuranceService == null | userProfile.InsuranceService == "axamansard") ? _uniqueIdentifier.GetUniqueCode(12) : "";
             profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
             profile.InsuranceService = userProfile.InsuranceService;
 
@@ -268,10 +268,23 @@ namespace Application.Services.HealthInsured
 
         }
 
-        public async Task<ResponseMessage> AxaMansardGetHealthProvider(string state, string city, string healthPlan)
+        /// <summary>
+        /// Get Health care providers. for Axamansard we use 1 as insuranceProvider params, For Hygeia we use 2 as insuranceprovider params3
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="city"></param>
+        /// <param name="healthPlan"></param>
+        /// <param name="insuranceProvider"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> GetHealthProvider(string state, string city,string insuranceProvider)
         {
-            var hospitalList = await _hospitalListRepository.GetHealthProviders(state, city);
-            return new ResponseMessage { Data = hospitalList, Status = true };
+            if(insuranceProvider.ToLower() == "axamansard")
+            {
+                var axaHospitalList = await _hospitalListRepository.GetHealthProviders(state, city);
+                return new ResponseMessage { Data = axaHospitalList, Status = true };
+            }
+            var hygeiaHospitalList = await _hygeiaHospitalListRepository.GetHealthProviders(state, city);
+            return new ResponseMessage { Data = hygeiaHospitalList, Status = true };
         }
 
         public async Task<ResponseMessage> CheckIfUserisCorporateOrIndividualUser(int userId)
@@ -292,14 +305,21 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage {Message="Indivivual user",Status=true,Data = individualOrCorporateUserDTO };
         }
 
-        public ResponseMessage GetTowns(string state)
+        public ResponseMessage GetTowns(string state,string insuranceProvider)
         {
-            var townList = _hospitalListRepository.GetTowns(state).Select(x => x.City).Distinct().ToList();
-            var townListDTO = new CityListDTO()
+            var townListDTO = new CityListDTO();
+            if (insuranceProvider.ToLowerInvariant() == "axamansard")
             {
-                State = state,
-                Cities = townList
-            };
+                var townList = _hospitalListRepository.GetTowns(state).Select(x => x.City).Distinct().ToList();
+                townListDTO.State = state;
+                townListDTO.Cities = townList;
+            }
+            else
+            {
+                var townList = _hygeiaHospitalListRepository.GetTowns(state).Select(x => x.City).Distinct().ToList();
+                townListDTO.State = state;
+                townListDTO.Cities = townList;
+            }
             var newList = new List<CityListDTO>();
             newList.Add(townListDTO);
             return new ResponseMessage { Data = newList, Status = true };
