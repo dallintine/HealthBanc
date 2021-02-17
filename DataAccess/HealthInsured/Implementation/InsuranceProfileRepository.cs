@@ -36,14 +36,6 @@ namespace DataAccess.HealthInsured.Implementation
             var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
             var queryable = _context.InsuranceUserProfiles.Where(x => x.CompanyProfileId == CompanyProfileId).AsQueryable();
 
-            if (paginationQuery is null)
-            {
-                paginatedResponse.Data = await queryable.ToListAsync();
-                var recordCount = await queryable.CountAsync();
-                paginatedResponse.RecordCount = recordCount;
-                paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
-                return paginatedResponse;
-            }
             //If Status is null returns all users
             //if status is 1 returns active users
             //if status is 2 returns Inactive users

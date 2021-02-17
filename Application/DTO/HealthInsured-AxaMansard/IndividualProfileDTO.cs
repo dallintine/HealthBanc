@@ -21,15 +21,13 @@ namespace HealthBanc.DTO.HealthInsured_AxaMansard
         public string MaritalStatus { get; set; }
         public string Identification { get; set; }
         public string CareProviderName { get; set; }
-        public string CPPhone { get; set; }
         public string CPAddress { get; set; }
         public string CPCity { get; set; }
-        public string CPEmail { get; set; }
         public string AlternateHospital { get; set; }
         public string AlternateHospitalAddress { get; set; }
-        public string MedicalCondition { get; set; }
         public string PlanCode { get; set; }
         public Decimal Premium { get; set; }
+        public string InsuranceService { get; set; }
         public string StateOfResidence { get; set; }
         public string TownOfResidence { get; set; }
         public bool SubscriptionStatus { get; set; }

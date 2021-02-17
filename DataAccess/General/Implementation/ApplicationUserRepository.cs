@@ -22,14 +22,6 @@ namespace DataAccess.General.Implementation
             var paginatedResponse = new PagedResponse<ApplicationUser>();
             var queryable = _context.Users.Where(x => x.UniqueUsername == null).AsQueryable();
 
-            if(paginationQuery is null)
-            {
-                paginatedResponse.Data = await queryable.ToListAsync();
-                var recordCount = await queryable.CountAsync();
-                paginatedResponse.RecordCount = recordCount;
-                paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
-                return paginatedResponse;
-            }
             //If Status is null returns all registered users
             //if status is 1 returns active users
             //if status is 2 returns inactive users

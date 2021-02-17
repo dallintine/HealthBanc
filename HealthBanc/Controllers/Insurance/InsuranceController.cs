@@ -39,6 +39,7 @@ using Infrastructure.UploadService;
 using DataAccess;
 using Application.DTO.HealthInsured_AxaMansard;
 using Domain.Models.Axa.Hygeia_Insurance;
+using Domain.Models.AxaMansard_Insurance;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -52,14 +53,15 @@ namespace HealthBanc.Controllers.Insurance
         private readonly ILogger<InsuranceController> _logger;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IInsuranceCompletionProfileRepository _completionRepository;
+        private readonly ICompanyProfileRepository _companyProfileRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly IHttpContextAccessor _accessor;
         public string IpAddress;
         public StringValues agent;
 
-        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IInsuranceProfileRepository insuranceProfileRepository,ILogger<InsuranceController> logger,
+        public InsuranceController(InsuranceService insuranceService, IMapper mapper, IInsuranceProfileRepository insuranceProfileRepository, ILogger<InsuranceController> logger,
             IApplicationUserRepository userRepository, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            IHttpContextAccessor accessor)
+            IHttpContextAccessor accessor, ICompanyProfileRepository companyProfileRepository)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
@@ -71,6 +73,7 @@ namespace HealthBanc.Controllers.Insurance
             _accessor = accessor;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
+            _companyProfileRepository = companyProfileRepository;
         }
 
         /// <summary>
@@ -144,6 +147,38 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
+        /// Get Health care providers based on state,city and insurance provider.Insurance provider is either hygeia or axamansard 
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="city"></param>
+        /// <param name="insuranceProvider"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<List<AxaMansardHospitalList>>))]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetHealthProvider(string state, string city, string insuranceProvider)
+        {
+            var healthProvider = await _insuranceService.GetHealthProvider(state, city, insuranceProvider);
+            return Ok(healthProvider);
+        }
+
+        /// <summary>
+        ///  Get filtered hygeia healthcare provider
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <param name="state"></param>
+        /// <param name="city"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HygeiaHospitalList>>))]
+        //[Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> FilterHygeiaHealthCareProvider([FromQuery]PaginationQuery paginationQuery,string state, string city)
+        {
+            var FilterHealthCareProvider = await _insuranceService.FilterHealthCareProvider(paginationQuery, state, city);
+            return Ok(FilterHealthCareProvider);
+        }
+
+        /// <summary>
         /// Get Health insurance plans
         /// </summary>
         /// <returns></returns>
@@ -169,7 +204,7 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Get Indiviadual Insurance profile details
+        /// Get Individual Insurance profile details
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
@@ -190,7 +225,7 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Get individual completion profile details
+        /// Get healthinsured completion profile details
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
@@ -204,11 +239,25 @@ namespace HealthBanc.Controllers.Insurance
             var profile = await _completionRepository.GetCompletionStateByUserId(Id);
             if (profile == null)
             {
-                var notFoundProfileState = new HealthInsuredProfileStateDTO(false, false,null);
-                return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = notFoundProfileState, Status = true, Message = "Profile completion state was fetched successfully" });
-            }
-            var profileState = new HealthInsuredProfileStateDTO(profile.ProfileCompleted, profile.TokenizationCompleted,profile.ServiceUsed);
-            return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = profileState, Status = true, Message = "Profile completion state was fetched successfully" });
+                var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(Id);
+                if(corporateUser != null)
+                {
+                    var corporateProfileState = new HealthInsuredProfileStateDTO(true, corporateUser.EmailConfirmed, corporateUser.ProfileCompleted
+                        ,corporateUser.TokenizationCompleted, null);
+                    return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = corporateProfileState, Status = true,
+                        Message = "Profile completion state was fetched successfully" });
+                }
+                var notFoundProfileState = new HealthInsuredProfileStateDTO(null,null,false, false, null);
+                return Ok(new ResponseMessage<HealthInsuredProfileStateDTO>
+                {
+                    Data = notFoundProfileState,
+                    Status = true,
+                    Message = "Profile completion state was fetched successfully"
+                });
+            };   
+            var individualProfileState = new HealthInsuredProfileStateDTO(false,null,profile.ProfileCompleted, profile.TokenizationCompleted,profile.ServiceUsed);
+            return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = individualProfileState, Status = true,
+                Message = "Profile completion state was fetched successfully" });
         }
 
         /// <summary>
@@ -217,6 +266,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="updateProfileViewModel"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel)
         {
@@ -257,22 +307,7 @@ namespace HealthBanc.Controllers.Insurance
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
-
-        /// <summary>
-        /// Get Axamansard Health care providers based on state,city and insurance provider.Insurance provider is either hygeia or axamansard 
-        /// </summary>
-        /// <param name="state"></param>
-        /// <param name="city"></param>
-        /// <param name="insuranceProvider"></param>
-        /// <returns></returns>
-        [HttpGet("[action]")]
-        [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> GetHealthProvider(string state, string city,string insuranceProvider)
-        {
-            var healthProvider = await _insuranceService.GetHealthProvider(state, city, insuranceProvider);
-            return Ok(healthProvider);
-        }
+        }        
 
         /// <summary>
         /// Create Corporate insurance 
@@ -301,21 +336,6 @@ namespace HealthBanc.Controllers.Insurance
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
-
-        /// <summary>
-        /// Get if user is a corporate or individual user
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("[action]")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualOrCorporateUserDTO>))]
-        [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> CheckIfUserisCorporateOrIndividualUser()
-        {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int Id = int.Parse(userId);
-            var checkIfUserisCorporateOrIndividualUser = await _insuranceService.CheckIfUserisCorporateOrIndividualUser(Id);
-            return Ok(checkIfUserisCorporateOrIndividualUser);
         }
 
         /// <summary>
@@ -424,8 +444,8 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<InsuranceBeneficiaryDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> GetCompanyBeneficiaries(PaginationQuery paginationQuery)
+        [HttpPost("[action]")]
+        public async Task<IActionResult> GetCompanyBeneficiaries([FromQuery]PaginationQuery paginationQuery)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);

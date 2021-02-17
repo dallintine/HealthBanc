@@ -287,22 +287,13 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Data = hygeiaHospitalList, Status = true };
         }
 
-        public async Task<ResponseMessage> CheckIfUserisCorporateOrIndividualUser(int userId)
+        public async Task<ResponseMessage> FilterHealthCareProvider(PaginationQuery paginationQuery,string state,string city)
         {
-            var individualUser = await _insuranceProfileRepository.GetByUserIdAsync(userId);
-            var individualOrCorporateUserDTO = new IndividualOrCorporateUserDTO();
-            if (individualUser == null)
-            {
-                var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
-                if(corporateUser == null)
-                {
-                    return new ResponseMessage { Message = "User is not registered under an insurance service",Status=true,Data= individualOrCorporateUserDTO};
-                }
-                individualOrCorporateUserDTO.CorporateUser = true ;
-                return new ResponseMessage { Message = "Corporate user", Status = true, Data = individualOrCorporateUserDTO };
-            }
-            individualOrCorporateUserDTO.IndiviaulaUser = true;
-            return new ResponseMessage {Message="Indivivual user",Status=true,Data = individualOrCorporateUserDTO };
+            var filterHealthCareProvider = await _hygeiaHospitalListRepository.FilterHealthCareProvider(paginationQuery, state, city);
+            filterHealthCareProvider.PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null;
+            filterHealthCareProvider.PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null;
+
+            return new ResponseMessage { Data = filterHealthCareProvider, Status = true, Message = "Care provider was fetched successfully" };
         }
 
         public ResponseMessage GetTowns(string state,string insuranceProvider)
