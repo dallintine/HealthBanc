@@ -15,5 +15,6 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         public string Gender { get; set; }
         public string DateOfBirth { get; set; }
         public string PhoneNumber { get; set; }
+        public bool InActiveStatus { get; set; }
     }
 }

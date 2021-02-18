@@ -22,6 +22,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Application.API_RequestModel.HealthInsured;
+using DataAccess.HealthInsured_AxaMansard.Interfaces;
+using Domain.Models.Axa.Hygeia_Insurance;
+using Application.Services.Identity;
 
 namespace Application.Services.HealthInsured
 {
@@ -41,14 +44,17 @@ namespace Application.Services.HealthInsured
         private readonly IEmailSender _emailSender;
         private readonly IEnrollmentOnOnboardingRepository _enrollmentOnOnboardingRepository;
         private readonly IPaymentReferenceRepository _paymentReference;
-
+        private readonly ICompanyProfileRepository _companyProfileRepository;
+        private readonly ICompanyInsuranceUserRepository _companyInsuranceUserRepository;
+        private readonly IdentityService _identityService;
         private SubscriptionDuration _subscriptionAccessor { get; }
 
-        public TokenizationService(IInsuranceProfileRepository insuranceProfileRepository,IInsuranceCompletionProfileRepository completionRepository,
-            ICardRepository cardRepository,IMapper mapper,PaystackService paystackService, AuditLogService auditLogServices, InsuranceService insuranceSerivce,
+        public TokenizationService(IInsuranceProfileRepository insuranceProfileRepository, IInsuranceCompletionProfileRepository completionRepository,
+            ICardRepository cardRepository, IMapper mapper, PaystackService paystackService, AuditLogService auditLogServices, InsuranceService insuranceSerivce,
             IOptions<SubscriptionDuration> subscriptionAccessor, IScheduledPaymentRepository scheduledPayment, IScheduledEnrollmentRepository scheduledEnrollment
-            ,IEnrollmentReactivationRepository enrollmentOnReactivation, IPaymentOnReactivationRepository paymentOnReactivation,IEmailSender emailSender,
-            IEnrollmentOnOnboardingRepository enrollmentOnOnboardingRepository, IPaymentReferenceRepository paymentReference)
+            , IEnrollmentReactivationRepository enrollmentOnReactivation, IPaymentOnReactivationRepository paymentOnReactivation, IEmailSender emailSender,
+            IEnrollmentOnOnboardingRepository enrollmentOnOnboardingRepository, IPaymentReferenceRepository paymentReference, IdentityService identityService,
+            ICompanyProfileRepository companyProfileRepository, ICompanyInsuranceUserRepository companyInsuranceUserRepository)
         {
             _insuranceProfileRepository = insuranceProfileRepository;
             _completionRepository = completionRepository;
@@ -65,6 +71,9 @@ namespace Application.Services.HealthInsured
             _enrollmentOnOnboardingRepository = enrollmentOnOnboardingRepository;
             _paymentReference = paymentReference;
             _subscriptionAccessor = subscriptionAccessor.Value;
+            _companyProfileRepository = companyProfileRepository;
+            _companyInsuranceUserRepository = companyInsuranceUserRepository;
+            _identityService = identityService;
         }
 
         /// <summary>
@@ -81,11 +90,83 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task<ResponseMessage> TokenizeCard(ChargeCardViewModel chargeCard, int id,string ipAddress,string device)
         {
+            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id);
+            if (profileCompletion.Data.CorporateUser is false)
+            {
+                return await ProcessIndividualCardTokenization(chargeCard, id, ipAddress, device);
+            }
+            else if(profileCompletion.Data.CorporateUser is true)
+            {
+                return await ProcessCorporateCardTokenization(chargeCard, id, ipAddress, device);
+            }
+            return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
+        }
+
+        private async Task<ResponseMessage> ProcessIndividualCardTokenization(ChargeCardViewModel chargeCard, int id, string ipAddress, string device)
+        {
             var insuranceProfile = await _insuranceProfileRepository.GetByUserIdAsync(id);
             var checkprofileComplete = await _completionRepository.GetCompletionStateByUserId(id);
-            if (checkprofileComplete != null)
+            if (checkprofileComplete.ProfileCompleted == true)
             {
-                if (checkprofileComplete.ProfileCompleted == true)
+                // remove empty space from the card.
+                var cardNumber = chargeCard.card.number.Replace(" ", "");
+
+                // Check if user has card dat matches last four card digit
+                var checkIfCardWasPreviouslyTokenized = await _cardRepository.CheckIfCardWasPreviouslyTokenized(id, cardNumber.Substring(cardNumber.Length - 4));
+                if (checkIfCardWasPreviouslyTokenized != null) return new ResponseMessage { Message = "This card was previously tokenized" };
+
+                var chargeCardRequest = _mapper.Map<API_RequestModel.Paystack.Card>(chargeCard.card);
+
+                var card = new ChargeCard();
+                card.card = chargeCardRequest; card.email = insuranceProfile.Email;
+                card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;
+
+                // If the user has is neither active nor  deactivated
+                if (insuranceProfile.SubscriptionStatus == null)
+                {
+                    // if user can be on a free trail do a test charge of 100 naria, we send amount in Kobo
+                    if (_subscriptionAccessor.FreeTrial)
+                    {
+                        card.amount = (100 * 100).ToString();
+                    }
+                    // if user cant be on free trial do a charge of premium fee, we send amount in kobo
+                    else
+                    {
+                        card.amount = (insuranceProfile.Premium * 100).ToString();
+                    }
+                }
+                // if the user has an activa or deactivated subscription status i.e userAxamansardProfile.SubscriptionStatus != null , 
+                // we do a test charge of 100 naria, we send amount in Kobo
+                // Since user is just adding a new card.
+                else
+                {
+                    card.amount = (100 * 100).ToString();
+                }
+
+                // Create payment reference for the charge.
+                var paymentReference = new PaymentReference(card.reference, insuranceProfile.Id, null, insuranceProfile.UserId
+                , insuranceProfile.Premium, "Pending");
+                _paymentReference.Create(paymentReference);
+                await _paymentReference.Save();
+
+                // Paystack service to charge user card
+                var chargeCardResponse = await _paystackService.ChargeCard(card, id);
+
+                // function to process response from paystack
+                return await ProcessPaystackChargeCardResponse(chargeCardResponse, insuranceProfile, checkprofileComplete
+                    , paymentReference, card.reference, ipAddress, device);
+
+            }
+            return new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false };
+        }
+
+        private async Task<ResponseMessage> ProcessCorporateCardTokenization(ChargeCardViewModel chargeCard,  int id, string ipAddress
+            ,string device)
+        {
+            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(id);
+            if (companyProfile != null)
+            {
+                if (companyProfile.ProfileCompleted == true && companyProfile.EmailConfirmed)
                 {
                     // remove empty space from the card.
                     var cardNumber = chargeCard.card.number.Replace(" ", "");
@@ -93,47 +174,27 @@ namespace Application.Services.HealthInsured
                     // Check if user has card dat matches last four card digit
                     var checkIfCardWasPreviouslyTokenized = await _cardRepository.CheckIfCardWasPreviouslyTokenized(id, cardNumber.Substring(cardNumber.Length - 4));
                     if (checkIfCardWasPreviouslyTokenized != null) return new ResponseMessage { Message = "This card was previously tokenized" };
-                     
+
                     var chargeCardRequest = _mapper.Map<API_RequestModel.Paystack.Card>(chargeCard.card);
 
                     var card = new ChargeCard();
-                    card.card = chargeCardRequest; card.email = insuranceProfile.Email; 
+                    card.card = chargeCardRequest; card.email = companyProfile.CompanyEmail;
                     card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;
 
-                    // If the user has is neither active nor  deactivated
-                    if(insuranceProfile.SubscriptionStatus == null)
-                    {
-                        // if user can be on a free trail do a test charge of 100 naria, we send amount in Kobo
-                        if (_subscriptionAccessor.FreeTrial)
-                        {
-                            card.amount = (100 * 100).ToString();
-                        }
-                        // if user cant be on free trial do a charge of premium fee, we send amount in kobo
-                        else
-                        {
-                            card.amount = (insuranceProfile.Premium * 100).ToString();
-                        }
-                    }
-                    // if the user has an activa or deactivated subscription status i.e userAxamansardProfile.SubscriptionStatus != null , 
-                    // we do a test charge of 100 naria, we send amount in Kobo
-                    // Since user is just adding a new card.
-                    else
-                    {
-                        card.amount = (100 * 100).ToString();
-                    }
+                    var insuranceUsers = await _insuranceProfileRepository.QueryableCompanyProfile(id);
+                    var totalAmount = insuranceUsers.Where(x => x.CompanySubscribedStatus == "pending").Select(x => x.Premium).Sum();
+                    card.amount = totalAmount.ToString();
 
                     // Create payment reference for the charge.
-                    var paymentReference = new PaymentReference(card.reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                    , insuranceProfile.Premium, "Pending");
+                    var paymentReference = new PaymentReference(card.reference, null, companyProfile.Id, id, totalAmount, "Pending");
                     _paymentReference.Create(paymentReference);
                     await _paymentReference.Save();
 
                     // Paystack service to charge user card
-                    var chargeCardResponse = await _paystackService.ChargeCard(card, id);                    
+                    var chargeCardResponse = await _paystackService.ChargeCard(card, id);
 
                     // function to process response from paystack
-                    return await ProcessPaystackChargeCardResponse(chargeCardResponse, insuranceProfile, checkprofileComplete
-                       ,paymentReference, card.reference, ipAddress, device);
+                    return await ProcessPaystackChargeCardResponse(chargeCardResponse, companyProfile, paymentReference,card.reference, ipAddress, device);
 
                 }
                 return new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false };
@@ -143,7 +204,7 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> ProcessPaystackChargeCardResponse(TokenizationResponse chargeCardResponse, InsuranceUserProfile insuranceUserProfile,
            InsuranceCompletionProfile checkprofileComplete,PaymentReference paymentReference, string cardReference, string ipAddress, string device)
-        {           
+        {      
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
@@ -221,8 +282,72 @@ namespace Application.Services.HealthInsured
                     Message = chargeCardResponse.Message
                 };
             }
+            return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
+        }
+
+        public async Task<ResponseMessage> ProcessPaystackChargeCardResponse(TokenizationResponse chargeCardResponse, CompanyProfile companyProfile,
+           PaymentReference paymentReference,string cardReference, string ipAddress, string device)
+        {
+            // if charge card was successfully
+            if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
+            {
+                //If card count is 0. it means there is no card available, so the card tokenised will
+                //be the primary card so primary card status is set to 1 
+                //else, card status is 0;
+                var cardStatus = companyProfile.Cards.Count == 0 ? 1 : 0;
+
+                var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
+                    , cardReference, chargeCardResponse.AuthorizationCode);
+                _cardRepository.Create(debitCard);
+
+                //Background task to Enroll all users to hygeia.
+                BackgroundJob.Enqueue(() => OnboardUsers(companyProfile.Id));
+
+                //Background task to schedule debit at the end of next cycle
+                var getScheduledPaymentJobId = await ProcessScheduledPayment(companyProfile);
+
+                //// Schedule debit email reminder for user 
+                //var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+                //    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+                // Save scheduled debit job Id
+                companyProfile.PendingJobId = getScheduledPaymentJobId;
+                //Save scheduled email jobId
+                //insuranceUserProfile.PendingEmailJobId = emailReminderJobId;
+
+                companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                companyProfile.TokenizationCompleted = true;
+                //companyProfile.PresentCyclePremiumFee = 
+
+                //_companyProfileRepository.Update(insuranceUserProfile);
+
+                //SendSuccesfulSubscriptionMail(insuranceUserProfile.Email, insuranceUserProfile.Surname, insuranceUserProfile.TransId, insuranceUserProfile.CareProviderName);
+
+                ////Create Audit thats user subscrption changed 
+                //var auditViewModel2 = new AuditLogViewModel(insuranceUserProfile.UserId, null, "Inactive subscription status", "Subscription Status Changed",
+                //    "Active subscription status");
+                //await _auditLogServices.UserCreateAuditLog(auditViewModel2, ipAddress, device);
+
+                //await _insuranceProfileRepository.Save();
+
+                //var auditViewModel = new AuditLogViewModel(insuranceUserProfile.UserId, null, null, "Debit Card Added", null);
+                //await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+
+                return new ResponseMessage
+                {
+                    Data = chargeCardResponse,
+                    Status = chargeCardResponse.Status,
+                    ResponseCode = chargeCardResponse.ResponseCode,
+                    Message = chargeCardResponse.Message
+                };
+            }
+            return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
+        }
+
+        public async Task<ResponseMessage> ProcessNotSuccessfulPaystackChargeCardResponse(PaymentReference paymentReference,TokenizationResponse chargeCardResponse)
+        {
             // If charge card response request for OTP
-            else if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 12)
+            if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 12)
             {
                 paymentReference.Status = "Send_Otp";
                 _paymentReference.Update(paymentReference);
@@ -260,6 +385,37 @@ namespace Application.Services.HealthInsured
                 Status = chargeCardResponse.Status,
                 ResponseCode = chargeCardResponse.ResponseCode
             };
+        }
+
+        public async Task OnboardUsers(int companyId)
+        {
+            var companyprofile = await _companyProfileRepository.GetCompanyInsuranceUsersByCompanyId(companyId);
+            var companyInsuranceUsers = companyprofile.CompanyInsuranceUsers.Where(x => x.InActiveStatus == false);
+            var insuranceUserProfiles = new List<InsuranceUserProfile>();
+            foreach (var item in companyInsuranceUsers)
+            {
+                var user = _mapper.Map<ApplicationUser>(item);
+                var createdUser = await _identityService.RegisterUserWithoutPassword(user);
+                if (createdUser.Status)
+                {
+                    var userId = createdUser.Data.Id;
+                    var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
+                    insuranceUserProfile.CompanyProfileId = companyId;
+                    insuranceUserProfile.InsuranceService = "Hygeia";
+                    insuranceUserProfile.Premium = Decimal.Parse("1000");
+                    insuranceUserProfile.CompanySubscribedStatus = "active";
+                    insuranceUserProfile.UserId = userId;
+                    insuranceUserProfiles.Add(insuranceUserProfile);
+                }
+            }
+            await _insuranceProfileRepository.InsertEntities(insuranceUserProfiles);
+            foreach (var item in insuranceUserProfiles)
+            {
+                var result = await EnrollUserToHygeiaOnOnboarding(item);
+                item.TransId = result.Message;
+                _insuranceProfileRepository.Update(item);
+            }
+            await _insuranceProfileRepository.Save();
         }
 
         public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
@@ -320,6 +476,19 @@ namespace Application.Services.HealthInsured
             } 
             await _scheduledPayment.Save();
 
+            return jobId;
+        }
+
+        public async Task<string> ProcessScheduledPayment(CompanyProfile companyProfile)
+        {
+            var executionDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+            var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), executionDate);
+
+            var processingScheduledPayment = new ScheduledPayment(companyProfile.UserId, null, null, companyProfile.Id, executionDate, jobId, "Processing", null
+                , null, "hygeia");
+            _scheduledPayment.Create(processingScheduledPayment);
+            await _scheduledPayment.Save();
             return jobId;
         }
 
@@ -420,6 +589,42 @@ namespace Application.Services.HealthInsured
 
                 SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString(), chargeAuthorization.Message);
 
+                await Task.CompletedTask;
+            }
+            await Task.CompletedTask;
+        }
+
+        [AutomaticRetry(Attempts = 0)]
+        public async Task SchedulePaymentLogic(int userId, PerformContext context)
+        {
+            var jobId = context.BackgroundJob.Id;
+            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+            var activeCard = companyProfile.Cards.FirstOrDefault(x => x.Status == 1);
+
+            //Get a charge authorization model to use in scheduled payment background process.
+            var chageAuthorizationModel = new ChargeAuthorization()
+            {
+                email = companyProfile.CompanyEmail,
+                amount = (companyProfile.NextCyclePremiumFee * 100).ToString(),
+                authorization_code = activeCard.Authorization_Code
+            };
+
+            var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
+            var scheduledPaymentJob = await _scheduledPayment.GetScheduledPaymentByJobId(jobId);
+            if (chargeAuthorization.Status)
+            {
+                scheduledPaymentJob.Status = "Successful"; scheduledPaymentJob.Message = chargeAuthorization.Message;
+                scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
+                companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+                //// Schedule debit email reminder for user 
+                //var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),
+                //    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+                var newJobId = await ProcessScheduledPayment(companyProfile);
+                companyProfile.PendingJobId = newJobId; 
+                _companyProfileRepository.Update(companyProfile);
+                await _scheduledPayment.Save();
                 await Task.CompletedTask;
             }
             await Task.CompletedTask;

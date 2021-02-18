@@ -49,12 +49,14 @@ namespace HealthBanc.Controllers.Insurance
         /// Charge user card for tokenization process
         /// </summary>
         /// <param name="chargeCard"></param>
+        /// <param name="emailAddress"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [Authorize(Roles = "SuperAdmin")]
+
         [HttpPost("[action]")]
-        public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard)
+        public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard,[FromQuery] List<string> emailAddress)
         {
             if (ModelState.IsValid)
             {

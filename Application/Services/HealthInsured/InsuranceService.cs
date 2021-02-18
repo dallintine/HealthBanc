@@ -268,6 +268,40 @@ namespace Application.Services.HealthInsured
 
         }
 
+        public async Task<ResponseMessage<HealthInsuredProfileStateDTO>> GetProfileCompletion(int userId)
+        {
+            var profile = await _completionRepository.GetCompletionStateByUserId(userId);
+            if (profile == null)
+            {
+                var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+                if (corporateUser != null)
+                {
+                    var corporateProfileState = new HealthInsuredProfileStateDTO(true, corporateUser.EmailConfirmed, corporateUser.ProfileCompleted
+                        , corporateUser.TokenizationCompleted, null);
+                    return new ResponseMessage<HealthInsuredProfileStateDTO>
+                    {
+                        Data = corporateProfileState,
+                        Status = true,
+                        Message = "Profile completion state was fetched successfully"
+                    };
+                }
+                var notFoundProfileState = new HealthInsuredProfileStateDTO(null, null, false, false, null);
+                return new ResponseMessage<HealthInsuredProfileStateDTO>
+                {
+                    Data = notFoundProfileState,
+                    Status = true,
+                    Message = "Profile completion state was fetched successfully"
+                };
+            };
+            var individualProfileState = new HealthInsuredProfileStateDTO(false, null, profile.ProfileCompleted, profile.TokenizationCompleted, profile.ServiceUsed);
+            return new ResponseMessage<HealthInsuredProfileStateDTO>
+            {
+                Data = individualProfileState,
+                Status = true,
+                Message = "Profile completion state was fetched successfully"
+            };
+        }
+
         /// <summary>
         /// Get Health care providers. for Axamansard we use 1 as insuranceProvider params, For Hygeia we use 2 as insuranceprovider params3
         /// </summary>
@@ -386,14 +420,12 @@ namespace Application.Services.HealthInsured
                     Message = "Uploaded Successfully",
                     Status = true
                 };
-            };
-            
+            };            
             return new ResponseMessage
             {
                 Message = "Please confirm company email address",
                 Status = false
             };
-
         }
 
         public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
@@ -515,6 +547,34 @@ namespace Application.Services.HealthInsured
             var companyProfileDTO = _mapper.Map<CompanyProfileDTO>(company);
 
             return new ResponseMessage { Data = companyProfileDTO, Status = true, Message = "Company profile was fetched successfully" };
+        }
+
+        public async Task<ResponseMessage> RemoveCompanyBeneficiary(string email,int companyUserId)
+        {
+            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+            var beneficiary = await _companyInsuranceUserRepository.GetByEmail(email);
+            if(beneficiary.CompanyProfileId == companyProfile.Id)
+            {
+                beneficiary.InActiveStatus = true;
+                _companyInsuranceUserRepository.Update(beneficiary);
+                await _companyInsuranceUserRepository.Save();
+                return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
+            }
+            return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
+        }
+
+        public async Task<ResponseMessage> RestoreCompanyBeneficiary(string email, int companyUserId)
+        {
+            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+            var beneficiary = await _companyInsuranceUserRepository.GetByEmail(email);
+            if (beneficiary.CompanyProfileId == companyProfile.Id)
+            {
+                beneficiary.InActiveStatus = false;
+                _companyInsuranceUserRepository.Update(beneficiary);
+                await _companyInsuranceUserRepository.Save();
+                return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
+            }
+            return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
         }
 
         //public async Task<ResponseMessage> ChangeCompanyRegisterdUserStatus(int companyUserId,int companySubscriberUserId,int status) 

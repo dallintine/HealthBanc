@@ -236,28 +236,8 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var profile = await _completionRepository.GetCompletionStateByUserId(Id);
-            if (profile == null)
-            {
-                var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(Id);
-                if(corporateUser != null)
-                {
-                    var corporateProfileState = new HealthInsuredProfileStateDTO(true, corporateUser.EmailConfirmed, corporateUser.ProfileCompleted
-                        ,corporateUser.TokenizationCompleted, null);
-                    return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = corporateProfileState, Status = true,
-                        Message = "Profile completion state was fetched successfully" });
-                }
-                var notFoundProfileState = new HealthInsuredProfileStateDTO(null,null,false, false, null);
-                return Ok(new ResponseMessage<HealthInsuredProfileStateDTO>
-                {
-                    Data = notFoundProfileState,
-                    Status = true,
-                    Message = "Profile completion state was fetched successfully"
-                });
-            };   
-            var individualProfileState = new HealthInsuredProfileStateDTO(false,null,profile.ProfileCompleted, profile.TokenizationCompleted,profile.ServiceUsed);
-            return Ok(new ResponseMessage<HealthInsuredProfileStateDTO> { Data = individualProfileState, Status = true,
-                Message = "Profile completion state was fetched successfully" });
+            var profileCompletion = await _insuranceService.GetProfileCompletion(Id);
+            return Ok(profileCompletion);
         }
 
         /// <summary>
@@ -435,7 +415,51 @@ namespace HealthBanc.Controllers.Insurance
             }
             return BadRequest(response);  
         }
-       
+
+        /// <summary>
+        /// Remove company beneficiary after user upload excel document
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [Authorize]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> RemoveCompanyBeneficiary(string email)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var response = await _insuranceService.RemoveCompanyBeneficiary(email, Id);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Restore company beneficiary after user upload excel documnet
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [Authorize]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> RestoreCompanyBeneficiary(string email)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var response = await _insuranceService.RemoveCompanyBeneficiary(email, Id);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
         /// <summary>
         /// Get Company insurance beneficiaries
         /// </summary>
