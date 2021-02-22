@@ -19,11 +19,11 @@ namespace HealthBanc.Mappers.Insurance
                .ForMember(dest => dest.Id, opt => opt.Ignore());
 
 
-            CreateMap<CompanyInsuranceUser, ApplicationUser>()
+            CreateMap<BeneficiaryReviewUser, ApplicationUser>()
                 .ForMember(dest => dest.DateOfRegistration, opt => opt.MapFrom(x => DateTime.Now))
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(x => x.Email));
 
-            CreateMap<CompanyInsuranceUser, InsuranceUserProfile>()
+            CreateMap<BeneficiaryReviewUser, InsuranceUserProfile>()
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(x => DateTime.Parse(x.DateOfBirth)))
                 .ForMember(dest => dest.Surname, opt => opt.MapFrom(x => x.LastName))
                 .ForMember(dest => dest.Othernames, opt => opt.MapFrom(x => x.FirstName))

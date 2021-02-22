@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Domain.Models.Axa.Hygeia_Insurance
 {
-    public class CompanyInsuranceUser
+    public class BeneficiaryReviewUser
     {
         public int Id { get; set; }
         public int CompanyProfileId {get;set;}
@@ -15,6 +15,8 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         public string Gender { get; set; }
         public string DateOfBirth { get; set; }
         public string PhoneNumber { get; set; }
-        public bool InActiveStatus { get; set; }
+        public DateTime DateCreated { get; set; }
+        public Decimal Amount { get; set; }
+        public bool Restore { get; set; }
     }
 }

@@ -45,7 +45,7 @@ namespace Application.Services.HealthInsured
         private readonly IEnrollmentOnOnboardingRepository _enrollmentOnOnboardingRepository;
         private readonly IPaymentReferenceRepository _paymentReference;
         private readonly ICompanyProfileRepository _companyProfileRepository;
-        private readonly ICompanyInsuranceUserRepository _companyInsuranceUserRepository;
+        private readonly IBeneficiaryReviewRepository _companyInsuranceUserRepository;
         private readonly IdentityService _identityService;
         private SubscriptionDuration _subscriptionAccessor { get; }
 
@@ -54,7 +54,7 @@ namespace Application.Services.HealthInsured
             IOptions<SubscriptionDuration> subscriptionAccessor, IScheduledPaymentRepository scheduledPayment, IScheduledEnrollmentRepository scheduledEnrollment
             , IEnrollmentReactivationRepository enrollmentOnReactivation, IPaymentOnReactivationRepository paymentOnReactivation, IEmailSender emailSender,
             IEnrollmentOnOnboardingRepository enrollmentOnOnboardingRepository, IPaymentReferenceRepository paymentReference, IdentityService identityService,
-            ICompanyProfileRepository companyProfileRepository, ICompanyInsuranceUserRepository companyInsuranceUserRepository)
+            ICompanyProfileRepository companyProfileRepository, IBeneficiaryReviewRepository companyInsuranceUserRepository)
         {
             _insuranceProfileRepository = insuranceProfileRepository;
             _completionRepository = completionRepository;
@@ -394,7 +394,7 @@ namespace Application.Services.HealthInsured
         public async Task OnboardUsers(int companyId)
         {
             var companyprofile = await _companyProfileRepository.GetCompanyInsuranceUsersByCompanyId(companyId);
-            var companyInsuranceUsers = companyprofile.CompanyInsuranceUsers.Where(x => x.InActiveStatus == false);
+            var companyInsuranceUsers = companyprofile.CompanyInsuranceUsers.Where(x => x.Restore == false);
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
             foreach (var item in companyInsuranceUsers)
             {

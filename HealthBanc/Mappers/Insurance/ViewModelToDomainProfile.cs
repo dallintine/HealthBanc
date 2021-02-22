@@ -28,7 +28,7 @@ namespace HealthBanc.Mappers.Insurance
                 .ForMember(dest => dest.CareProviderName, opt => opt.Ignore())
                 .ForMember(dest => dest.CPAddress, opt => opt.Ignore());
 
-            CreateMap<FileModel, CompanyInsuranceUser>();
+            CreateMap<FileModel, BeneficiaryReviewUser>();
 
         }
     }

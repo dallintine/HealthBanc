@@ -23,7 +23,7 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         public string OTPJobId { get; set; }
         public string InsuranceService { get; set; }
         public List<InsuranceUserProfile> InsuranceUserProfiles { get; set; }
-        public List<CompanyInsuranceUser> CompanyInsuranceUsers { get; set; }
+        public List<BeneficiaryReviewUser> CompanyInsuranceUsers { get; set; }
         public List<DebitCard> Cards { get; set; }
     }
 }

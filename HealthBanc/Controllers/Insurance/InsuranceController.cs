@@ -395,12 +395,11 @@ namespace HealthBanc.Controllers.Insurance
 
         /// <summary>
         /// Upload excel file containing insurance details for users under a corporate organization.
-        /// Uploaded details create CompanyInsuranceUsers
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
         [Authorize]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<CompanyInsuranceUser>>))]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<BeneficiaryReviewDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
         public async Task<IActionResult> UploadUserProfileFromExcelFile([FromForm]UploadViewModel file)
@@ -421,7 +420,32 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Remove company beneficiary after user upload excel document
+        /// Get company Beneficiary Review
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <returns></returns>
+        [Authorize]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<BeneficiaryReviewDTO>>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> GetCompanyBeneficiaryReview([FromQuery] PaginationQuery paginationQuery)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var beneficiariesResponse = await _insuranceService.GetBeneficiariesReview(paginationQuery, Id);
+            if (beneficiariesResponse.Status)
+            {
+                return Ok(beneficiariesResponse);
+            }
+            else
+            {
+                return BadRequest(beneficiariesResponse);
+            }
+        }
+
+        /// <summary>
+        /// Remove company beneficiary Review user after user upload excel document
         /// </summary>
         /// <param name="email"></param>
         /// <returns></returns>
@@ -429,7 +453,7 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        public async Task<IActionResult> RemoveCompanyBeneficiary(string email)
+        public async Task<IActionResult> RemoveCompanyBeneficiaryReviewUser(string email)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
@@ -443,7 +467,7 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Restore company beneficiary after user upload excel documnet
+        /// Restore company beneficiary review user after user upload excel documnet
         /// </summary>
         /// <param name="email"></param>
         /// <returns></returns>
@@ -451,7 +475,7 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        public async Task<IActionResult> RestoreCompanyBeneficiary(string email)
+        public async Task<IActionResult> RestoreCompanyBeneficiaryReviewUser(string email)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);

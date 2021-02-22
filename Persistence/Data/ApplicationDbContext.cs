@@ -40,7 +40,7 @@ namespace Persistence
         public DbSet<HygeiaHospitalList> HygeiaHospitalLists { get; set; }
         public DbSet<EnrollmentOnOnboarding> EnrollmentOnOnboardings { get; set; }
         public DbSet<CompanyProfile> CompanyProfiles { get; set; }
-        public DbSet<CompanyInsuranceUser> CompanyInsuranceUsers { get; set; }
+        public DbSet<BeneficiaryReviewUser> BeneficiaryReviewUsers { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

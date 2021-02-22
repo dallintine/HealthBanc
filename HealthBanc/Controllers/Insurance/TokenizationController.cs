@@ -56,7 +56,7 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "SuperAdmin")]
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard,[FromQuery] List<string> emailAddress)
+        public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard)
         {
             if (ModelState.IsValid)
             {

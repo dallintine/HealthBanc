@@ -55,7 +55,7 @@ namespace Application.Services.HealthInsured
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IFileProcessor _fileProcessor;
         private readonly IdentityService _identityService;
-        private readonly ICompanyInsuranceUserRepository _companyInsuranceUserRepository;
+        private readonly IBeneficiaryReviewRepository _companyInsuranceUserRepository;
 
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
@@ -65,7 +65,7 @@ namespace Application.Services.HealthInsured
             ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository, ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier,
              IOptions<HygeiaConfiguration> hygeiaAccessor, ICompanyProfileRepository companyProfileRepository, IEmailSender emailSender,
               UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor, IdentityService identityService
-            , ICompanyInsuranceUserRepository companyInsuranceUserRepository, IHygeiaHospitalListRepository hygeiaHospitalListRepository)
+            , IBeneficiaryReviewRepository companyInsuranceUserRepository, IHygeiaHospitalListRepository hygeiaHospitalListRepository)
         {
             _httpClientFactory = httpClientFactory;
             _userRepository = userRepository;
@@ -399,20 +399,22 @@ namespace Application.Services.HealthInsured
             {
                 var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
 
-                var companyInsuranceUsers = _mapper.Map<List<FileModel>, List<CompanyInsuranceUser>>(excelModel);
+                var companyInsuranceUsers = _mapper.Map<List<FileModel>, List<BeneficiaryReviewUser>>(excelModel);
                 foreach(var item in companyInsuranceUsers)
                 {
                     item.CompanyProfileId = companyProfile.Id;
                 }
                 await _companyInsuranceUserRepository.InsertEntities(companyInsuranceUsers);
 
-                var paginatedResponse = new PagedResponse<CompanyInsuranceUser>
+                var beneficiariesReviewDTO = _mapper.Map<List<BeneficiaryReviewUser>, List<BeneficiaryReviewDTO>>(companyInsuranceUsers);
+
+                var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
                 {
-                    Data = companyInsuranceUsers,
+                    Data = beneficiariesReviewDTO,
                     PageNumber = 1,
                     PageSize = 50,
-                    RecordCount = companyInsuranceUsers.Count,
-                    PageCount = Convert.ToInt32(Math.Ceiling((double)companyInsuranceUsers.Count / (double)50))
+                    RecordCount = beneficiariesReviewDTO.Count,
+                    PageCount = Convert.ToInt32(Math.Ceiling((double)beneficiariesReviewDTO.Count / (double)50))
                 };
                 return new ResponseMessage
                 {
@@ -505,6 +507,25 @@ namespace Application.Services.HealthInsured
             await _companyProfileRepository.Save();
         }
 
+        public async Task<ResponseMessage> GetBeneficiariesReview(PaginationQuery paginationQuery,int companyUserId)
+        {
+            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+
+            var companyBeneficiaries = await _companyInsuranceUserRepository.FilterBeneficiariesReview(paginationQuery, companyProfile.Id);
+            var beneficiariesReviewDTO = _mapper.Map<IEnumerable<BeneficiaryReviewUser>, IEnumerable<BeneficiaryReviewDTO>>(companyBeneficiaries.Data);
+
+            var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
+            {
+                Data = beneficiariesReviewDTO,
+                Amount = beneficiariesReviewDTO.Select(x => x.Amount).Sum(),
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = companyBeneficiaries.RecordCount,
+                PageCount = companyBeneficiaries.PageCount
+            };
+            return new ResponseMessage { Data = paginatedResponse, Status = true, Message = "Beneficiaries was fetched successfully" };
+        }
+
         public async Task<ResponseMessage> GetCompanyBeneficiaries(PaginationQuery paginationQuery,int companyUserId)
         {
             var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
@@ -555,7 +576,7 @@ namespace Application.Services.HealthInsured
             var beneficiary = await _companyInsuranceUserRepository.GetByEmail(email);
             if(beneficiary.CompanyProfileId == companyProfile.Id)
             {
-                beneficiary.InActiveStatus = true;
+                beneficiary.Restore = true;
                 _companyInsuranceUserRepository.Update(beneficiary);
                 await _companyInsuranceUserRepository.Save();
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
@@ -569,7 +590,7 @@ namespace Application.Services.HealthInsured
             var beneficiary = await _companyInsuranceUserRepository.GetByEmail(email);
             if (beneficiary.CompanyProfileId == companyProfile.Id)
             {
-                beneficiary.InActiveStatus = false;
+                beneficiary.Restore = false;
                 _companyInsuranceUserRepository.Update(beneficiary);
                 await _companyInsuranceUserRepository.Save();
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };

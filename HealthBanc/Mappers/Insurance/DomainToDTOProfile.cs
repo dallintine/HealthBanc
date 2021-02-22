@@ -22,6 +22,8 @@ namespace HealthBanc.Mappers.Insurance
                .ForMember(dest => dest.Amount, opt => opt.MapFrom(x => x.Premium));
 
             CreateMap<CompanyProfile, CompanyProfileDTO>();
+
+            CreateMap<BeneficiaryReviewUser, BeneficiaryReviewDTO>();
         }
     }
 }
