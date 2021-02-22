@@ -121,7 +121,7 @@ namespace Application.Services.HealthInsured
                 card.card = chargeCardRequest; card.email = insuranceProfile.Email;
                 card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;
 
-                // If the user has is neither active nor  deactivated
+                // If the user is neither active nor  deactivated
                 if (insuranceProfile.SubscriptionStatus == null)
                 {
                     // if user can be on a free trail do a test charge of 100 naria, we send amount in Kobo
@@ -155,7 +155,6 @@ namespace Application.Services.HealthInsured
                 // function to process response from paystack
                 return await ProcessPaystackChargeCardResponse(chargeCardResponse, insuranceProfile, checkprofileComplete
                     , paymentReference, card.reference, ipAddress, device);
-
             }
             return new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false };
         }
@@ -181,12 +180,18 @@ namespace Application.Services.HealthInsured
                     card.card = chargeCardRequest; card.email = companyProfile.CompanyEmail;
                     card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;
 
-                    var insuranceUsers = await _insuranceProfileRepository.QueryableCompanyProfile(id);
-                    var totalAmount = insuranceUsers.Where(x => x.CompanySubscribedStatus == "pending").Select(x => x.Premium).Sum();
-                    card.amount = totalAmount.ToString();
+                    // When user is tokenizing card
+                    if (!companyProfile.TokenizationCompleted)
+                    {
+                        var insuranceUsers = await _insuranceProfileRepository.QueryableCompanyProfile(id);
+                        var totalAmount = insuranceUsers.Where(x => x.CompanySubscribedStatus == "pending").Select(x => x.Premium).Sum();
+                        card.amount = totalAmount.ToString();
+                    }
+                    // When user is adding card
+                    card.amount = (100 * 50).ToString();
 
                     // Create payment reference for the charge.
-                    var paymentReference = new PaymentReference(card.reference, null, companyProfile.Id, id, totalAmount, "Pending");
+                    var paymentReference = new PaymentReference(card.reference, null, companyProfile.Id, id, decimal.Parse(card.amount), "Pending");
                     _paymentReference.Create(paymentReference);
                     await _paymentReference.Save();
 
@@ -195,7 +200,6 @@ namespace Application.Services.HealthInsured
 
                     // function to process response from paystack
                     return await ProcessPaystackChargeCardResponse(chargeCardResponse, companyProfile, paymentReference,card.reference, ipAddress, device);
-
                 }
                 return new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false };
             }
@@ -629,7 +633,7 @@ namespace Application.Services.HealthInsured
             }
             await Task.CompletedTask;
         }
-
+        
         public async Task<ResponseMessage> SubmitOtp(SetOtpViewModel otpViewModel,int id, string ipAddress, string device)
         {
             var insuranceProfile = await _insuranceProfileRepository.GetByUserIdAsync(id);

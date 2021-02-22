@@ -304,7 +304,11 @@ namespace HealthBanc.Controllers.Insurance
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
                 var corporateRegistration = await _insuranceService.CreateCorporateUser(corporateRegViewModel, Id);
-                return Ok(corporateRegistration);
+                if (corporateRegistration.Status)
+                {
+                    return Ok(corporateRegistration);
+                }
+                return BadRequest(corporateRegistration);
             }
             //return validation errors
             var errors = new List<string>();

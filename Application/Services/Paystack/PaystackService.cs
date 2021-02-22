@@ -87,7 +87,6 @@ namespace Application.Services.Paystack
             var errorMessage = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
             return new TokenizationResponse { Message = chargeCardResponse.message + ", " + errorMessage, Status = false };
         }
-
         public async Task<TokenizationResponse> SendOtp(string otp, string reference,string phoneNumber, DateTime dateOfBirth,string pin)
         {
             var otpRequest = new SendOtp(otp, reference);
@@ -138,7 +137,6 @@ namespace Application.Services.Paystack
             var errorMessage = otpResponse.data.message != null ? otpResponse.data.message : "";
             return new TokenizationResponse { Message = otpResponse.message + ", " + errorMessage, Status = false };
         }
-
         public async Task<TokenizationResponse> ChargeAuthorization(ChargeAuthorization chargeAuthorization)
         {
             try
@@ -188,7 +186,6 @@ namespace Application.Services.Paystack
                 return new TokenizationResponse { Message = ex.Message.ToString(), Status = false };
             }            
         }
-
         private TokenizationResponse ProcessSuccessOrFailedDataStatus(Authorization authorization, string status, string message,string reference)
         {
             // check if the status is successfully
@@ -224,7 +221,6 @@ namespace Application.Services.Paystack
                 ResponseCode = 13
             };
         }
-
         private async Task<TokenizationResponse> ProcessValidDataStatus(string status, string reference, string phoneNumber, DateTime birthDate,string pin)
         {
             //Check if the data.status was send_otp : Means we need user OTP
@@ -266,7 +262,6 @@ namespace Application.Services.Paystack
             }
             return new TokenizationResponse { Message = "Please try again later" };
         }
-
         private async Task<TokenizationResponse> SubmitBirthDay(string reference,string phoneNumber, DateTime birthDate,string pin)
         {
             var birthRequest = new SubmitBirthday(birthDate, reference);
@@ -318,7 +313,6 @@ namespace Application.Services.Paystack
             var errorMessage = birthdayResponse.data.message != null ? birthdayResponse.data.message : "";
             return new TokenizationResponse { Message = birthdayResponse.message + ", " + errorMessage, Status = false };
         }
-
         private async Task<TokenizationResponse> SubmitPhone(string reference, string phoneNumber, DateTime birthDate,string pin)
         {
             var phoneRequest = new SubmitPhoneNumber(phoneNumber, reference);
@@ -476,7 +470,26 @@ namespace Application.Services.Paystack
             }
             var errorMessage = verifyResponse.data.message != null ? verifyResponse.data.message : "";
             return new TokenizationResponse { Message = verifyResponse.message + ", " + errorMessage, Status = false };
+        }        
+
+        private async Task RefundTestCardFunds(string reference, string amount)
+        {
+            var refund = new Refund(reference, amount);
+            var httpClient = _httpClientFactory.CreateClient("Paystack");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(refund), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync($"{Options.PayStackSubmitPhone}", content);
+
+            string apiResponse = await response.Content.ReadAsStringAsync();
+            var refundResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+            if (response.IsSuccessStatusCode)
+            {
+                if (refundResponse.status is true)
+                {
+                    await Task.CompletedTask;
+                }
+            }
+            await Task.CompletedTask;
         }
-        
     }
 }
