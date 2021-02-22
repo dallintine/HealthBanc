@@ -11,5 +11,8 @@ namespace Application.DTO.HealthInsured_AxaMansard
         public string Industry { get; set; }
         public string CompanySize { get; set; }
         public string InsuranceService { get; set; }
+        public bool EmailConfirmed { get; set; }
+        public bool ProfileCompleted { get; set; }
+        public bool TokenizationCompleted { get; set; }
     }
 }
