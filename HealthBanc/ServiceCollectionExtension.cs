@@ -4,12 +4,11 @@ using Application.Services.Admin;
 using Application.Services.HealthInsured;
 using Application.Services.Identity;
 using Application.Services.Paystack;
+using DataAccess;
 using DataAccess.General.Implementation;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Implementation;
 using DataAccess.HealthInsured.Interfaces;
-using DataAccess.HealthInsured_AxaMansard.Implementation;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using DataAccess.Logs.Implementation;
 using DataAccess.Logs.Interfaces;
 using Infrastructure.EncryptionService;
@@ -87,6 +86,7 @@ namespace HealthBanc
                 x.IncludeXmlComments(xmlPath);
             });
 
+            services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddScoped<IdentityService>();
             services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();

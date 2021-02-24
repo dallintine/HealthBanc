@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataAccess.HealthInsured_AxaMansard.Interfaces
+namespace DataAccess.HealthInsured.Interfaces
 {
     public interface ICompanyProfileRepository : IBaseRepository<CompanyProfile>
     {

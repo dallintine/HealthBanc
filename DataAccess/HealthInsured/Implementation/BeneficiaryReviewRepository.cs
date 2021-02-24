@@ -72,5 +72,11 @@ namespace DataAccess.HealthInsured.Implementation
                 }
             }
         }
+
+        public async Task<IQueryable<BeneficiaryReviewUser>> QueryableBeneficiaryReviews(int userId)
+        {
+            var beneficiaryReviews = await _context.CompanyProfiles.Include(x => x.BeneficiaryReviewUsers).FirstOrDefaultAsync(x => x.UserId == userId);
+            return beneficiaryReviews.BeneficiaryReviewUsers.AsQueryable();
+        }
     }
 }

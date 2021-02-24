@@ -28,7 +28,6 @@ using System.Xml;
 using Application.Interfaces;
 using Application.API_RequestModel.HealthInsured;
 using Application.API_ResponseModel.HealthInsured;
-using DataAccess.HealthInsured_AxaMansard.Interfaces;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Microsoft.AspNetCore.Identity;
 using Application.Services.Identity;
@@ -40,59 +39,44 @@ namespace Application.Services.HealthInsured
     public class InsuranceService
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IApplicationUserRepository _userRepository;
-        private readonly IInsuranceProfileRepository _insuranceProfileRepository;
         private readonly IMapper _mapper;
-        private readonly IInsuranceCompletionProfileRepository _completionRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly ExcelPackage _excelPackage;
-        private readonly IAxaMansardHospitalListRepository _hospitalListRepository;
-        private readonly IHygeiaHospitalListRepository _hygeiaHospitalListRepository;
         private readonly ILogger<InsuranceService> _logger;
         private readonly IUniqueIdentifier _uniqueIdentifier;
-        private readonly ICompanyProfileRepository _companyProfileRepository;
         private readonly IEmailSender _emailSender;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IFileProcessor _fileProcessor;
         private readonly IdentityService _identityService;
-        private readonly IBeneficiaryReviewRepository _companyInsuranceUserRepository;
+        private IRepositoryWrapper _repoWrapper;
 
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
 
-        public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IApplicationUserRepository userRepository
-            , IInsuranceProfileRepository insurance, IMapper mapper, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            ExcelPackage excelPackage, IAxaMansardHospitalListRepository hospitalListRepository, ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier,
-             IOptions<HygeiaConfiguration> hygeiaAccessor, ICompanyProfileRepository companyProfileRepository, IEmailSender emailSender,
-              UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor, IdentityService identityService
-            , IBeneficiaryReviewRepository companyInsuranceUserRepository, IHygeiaHospitalListRepository hygeiaHospitalListRepository)
+        public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor,IMapper mapper, AuditLogService auditLogServices,
+            ExcelPackage excelPackage, ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender, IdentityService identityService,
+             IOptions<HygeiaConfiguration> hygeiaAccessor,UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor,IRepositoryWrapper repoWrapper)
         {
             _httpClientFactory = httpClientFactory;
-            _userRepository = userRepository;
-            _insuranceProfileRepository = insurance;
             _mapper = mapper;
-            _completionRepository = completionRepository;
             _auditLogServices = auditLogServices;
             _excelPackage = excelPackage;
-            _hospitalListRepository = hospitalListRepository;
             _logger = logger;
             _uniqueIdentifier = uniqueIdentifier;
-            _companyProfileRepository = companyProfileRepository;
             _emailSender = emailSender;
             _userManager = userManager;
             _fileProcessor = fileProcessor;
             _identityService = identityService;
-            _companyInsuranceUserRepository = companyInsuranceUserRepository;
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
-            _hygeiaHospitalListRepository = hygeiaHospitalListRepository;
+            _repoWrapper = repoWrapper;
         }
 
         public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId,string ipAddress,string device)
         {
-            var user = await _userRepository.FindByIdAsync(userId);
+            var user = await _repoWrapper.ApplicationUser.FindByIdAsync(userId);
 
-            var checkIfUserHasBeenProfiled = await _insuranceProfileRepository.GetByUserIdAsync(userId);
+            var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled != null) return new ResponseMessage { Message = "User has a profile already" };
 
 
@@ -144,16 +128,16 @@ namespace Application.Services.HealthInsured
 
             var updatedProfile = _mapper.Map(user, profile);
 
-            _insuranceProfileRepository.Create(updatedProfile);
+            _repoWrapper.InsuranceProfile.Create(updatedProfile);
 
             var completionProfile = new InsuranceCompletionProfile(user.Id, true, false,userProfile.InsuranceService);
-            _completionRepository.Create(completionProfile);
-            await _completionRepository.Save();
+            _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
+            await _repoWrapper.Save();
 
             var newServiceString = user.ServiceUsed + "HealthInsured,";
             user.ServiceUsed = newServiceString;
-            _userRepository.Update(user);
-            await _userRepository.Save();
+            _repoWrapper.ApplicationUser.Update(user);
+            await _repoWrapper.Save();
             return new ResponseMessage { Status = true};
         }
 
@@ -270,10 +254,10 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage<HealthInsuredProfileStateDTO>> GetProfileCompletion(int userId)
         {
-            var profile = await _completionRepository.GetCompletionStateByUserId(userId);
+            var profile = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(userId);
             if (profile == null)
             {
-                var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+                var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
                 if (corporateUser != null)
                 {
                     var corporateProfileState = new HealthInsuredProfileStateDTO(true, corporateUser.EmailConfirmed, corporateUser.ProfileCompleted
@@ -314,16 +298,16 @@ namespace Application.Services.HealthInsured
         {
             if(insuranceProvider.ToLower() == "axamansard")
             {
-                var axaHospitalList = await _hospitalListRepository.GetHealthProviders(state, city);
+                var axaHospitalList = await _repoWrapper.AxaMansardHospitalList.GetHealthProviders(state, city);
                 return new ResponseMessage { Data = axaHospitalList, Status = true };
             }
-            var hygeiaHospitalList = await _hygeiaHospitalListRepository.GetHealthProviders(state, city);
+            var hygeiaHospitalList = await _repoWrapper.HygeiaHospitalList.GetHealthProviders(state, city);
             return new ResponseMessage { Data = hygeiaHospitalList, Status = true };
         }
 
         public async Task<ResponseMessage> FilterHealthCareProvider(PaginationQuery paginationQuery,string state,string city)
         {
-            var filterHealthCareProvider = await _hygeiaHospitalListRepository.FilterHealthCareProvider(paginationQuery, state, city);
+            var filterHealthCareProvider = await _repoWrapper.HygeiaHospitalList.FilterHealthCareProvider(paginationQuery, state, city);
             filterHealthCareProvider.PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null;
             filterHealthCareProvider.PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null;
 
@@ -335,13 +319,13 @@ namespace Application.Services.HealthInsured
             var townListDTO = new CityListDTO();
             if (insuranceProvider.ToLowerInvariant() == "axamansard")
             {
-                var townList = _hospitalListRepository.GetTowns(state).Select(x => x.City).Distinct().ToList();
+                var townList = _repoWrapper.AxaMansardHospitalList.GetTowns(state).Select(x => x.City).Distinct().ToList();
                 townListDTO.State = state;
                 townListDTO.Cities = townList;
             }
             else
             {
-                var townList = _hygeiaHospitalListRepository.GetTowns(state).Select(x => x.City).Distinct().ToList();
+                var townList = _repoWrapper.HygeiaHospitalList.GetTowns(state).Select(x => x.City).Distinct().ToList();
                 townListDTO.State = state;
                 townListDTO.Cities = townList;
             }
@@ -353,22 +337,23 @@ namespace Application.Services.HealthInsured
         public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
         {
             var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
-            _hospitalListRepository.CreateRange(hospitalList);
-            await _hospitalListRepository.Save();
+            _repoWrapper.AxaMansardHospitalList.CreateRange(hospitalList);
+            await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
 
         public async Task<ResponseMessage> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
         {
             var hospitalList = await _fileProcessor.UploadHygeiaHospitalListFromExcel(formFile);
-            _hygeiaHospitalListRepository.CreateRange(hospitalList);
-            await _hospitalListRepository.Save();
+            _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
+            await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
 
         public async Task<ResponseMessage> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel,int userId)
         {
-            var company = await _companyProfileRepository.GetCompanyProfileByEmail(corporateRegViewModel.Email);
+            var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(corporateRegViewModel.Email);
+
             if(company != null)
             { 
                 return new ResponseMessage { Message = "Company profile with this email already exist" };
@@ -385,15 +370,15 @@ namespace Application.Services.HealthInsured
             var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId),DateTime.Now.AddMinutes(5));
 
             company.OTPJobId = otpJobId;
-            _companyProfileRepository.Create(company);
-            await _companyProfileRepository.Save();
+            _repoWrapper.CompanyProfile.Create(company);
+            await _repoWrapper.Save();
             _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporating Onboarding", otp);
             return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
         }
 
         public async Task<ResponseMessage> UploadUserProfileFromExcelFile(IFormFile file,int companyUserId)
         {
-            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
 
             if (companyProfile.EmailConfirmed)
             {
@@ -404,7 +389,7 @@ namespace Application.Services.HealthInsured
                 {
                     item.CompanyProfileId = companyProfile.Id;
                 }
-                await _companyInsuranceUserRepository.InsertEntities(companyInsuranceUsers);
+                await _repoWrapper.BeneficiaryReview.InsertEntities(companyInsuranceUsers);
 
                 var beneficiariesReviewDTO = _mapper.Map<List<BeneficiaryReviewUser>, List<BeneficiaryReviewDTO>>(companyInsuranceUsers);
 
@@ -432,7 +417,7 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
         {
-            var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+            var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
 
             if (corporateUser.OTPCode != null)
             {
@@ -446,8 +431,8 @@ namespace Application.Services.HealthInsured
                     corporateUser.OTPCode = null;
                     BackgroundJob.Delete(corporateUser.OTPJobId);
                     corporateUser.OTPJobId = null;
-                    _companyProfileRepository.Update(corporateUser);
-                    await _companyProfileRepository.Save();
+                    _repoWrapper.CompanyProfile.Update(corporateUser);
+                    await _repoWrapper.Save();
                     return new ResponseMessage { Message = "Email was confirmed successfully", Status = true };
                 }
                 return new ResponseMessage { Message = "OTP code does not match", Status = false };
@@ -457,7 +442,7 @@ namespace Application.Services.HealthInsured
          
         public async Task<ResponseMessage> ResendOtp(int userId)
         {
-            var company = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+            var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
             if (company == null)
             {
                 return new ResponseMessage { Message = "Company profile does not exist, please register as a corporate entity.",Status=false };
@@ -476,15 +461,15 @@ namespace Application.Services.HealthInsured
             var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId), DateTime.Now.AddMinutes(5));
 
             company.OTPJobId = otpJobId;
-            _companyProfileRepository.Update(company);
-            await _companyProfileRepository.Save();
+            _repoWrapper.CompanyProfile.Update(company);
+            await _repoWrapper.Save();
             _emailSender.CorporateInsuranceOnboarding(company.CompanyEmail, "Corporating Onboarding", otp);
             return new ResponseMessage { Message = "OTP was sent successfully", Status = true };
         }
 
         public async Task<ResponseMessage> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel,int Id)
         {
-            var company = await _companyProfileRepository.GetCompanyProfileByUserId(Id);
+            var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(Id);
             if(company is null)
             {
                 return new ResponseMessage { Message = "Company does not exist", Status = false };
@@ -492,26 +477,26 @@ namespace Application.Services.HealthInsured
             company.Industry = updateCorporateUserViewModel.Industry;
             company.CompanySize = updateCorporateUserViewModel.CompanySize;
             company.ProfileCompleted = true;
-            _companyProfileRepository.Update(company);
-            await _companyProfileRepository.Save();
+            _repoWrapper.CompanyProfile.Update(company);
+            await _repoWrapper.Save();
             var corporateprofileDTO = _mapper.Map<CompanyProfileDTO>(company);
             return new ResponseMessage { Message = "Company profile was updated successfully", Status = true,Data= corporateprofileDTO };
         }        
 
         public async Task RemoveOTP(int userId)
         {
-            var corporateUser = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
+            var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
             corporateUser.OTPCode = null;
             corporateUser.OTPJobId = null;
-            _companyProfileRepository.Update(corporateUser);
-            await _companyProfileRepository.Save();
+            _repoWrapper.CompanyProfile.Update(corporateUser);
+            await _repoWrapper.Save();
         }
 
         public async Task<ResponseMessage> GetBeneficiariesReview(PaginationQuery paginationQuery,int companyUserId)
         {
-            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
 
-            var companyBeneficiaries = await _companyInsuranceUserRepository.FilterBeneficiariesReview(paginationQuery, companyProfile.Id);
+            var companyBeneficiaries = await _repoWrapper.BeneficiaryReview.FilterBeneficiariesReview(paginationQuery, companyProfile.Id);
             var beneficiariesReviewDTO = _mapper.Map<IEnumerable<BeneficiaryReviewUser>, IEnumerable<BeneficiaryReviewDTO>>(companyBeneficiaries.Data);
 
             var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
@@ -528,9 +513,9 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> GetCompanyBeneficiaries(PaginationQuery paginationQuery,int companyUserId)
         {
-            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
 
-            var beneficiaries = await _insuranceProfileRepository.GetAllInsuranceProfileUnderCompany(paginationQuery, companyProfile.Id);
+            var beneficiaries = await _repoWrapper.InsuranceProfile.GetAllInsuranceProfileUnderCompany(paginationQuery, companyProfile.Id);
             var beneficiariesDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>, List<InsuranceBeneficiaryDTO>>(beneficiaries.Data);
 
             var paginatedResponse = new PagedResponse<InsuranceBeneficiaryDTO>
@@ -547,7 +532,7 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> CorporateSubscribersAnalytics(int companyUserId)
         {
-            var companyProfile = await _insuranceProfileRepository.QueryableCompanyProfile(companyUserId);
+            var companyProfile = await _repoWrapper.InsuranceProfile.QueryableCompanyProfile(companyUserId);
 
             var activeBeneficiaryCount = companyProfile.Where(x => x.ActiveStatus == true).Count();
             var inactiveBeneficairyCount = companyProfile.Where(x => x.SubscriptionStatus == false && x.ActiveStatus == false).Count();
@@ -563,7 +548,7 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> GetCompanyProfileDetails(int companyUserId)
         {
-            var company = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
+            var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
 
             var companyProfileDTO = _mapper.Map<CompanyProfileDTO>(company);
 
@@ -572,13 +557,13 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> RemoveCompanyBeneficiary(string email,int companyUserId)
         {
-            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
-            var beneficiary = await _companyInsuranceUserRepository.GetByEmail(email);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
+            var beneficiary = await _repoWrapper.BeneficiaryReview.GetByEmail(email);
             if(beneficiary.CompanyProfileId == companyProfile.Id)
             {
                 beneficiary.Restore = true;
-                _companyInsuranceUserRepository.Update(beneficiary);
-                await _companyInsuranceUserRepository.Save();
+                _repoWrapper.BeneficiaryReview.Update(beneficiary);
+                await _repoWrapper.Save();
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
@@ -586,13 +571,13 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> RestoreCompanyBeneficiary(string email, int companyUserId)
         {
-            var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
-            var beneficiary = await _companyInsuranceUserRepository.GetByEmail(email);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
+            var beneficiary = await _repoWrapper.BeneficiaryReview.GetByEmail(email);
             if (beneficiary.CompanyProfileId == companyProfile.Id)
             {
                 beneficiary.Restore = false;
-                _companyInsuranceUserRepository.Update(beneficiary);
-                await _companyInsuranceUserRepository.Save();
+                _repoWrapper.BeneficiaryReview.Update(beneficiary);
+                await _repoWrapper.Save();
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
@@ -620,6 +605,6 @@ namespace Application.Services.HealthInsured
 
         //        }
         //    }
-        //}
+        //}        
     }
 }

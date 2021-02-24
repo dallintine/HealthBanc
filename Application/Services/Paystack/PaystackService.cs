@@ -472,7 +472,13 @@ namespace Application.Services.Paystack
             return new TokenizationResponse { Message = verifyResponse.message + ", " + errorMessage, Status = false };
         }        
 
-        private async Task RefundTestCardFunds(string reference, string amount)
+        /// <summary>
+        /// Method to process refund of paystack made via paystack
+        /// </summary>
+        /// <param name="reference"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public async Task RefundTestCardFunds(string reference, string amount)
         {
             var refund = new Refund(reference, amount);
             var httpClient = _httpClientFactory.CreateClient("Paystack");

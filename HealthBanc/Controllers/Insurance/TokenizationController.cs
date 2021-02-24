@@ -18,6 +18,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Application.Services.HealthInsured;
+using Application.ViewModels.HealthInsured;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -49,12 +50,10 @@ namespace HealthBanc.Controllers.Insurance
         /// Charge user card for tokenization process
         /// </summary>
         /// <param name="chargeCard"></param>
-        /// <param name="emailAddress"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [Authorize(Roles = "SuperAdmin")]
-
         [HttpPost("[action]")]
         public async Task<IActionResult> ChargeCard(ChargeCardViewModel chargeCard)
         {
@@ -83,7 +82,14 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        /// <summary>
+        /// Action to submit OTP during tokenization process
+        /// </summary>
+        /// <param name="otpViewModel"></param>
+        /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<TokenizationResponse>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<TokenizationResponse>))]
         [HttpPost("[action]")]
         public async Task<IActionResult> SubmitOtp(SetOtpViewModel otpViewModel)
         {
@@ -128,12 +134,11 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Get subscriber cards
+        /// Get debit card for both coporate and individual health insured users
         /// </summary>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CardDTO>>))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage<List<CardDTO>>))]
-        [ProducesResponseType(404, Type = typeof(ResponseMessage<List<CardDTO>>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetCards()
@@ -141,21 +146,23 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var cards = await _insuranceProfileRepository.GetByUserIdAsync(Id);
-            if (cards != null)
+            var cards = await _tokenizationService.GetCards(Id);
+            if (cards.Status)
             {
-                if (cards.Cards.Count > 0)
-                {
-                    var cardDTO = _mapper.Map<List<DebitCard>, List<CardDTO>>(cards.Cards);
-                    return Ok(new ResponseMessage<List<CardDTO>> { Data = cardDTO, Status = true, Message = "Cards was fetchd successfully" });
-                }
-                var emptyCardDTO = new List<CardDTO>();
-                return Ok(new ResponseMessage<List<CardDTO>> { Data = emptyCardDTO, Message = "User has no card, Kindly add a card", Status = true });
+                return Ok(cards);
             }
-            return NotFound(new ResponseMessage<List<CardDTO>> { Status = false, Message = "User was not found" });
+            return BadRequest(cards);
         }
 
+        /// <summary>
+        /// Change primary card debit card for both corporate and individual healthinsured users
+        /// </summary>
+        /// <param name="cardId"></param>
+        /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public async Task<IActionResult> ChangePrimaryCard(int cardId)
         {
@@ -188,7 +195,15 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        /// <summary>
+        /// Delete Debit Card for both corporate and individual healthinsured users
+        /// </summary>
+        /// <param name="cardId"></param>
+        /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public async Task<IActionResult> DeleteCard(int cardId)
         {
@@ -221,7 +236,13 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        /// <summary>
+        /// Reactivate Healthinsured insurance service for individual users
+        /// </summary>
+        /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public async Task<IActionResult> ReactivateWithPresentPrimaryCard()
         {
@@ -236,6 +257,28 @@ namespace HealthBanc.Controllers.Insurance
                 return Ok(reactivatewithPrimaryCardResponse);
             }
             return BadRequest(reactivatewithPrimaryCardResponse);            
+        }
+
+        /// <summary>
+        /// Action to Deactivate beneficiairies  under a coporate organisation.
+        /// </summary>
+        /// <param name="beneficiaryListViewModel"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> DeactivateCompanyBeneficiary(BeneficiaryListViewModel beneficiaryListViewModel)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+
+            var response = await _tokenizationService.DeactivateCompanyBeneficiaries(beneficiaryListViewModel, id);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
         }
     }
 }
