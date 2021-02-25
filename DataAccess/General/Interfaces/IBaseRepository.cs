@@ -16,5 +16,6 @@ namespace DataAccess.General.Interfaces
         T Find(Func<T, bool> predicate);
         void CreateRange(List<T> entity);
         Task InsertEntities(List<T> entities);
+        void DeleteRange(List<T> entity);
     }
 }

@@ -1,38 +1,33 @@
-﻿using Application.DTO;
+﻿using Application.API_RequestModel.HealthInsured;
+using Application.API_ResponseModel.HealthInsured;
 using Application.AuditAndReport.AuditLog;
+using Application.DTO;
+using Application.DTO.HealthInsured_AxaMansard;
 using Application.Helpers;
+using Application.Interfaces;
+using Application.Services.Identity;
 using Application.ViewModels;
 using Application.ViewModels.HealthInsured;
 using AutoMapper;
-using DataAccess.General.Interfaces;
-using DataAccess.HealthInsured.Interfaces;
+using DataAccess;
 using Domain.Models;
+using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.AxaMansard_Insurance;
 using Hangfire;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
-using Application.Interfaces;
-using Application.API_RequestModel.HealthInsured;
-using Application.API_ResponseModel.HealthInsured;
-using Domain.Models.Axa.Hygeia_Insurance;
-using Microsoft.AspNetCore.Identity;
-using Application.Services.Identity;
-using DataAccess;
-using Application.DTO.HealthInsured_AxaMansard;
 
 namespace Application.Services.HealthInsured
 {
@@ -175,6 +170,21 @@ namespace Application.Services.HealthInsured
             }
         }
 
+        public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
+        {
+            // Send user details to axamansard
+            var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
+            var enrollment = await AxamansardRegisterUser(enrollmentModel);
+            if (!enrollment.Status)
+            {
+                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed"
+                    , enrollment.Message, "axamansard");
+                _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
+        }
+
         public async Task<ResponseMessage> HygeiaRegisterUser(RegistrationModel model)
         {
             try
@@ -220,6 +230,22 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Message = "User was previously deactivated", Status = false };
             }
             return new ResponseMessage { Message = "Could not process Hygeia response", Status = false };
+        }
+
+        public async Task<ResponseMessage> EnrollUserToHygeiaOnOnboarding(InsuranceUserProfile insuranceUserProfile)
+        {
+            // Send user details to hygeia
+            var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);
+            var registration = await HygeiaRegisterUser(registrationModel);
+            if (!registration.Status)
+            {
+                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed", registration.Message,
+                    "hygeia");
+                _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
+                await _repoWrapper.Save();
+                return registration;
+            }
+            return registration;
         }
 
         private async Task<ResponseMessage<AuthenticationResponse>> AxaMansardAuthentication()
@@ -383,36 +409,87 @@ namespace Application.Services.HealthInsured
             if (companyProfile.EmailConfirmed)
             {
                 var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
-
-                var companyInsuranceUsers = _mapper.Map<List<FileModel>, List<BeneficiaryReviewUser>>(excelModel);
-                foreach(var item in companyInsuranceUsers)
+                var companyBeneficiaries = _mapper.Map<List<FileModel>, List<BeneficiaryReviewUser>>(excelModel);
+                if (!companyProfile.TokenizationCompleted)
                 {
-                    item.CompanyProfileId = companyProfile.Id;
+                    foreach (var item in companyBeneficiaries)
+                    {
+                        item.CompanyProfileId = companyProfile.Id;
+                        item.Amount = decimal.Parse("1000");
+                    }
+                    await _repoWrapper.BeneficiaryReview.InsertEntities(companyBeneficiaries);
+
+                    var beneficiariesReviewDTO = _mapper.Map<List<BeneficiaryReviewUser>, List<BeneficiaryReviewDTO>>(companyBeneficiaries);
+
+                    var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
+                    {
+                        Data = beneficiariesReviewDTO,
+                        PageNumber = 1,
+                        PageSize = 50,
+                        RecordCount = beneficiariesReviewDTO.Count,
+                        PageCount = Convert.ToInt32(Math.Ceiling((double)beneficiariesReviewDTO.Count / (double)50))
+                    };
+                    return new ResponseMessage
+                    {
+                        Data = paginatedResponse,
+                        Message = "Uploaded Successfully",
+                        Status = true
+                    };
                 }
-                await _repoWrapper.BeneficiaryReview.InsertEntities(companyInsuranceUsers);
-
-                var beneficiariesReviewDTO = _mapper.Map<List<BeneficiaryReviewUser>, List<BeneficiaryReviewDTO>>(companyInsuranceUsers);
-
-                var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
-                {
-                    Data = beneficiariesReviewDTO,
-                    PageNumber = 1,
-                    PageSize = 50,
-                    RecordCount = beneficiariesReviewDTO.Count,
-                    PageCount = Convert.ToInt32(Math.Ceiling((double)beneficiariesReviewDTO.Count / (double)50))
-                };
-                return new ResponseMessage
-                {
-                    Data = paginatedResponse,
-                    Message = "Uploaded Successfully",
-                    Status = true
-                };
-            };            
+                return  await CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, companyBeneficiaries);
+            } 
             return new ResponseMessage
             {
                 Message = "Please confirm company email address",
                 Status = false
             };
+        }
+
+        public async Task<ResponseMessage> CreateInsuranceProfileForCompanyBeneficiaries(int companyId, List<BeneficiaryReviewUser> beneficiaryReviews)
+        {
+            var companySubscribedStatus = "pending";
+            var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUsersByCompanyId(companyId);
+
+            if (beneficiaryReviews is null){
+                beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.Restore == false).ToList();
+                companySubscribedStatus = "active";
+            }
+            companyprofile.NextCyclePremiumFee = beneficiaryReviews.Count * 1000;
+            var insuranceUserProfiles = new List<InsuranceUserProfile>();
+            foreach (var item in beneficiaryReviews)
+            {
+                var user = _mapper.Map<ApplicationUser>(item);
+                var createdUser = await _identityService.RegisterUserWithoutPassword(user);
+                if (createdUser.Status)
+                {
+                    var userId = createdUser.Data.Id;
+                    var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
+                    insuranceUserProfile.CompanyProfileId = companyId;
+                    insuranceUserProfile.InsuranceService = "Hygeia";
+                    insuranceUserProfile.Premium = Decimal.Parse("1000");
+                    insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
+                    insuranceUserProfile.UserId = userId;
+                    insuranceUserProfiles.Add(insuranceUserProfile);
+                }
+            }
+            _repoWrapper.CompanyProfile.Update(companyprofile);
+            _repoWrapper.InsuranceProfile.CreateRange(insuranceUserProfiles);
+            var beneficiaries = companyprofile.BeneficiaryReviewUsers.ToList();
+            _repoWrapper.BeneficiaryReview.DeleteRange(beneficiaries);
+            await _repoWrapper.Save();
+            return new ResponseMessage { Message = "Profiles was created successfully" };
+        }
+
+        public async Task OnboardUsersToHygeia(int companyUserId)
+        {
+            var companyProfile = await _repoWrapper.InsuranceProfile.QueryableCompanyProfile(companyUserId);
+            var insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == "active");
+            foreach (var item in insuranceUserProfiles)
+            {
+                var result = await EnrollUserToHygeiaOnOnboarding(item);
+                item.TransId = result.Message;
+                _repoWrapper.InsuranceProfile.Update(item);
+            }
         }
 
         public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
@@ -582,29 +659,5 @@ namespace Application.Services.HealthInsured
             }
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
         }
-
-        //public async Task<ResponseMessage> ChangeCompanyRegisterdUserStatus(int companyUserId,int companySubscriberUserId,int status) 
-        //{
-        //    var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(companyUserId);
-        //    var companySubscriber = await _insuranceProfileRepository.GetByUserIdAsync(companySubscriberUserId);
-        //    if(companySubscriber.CompanyProfileId == companyProfile.Id)
-        //    {
-        //        // Change Status to Inactive
-        //        if(status == 1)
-        //        {
-        //            if((companySubscriber.ActiveStatus == false || companySubscriber.ActiveStatus == null) && companySubscriber.CompanySubscribedStatus == "pending")
-        //            {
-        //                companySubscriber.CompanySubscribedStatus = "inactive";
-        //                return new ResponseMessage { Status = false, Message = "Status cannot be change to Inactive" };
-        //            }
-        //                return new ResponseMessage { Status = false, Message = "Status cannot be change to Inactive" };
-        //        }
-        //        // Change Status to Pending
-        //        else if(status == 2)
-        //        {
-
-        //        }
-        //    }
-        //}        
     }
 }

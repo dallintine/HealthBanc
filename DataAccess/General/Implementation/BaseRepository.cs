@@ -43,6 +43,11 @@ namespace DataAccess.General.Implementation
             _context.Remove(entity);
         }
 
+        public void DeleteRange(List<T> entity)
+        {
+            _context.RemoveRange(entity);
+        }
+
         public IEnumerable<T> Filter(Func<T, bool> predicate)
         {
             return _context.Set<T>().Where(predicate);

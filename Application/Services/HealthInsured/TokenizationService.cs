@@ -265,11 +265,11 @@ namespace Application.Services.HealthInsured
                     //Send user details to insurance provider when payment is successfully
                     if(insuranceUserProfile.InsuranceService.ToLower() == "axamansard")
                     {
-                        await EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                        await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
                     }
                     else
                     {
-                        var response = await EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
+                        var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
                         if (response.Status)
                         {
                             insuranceUserProfile.TransId = response.Message;
@@ -360,33 +360,29 @@ namespace Application.Services.HealthInsured
 
                 if (!companyProfile.TokenizationCompleted)
                 {
+                    //method to create insurance profiles for the beneficiaires.
+                    await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
+
                     //Background task to Enroll all users to hygeia.
-                    BackgroundJob.Enqueue(() => OnboardUsers(companyProfile.Id));
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.Id));
+                    
 
                     //Background task to schedule debit at the end of next cycle
                     var getScheduledPaymentJobId = await ProcessScheduledPayment(companyProfile);
 
                     // Save scheduled debit job Id
                     companyProfile.PendingJobId = getScheduledPaymentJobId;
+
+                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                    companyProfile.TokenizationCompleted = true;
+                    _repoWrapper.CompanyProfile.Update(companyProfile);
                 }
-
-                companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-                companyProfile.TokenizationCompleted = true;
-                //companyProfile.PresentCyclePremiumFee = 
-
-                //_companyProfileRepository.Update(insuranceUserProfile);
-
-                //SendSuccesfulSubscriptionMail(insuranceUserProfile.Email, insuranceUserProfile.Surname, insuranceUserProfile.TransId, insuranceUserProfile.CareProviderName);
-
-                ////Create Audit thats user subscrption changed 
-                //var auditViewModel2 = new AuditLogViewModel(insuranceUserProfile.UserId, null, "Inactive subscription status", "Subscription Status Changed",
-                //    "Active subscription status");
-                //await _auditLogServices.UserCreateAuditLog(auditViewModel2, ipAddress, device);
-
-                //await _insuranceProfileRepository.Save();
-
-                //var auditViewModel = new AuditLogViewModel(insuranceUserProfile.UserId, null, null, "Debit Card Added", null);
-                //await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+                // Enqueue method to process refund 0f 50 naira test charge
+                else
+                {
+                    BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(cardReference, (50 * 100).ToString()));
+                }
+                await _repoWrapper.Save();
 
                 return new ResponseMessage
                 {
@@ -441,68 +437,7 @@ namespace Application.Services.HealthInsured
                 ResponseCode = chargeCardResponse.ResponseCode
             };
         }
-
-        public async Task OnboardUsers(int companyId)
-        {
-            var companyprofile = await _companyProfileRepository.GetCompanyInsuranceUsersByCompanyId(companyId);
-            var beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.Restore == false);
-            var insuranceUserProfiles = new List<InsuranceUserProfile>();
-            foreach (var item in beneficiaryReviews)
-            {
-                var user = _mapper.Map<ApplicationUser>(item);
-                var createdUser = await _identityService.RegisterUserWithoutPassword(user);
-                if (createdUser.Status)
-                {
-                    var userId = createdUser.Data.Id;
-                    var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
-                    insuranceUserProfile.CompanyProfileId = companyId;
-                    insuranceUserProfile.InsuranceService = "Hygeia";
-                    insuranceUserProfile.Premium = Decimal.Parse("1000");
-                    insuranceUserProfile.CompanySubscribedStatus = "active";
-                    insuranceUserProfile.UserId = userId;
-                    insuranceUserProfiles.Add(insuranceUserProfile);
-                }
-            }
-            await _insuranceProfileRepository.InsertEntities(insuranceUserProfiles);
-            foreach (var item in insuranceUserProfiles)
-            {
-                var result = await EnrollUserToHygeiaOnOnboarding(item);
-                item.TransId = result.Message;
-                _insuranceProfileRepository.Update(item);
-            }
-            await _insuranceProfileRepository.Save();
-        }
-
-        public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
-        {
-            // Send user details to axamansard
-            var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
-            var enrollment = await _insuranceSerivce.AxamansardRegisterUser(enrollmentModel);
-            if (!enrollment.Status)
-            {
-                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed"
-                    , enrollment.Message,"axamansard");
-                _enrollmentOnOnboardingRepository.Create(axaEnrollmentOnOnboarding);
-                await _enrollmentOnOnboardingRepository.Save();
-            }
-            await Task.CompletedTask;
-        }
-
-        public async Task<ResponseMessage> EnrollUserToHygeiaOnOnboarding(InsuranceUserProfile insuranceUserProfile)
-        {
-            // Send user details to hygeia
-            var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);
-            var registration = await _insuranceSerivce.HygeiaRegisterUser(registrationModel);
-            if (!registration.Status)
-            {
-                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed", registration.Message,
-                    "hygeia");
-                _enrollmentOnOnboardingRepository.Create(enrollmentOnOnboarding);
-                await _enrollmentOnOnboardingRepository.Save();
-                return registration;
-            }
-            return registration;
-        }
+                
 
         /// <summary>
         /// Overloaded method to process individual scheduled payment.Create scheduled enrollment and scheduled payment data that is set to the processing stage.
