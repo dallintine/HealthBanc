@@ -8,6 +8,7 @@ namespace Application.DTO.HealthInsured_AxaMansard
     {
         public int ActiveBeneficiaryCount { get; set; }
         public int InactiveBeneficiaryCount { get; set; }
+        public int PendingBeneficiaryCount { get; set; }
         public DateTime? NextPaymentDate { get; set; }
     }
 }

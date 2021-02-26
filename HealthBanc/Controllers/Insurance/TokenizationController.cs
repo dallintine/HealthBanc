@@ -267,7 +267,7 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [HttpGet("[action]")]
+        [HttpPost("[action]")]
         public async Task<IActionResult> DeactivateCompanyBeneficiary(BeneficiaryListViewModel beneficiaryListViewModel)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;

@@ -748,7 +748,7 @@ namespace Application.Services.HealthInsured
                     {
                         insuranceUserProfile.CompanySubscribedStatus = "deactivated";
                         insuranceUserProfile.SubscriptionStatus = false;
-                        BackgroundJob.Enqueue(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.UserId));
+                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.UserId),insuranceUserProfile.EndActiveStatusDate);
                     }
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 }
@@ -757,7 +757,8 @@ namespace Application.Services.HealthInsured
             companyProfile.NextCyclePremiumFee = nextCyclePremiumFee;
             _repoWrapper.CompanyProfile.Update(companyProfile);
             await _repoWrapper.Save();
-            return new ResponseMessage { Data = "Beneficiaries was deactivated successfully", Status = false };
+            return new ResponseMessage { Data = "Beneficiaries was deactivated successfully,beneficiaries will still remain active till insurance " +
+                "cycle ends.", Status = false };
         }
 
         /// <summary>

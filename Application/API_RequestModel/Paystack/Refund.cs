@@ -6,13 +6,17 @@ namespace Application.API_RequestModel.Paystack
 {
     public class Refund
     {
-        public Refund(string transaction, string amount)
+        public Refund()
         {
-            Transaction = transaction;
-            Amount = amount;
+                
+        }
+        public Refund(string transactions, string amounts)
+        {
+            transaction = transactions;
+            amount = amounts;
         }
 
-        public string Transaction { get; set; }
-        public string Amount { get; set; }
+        public string transaction { get; set; }
+        public string amount { get; set; }
     }
 }

@@ -484,7 +484,7 @@ namespace Application.Services.Paystack
             var httpClient = _httpClientFactory.CreateClient("Paystack");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(refund), Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync($"{Options.PayStackSubmitPhone}", content);
+            var response = await httpClient.PostAsync($"{Options.Refund}", content);
 
             string apiResponse = await response.Content.ReadAsStringAsync();
             var refundResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);

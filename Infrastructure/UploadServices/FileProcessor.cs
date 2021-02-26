@@ -60,7 +60,7 @@ namespace Infrastructure.UploadService
                     excelModel.LastName = ws.Cells[r, 2].Value?.ToString();
                     excelModel.Address = ws.Cells[r, 3].Value?.ToString();
                     excelModel.Gender = ws.Cells[r, 4].Value?.ToString();
-                    excelModel.DateOfBirth = ws.Cells[r, 5].Value?.ToString();
+                    excelModel.DateOfBirth = ws.Cells[r, 5].Text.ToString();
                     excelModel.Email = ws.Cells[r, 6].Value?.ToString();
                     excelModel.PhoneNumber = ws.Cells[r, 7].Value?.ToString();
                     excelModels.Add(excelModel);

@@ -38,11 +38,13 @@ namespace DataAccess.HealthInsured.Implementation
 
             //If Status is null returns all users
             //if status is 1 returns active users
-            //if status is 2 returns Inactive users
+            //if status is 2 returns pending users
+            //if status is 3 returns Inactive users
             if (paginationQuery.Status != null)
             {
                 if (paginationQuery.Status == 1) queryable = queryable.Where(x => x.ActiveStatus == true).AsQueryable();
-                if (paginationQuery.Status == 2) queryable = queryable.Where(x => x.SubscriptionStatus == false && x.ActiveStatus == false).AsQueryable();
+                if (paginationQuery.Status == 2) queryable = queryable.Where(x => x.CompanySubscribedStatus == "pending").AsQueryable();
+                if (paginationQuery.Status == 3) queryable = queryable.Where(x => x.ActiveStatus == false).AsQueryable();
             }
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))

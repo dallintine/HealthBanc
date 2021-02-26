@@ -47,10 +47,13 @@ namespace Application.Services.HealthInsured
 
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
+        private SubscriptionDuration _subscriptionAccessor { get; }
 
-        public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor,IMapper mapper, AuditLogService auditLogServices,
+
+        public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IMapper mapper, AuditLogService auditLogServices,
             ExcelPackage excelPackage, ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender, IdentityService identityService,
-             IOptions<HygeiaConfiguration> hygeiaAccessor,UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor,IRepositoryWrapper repoWrapper)
+             IOptions<HygeiaConfiguration> hygeiaAccessor, UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper,
+             IOptions<SubscriptionDuration> subscriptionAccessor)
         {
             _httpClientFactory = httpClientFactory;
             _mapper = mapper;
@@ -65,6 +68,7 @@ namespace Application.Services.HealthInsured
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
             _repoWrapper = repoWrapper;
+            _subscriptionAccessor = subscriptionAccessor.Value ;
         }
 
         public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId,string ipAddress,string device)
@@ -449,7 +453,7 @@ namespace Application.Services.HealthInsured
         public async Task<ResponseMessage> CreateInsuranceProfileForCompanyBeneficiaries(int companyId, List<BeneficiaryReviewUser> beneficiaryReviews)
         {
             var companySubscribedStatus = "pending";
-            var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUsersByCompanyId(companyId);
+            var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyId);
 
             if (beneficiaryReviews is null){
                 beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.Restore == false).ToList();
@@ -469,6 +473,13 @@ namespace Application.Services.HealthInsured
                     insuranceUserProfile.Premium = Decimal.Parse("1000");
                     insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
                     insuranceUserProfile.UserId = userId;
+                    if(companySubscribedStatus == "active")
+                    {
+                        insuranceUserProfile.ActiveStatus = true;
+                        insuranceUserProfile.SubscriptionStatus = true;
+                        insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
+                        insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                    }
                     insuranceUserProfiles.Add(insuranceUserProfile);
 
                     companyprofile.NextCyclePremiumFee = companyprofile.NextCyclePremiumFee + insuranceUserProfile.Premium;
@@ -521,7 +532,7 @@ namespace Application.Services.HealthInsured
             }
             return new ResponseMessage { Message = "OTP code has expired, please resend OTP", Status = false };
         }
-         
+        
         public async Task<ResponseMessage> ResendOtp(int userId)
         {
             var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
@@ -614,16 +625,18 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> CorporateSubscribersAnalytics(int companyUserId)
         {
-            var companyProfile = await _repoWrapper.InsuranceProfile.QueryableCompanyProfile(companyUserId);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByCompanyId(companyUserId);
 
-            var activeBeneficiaryCount = companyProfile.Where(x => x.ActiveStatus == true).Count();
-            var inactiveBeneficairyCount = companyProfile.Where(x => x.SubscriptionStatus == false && x.ActiveStatus == false).Count();
+            var activeBeneficiaryCount = companyProfile.InsuranceUserProfiles.Where(x => x.ActiveStatus == true).Count();
+            var pendingbeneficiarycount = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == "pending").Count();
+            var inactiveBeneficairyCount = companyProfile.InsuranceUserProfiles.Where(x => x.ActiveStatus == false).Count();
 
             var companyProfileBeneficiaryAnalyticDTO = new CompanyProfileBeneficiaryAnalyticDTO
             {
                 ActiveBeneficiaryCount = activeBeneficiaryCount,
                 InactiveBeneficiaryCount = inactiveBeneficairyCount,
-                NextPaymentDate = DateTime.Now
+                PendingBeneficiaryCount = pendingbeneficiarycount,
+                NextPaymentDate = companyProfile.NextPaymentDate
             };
             return new ResponseMessage { Status = true, Data = companyProfileBeneficiaryAnalyticDTO, Message = "Analytics was fetched successfully" };
         }
