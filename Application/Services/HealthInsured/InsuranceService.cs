@@ -209,7 +209,7 @@ namespace Application.Services.HealthInsured
             catch (Exception ex)
             {
                 //_logger.LogCritical("An error occurred while enrolling user to axa-mansard", ex);
-                return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
+                return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to hygeia.Please try again later" };
             }
         }
 
@@ -423,6 +423,7 @@ namespace Application.Services.HealthInsured
 
                     var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
                     {
+                        Amount = beneficiariesReviewDTO.Select(x => x.Amount).Sum(),
                         Data = beneficiariesReviewDTO,
                         PageNumber = 1,
                         PageSize = 50,
@@ -454,7 +455,6 @@ namespace Application.Services.HealthInsured
                 beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.Restore == false).ToList();
                 companySubscribedStatus = "active";
             }
-            companyprofile.NextCyclePremiumFee = beneficiaryReviews.Count * 1000;
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
             foreach (var item in beneficiaryReviews)
             {
@@ -470,14 +470,19 @@ namespace Application.Services.HealthInsured
                     insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
                     insuranceUserProfile.UserId = userId;
                     insuranceUserProfiles.Add(insuranceUserProfile);
+
+                    companyprofile.NextCyclePremiumFee = companyprofile.NextCyclePremiumFee + insuranceUserProfile.Premium;
                 }
             }
             _repoWrapper.CompanyProfile.Update(companyprofile);
             _repoWrapper.InsuranceProfile.CreateRange(insuranceUserProfiles);
             var beneficiaries = companyprofile.BeneficiaryReviewUsers.ToList();
-            _repoWrapper.BeneficiaryReview.DeleteRange(beneficiaries);
+            if(beneficiaries.Count > 0)
+            {
+                _repoWrapper.BeneficiaryReview.DeleteRange(beneficiaries);
+            }
             await _repoWrapper.Save();
-            return new ResponseMessage { Message = "Profiles was created successfully" };
+            return new ResponseMessage { Message = "Profiles was created successfully", Status=true };
         }
 
         public async Task OnboardUsersToHygeia(int companyUserId)

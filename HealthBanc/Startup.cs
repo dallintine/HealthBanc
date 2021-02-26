@@ -138,6 +138,17 @@ namespace HealthBanc
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            var hygeia = Configuration.GetSection("HygeiaConfiguration");
+            services.Configure<HygeiaConfiguration>(hygeia);
+            var hygeiaValues = hygeia.Get<HygeiaConfiguration>();
+
+            services.AddHttpClient("Hygeia", client =>
+            {
+                client.BaseAddress = new Uri(hygeiaValues.HygeiaBaseAddress);
+            })
+             .AddTransientHttpErrorPolicy(x =>
+             x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
             var sterlingOTPConfig = Configuration.GetSection("SterlingOtpConfig");
             services.Configure<SterlingOtpConfig>(sterlingOTPConfig);
             var sterlingOTPConfigValues = sterlingOTPConfig.Get<SterlingOtpConfig>();

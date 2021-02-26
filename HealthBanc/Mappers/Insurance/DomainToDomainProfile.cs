@@ -21,7 +21,8 @@ namespace HealthBanc.Mappers.Insurance
 
             CreateMap<BeneficiaryReviewUser, ApplicationUser>()
                 .ForMember(dest => dest.DateOfRegistration, opt => opt.MapFrom(x => DateTime.Now))
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(x => x.Email));
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(x => x.Email))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
 
             CreateMap<BeneficiaryReviewUser, InsuranceUserProfile>()
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(x => DateTime.Parse(x.DateOfBirth)))
@@ -32,7 +33,8 @@ namespace HealthBanc.Mappers.Insurance
                 .ForMember(dest => dest.StartActiveStatusDate, opt => opt.MapFrom(x => DateTime.Now))
                 .ForMember(dest => dest.EndActiveStatusDate, opt => opt.MapFrom(x => DateTime.Now))
                 .ForMember(dest => dest.ActiveStatus, opt => opt.MapFrom(x => true))
-                .ForMember(dest => dest.ContactAddress, opt => opt.MapFrom(x => x.Address));
+                .ForMember(dest => dest.ContactAddress, opt => opt.MapFrom(x => x.Address))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
         }
     }
 }

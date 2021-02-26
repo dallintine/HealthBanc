@@ -206,7 +206,11 @@ namespace Application.Services.HealthInsured
                     {
                         var beneficiaryReviews = await _beneficiaryReviewRepository.QueryableBeneficiaryReviews(id);
                         var totalAmount = beneficiaryReviews.Where(x => !x.Restore).Select(x => x.Amount).Sum();
-                        card.amount = totalAmount.ToString();
+                        if(totalAmount == 0)
+                        {
+                            return new ResponseMessage { Message = "Beneficiaries must be greater than 1" };
+                        }
+                        card.amount = (totalAmount * 100).ToString();
                     }
                     else
                     {
@@ -364,7 +368,7 @@ namespace Application.Services.HealthInsured
                     await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
 
                     //Background task to Enroll all users to hygeia.
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.Id));
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId));
                     
 
                     //Background task to schedule debit at the end of next cycle
