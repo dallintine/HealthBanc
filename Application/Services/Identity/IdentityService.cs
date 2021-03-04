@@ -212,7 +212,7 @@ namespace Application.Services.Identity
                 SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _jwtsettings.Site,
                 Audience = _jwtsettings.Audience,
-                Expires = DateTime.Now.AddDays(expirationTime),               
+                Expires = DateTime.Now.AddMinutes(expirationTime),               
                 
             };
             tokenDescriptor.Subject.AddClaims(roles.Select(role => new Claim(ClaimTypes.Role, role)));

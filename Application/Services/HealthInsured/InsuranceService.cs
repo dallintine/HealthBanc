@@ -36,14 +36,12 @@ namespace Application.Services.HealthInsured
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IMapper _mapper;
         private readonly AuditLogService _auditLogServices;
-        private readonly ExcelPackage _excelPackage;
         private readonly ILogger<InsuranceService> _logger;
         private readonly IUniqueIdentifier _uniqueIdentifier;
         private readonly IEmailSender _emailSender;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IFileProcessor _fileProcessor;
         private readonly IdentityService _identityService;
-        private IRepositoryWrapper _repoWrapper;
+        private readonly IRepositoryWrapper _repoWrapper;
 
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
@@ -51,18 +49,16 @@ namespace Application.Services.HealthInsured
 
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IMapper mapper, AuditLogService auditLogServices,
-            ExcelPackage excelPackage, ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender, IdentityService identityService,
-             IOptions<HygeiaConfiguration> hygeiaAccessor, UserManager<ApplicationUser> userManager, IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper,
+            ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender, IdentityService identityService,
+             IOptions<HygeiaConfiguration> hygeiaAccessor, IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper,
              IOptions<SubscriptionDuration> subscriptionAccessor)
         {
             _httpClientFactory = httpClientFactory;
             _mapper = mapper;
             _auditLogServices = auditLogServices;
-            _excelPackage = excelPackage;
             _logger = logger;
             _uniqueIdentifier = uniqueIdentifier;
             _emailSender = emailSender;
-            _userManager = userManager;
             _fileProcessor = fileProcessor;
             _identityService = identityService;
             Options = axaAccessor.Value;
@@ -223,9 +219,8 @@ namespace Application.Services.HealthInsured
             var httpClient = _httpClientFactory.CreateClient("Hygeia");
             var response = await httpClient.PutAsync($"{_hygeiaAccessor.HygeiaDeactivate}/{enrollNumber}", null);
 
-            var deactivateResponse = new HygeiaDeactivateResponse();
             string apiResponse = await response.Content.ReadAsStringAsync();
-            deactivateResponse = JsonConvert.DeserializeObject<HygeiaDeactivateResponse>(apiResponse);
+            var deactivateResponse = JsonConvert.DeserializeObject<HygeiaDeactivateResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
             {
                 if (deactivateResponse.Success)
@@ -360,8 +355,10 @@ namespace Application.Services.HealthInsured
                 townListDTO.State = state;
                 townListDTO.Cities = townList;
             }
-            var newList = new List<CityListDTO>();
-            newList.Add(townListDTO);
+            var newList = new List<CityListDTO>
+            {
+                townListDTO
+            };
             return new ResponseMessage { Data = newList, Status = true };
         }
 
@@ -390,12 +387,14 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Message = "Company profile with this email already exist" };
             }
             var otp = _uniqueIdentifier.GetUniqueCode(6);
-            company = new CompanyProfile();
-            company.OTPCode = otp;
-            company.UserId = userId;
-            company.CompanyEmail = corporateRegViewModel.Email;
-            company.CompanyName = corporateRegViewModel.Name;
-            company.InsuranceService = "Hygeia";
+            company = new CompanyProfile
+            {
+                OTPCode = otp,
+                UserId = userId,
+                CompanyEmail = corporateRegViewModel.Email,
+                CompanyName = corporateRegViewModel.Name,
+                InsuranceService = "Hygeia"
+            };
 
             // Schedule otp removal after 5 minutes
             var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId),DateTime.Now.AddMinutes(5));
@@ -419,8 +418,16 @@ namespace Application.Services.HealthInsured
                 {
                     foreach (var item in companyBeneficiaries)
                     {
-                        item.CompanyProfileId = companyProfile.Id;
-                        item.Amount = decimal.Parse("1000");
+                        var checkIfItemEmailExist = await _repoWrapper.BeneficiaryReview.GetByEmail(item.Email);
+                        if(checkIfItemEmailExist is null)
+                        {
+                            item.CompanyProfileId = companyProfile.Id;
+                            item.Amount = decimal.Parse("1000");
+                        }
+                        else
+                        {
+                            companyBeneficiaries.Remove(item);
+                        }
                     }
                     await _repoWrapper.BeneficiaryReview.InsertEntities(companyBeneficiaries);
 
@@ -457,7 +464,7 @@ namespace Application.Services.HealthInsured
             var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyId);
 
             if (beneficiaryReviews is null){
-                beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.Restore == false).ToList();
+                beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.IsRemove == false).ToList();
                 companySubscribedStatus = "active";
             }
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
@@ -483,7 +490,7 @@ namespace Application.Services.HealthInsured
                     }
                     insuranceUserProfiles.Add(insuranceUserProfile);
 
-                    companyprofile.NextCyclePremiumFee = companyprofile.NextCyclePremiumFee + insuranceUserProfile.Premium;
+                    companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
                 }
             }
             _repoWrapper.CompanyProfile.Update(companyprofile);
@@ -513,25 +520,29 @@ namespace Application.Services.HealthInsured
         {
             var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
 
-            if (corporateUser.OTPCode != null)
+            if (corporateUser != null)
             {
                 if (corporateUser.EmailConfirmed)
                 {
                     return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
                 }
-                if (otp == corporateUser.OTPCode)
+                if (corporateUser.OTPCode != null)
                 {
-                    corporateUser.EmailConfirmed = true;
-                    corporateUser.OTPCode = null;
-                    BackgroundJob.Delete(corporateUser.OTPJobId);
-                    corporateUser.OTPJobId = null;
-                    _repoWrapper.CompanyProfile.Update(corporateUser);
-                    await _repoWrapper.Save();
-                    return new ResponseMessage { Message = "Email was confirmed successfully", Status = true };
+                    if (otp == corporateUser.OTPCode)
+                    {
+                        corporateUser.EmailConfirmed = true;
+                        corporateUser.OTPCode = null;
+                        BackgroundJob.Delete(corporateUser.OTPJobId);
+                        corporateUser.OTPJobId = null;
+                        _repoWrapper.CompanyProfile.Update(corporateUser);
+                        await _repoWrapper.Save();
+                        return new ResponseMessage { Message = "Email was confirmed successfully", Status = true };
+                    }
+                    return new ResponseMessage { Message = "OTP code does not match", Status = false };
                 }
-                return new ResponseMessage { Message = "OTP code does not match", Status = false };
+                return new ResponseMessage { Message = "OTP code has expired, please resend OTP", Status = false };
             }
-            return new ResponseMessage { Message = "OTP code has expired, please resend OTP", Status = false };
+            return new ResponseMessage { Message = "Company profile does not exist", Status = false };
         }
         
         public async Task<ResponseMessage> ResendOtp(int userId)
@@ -580,10 +591,15 @@ namespace Application.Services.HealthInsured
         public async Task RemoveOTP(int userId)
         {
             var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-            corporateUser.OTPCode = null;
-            corporateUser.OTPJobId = null;
-            _repoWrapper.CompanyProfile.Update(corporateUser);
-            await _repoWrapper.Save();
+
+            if(!(corporateUser is null))
+            {
+                corporateUser.OTPCode = null;
+                corporateUser.OTPJobId = null;
+                _repoWrapper.CompanyProfile.Update(corporateUser);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
         }
 
         public async Task<ResponseMessage> GetBeneficiariesReview(PaginationQuery paginationQuery,int companyUserId)
@@ -657,7 +673,7 @@ namespace Application.Services.HealthInsured
             var beneficiary = await _repoWrapper.BeneficiaryReview.GetByEmail(email);
             if(beneficiary.CompanyProfileId == companyProfile.Id)
             {
-                beneficiary.Restore = true;
+                beneficiary.IsRemove = true;
                 _repoWrapper.BeneficiaryReview.Update(beneficiary);
                 await _repoWrapper.Save();
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
@@ -671,7 +687,7 @@ namespace Application.Services.HealthInsured
             var beneficiary = await _repoWrapper.BeneficiaryReview.GetByEmail(email);
             if (beneficiary.CompanyProfileId == companyProfile.Id)
             {
-                beneficiary.Restore = false;
+                beneficiary.IsRemove = false;
                 _repoWrapper.BeneficiaryReview.Update(beneficiary);
                 await _repoWrapper.Save();
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };

@@ -44,30 +44,21 @@ namespace HealthBanc.Controllers.Insurance
         private readonly InsuranceService _insuranceService;
         private readonly IMapper _mapper;
         private readonly IInsuranceProfileRepository _insuranceProfileRepository;
-        private readonly ILogger<InsuranceController> _logger;
-        private readonly IApplicationUserRepository _userRepository;
-        private readonly IInsuranceCompletionProfileRepository _completionRepository;
-        private readonly ICompanyProfileRepository _companyProfileRepository;
         private readonly AuditLogService _auditLogServices;
         private readonly IHttpContextAccessor _accessor;
         public string IpAddress;
         public StringValues agent;
 
-        public InsuranceController(InsuranceService insuranceService, IMapper mapper, IInsuranceProfileRepository insuranceProfileRepository, ILogger<InsuranceController> logger,
-            IApplicationUserRepository userRepository, IInsuranceCompletionProfileRepository completionRepository, AuditLogService auditLogServices,
-            IHttpContextAccessor accessor, ICompanyProfileRepository companyProfileRepository)
+        public InsuranceController(InsuranceService insuranceService, IMapper mapper, IInsuranceProfileRepository insuranceProfileRepository,
+            AuditLogService auditLogServices,IHttpContextAccessor accessor)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
             _insuranceProfileRepository = insuranceProfileRepository;
-            _logger = logger;
-            _userRepository = userRepository;
-            _completionRepository = completionRepository;
             _auditLogServices = auditLogServices;
             _accessor = accessor;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
-            _companyProfileRepository = companyProfileRepository;
         }
 
         /// <summary>

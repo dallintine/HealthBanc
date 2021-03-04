@@ -48,7 +48,7 @@ namespace Application.Services.HealthInsured
         private readonly ICompanyProfileRepository _companyProfileRepository;
         private readonly IBeneficiaryReviewRepository _beneficiaryReviewRepository;
         private readonly IdentityService _identityService;
-        private IRepositoryWrapper _repoWrapper;
+        private readonly IRepositoryWrapper _repoWrapper;
         private SubscriptionDuration _subscriptionAccessor { get; }
 
         public TokenizationService(IInsuranceProfileRepository insuranceProfileRepository, IInsuranceCompletionProfileRepository completionRepository,
@@ -129,9 +129,13 @@ namespace Application.Services.HealthInsured
 
                 var chargeCardRequest = _mapper.Map<API_RequestModel.Paystack.Card>(chargeCard.card);
 
-                var card = new ChargeCard();
-                card.card = chargeCardRequest; card.email = insuranceProfile.Email;
-                card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;
+                var card = new ChargeCard
+                {
+                    card = chargeCardRequest,
+                    email = insuranceProfile.Email,
+                    reference = Guid.NewGuid().ToString(),
+                    pin = chargeCard.pin
+                };
 
                 // If the user is neither active nor  deactivated. Means user tokenizing for th first time
                 if (insuranceProfile.SubscriptionStatus == null)
@@ -197,15 +201,19 @@ namespace Application.Services.HealthInsured
 
                     var chargeCardRequest = _mapper.Map<API_RequestModel.Paystack.Card>(chargeCard.card);
 
-                    var card = new ChargeCard();
-                    card.card = chargeCardRequest; card.email = companyProfile.CompanyEmail;
-                    card.reference = Guid.NewGuid().ToString(); card.pin = chargeCard.pin;
+                    var card = new ChargeCard
+                    {
+                        card = chargeCardRequest,
+                        email = companyProfile.CompanyEmail,
+                        reference = Guid.NewGuid().ToString(),
+                        pin = chargeCard.pin
+                    };
 
                     // When user is tokenizing card
                     if (!companyProfile.TokenizationCompleted)
                     {
                         var beneficiaryReviews = await _beneficiaryReviewRepository.QueryableBeneficiaryReviews(id);
-                        var totalAmount = beneficiaryReviews.Where(x => !x.Restore).Select(x => x.Amount).Sum();
+                        var totalAmount = beneficiaryReviews.Where(x => !x.IsRemove).Select(x => x.Amount).Sum();
                         if(totalAmount == 0)
                         {
                             return new ResponseMessage { Message = "Beneficiaries must be greater than 1" };

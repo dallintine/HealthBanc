@@ -17,6 +17,6 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         public string PhoneNumber { get; set; }
         public DateTime DateCreated { get; set; }
         public Decimal Amount { get; set; }
-        public bool Restore { get; set; }
+        public bool IsRemove { get; set; }
     }
 }

@@ -13,7 +13,7 @@ namespace Application.DTO.HealthInsured_AxaMansard
         public string Gender { get; set; }
         public string DateOfBirth { get; set; }
         public string PhoneNumber { get; set; }
-        public bool Restore { get; set; }
+        public bool IsRemove { get; set; }
         public Decimal Amount { get; set; }
     }
 }

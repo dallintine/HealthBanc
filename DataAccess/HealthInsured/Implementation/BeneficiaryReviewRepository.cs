@@ -54,7 +54,7 @@ namespace DataAccess.HealthInsured.Implementation
                 //filter users by the restore prop in InusranceUsers
                 if (paginationQuery.Filter == 1)
                 {
-                    var newQueryable = queryable.Where(x => x.Restore == false).Skip(skip).Take(paginationQuery.PageSize);
+                    var newQueryable = queryable.Where(x => x.IsRemove == false).Skip(skip).Take(paginationQuery.PageSize);
                     paginatedResponse.Data = await newQueryable.ToListAsync();
                     var recordCount = await queryable.CountAsync();
                     paginatedResponse.RecordCount = recordCount;
@@ -63,7 +63,7 @@ namespace DataAccess.HealthInsured.Implementation
                 }
                 else
                 {
-                    var newQueryable = queryable.Where(x => x.Restore == true).Skip(skip).Take(paginationQuery.PageSize);
+                    var newQueryable = queryable.Where(x => x.IsRemove == true).Skip(skip).Take(paginationQuery.PageSize);
                     paginatedResponse.Data = await newQueryable.ToListAsync();
                     var recordCount = await queryable.CountAsync();
                     paginatedResponse.RecordCount = recordCount;
