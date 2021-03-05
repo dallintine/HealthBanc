@@ -465,7 +465,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var response = await _insuranceService.RemoveCompanyBeneficiary(email, Id);
+            var response = await _insuranceService.RestoreCompanyBeneficiary(email, Id);
             if (response.Status)
             {
                 return Ok(response);
