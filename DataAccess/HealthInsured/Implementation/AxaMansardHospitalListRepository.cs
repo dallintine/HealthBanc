@@ -19,12 +19,13 @@ namespace DataAccess.HealthInsured.Implementation
 
         public async Task<List<AxaMansardHospitalList>> GetHealthProviders(string state, string city)
         {
-            return await _context.AxaMansardHospitalLists.Where(x => x.State == state && x.City == city).ToListAsync();
+            return await _context.AxaMansardHospitalLists.Where(x => x.State.ToLower().Trim() == state.ToLower().Trim() && x.City.ToLower().Trim() == city.ToLower().Trim())
+                .ToListAsync();
         }
 
         public IQueryable<AxaMansardHospitalList> GetTowns(string state)
         {
-            return  _context.AxaMansardHospitalLists.Where(x => x.State == state);
+            return  _context.AxaMansardHospitalLists.Where(x => x.State.ToLower().Trim() == state.ToLower().Trim());
         }
     }
 }
