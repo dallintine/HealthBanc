@@ -35,12 +35,12 @@ namespace DataAccess.HealthInsured.Implementation
 
             if (!string.IsNullOrEmpty(state))
             {
-                queryable = queryable.Where(x => x.State.ToLower() == state.ToLower()).AsQueryable();
+                queryable = queryable.Where(x => x.State.ToLower().Trim() == state.ToLower().Trim()).AsQueryable();
             }
 
             if (!string.IsNullOrEmpty(city))
             {
-                queryable = queryable.Where(x => x.City.ToLower() == city.ToLower()).AsQueryable();
+                queryable = queryable.Where(x => x.City.ToLower().Trim() == city.ToLower().Trim()).AsQueryable();
             }
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))
