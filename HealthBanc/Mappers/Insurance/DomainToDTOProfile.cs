@@ -16,7 +16,9 @@ namespace HealthBanc.Mappers.Insurance
         {
             CreateMap<InsuranceUserProfile, IndividualProfileDTO>()
                .ForMember(dest => dest.PlanCode, opt => opt.MapFrom(x => x.PlanCode == "1" ? "7" : "8"))
-               .ForMember(dest => dest.EnrolleeNumber, opt => opt.MapFrom(x => x.TransId));
+               .ForMember(dest => dest.EnrolleeNumber, opt => opt.MapFrom(x => x.TransId))
+               .ForPath(dest => dest.CardDTOs, opt => opt.MapFrom(x => x.Cards))
+               .ForPath(dest => dest.TransactionLogDTOs, opt => opt.MapFrom(x => x.PaymentReferences));
 
             CreateMap<InsuranceUserProfile, InsuranceBeneficiaryDTO>()
                .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.Othernames +" "+x.Surname))
@@ -26,9 +28,10 @@ namespace HealthBanc.Mappers.Insurance
 
             CreateMap<BeneficiaryReviewUser, BeneficiaryReviewDTO>();
 
-            //CreateMap<InsuranceUserProfile, TransactionLogDTO>()
-            //    .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.Surname + " " + x.Othernames))
-            //    .IncludeMembers(x => x.PaymentReferences);
+            CreateMap<PaymentReference, TransactionLogDTO>().IncludeMembers(x => x.InsuranceUserProfile);
+
+            CreateMap<InsuranceUserProfile, TransactionLogDTO>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.Surname + " " + x.Othernames));
         }
     }
 }

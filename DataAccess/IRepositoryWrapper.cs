@@ -23,6 +23,7 @@ namespace DataAccess
         IApplicationUserRepository ApplicationUser { get; }
         IHygeiaHospitalListRepository HygeiaHospitalList { get; }
         IAxaMansardHospitalListRepository AxaMansardHospitalList { get; }
+        IHealthInsuredActivityLogRepository HealthInsuredActivityLog { get; }
 
         Task<int> Save();
     }

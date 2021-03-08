@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Application.DTO;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -34,5 +35,7 @@ namespace HealthBanc.DTO.HealthInsured_AxaMansard
         public bool? ActiveStatus { get; set; }
         public DateTime EndActiveStatusDate { get; set; }
         public DateTime StartActiveStatusDate { get; set; }
+        public List<CardDTO> CardDTOs { get; set; }
+        public List<TransactionLogDTO> TransactionLogDTOs { get; set; }
     }
 }

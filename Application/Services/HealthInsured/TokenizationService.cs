@@ -228,7 +228,7 @@ namespace Application.Services.HealthInsured
                     // function to process response from paystack
                     return await ProcessPaystackChargeCardResponse(chargeCardResponse, companyProfile, paymentReference,card.reference, ipAddress, device);
                 }
-                return new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false };
+                return new ResponseMessage { Message = "Kindly update your profile", Status = false };
             }
             return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
         }
@@ -776,7 +776,7 @@ namespace Application.Services.HealthInsured
             var insuranceProfile = await _insuranceProfileRepository.GetByUserIdAsync(userId);
             if (insuranceProfile.InsuranceService.ToLower() == "hygeia")
             {
-                var response = await _insuranceSerivce.HygeiaDeactivateUser(insuranceProfile.TransId);
+                await _insuranceSerivce.HygeiaDeactivateUser(insuranceProfile.TransId);
             }
             insuranceProfile.ActiveStatus = false;
             _insuranceProfileRepository.Update(insuranceProfile);

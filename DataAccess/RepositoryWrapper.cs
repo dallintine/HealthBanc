@@ -28,6 +28,7 @@ namespace DataAccess
         private IApplicationUserRepository _userRepository;
         private IAxaMansardHospitalListRepository _hospitalListRepository;
         private IHygeiaHospitalListRepository _hygeiaHospitalListRepository;
+        private IHealthInsuredActivityLogRepository _healthInsuredActivityLogRepository;
 
         public IApplicationUserRepository ApplicationUser
         {
@@ -39,7 +40,20 @@ namespace DataAccess
                 }
                 return _userRepository;
             }
+        }        
+
+        public IHealthInsuredActivityLogRepository HealthInsuredActivityLog
+        {
+            get
+            {
+                if (_healthInsuredActivityLogRepository == null)
+                {
+                    _healthInsuredActivityLogRepository = new HealthInsuredActivityLogRepository(_context);
+                }
+                return _healthInsuredActivityLogRepository;
+            }
         }
+
         public IHygeiaHospitalListRepository HygeiaHospitalList
         {
             get

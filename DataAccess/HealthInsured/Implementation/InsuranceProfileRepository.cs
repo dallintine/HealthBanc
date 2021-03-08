@@ -26,6 +26,11 @@ namespace DataAccess.HealthInsured.Implementation
             return await _context.InsuranceUserProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Email == email);
         }
 
+        public async Task<InsuranceUserProfile> GetExtendedProfileDetailsByEmail(string email)
+        {
+            return await _context.InsuranceUserProfiles.Where(x => x.Email == email).Include(x => x.Cards).Include(x => x.PaymentReferences).Include(x => x.HealthInsuredActivityLogs).FirstOrDefaultAsync();
+        }
+
         public async Task<InsuranceUserProfile> GetByIdAsync(int id)
         {
             return await _context.InsuranceUserProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Id == id);
@@ -34,7 +39,7 @@ namespace DataAccess.HealthInsured.Implementation
         public async Task<PagedResponse<InsuranceUserProfile>> GetPaginatedInsuranceUserProfiles(PaginationQuery paginationQuery)
         {
             var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
-            var queryable = _context.InsuranceUserProfiles.Include(x => x.PaymentReferences).Include(x => x.Cards).AsQueryable();
+            var queryable = _context.InsuranceUserProfiles.AsQueryable();
 
             //If Status is null returns all users
             //if status is 1 returns active users

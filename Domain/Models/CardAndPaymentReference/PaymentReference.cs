@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Models.Axa.Hygeia_Insurance;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -33,5 +34,7 @@ namespace Domain.Models
         public int UserId { get; set; }
         public Decimal Amount { get; set; }
         public string Status { get; set; }
+        public InsuranceUserProfile InsuranceUserProfile { get; set; }
+        public CompanyProfile CompanyProfile { get; set; }
     }
 }

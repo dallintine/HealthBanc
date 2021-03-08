@@ -25,5 +25,7 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         public List<InsuranceUserProfile> InsuranceUserProfiles { get; set; }
         public List<BeneficiaryReviewUser> BeneficiaryReviewUsers { get; set; }
         public List<DebitCard> Cards { get; set; }
+        public List<PaymentReference> PaymentReferences { get; set; }
+        public List<HealthInsuredActivityLog> HealthInsuredActivityLogs { get; set; }
     }
 }

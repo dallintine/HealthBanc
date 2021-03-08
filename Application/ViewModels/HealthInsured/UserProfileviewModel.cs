@@ -22,8 +22,6 @@ namespace Application.ViewModels.HealthInsured
         [Required]
         public string MaritalStatus { get; set; }
         [Required]
-        public string Identification { get; set; }
-        [Required]
         public string CareProviderName { get; set; }
         public string CPPhone { get; set; }
         public string CPAddress { get; set; }
@@ -31,10 +29,6 @@ namespace Application.ViewModels.HealthInsured
         public string AlternateHospital { get; set; }
         [Required]
         public string PlanCode { get; set; }
-        [Required]
-        public IFormFile CustomerPhoto { get; set; }
-        [Required]
-        public IFormFile IdentityPhoto { get; set; }
         [Required]
         public string StateOfResidence { get; set; }
         [Required]

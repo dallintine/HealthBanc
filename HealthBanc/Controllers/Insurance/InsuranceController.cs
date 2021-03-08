@@ -202,16 +202,43 @@ namespace HealthBanc.Controllers.Insurance
             return Ok(insuranceProfiles);
         }
 
-        //[HttpPost("[action]")]
-        //[Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        //[ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<IndividualProfileDTO>>))]
-        //public async Task<IActionResult> GetPaginatedTransactionLogs([FromQuery] PaginationQuery paginationQuery)
-        //{
-        //    var transLogs = await 
-        //}
+        /// <summary>
+        /// Get paginated transaction log of all users or specific user by specifying email. Can only be accessed by the application admins
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <param name="email"></param> 
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<TransactionLogDTO>>))]
+        public async Task<IActionResult> GetPaginatedTransactionLogs([FromQuery] PaginationQuery paginationQuery,string email)
+        {
+            var transLogs = await _insuranceService.GetPaginatedTransactionLogs(paginationQuery,email);
+
+            return Ok(transLogs);
+        }
 
         /// <summary>
-        /// Get Individual Insurance profile details
+        /// Get extended information on users insurance profile
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualProfileDTO>))]
+        public async Task<IActionResult> GetExtendedInsuranceProfileByEmail(string email)
+        {
+            if(email != null)
+            {
+                var profileDetails =  await _insuranceService.GetExtendedInsuranceProfileDetailByEmail(email);
+                if (!profileDetails.Status) return NotFound(profileDetails);
+                return Ok(profileDetails);
+            }
+            return BadRequest(new ResponseMessage { Message = "Email Cannot be null", Status = false });
+        }
+
+        /// <summary>
+        /// Get Logged in User Individual Insurance profile details
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
@@ -294,7 +321,47 @@ namespace HealthBanc.Controllers.Insurance
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }        
+        }
+
+        /// <summary>
+        /// Returns Paginated healthinsured activity log based on email parameter. Applies for both corporate and individual users
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HealthInsuredActivityLog>>))]
+        public async Task<IActionResult> GetPaginatedActivityLogByEmail(PaginationQuery paginationQuery, string email)
+        {
+            var response = await _insuranceService.GetPaginatedActivityLogByEmail(paginationQuery,email);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Returns paginated health insured activity log for logged in users. Applies for both corporate and individual users
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HealthInsuredActivityLog>>))]
+        public async Task<IActionResult> GetLoggedInUserPaginatedActivityLog(PaginationQuery paginationQuery)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+
+            var response = await _insuranceService.GetLoggedInUserPaginatedActivityLog(paginationQuery, id);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
 
         /// <summary>
         /// Create Corporate insurance 

@@ -73,24 +73,7 @@ namespace Application.Services.HealthInsured
 
             var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled != null) return new ResponseMessage { Message = "User has a profile already" };
-
-
-            var supportedTypes = new[] { ".JPG", ".JPE", ".PNG", ".JPEG" };
-            var customerPhoto = System.IO.Path.GetExtension(userProfile.CustomerPhoto.FileName).ToUpperInvariant();
-            var identityPhoto = System.IO.Path.GetExtension(userProfile.IdentityPhoto.FileName).ToUpperInvariant();
-
-            if (!supportedTypes.Contains(customerPhoto) || !supportedTypes.Contains(identityPhoto))
-            {
-                return new ResponseMessage { Message = "FIle extension is invalid - Only Upload PNG/JPEG/JPG/JPE" };
-            }
-
-            var customerPhotorSize = userProfile.CustomerPhoto.Length;
-            var identityPhotoSize = userProfile.IdentityPhoto.Length;
-            if ((customerPhotorSize / 1048576) > 4 || (identityPhotoSize / 1048576) > 4)
-            {
-                return new ResponseMessage { Message = "Image size is too large - Size should be less than four Megabyte" };
-            }
-
+            
             var creatResponse = await CreateUserProfile(userProfile, user);
             if (creatResponse.Status)
             {
@@ -109,6 +92,9 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
         {
+            var checkIfUserIsRegisteredAsCorporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(user.Id);
+            if (!(checkIfUserIsRegisteredAsCorporateUser is null)) return new ResponseMessage { Status = false, Message = "Üser is registered as corporate user" };
+
             userProfile.InsuranceService = userProfile.InsuranceService == null ? userProfile.InsuranceService = "axamansard"
                : userProfile.InsuranceService = userProfile.InsuranceService;
 
@@ -153,13 +139,31 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Data = paginatedResponse, Status = true };
         }
 
-        //public async Task<ResponseMessage> GetPaginatedTransactionLogs(PaginationQuery paginationQuery)
-        //{
-        //    var transactionLogs = await _repoWrapper.InsuranceProfile.GetPaginatedInsuranceUserProfiles(paginationQuery);
+        public async Task<ResponseMessage> GetPaginatedTransactionLogs(PaginationQuery paginationQuery,string email)
+        {
+            var transactionLogs = await _repoWrapper.PaymentReference.GetPaginatedPaymentReference(paginationQuery,email);
 
-        //    var transactionLogDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>, IEnumerable<TransactionLogDTO>>(transactionLogs.Data);
-        //    return new ResponseMessage();
-        //}
+            var transactionLogDTO = _mapper.Map<IEnumerable<PaymentReference>, IEnumerable<TransactionLogDTO>>(transactionLogs.Data);
+
+            var paginatedResponse = new PagedResponse<TransactionLogDTO>
+            {
+                Data = transactionLogDTO,
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = transactionLogs.RecordCount,
+                PageCount = transactionLogs.PageCount
+            };
+            return new ResponseMessage { Data = paginatedResponse, Status = true };
+        }
+
+        public async Task<ResponseMessage> GetExtendedInsuranceProfileDetailByEmail(string email)
+        {
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetExtendedProfileDetailsByEmail(email);
+            if (insuranceProfile is null) return new ResponseMessage { Status = false, Message = "Profile with the email was not found" };
+
+            var insuranceProfileDTO = _mapper.Map<IndividualProfileDTO>(insuranceProfile);
+            return new ResponseMessage { Data = insuranceProfileDTO, Status = true };
+        }
 
         public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
         {
@@ -389,6 +393,9 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel,int userId)
         {
+            var checkIfUserIsRegisteredAsIndividualUser = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (!(checkIfUserIsRegisteredAsIndividualUser is null)) return new ResponseMessage { Status = false, Message = "User is registered as an individual user" };
+
             var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(corporateRegViewModel.Email);
 
             if(company != null)
@@ -720,6 +727,72 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
+        }
+
+        public async Task<ResponseMessage> GetLoggedInUserPaginatedActivityLog(PaginationQuery paginationQuery , int userId)
+        {
+            var individualUser = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if(individualUser is null)
+            {
+                var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
+                if(!(corporateUser is null))
+                {
+                    var corporateUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery,null, corporateUser.Id);
+                    var paginatedResponse = new PagedResponse<HealthInsuredActivityLog>
+                    {
+                        Data = corporateUserActivityLog.Data,
+                        PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                        PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                        RecordCount = corporateUserActivityLog.RecordCount,
+                        PageCount = corporateUserActivityLog.PageCount
+                    };
+                    return new ResponseMessage { Data = paginatedResponse, Status = true };
+                }
+                return new ResponseMessage { Status = false, Message = "User activity log does not exist" };
+            }
+            var individualUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery,individualUser.Id,null);
+            var response = new PagedResponse<HealthInsuredActivityLog>
+            {
+                Data = individualUserActivityLog.Data,
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?) null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?) null,
+                RecordCount = individualUserActivityLog.RecordCount,
+                PageCount = individualUserActivityLog.PageCount
+            };
+            return new ResponseMessage { Data = response, Status = true };
+        }
+
+        public async Task<ResponseMessage> GetPaginatedActivityLogByEmail(PaginationQuery paginationQuery, string email)
+        {
+            var individualUser = await _repoWrapper.InsuranceProfile.GetByEmail(email);
+            if (individualUser is null)
+            {
+                var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
+                if (!(corporateUser is null))
+                {
+                    var corporateUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, null, corporateUser.Id);
+                    var paginatedResponse = new PagedResponse<HealthInsuredActivityLog>
+                    {
+                        Data = corporateUserActivityLog.Data,
+                        PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                        PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                        RecordCount = corporateUserActivityLog.RecordCount,
+                        PageCount = corporateUserActivityLog.PageCount
+                    };
+                    return new ResponseMessage { Data = paginatedResponse, Status = true };
+                }
+                return new ResponseMessage { Status = false, Message = "User activity log does not exist" };
+            }
+            var individualUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, individualUser.Id, null);
+            var response = new PagedResponse<HealthInsuredActivityLog>
+            {
+                Data = individualUserActivityLog.Data,
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = individualUserActivityLog.RecordCount,
+                PageCount = individualUserActivityLog.PageCount
+            };
+            return new ResponseMessage { Data = response, Status = true };
         }
 
         public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)

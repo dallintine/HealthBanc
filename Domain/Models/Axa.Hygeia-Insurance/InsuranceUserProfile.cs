@@ -45,5 +45,6 @@ namespace Domain.Models
         public DateTime? DateCreated { get; set; }
         public List<DebitCard> Cards { get; set; }
         public List<PaymentReference> PaymentReferences { get; set; }
+        public List<HealthInsuredActivityLog> HealthInsuredActivityLogs { get; set; }
     }
 }
