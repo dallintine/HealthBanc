@@ -189,6 +189,28 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
+        /// Get paginated list of all users insurance profile. Can only be accessed by the application admins
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<IndividualProfileDTO>>))]
+        public async Task<IActionResult> GetPaginatedInsuranceProfiles([FromQuery]PaginationQuery paginationQuery)
+        {
+            var insuranceProfiles = await _insuranceService.GetPaginatedInsuranceProfiles(paginationQuery);
+            return Ok(insuranceProfiles);
+        }
+
+        //[HttpPost("[action]")]
+        //[Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        //[ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<IndividualProfileDTO>>))]
+        //public async Task<IActionResult> GetPaginatedTransactionLogs([FromQuery] PaginationQuery paginationQuery)
+        //{
+        //    var transLogs = await 
+        //}
+
+        /// <summary>
         /// Get Individual Insurance profile details
         /// </summary>
         /// <returns></returns>

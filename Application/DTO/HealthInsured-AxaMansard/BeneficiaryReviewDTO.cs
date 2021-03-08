@@ -6,6 +6,7 @@ namespace Application.DTO.HealthInsured_AxaMansard
 {
     public class BeneficiaryReviewDTO
     {
+        public string TransId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }

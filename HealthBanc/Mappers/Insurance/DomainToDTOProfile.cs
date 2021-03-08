@@ -1,4 +1,5 @@
-﻿using Application.DTO.HealthInsured_AxaMansard;
+﻿using Application.DTO;
+using Application.DTO.HealthInsured_AxaMansard;
 using AutoMapper;
 using Domain.Models;
 using Domain.Models.Axa.Hygeia_Insurance;
@@ -24,6 +25,10 @@ namespace HealthBanc.Mappers.Insurance
             CreateMap<CompanyProfile, CompanyProfileDTO>();
 
             CreateMap<BeneficiaryReviewUser, BeneficiaryReviewDTO>();
+
+            //CreateMap<InsuranceUserProfile, TransactionLogDTO>()
+            //    .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.Surname + " " + x.Othernames))
+            //    .IncludeMembers(x => x.PaymentReferences);
         }
     }
 }

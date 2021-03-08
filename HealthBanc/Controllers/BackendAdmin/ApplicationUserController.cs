@@ -32,7 +32,7 @@ namespace HealthBanc.Controllers.BackendAdmin
 
         //WORKING1
         /// <summary>
-        /// Get All Users
+        /// Get All Users and filter based on service Used    
         /// </summary>
         [ProducesResponseType(200, Type = typeof(PagedResponse<ApplicationUserDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]

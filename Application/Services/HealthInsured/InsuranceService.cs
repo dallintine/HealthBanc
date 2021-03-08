@@ -136,6 +136,46 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Status = true};
         }
 
+        public async Task<ResponseMessage> GetPaginatedInsuranceProfiles(PaginationQuery paginationQuery)
+        {
+            var insuranceProfiles =await _repoWrapper.InsuranceProfile.GetPaginatedInsuranceUserProfiles(paginationQuery);
+
+            var insuranceProfilesDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>,IEnumerable<IndividualProfileDTO>>(insuranceProfiles.Data);
+
+            var paginatedResponse = new PagedResponse<IndividualProfileDTO>
+            {
+                Data = insuranceProfilesDTO,
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = insuranceProfiles.RecordCount,
+                PageCount = insuranceProfiles.PageCount
+            };
+            return new ResponseMessage { Data = paginatedResponse, Status = true };
+        }
+
+        //public async Task<ResponseMessage> GetPaginatedTransactionLogs(PaginationQuery paginationQuery)
+        //{
+        //    var transactionLogs = await _repoWrapper.InsuranceProfile.GetPaginatedInsuranceUserProfiles(paginationQuery);
+
+        //    var transactionLogDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>, IEnumerable<TransactionLogDTO>>(transactionLogs.Data);
+        //    return new ResponseMessage();
+        //}
+
+        public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
+        {
+            // Send user details to axamansard
+            var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
+            var enrollment = await AxamansardRegisterUser(enrollmentModel);
+            if (!enrollment.Status)
+            {
+                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed"
+                    , enrollment.Message, "axamansard");
+                _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
+        }
+
         public async Task<ResponseMessage> AxamansardRegisterUser(EnrollmentModel model)
         {
             try
@@ -160,7 +200,7 @@ namespace Application.Services.HealthInsured
                     //return new ResponseMessage { Status = true, Message = authResponse.message };
                     //}
                     //return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
-                    return new ResponseMessage { Status = true, Message ="Successful"  };
+                    return new ResponseMessage { Status = true, Message = "Successful" };
                 }
                 return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
@@ -171,19 +211,50 @@ namespace Application.Services.HealthInsured
             }
         }
 
-        public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
+        private async Task<ResponseMessage<AuthenticationResponse>> AxaMansardAuthentication()
         {
-            // Send user details to axamansard
-            var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
-            var enrollment = await AxamansardRegisterUser(enrollmentModel);
-            if (!enrollment.Status)
+            try
             {
-                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed"
-                    , enrollment.Message, "axamansard");
-                _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
-                await _repoWrapper.Save();
+                var httpClient = _httpClientFactory.CreateClient("AxaMansard");
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-key", $"{Options.Apikey}");
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-secret", $"{Options.ApiSecret}");
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-client-key", $"{Options.ClientKey}");
+
+                var response = await httpClient.GetAsync($"{Options.AxaMansardToken}");
+                if (response.IsSuccessStatusCode)
+                {
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                    var authResponse = JsonConvert.DeserializeObject<AuthenticationResponse>(apiResponse);
+                    if (authResponse.Succeeded)
+                    {
+                        return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = true, Message = "Request was processed successfully" };
+                    }
+                    return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = false, Message = authResponse.Message.ToString() };
+                }
+                return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
             }
-            await Task.CompletedTask;
+            catch (Exception ex)
+            {
+                _logger.LogCritical("Error occured while trying to get axamansard auth token", ex);
+                return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
+            }
+
+        }
+
+        public async Task<ResponseMessage> EnrollUserToHygeiaOnOnboarding(InsuranceUserProfile insuranceUserProfile)
+        {
+            // Send user details to hygeia
+            var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);
+            var registration = await HygeiaRegisterUser(registrationModel);
+            if (!registration.Status)
+            {
+                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed", registration.Message,
+                    "hygeia");
+                _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
+                await _repoWrapper.Save();
+                return registration;
+            }
+            return registration;
         }
 
         public async Task<ResponseMessage> HygeiaRegisterUser(RegistrationModel model)
@@ -232,52 +303,6 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Message = "Could not process Hygeia response", Status = false };
         }
 
-        public async Task<ResponseMessage> EnrollUserToHygeiaOnOnboarding(InsuranceUserProfile insuranceUserProfile)
-        {
-            // Send user details to hygeia
-            var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);
-            var registration = await HygeiaRegisterUser(registrationModel);
-            if (!registration.Status)
-            {
-                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed", registration.Message,
-                    "hygeia");
-                _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
-                await _repoWrapper.Save();
-                return registration;
-            }
-            return registration;
-        }
-
-        private async Task<ResponseMessage<AuthenticationResponse>> AxaMansardAuthentication()
-        {
-            try
-            {
-                var httpClient = _httpClientFactory.CreateClient("AxaMansard");
-                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-key", $"{Options.Apikey}");
-                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-secret", $"{Options.ApiSecret}");
-                httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-client-key", $"{Options.ClientKey}");
-
-                var response = await httpClient.GetAsync($"{Options.AxaMansardToken}");
-                if (response.IsSuccessStatusCode)
-                {
-                    string apiResponse = await response.Content.ReadAsStringAsync();
-                    var authResponse = JsonConvert.DeserializeObject<AuthenticationResponse>(apiResponse);
-                    if (authResponse.Succeeded)
-                    {
-                        return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = true, Message = "Request was processed successfully" };
-                    }
-                    return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = false, Message = authResponse.Message.ToString() };
-                }
-                return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical("Error occured while trying to get axamansard auth token", ex);
-                return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
-            }
-
-        }
-
         public async Task<ResponseMessage<HealthInsuredProfileStateDTO>> GetProfileCompletion(int userId)
         {
             var profile = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(userId);
@@ -312,6 +337,28 @@ namespace Application.Services.HealthInsured
             };
         }
 
+        public ResponseMessage GetTowns(string state, string insuranceProvider)
+        {
+            var townListDTO = new CityListDTO();
+            if (insuranceProvider.ToLowerInvariant() == "axamansard")
+            {
+                var townList = _repoWrapper.AxaMansardHospitalList.GetTowns(state).Select(x => x.City).Distinct().ToList();
+                townListDTO.State = state;
+                townListDTO.Cities = townList;
+            }
+            else
+            {
+                var townList = _repoWrapper.HygeiaHospitalList.GetTowns(state).Select(x => x.City).Distinct().ToList();
+                townListDTO.State = state;
+                townListDTO.Cities = townList;
+            }
+            var newList = new List<CityListDTO>
+            {
+                townListDTO
+            };
+            return new ResponseMessage { Data = newList, Status = true };
+        }
+
         /// <summary>
         /// Get Health care providers. for Axamansard we use 1 as insuranceProvider params, For Hygeia we use 2 as insuranceprovider params3
         /// </summary>
@@ -338,45 +385,7 @@ namespace Application.Services.HealthInsured
             filterHealthCareProvider.PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null;
 
             return new ResponseMessage { Data = filterHealthCareProvider, Status = true, Message = "Care provider was fetched successfully" };
-        }
-
-        public ResponseMessage GetTowns(string state,string insuranceProvider)
-        {
-            var townListDTO = new CityListDTO();
-            if (insuranceProvider.ToLowerInvariant() == "axamansard")
-            {
-                var townList = _repoWrapper.AxaMansardHospitalList.GetTowns(state).Select(x => x.City).Distinct().ToList();
-                townListDTO.State = state;
-                townListDTO.Cities = townList;
-            }
-            else
-            {
-                var townList = _repoWrapper.HygeiaHospitalList.GetTowns(state).Select(x => x.City).Distinct().ToList();
-                townListDTO.State = state;
-                townListDTO.Cities = townList;
-            }
-            var newList = new List<CityListDTO>
-            {
-                townListDTO
-            };
-            return new ResponseMessage { Data = newList, Status = true };
-        }
-
-        public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
-        {
-            var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
-            _repoWrapper.AxaMansardHospitalList.CreateRange(hospitalList);
-            await _repoWrapper.Save();
-            return new ResponseMessage { Status = true, Message = "Upload was successful" };
-        }
-
-        public async Task<ResponseMessage> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
-        {
-            var hospitalList = await _fileProcessor.UploadHygeiaHospitalListFromExcel(formFile);
-            _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
-            await _repoWrapper.Save();
-            return new ResponseMessage { Status = true, Message = "Upload was successful" };
-        }
+        }       
 
         public async Task<ResponseMessage> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel,int userId)
         {
@@ -406,32 +415,41 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
         }
 
+        /// <summary>
+        /// Task to upload excel list contanning list of beneficiaries under a corporate organization
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="companyUserId"></param>
+        /// <returns></returns>
         public async Task<ResponseMessage> UploadUserProfileFromExcelFile(IFormFile file,int companyUserId)
         {
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
 
             if (companyProfile.EmailConfirmed)
             {
+                // Process excel list
                 var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
+                // Get company beneficaries from excel list
                 var companyBeneficiaries = _mapper.Map<List<FileModel>, List<BeneficiaryReviewUser>>(excelModel);
+
+                var newCompanyBeneficiaries = new List<BeneficiaryReviewUser>();
+                // If card is not tokenized we add users in the excel sheet to list of beneficiary Review users
                 if (!companyProfile.TokenizationCompleted)
                 {
                     foreach (var item in companyBeneficiaries)
                     {
                         var checkIfItemEmailExist = await _repoWrapper.BeneficiaryReview.GetByEmail(item.Email);
+                        // Check to make sure beneficiary with the same email cant be uploaded twice
                         if(checkIfItemEmailExist is null)
                         {
                             item.CompanyProfileId = companyProfile.Id;
                             item.Amount = decimal.Parse("1000");
-                        }
-                        else
-                        {
-                            companyBeneficiaries.Remove(item);
+                            newCompanyBeneficiaries.Add(item);
                         }
                     }
-                    await _repoWrapper.BeneficiaryReview.InsertEntities(companyBeneficiaries);
+                    if(newCompanyBeneficiaries.Count > 0) await _repoWrapper.BeneficiaryReview.InsertEntities(newCompanyBeneficiaries);
 
-                    var beneficiariesReviewDTO = _mapper.Map<List<BeneficiaryReviewUser>, List<BeneficiaryReviewDTO>>(companyBeneficiaries);
+                    var beneficiariesReviewDTO = _mapper.Map<List<BeneficiaryReviewUser>, List<BeneficiaryReviewDTO>>(newCompanyBeneficiaries);
 
                     var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
                     {
@@ -449,6 +467,7 @@ namespace Application.Services.HealthInsured
                         Status = true
                     };
                 }
+                // Else we process users in the excel sheet to be added to the Beneficaries List either as pending or active beneficiairy
                 return  await CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, companyBeneficiaries);
             } 
             return new ResponseMessage
@@ -458,6 +477,13 @@ namespace Application.Services.HealthInsured
             };
         }
 
+        /// <summary>
+        /// This task adds the beneficiary as an application and insurance users. Also process maybe to set the user as a pending beneficiary or active beneficiary.
+        /// If beneficaryReviews is null, user would be set as active beneficiaries, else users will be a  pending beneficiary.
+        /// </summary>
+        /// <param name="companyId"></param>
+        /// <param name="beneficiaryReviews"></param>
+        /// <returns></returns>
         public async Task<ResponseMessage> CreateInsuranceProfileForCompanyBeneficiaries(int companyId, List<BeneficiaryReviewUser> beneficiaryReviews)
         {
             var companySubscribedStatus = "pending";
@@ -507,13 +533,14 @@ namespace Application.Services.HealthInsured
         public async Task OnboardUsersToHygeia(int companyUserId)
         {
             var companyProfile = await _repoWrapper.InsuranceProfile.QueryableCompanyProfile(companyUserId);
-            var insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == "active");
+            var insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus != "inactive");
             foreach (var item in insuranceUserProfiles)
             {
                 var result = await EnrollUserToHygeiaOnOnboarding(item);
                 item.TransId = result.Message;
                 _repoWrapper.InsuranceProfile.Update(item);
             }
+            await Task.CompletedTask;
         }
 
         public async Task<ResponseMessage> ConfirmOtp(string otp,int userId)
@@ -572,6 +599,20 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Message = "OTP was sent successfully", Status = true };
         }
 
+        public async Task RemoveOTP(int userId)
+        {
+            var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
+
+            if (!(corporateUser is null))
+            {
+                corporateUser.OTPCode = null;
+                corporateUser.OTPJobId = null;
+                _repoWrapper.CompanyProfile.Update(corporateUser);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
+        }
+
         public async Task<ResponseMessage> UpdateCorporateUser(UpdateCorporateUserViewModel updateCorporateUserViewModel,int Id)
         {
             var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(Id);
@@ -587,20 +628,6 @@ namespace Application.Services.HealthInsured
             var corporateprofileDTO = _mapper.Map<CompanyProfileDTO>(company);
             return new ResponseMessage { Message = "Company profile was updated successfully", Status = true,Data= corporateprofileDTO };
         }        
-
-        public async Task RemoveOTP(int userId)
-        {
-            var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-
-            if(!(corporateUser is null))
-            {
-                corporateUser.OTPCode = null;
-                corporateUser.OTPJobId = null;
-                _repoWrapper.CompanyProfile.Update(corporateUser);
-                await _repoWrapper.Save();
-            }
-            await Task.CompletedTask;
-        }
 
         public async Task<ResponseMessage> GetBeneficiariesReview(PaginationQuery paginationQuery,int companyUserId)
         {
@@ -693,6 +720,22 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
+        }
+
+        public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
+        {
+            var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
+            _repoWrapper.AxaMansardHospitalList.CreateRange(hospitalList);
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true, Message = "Upload was successful" };
+        }
+
+        public async Task<ResponseMessage> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
+        {
+            var hospitalList = await _fileProcessor.UploadHygeiaHospitalListFromExcel(formFile);
+            _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
     }
 }

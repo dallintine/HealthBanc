@@ -139,17 +139,8 @@ namespace Application.Services.HealthInsured
 
                 // If the user is neither active nor  deactivated. Means user tokenizing for th first time
                 if (insuranceProfile.SubscriptionStatus == null)
-                {
-                    // if user can be on a free trail do a test charge of 100 naria, we send amount in Kobo
-                    if (_subscriptionAccessor.FreeTrial)
-                    {
-                        card.amount = (50 * 100).ToString();
-                    }
-                    // if user cant be on free trial do a charge of premium fee, we send amount in kobo
-                    else
-                    {
-                        card.amount = (insuranceProfile.Premium * 100).ToString();
-                    }
+                {                   
+                    card.amount = (insuranceProfile.Premium * 100).ToString();
                 }
                 // If the user is not tokenizing for the first time
                 // we do a test charge of 50 naria to get authorization code to use in future transactions, we send amount in Kobo\
@@ -275,11 +266,7 @@ namespace Application.Services.HealthInsured
                 if (insuranceUserProfile.SubscriptionStatus == null)
                 {
                     //Send user details to insurance provider when payment is successfully
-                    if(insuranceUserProfile.InsuranceService.ToLower() == "axamansard")
-                    {
-                        await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
-                    }
-                    else
+                    if(insuranceUserProfile.InsuranceService.ToLower() == "hygeia")
                     {
                         var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
                         if (response.Status)
@@ -291,23 +278,28 @@ namespace Application.Services.HealthInsured
                             insuranceUserProfile.TransId = "NA";
                         }
                     }
+                    else
+                    {
+                        await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                    }       
+
+                    insuranceUserProfile.EndActiveStatusDate = _subscriptionAccessor.FreeTrial is true ?  DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration * 2) 
+                        : DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
                     // Schedule Payment for user tokenizing card for the first time.
                     var getScheduledPaymentJobId = await ProcessScheduledPayment(insuranceUserProfile);
 
-                    // Schedule debit email reminder to user 3 days before scheduled debit
-                    var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
-                        DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                    insuranceUserProfile.PendingEmailJobId = _subscriptionAccessor.FreeTrial is true ? BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+                           DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration * 2).Subtract(new TimeSpan(3, 0, 0, 0)))
+                       : BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+                           DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
                     // Save scheduled debit job Id
                     insuranceUserProfile.PendingJobId = getScheduledPaymentJobId;
-                    //Save scheduled email jobId
-                    insuranceUserProfile.PendingEmailJobId = emailReminderJobId;
 
                     insuranceUserProfile.SubscriptionStatus = true;
                     insuranceUserProfile.ActiveStatus = true;
                     insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-                    insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
                     checkprofileComplete.TokenizationCompleted = true;
                     _completionRepository.Update(checkprofileComplete);
@@ -458,7 +450,7 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task<string> ProcessScheduledPayment(InsuranceUserProfile insuranceProfile)
         {
-            var executionDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+            var executionDate = insuranceProfile.EndActiveStatusDate;
 
             var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(insuranceProfile.UserId,
                  insuranceProfile.Id, null), executionDate);
@@ -625,6 +617,8 @@ namespace Application.Services.HealthInsured
             var scheduledPaymentJob = await _scheduledPayment.GetScheduledPaymentByJobId(jobId);
             if (chargeAuthorization.Status)
             {
+                BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(userId));
+                
                 scheduledPaymentJob.Status = "Successful"; scheduledPaymentJob.Message = chargeAuthorization.Message;
                 scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
                 companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
@@ -720,7 +714,10 @@ namespace Application.Services.HealthInsured
                 insuranceProfile.ActiveStatus = false;
                 insuranceProfile.PendingJobId = null;
                 insuranceProfile.PendingEmailJobId = null;
-                var response = await _insuranceSerivce.HygeiaDeactivateUser(insuranceProfile.TransId);
+                if(insuranceProfile.InsuranceService == "hygeia")
+                {
+                    await _insuranceSerivce.HygeiaDeactivateUser(insuranceProfile.TransId);
+                }
             }
             else
             {
@@ -754,7 +751,7 @@ namespace Application.Services.HealthInsured
                 {
                     if (insuranceUserProfile.CompanySubscribedStatus.ToLower() == "active")
                     {
-                        insuranceUserProfile.CompanySubscribedStatus = "deactivated";
+                        insuranceUserProfile.CompanySubscribedStatus = "inactive";
                         insuranceUserProfile.SubscriptionStatus = false;
                         BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.UserId),insuranceUserProfile.EndActiveStatusDate);
                     }
@@ -926,6 +923,7 @@ namespace Application.Services.HealthInsured
         /// <summary>
         /// Func to process user activation flow.
         /// Determines maybe user is activated immediately or a background job is scheduled for reactivation
+        /// If user reacytivates within an active cycle, user is just scheduled for payment again when the cycle ends.
         /// </summary>
         /// <param name="userAxamansardProfile"></param>
         /// <param name="authorization_Code"></param>
@@ -942,43 +940,18 @@ namespace Application.Services.HealthInsured
             {
                 // If user is still in active cycle and want to reactivate, that means user must have a background job scheduled to render user INACTIVE
                 // at the end of current cycle.
-                // To resolve this, we delete background task scheduled to render user inactive at the end of current cycle.
-                // Background Task is ProcessUserActiveStatusCancellation            
+                // To resolve this, we delete background task scheduled to render user inactive at the end of current cycle which is ProcessUserActiveStatusCancellation            
                 BackgroundJob.Delete(insuranceProfile.PendingJobId);
 
-                // Scheduled Subscription Reactivation
-                var jobId = BackgroundJob.Schedule(() => ProcessScheduledReactivationPayment(insuranceProfile.UserId, authorization_Code), reactivationTime.Value);
-
-                if(insuranceProfile.InsuranceService.ToLower() == "hygeia")
-                {
-                    // Set enrollment and payment to processing. Check Model to see wat data is used for
-                    var enrollment = new EnrollmentOnReactivation(insuranceProfile.UserId, insuranceProfile.Id, reactivationTime.Value, "Processing",
-                       null,"hygeia");
-                    _enrollmentOnReactivation.Create(enrollment);
-                    await _enrollmentOnReactivation.Save();
-
-                    var paymentOnReactivation = new PaymentOnReactivation(insuranceProfile.UserId, insuranceProfile.Id, enrollment.Id, reactivationTime.Value
-                        , "Processing", jobId, null, null,"hygeia");
-                    _paymentOnReactivation.Create(paymentOnReactivation);
-                }
-                else
-                {
-                    // Set enrollment and payment to processing. Check Model to see wat data is used for
-                    var enrollment = new EnrollmentOnReactivation(insuranceProfile.UserId, insuranceProfile.Id, reactivationTime.Value, "Processing",
-                       null, "axamasard");
-                    _enrollmentOnReactivation.Create(enrollment);
-                    await _enrollmentOnReactivation.Save();
-
-                    var paymentOnReactivation = new PaymentOnReactivation(insuranceProfile.UserId, insuranceProfile.Id, enrollment.Id, reactivationTime.Value
-                        , "Processing", jobId, null, null, "axamasard");
-                    _paymentOnReactivation.Create(paymentOnReactivation);
-                }
+                // Task to process scheduled payment at end of current active cycle
+                var jobId = await ProcessScheduledPayment(insuranceProfile);
 
                 insuranceProfile.SubscriptionStatus = true;
                 insuranceProfile.ActiveStatus = true;
                 insuranceProfile.PendingJobId = jobId;
+                _insuranceProfileRepository.Update(insuranceProfile);
                 await _enrollmentOnReactivation.Save();
-                return new ResponseMessage {Status = true,Message= "Reactivation was successful.You will be debited a the end of your " +
+                return new ResponseMessage {Status = true,Message= "Reactivation was successful.You will be debited at the end of your " +
                     "active cycle" };
             }            
         }
@@ -1045,17 +1018,19 @@ namespace Application.Services.HealthInsured
                  DateTime.Now, "Successful",null, chargeAuthorization.Message,chargeAuthorization.Reference, immediateEnrollment.InsuranceService);
                 _paymentOnReactivation.Create(immediatePaymentOnReactivation);
 
+                // Dont change the position of this, comes before the  background ProcessScheduledPayment is called !!!
+                insuranceProfile.StartActiveStatusDate = DateTime.Now;
+                insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
                 //Schedule job to debit user every 28 days
                 var getScheduledPaymentJobId = await ProcessScheduledPayment(insuranceProfile);
 
                 // Schedule debit email reminder for user 
-                var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),
-                    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
 
                 insuranceProfile.PendingEmailJobId = emailReminderJobId;
                 insuranceProfile.SubscriptionStatus = true; insuranceProfile.PendingJobId = getScheduledPaymentJobId;
-                insuranceProfile.ActiveStatus = true; insuranceProfile.StartActiveStatusDate = DateTime.Now;
-                insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                insuranceProfile.ActiveStatus = true; 
                 _insuranceProfileRepository.Update(insuranceProfile);
 
                 await _insuranceProfileRepository.Save();
@@ -1131,6 +1106,10 @@ namespace Application.Services.HealthInsured
                 }
                 _paymentOnReactivation.Update(paymentOnReactivation);
 
+                // Set the EndActiveStatusDate for the insurance profile before calling the background process ProcessScheduledPayment !!!!
+                insuranceProfile.StartActiveStatusDate = DateTime.Now;
+                insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
                 //Schedule job to debit user every 28 days
                 var getScheduledPaymentJobId = await ProcessScheduledPayment(insuranceProfile);
 
@@ -1139,9 +1118,8 @@ namespace Application.Services.HealthInsured
                     DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
                 insuranceProfile.PendingEmailJobId = emailReminderJobId;
-                insuranceProfile.PendingJobId = getScheduledPaymentJobId; insuranceProfile.StartActiveStatusDate = DateTime.Now;
+                insuranceProfile.PendingJobId = getScheduledPaymentJobId;
                 insuranceProfile.SubscriptionStatus = true; insuranceProfile.ActiveStatus = true;
-                insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
                 _insuranceProfileRepository.Update(insuranceProfile);
             }
             // if user has insufficient funds during charge process
