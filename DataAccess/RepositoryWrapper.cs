@@ -2,6 +2,8 @@
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Implementation;
 using DataAccess.HealthInsured.Interfaces;
+using DataAccess.Logs.Implementation;
+using DataAccess.Logs.Interfaces;
 using Domain.Models.AxaMansard_Insurance;
 using Persistence;
 using System;
@@ -28,7 +30,8 @@ namespace DataAccess
         private IApplicationUserRepository _userRepository;
         private IAxaMansardHospitalListRepository _hospitalListRepository;
         private IHygeiaHospitalListRepository _hygeiaHospitalListRepository;
-        private IHealthInsuredActivityLogRepository _healthInsuredActivityLogRepository;
+        private IActivityLogRepository _healthInsuredActivityLogRepository;
+        private IExceptionLogRepository _exceptionLogRepository;
 
         public IApplicationUserRepository ApplicationUser
         {
@@ -40,15 +43,27 @@ namespace DataAccess
                 }
                 return _userRepository;
             }
-        }        
+        }
 
-        public IHealthInsuredActivityLogRepository HealthInsuredActivityLog
+        public IExceptionLogRepository ExceptionLog
+        {
+            get
+            {
+                if (_exceptionLogRepository == null)
+                {
+                    _exceptionLogRepository = new ExceptionLogRepository(_context);
+                }
+                return _exceptionLogRepository;
+            }
+        }
+
+        public IActivityLogRepository HealthInsuredActivityLog
         {
             get
             {
                 if (_healthInsuredActivityLogRepository == null)
                 {
-                    _healthInsuredActivityLogRepository = new HealthInsuredActivityLogRepository(_context);
+                    _healthInsuredActivityLogRepository = new ActivityLogRepository(_context);
                 }
                 return _healthInsuredActivityLogRepository;
             }

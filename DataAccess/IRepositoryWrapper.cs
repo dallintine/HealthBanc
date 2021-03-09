@@ -1,5 +1,6 @@
 ﻿using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
+using DataAccess.Logs.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,7 +24,8 @@ namespace DataAccess
         IApplicationUserRepository ApplicationUser { get; }
         IHygeiaHospitalListRepository HygeiaHospitalList { get; }
         IAxaMansardHospitalListRepository AxaMansardHospitalList { get; }
-        IHealthInsuredActivityLogRepository HealthInsuredActivityLog { get; }
+        IActivityLogRepository HealthInsuredActivityLog { get; }
+        IExceptionLogRepository ExceptionLog { get; }
 
         Task<int> Save();
     }

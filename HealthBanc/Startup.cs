@@ -241,7 +241,6 @@ namespace HealthBanc
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger)
         {
-
             var hangfireSecret = new JwtSettings();
             Configuration.GetSection(nameof(JwtSettings)).Bind(hangfireSecret);
             app.UseHangfireDashboard($"/apiResponse1963.", new DashboardOptions
