@@ -13,10 +13,10 @@ namespace Domain.Models
         {
 
         }
-        public PaymentReference(string channel,string refernce, int? insuranceUserProfileId,int? companyProfileId, int userId, decimal amount,string status)
+        public PaymentReference(string refernce, int? insuranceUserProfileId,int? companyProfileId, int userId, decimal amount,string status)
         {
             Date = DateTime.Now;
-            Channel = channel;
+            Channel = "HealthBanc-Axamansard";
             Refernce = refernce;
             InsuranceUserProfileId = insuranceUserProfileId;
             CompanyProfileId = companyProfileId;
@@ -33,32 +33,8 @@ namespace Domain.Models
         public int? CompanyProfileId { get; set; }
         public int UserId { get; set; }
         public Decimal Amount { get; set; }
-
-        private string _status;
-        public string Status
-        {
-            get { return _status; }
-            set
-            {
-                if (Enum.IsDefined(typeof(StatusValue), value))
-                {
-                    _status = value;
-                }
-                throw new ArgumentOutOfRangeException("Value of status is out of range. Please check defined enumerated values for status in the scheduledPayment class");
-            }
-        }
+        public string Status { get; set; }
         public InsuranceUserProfile InsuranceUserProfile { get; set; }
         public CompanyProfile CompanyProfile { get; set; }
-    }
-    // <summary>
-    /// The Possible Values for Status
-    /// </summary>
-    enum StatusValue
-    {
-        Pending,
-        Failed,
-        Successful,
-        Send_Otp,
-        Send_Url
     }
 }

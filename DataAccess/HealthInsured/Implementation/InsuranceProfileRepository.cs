@@ -78,7 +78,7 @@ namespace DataAccess.HealthInsured.Implementation
             paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount2 / (double)paginationQuery.PageSize));
             return paginatedResponse;
         }
-         
+
         public async Task<PagedResponse<InsuranceUserProfile>> GetAllInsuranceProfileUnderCompany(PaginationQuery paginationQuery,int CompanyProfileId)
         {
             var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
@@ -115,15 +115,10 @@ namespace DataAccess.HealthInsured.Implementation
             return paginatedResponse;
         }
 
-        public async Task<IQueryable<InsuranceUserProfile>> QueryableInsuranceProfilesUnderCompany(int userId)
+        public async Task<IQueryable<InsuranceUserProfile>> QueryableCompanyProfile(int userId)
         {
             var companyProfile = await  _context.CompanyProfiles.Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.UserId == userId);
             return companyProfile.InsuranceUserProfiles.AsQueryable();
-        }
-
-        public IQueryable<InsuranceUserProfile> QueryAllInsuranceProfiles()
-        {
-            return _context.InsuranceUserProfiles.AsQueryable();
         }
     }
 }

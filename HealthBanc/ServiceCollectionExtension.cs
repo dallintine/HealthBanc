@@ -1,7 +1,6 @@
 ﻿using Application.AuditAndReport.AuditLog;
 using Application.Interfaces;
 using Application.Services.Admin;
-using Application.Services.AuditAndReport;
 using Application.Services.HealthInsured;
 using Application.Services.Identity;
 using Application.Services.Paystack;
@@ -88,7 +87,6 @@ namespace HealthBanc
             });
 
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
-            services.AddScoped<Activity_ErrorLogService>();
             services.AddScoped<IdentityService>();
             services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();

@@ -1,5 +1,4 @@
-﻿using Domain.Models.ReportAndLogs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -27,6 +26,6 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         public List<BeneficiaryReviewUser> BeneficiaryReviewUsers { get; set; }
         public List<DebitCard> Cards { get; set; }
         public List<PaymentReference> PaymentReferences { get; set; }
-        public List<ActivityLog> HealthInsuredActivityLogs { get; set; }
+        public List<HealthInsuredActivityLog> HealthInsuredActivityLogs { get; set; }
     }
 }
