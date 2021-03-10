@@ -68,6 +68,12 @@ namespace Application.Services.Paystack
                     {
                         var user = await _axaMansardUser.GetByUserIdAsync(id);
 
+                        if(user is null)
+                        {
+                            user = new InsuranceUserProfile();
+                            user.PhoneNumber = "";
+                            user.DateOfBirth = DateTime.Now;
+                        }
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
                         var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber
                             , user.DateOfBirth,chargeCard.pin);
