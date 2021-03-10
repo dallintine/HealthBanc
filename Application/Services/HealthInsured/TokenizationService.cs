@@ -148,11 +148,11 @@ namespace Application.Services.HealthInsured
                 {
                     card.amount = (50 * 100).ToString();
                 }
-
+                
                 // Create payment reference for the charge.
                 var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
                 var paymentReference = new PaymentReference(channel,card.reference, insuranceProfile.Id, null, insuranceProfile.UserId
-                , insuranceProfile.Premium, "Pending");
+                , insuranceProfile.Premium, PaymentReference_StatusValue.Pending.ToString());
                 _paymentReference.Create(paymentReference);
                 await _paymentReference.Save();
 
@@ -220,7 +220,7 @@ namespace Application.Services.HealthInsured
 
                     // Create payment reference for the charge.
                     var channel = companyProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
-                    var paymentReference = new PaymentReference(channel,card.reference, null, companyProfile.Id, id, decimal.Parse(card.amount), "Pending");
+                    var paymentReference = new PaymentReference(channel,card.reference, null, companyProfile.Id, id, decimal.Parse(card.amount), PaymentReference_StatusValue.Pending.ToString());
                     _paymentReference.Create(paymentReference);
                     await _paymentReference.Save();
 
@@ -406,7 +406,7 @@ namespace Application.Services.HealthInsured
             // If charge card response request for OTP
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 12)
             {
-                paymentReference.Status = "Send_Otp";
+                paymentReference.Status = PaymentReference_StatusValue.Send_Otp.ToString();
                 _paymentReference.Update(paymentReference);
                 await _paymentReference.Save();
                 return new ResponseMessage
@@ -420,7 +420,7 @@ namespace Application.Services.HealthInsured
             // If charge card response wants to redirect
             else if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 20)
             {
-                paymentReference.Status = "Send_Url";
+                paymentReference.Status = PaymentReference_StatusValue.Send_Url.ToString();
                 _paymentReference.Update(paymentReference);
                 await _paymentReference.Save();
                 return new ResponseMessage
@@ -432,7 +432,7 @@ namespace Application.Services.HealthInsured
                 };
             }
             // If theres is an error
-            paymentReference.Status = "Failed";
+            paymentReference.Status = PaymentReference_StatusValue.Failed.ToString();
             _paymentReference.Update(paymentReference);
             await _paymentReference.Save();
             return new ResponseMessage
@@ -558,7 +558,7 @@ namespace Application.Services.HealthInsured
             {
                 var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
                 var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                    , insuranceProfile.Premium, "Failed");
+                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _paymentReference.Create(paymentReference);
 
                 scheduledPaymentJob.Status = "Terminated"; scheduledPaymentJob.Message = chargeAuthorization.Message;
@@ -581,7 +581,7 @@ namespace Application.Services.HealthInsured
             {
                 var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
                 var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                   , insuranceProfile.Premium, "Failed");
+                   , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _paymentReference.Create(paymentReference);
 
                 scheduledPaymentJob.Status = "Failed"; scheduledPaymentJob.Message = chargeAuthorization.Message;
@@ -1043,7 +1043,7 @@ namespace Application.Services.HealthInsured
             // Set payment reference for transacation;
             var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
             var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                   , insuranceProfile.Premium,"Failed");
+                   , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
             _paymentReference.Create(paymentReference);
             await _paymentReference.Save();
 
@@ -1133,7 +1133,7 @@ namespace Application.Services.HealthInsured
                 // Set payment reference for failed transacation;
                 var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
                 var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                   , insuranceProfile.Premium, "Failed");
+                   , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _paymentReference.Create(paymentReference);
                 await _paymentReference.Save();
 
@@ -1153,7 +1153,7 @@ namespace Application.Services.HealthInsured
                 // Set payment reference for failed transacation;
                 var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
                 var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                   , insuranceProfile.Premium, "Failed");
+                   , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _paymentReference.Create(paymentReference);
                 await _paymentReference.Save();
 
@@ -1192,7 +1192,7 @@ namespace Application.Services.HealthInsured
                     var paymentReference = await _paymentReference.GetByReference(reference);
                     if (paymentReference != null)
                     {
-                        if (paymentReference.Status == "Send_Url")
+                        if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
                         {
                             var checkprofileComplete = await _completionRepository.GetCompletionStateByUserId(insuranceProfile.UserId);
 
@@ -1208,13 +1208,13 @@ namespace Application.Services.HealthInsured
                             };
                             await ProcessPaystackChargeCardResponse(tokenizationResponse, insuranceProfile,
                                 checkprofileComplete, paymentReference, paymentReference.Refernce, ipAddress, "nil");
-                            paymentReference.Status = "Successful";
+                            paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
                             _paymentReference.Update(paymentReference);
                             await _paymentReference.Save();
                         }
                         else
                         {
-                            paymentReference.Status = "Successful";
+                            paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
                             _paymentReference.Update(paymentReference);
                             await _paymentReference.Save();
                         }
@@ -1224,7 +1224,7 @@ namespace Application.Services.HealthInsured
                         // Create payment reference for the charge.
                         var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
                         var paymentReference2 = new PaymentReference(channel,reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                        , decimal.Parse(amount), "Successful");
+                        , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
                         _paymentReference.Create(paymentReference2);
                         await _paymentReference.Save();
                     }
@@ -1260,14 +1260,15 @@ namespace Application.Services.HealthInsured
             _emailSender.HealthInsuredFailedDebit(email, "Failed Transaction", userName, premium);
         }
 
-        public async void Create()
+        public async Task<ResponseMessage> Create()
         {
-            throw new System.FormatException("Value of status is out of range. Please check defined enumerated values for status in the scheduledPayment class");
+            //throw new System.FormatException("Value of status is out of range. Please check defined enumerated values for status in the scheduledPayment class");
 
             var paymentReference = new PaymentReference("hassan", "dscascdac", null, null, 2
-               , Decimal.Parse("200"), "Pendingde");
+               , Decimal.Parse("200"), "send_otp");
             _paymentReference.Create(paymentReference);
             await _paymentReference.Save();
+            return new ResponseMessage { Status = true };
 
         }
     } 
