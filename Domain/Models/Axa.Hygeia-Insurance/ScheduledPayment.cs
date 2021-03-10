@@ -44,7 +44,10 @@ namespace Domain.Models.AxaMansard_Insurance
                 {
                     _status = value;
                 }
-                throw new ArgumentOutOfRangeException("Value of status is out of range. Please check defined enumerated values for status in the scheduledPayment class");
+                else
+                {
+                    throw new ArgumentOutOfRangeException("Value of status is out of range. Please check defined enumerated values for status in the scheduledPayment class");
+                }
             }
         }
         public string Message { get; set; }

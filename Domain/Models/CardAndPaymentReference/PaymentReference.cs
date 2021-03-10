@@ -29,22 +29,22 @@ namespace Domain.Models
         public int Id { get; set; }
         public DateTime Date { get; set; }
 
-        public string Channel { get; set; }
-        //public string Channel
-        //{
-        //    get { return _channel; }
-        //    set
-        //    {
-        //        if (Enum.IsDefined(typeof(PaymentReference_ChannelValue), value))
-        //        {
-        //            _channel = value;
-        //        }
-        //        else
-        //        {
-        //            throw new ArgumentException("Value of PaymentReference.Channel is not valid. Please check defined enumerated values for channel in the PaymentReference_ChannelValue class");
-        //        }
-        //    }
-        //}
+        public string _channel;
+        public string Channel
+        {
+            get { return _channel; }
+            set
+            {
+                if (Enum.IsDefined(typeof(PaymentReference_ChannelValue), value))
+                {
+                    _channel = value;
+                }
+                else
+                {
+                    throw new ArgumentException("Value of PaymentReference.Channel is not valid. Please check defined enumerated values for channel in the PaymentReference_ChannelValue class");
+                }
+            }
+        }
         public string Refernce { get; set; }
         public int? InsuranceUserProfileId { get; set; }
         public int? CompanyProfileId { get; set; }

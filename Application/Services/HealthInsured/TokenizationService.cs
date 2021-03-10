@@ -150,7 +150,7 @@ namespace Application.Services.HealthInsured
                 }
                 
                 // Create payment reference for the charge.
-                var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
+                var channel = insuranceProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
                 var paymentReference = new PaymentReference(channel,card.reference, insuranceProfile.Id, null, insuranceProfile.UserId
                 , insuranceProfile.Premium, PaymentReference_StatusValue.Pending.ToString());
                 _paymentReference.Create(paymentReference);
@@ -219,7 +219,7 @@ namespace Application.Services.HealthInsured
                     }
 
                     // Create payment reference for the charge.
-                    var channel = companyProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
+                    var channel = companyProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
                     var paymentReference = new PaymentReference(channel,card.reference, null, companyProfile.Id, id, decimal.Parse(card.amount), PaymentReference_StatusValue.Pending.ToString());
                     _paymentReference.Create(paymentReference);
                     await _paymentReference.Save();
@@ -556,7 +556,8 @@ namespace Application.Services.HealthInsured
             // Insufficient funds
             else if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
             {
-                var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
+                var channel = insuranceProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
                 var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                     , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _paymentReference.Create(paymentReference);
@@ -579,7 +580,8 @@ namespace Application.Services.HealthInsured
             // Failed
             else
             {
-                var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
+                var channel = insuranceProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
                 var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _paymentReference.Create(paymentReference);
@@ -1041,7 +1043,8 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Message = "Reactivation was successful." , Status = true, ResponseCode = chargeAuthorization.ResponseCode };
             }
             // Set payment reference for transacation;
-            var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
+            var channel = insuranceProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
             var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
             _paymentReference.Create(paymentReference);
@@ -1131,7 +1134,8 @@ namespace Application.Services.HealthInsured
             else if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
             {
                 // Set payment reference for failed transacation;
-                var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
+                var channel = insuranceProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
                 var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _paymentReference.Create(paymentReference);
@@ -1151,7 +1155,8 @@ namespace Application.Services.HealthInsured
             else
             {
                 // Set payment reference for failed transacation;
-                var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
+                var channel = insuranceProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
                 var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _paymentReference.Create(paymentReference);
@@ -1222,7 +1227,8 @@ namespace Application.Services.HealthInsured
                     else
                     {
                         // Create payment reference for the charge.
-                        var channel = insuranceProfile.InsuranceService == "hygeia" ? "healthinsured-hygeia" : "healthinsured-axamansard";
+                        var channel = insuranceProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
                         var paymentReference2 = new PaymentReference(channel,reference, insuranceProfile.Id,null, insuranceProfile.UserId
                         , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
                         _paymentReference.Create(paymentReference2);
