@@ -9,6 +9,5 @@ namespace DataAccess.Logs.Interfaces
 {
     public interface IExceptionLogRepository : IBaseRepository<ExceptionLog>
     {
-        Task<PagedResponse<ExceptionLog>> GetPaginatedErrorLog(PaginationQuery paginationQuery);
     }
 }

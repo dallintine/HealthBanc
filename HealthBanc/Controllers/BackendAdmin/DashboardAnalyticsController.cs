@@ -1,5 +1,4 @@
 ﻿using Application.DTO;
-using Application.DTO.DashboardAnalyticsDTOs;
 using Application.Services.Admin;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
@@ -30,7 +29,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         }
 
         /// <summary>
-        /// Get Basic Dashboard Analytics for  Healthbanc Users
+        /// Get All Dashboard Analytics
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<DashboardDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
@@ -42,9 +41,10 @@ namespace HealthBanc.Controllers.BackendAdmin
 
             return Ok(new ResponseMessage<DashboardDTO> { Data = allDashboardAnalytics, Status = true, Message = "All dashboard analytics was fetched successfully" });           
         }
+
         
         /// <summary>
-        /// Get Application Users Status
+        /// Get Users Status
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<DashboardDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
@@ -58,7 +58,7 @@ namespace HealthBanc.Controllers.BackendAdmin
 
         
         /// <summary>
-        /// Get breakdown of service used by application users
+        /// Get Service Breakdown
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<DashboardDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
@@ -102,48 +102,6 @@ namespace HealthBanc.Controllers.BackendAdmin
         {            
             var services = await _serviceRepository.GetServicesAsync();
             return Ok(new ResponseMessage { Data = services, Status = true, Message = "Service was fetched successfully" });            
-        }
-
-        /// <summary>
-        /// Get Dashboard Analytics for  HealthInsured Service
-        /// </summary>
-        /// <returns></returns>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredDashboardDTO>))]
-        [HttpGet("[action]")]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        public async Task<IActionResult> HealthInsuredDashBoardAnalytics()
-        {
-            var healthInsuredDashboard = await _dashboardAnalytics.GetHealthInsuredDashBoardAnalytics();
-
-            return Ok(healthInsuredDashboard);
-        }
-
-        /// <summary>
-        /// Get HealthInsured User acquisition analytical data
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredDashboardDTO>))]
-        [HttpGet("[action]")]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        public async Task<IActionResult> HealthInsuredUserAcquisition(int? id)
-        {
-            var healthInsuredAcquisistions = await _dashboardAnalytics.HealthInsuredUserAcquisition(id);
-            return Ok(healthInsuredAcquisistions);
-        }
-
-        /// <summary>
-        /// Get HealthInsured Subscriber acquisition analytical data
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredDashboardDTO>))]
-        [HttpGet("[action]")]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        public async Task<IActionResult> HealthInsuredSubscriberAcquisition(int? id)
-        {
-            var subscriberAcqusition = await _dashboardAnalytics.HealthInsuredSubscriberAcquisition(id);
-            return Ok(subscriberAcqusition);
         }
     }
 }

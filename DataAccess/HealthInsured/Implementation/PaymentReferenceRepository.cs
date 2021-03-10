@@ -74,10 +74,5 @@ namespace DataAccess.HealthInsured.Implementation
             paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount2 / (double)paginationQuery.PageSize));
             return paginatedResponse;
         }
-
-        public IQueryable<PaymentReference> QueryAllPaymentReference()
-        {
-            return _context.PaymentReferences.AsQueryable();
-        }
     }
 }

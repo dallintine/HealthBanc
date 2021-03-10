@@ -34,35 +34,10 @@ namespace Domain.Models.AxaMansard_Insurance
         public DateTime DateScheduled { get; set; }
         public DateTime ExecutionDate { get; set; }
         public string JobId { get; set; }
-
-        private string _status;
-        public string Status
-        {
-            get { return _status; }
-            set
-            { if(Enum.IsDefined(typeof(StatusValue), value))
-                {
-                    _status = value;
-                }
-                throw new ArgumentOutOfRangeException("Value of status is out of range. Please check defined enumerated values for status in the scheduledPayment class");
-            }
-        }
+        public string Status { get; set; }
         public string Message { get; set; }
-        /// <summary>
-        /// This the payment referenc for the scheduled payment
-        /// </summary>
         public string PaymentReference { get; set; }
         public string InsuranceService { get; set; }
-        public ScheduledEnrollment ScheduledEnrollment { get; set; }        
-    }
-    /// <summary>
-    /// The Possible Values for Status
-    /// </summary>
-    enum StatusValue
-    {
-        Processing,
-        Terminated,
-        Failed,
-        Successful
+        public ScheduledEnrollment ScheduledEnrollment { get; set; }
     }
 }

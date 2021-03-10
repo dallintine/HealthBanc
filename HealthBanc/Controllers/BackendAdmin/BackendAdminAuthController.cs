@@ -245,7 +245,7 @@ namespace HealthBanc.Controllers
                     _adminRepository.Create(adminUser);
                     await _adminRepository.Save();
 
-                    var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id,$"Admin with email {adminUser.Email} was created", "HealthBanc_Admin");
+                    var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id, null,null , "Admin user created", $"Admin user with email {adminUser.Email} was created");
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
                     return Ok(new ResponseMessage{ Message = "Admin has been created successfully", Status = true });
@@ -310,7 +310,7 @@ namespace HealthBanc.Controllers
                     _adminRepository.Update(admin);
                     await _adminRepository.Save();
 
-                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"Admin with email {email} role was changed", "HealthBanc_Admin");
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, null, null, "Change In Admin Role", $"Admin user with email {email} role was changed");
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
                     return Ok(new ResponseMessage {Message="Role was changed successfully", Status=true });
@@ -361,7 +361,7 @@ namespace HealthBanc.Controllers
                     _adminRepository.Delete(admin);
                     await _adminRepository.Save();
 
-                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"Admin with email {email} was deleted", "HealthBanc_Admin");
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, null, null, "Delete Admin", $"Admin user with email {email} was deleted");
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
                     return Ok(new ResponseMessage { Message = "Admin was deleted successfully", Status = true });

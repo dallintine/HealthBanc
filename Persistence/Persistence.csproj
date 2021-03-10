@@ -15,10 +15,6 @@
     <Compile Remove="Migrations\20210205102100_First_Localdb.Designer.cs" />
     <Compile Remove="Migrations\20210210154403_modified_insuranceuserProfile_table.cs" />
     <Compile Remove="Migrations\20210210154403_modified_insuranceuserProfile_table.Designer.cs" />
-    <Compile Remove="Migrations\20210309202538_Modify_schedulePAyment_table.cs" />
-    <Compile Remove="Migrations\20210309202538_Modify_schedulePAyment_table.Designer.cs" />
-    <Compile Remove="Migrations\20210309203211_Modify_schedulePAyment_table.cs" />
-    <Compile Remove="Migrations\20210309203211_Modify_schedulePAyment_table.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

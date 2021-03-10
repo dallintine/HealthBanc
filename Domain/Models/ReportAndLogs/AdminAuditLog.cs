@@ -13,13 +13,16 @@ namespace Domain.Models.ReportAndLogs
         [Required]
         public int ApplicationUserId { get; set; }
         public int BackendAdminUserId { get; set; }
+        public string TransactionId { get; set; }
+        public string BeforeEventContent { get; set; }
         [Required]
         public string ActionApplied { get; set; }
+        public string AfterEventContent { get; set; }
         [Required]
         public DateTime Date { get; set; }
         [Required]
         public string IPAddress { get; set; }
-        public string Channel { get; set; }
+        public string MACAddress { get; set; }
         public BackendAdminUser BackendAdminUser { get; set; }
     }
 }

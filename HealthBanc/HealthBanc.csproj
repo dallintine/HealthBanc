@@ -64,6 +64,7 @@
 
   <ItemGroup>
     <Folder Include="Connected Services\" />
+    <Folder Include="Controllers\BackendAdmin\HealthInsured\" />
   </ItemGroup>
 
 

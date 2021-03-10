@@ -2,21 +2,20 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Models.ReportAndLogs 
-{ 
-    public class ActivityLog
+namespace Domain.Models.Axa.Hygeia_Insurance
+{
+    public class HealthInsuredActivityLog
     {
-        public ActivityLog()
+        public HealthInsuredActivityLog()
         {
                 
         }
-        public ActivityLog(int? insuranceUserProfileId, int? companyProfileId, string actionApplied,string service)
+        public HealthInsuredActivityLog(int? insuranceUserProfileId, int? companyProfileId, string actionApplied)
         {
             InsuranceUserProfileId = insuranceUserProfileId;
             CompanyProfileId = companyProfileId;
             ActionApplied = actionApplied;
             Date = DateTime.Now;
-            Service = service;
         }
 
         public int Id { get; set; }
@@ -24,6 +23,5 @@ namespace Domain.Models.ReportAndLogs
         public int? CompanyProfileId { get; set; }
         public string ActionApplied { get; set; }
         public DateTime Date { get; set; }
-        public string Service { get; set; }
     }
 }

@@ -41,6 +41,7 @@ namespace Application.AuditAndReport.AuditLog
         public async Task AdminCreateAuditLog(AdminAuditLogViewModel viewModel)
         {
             var auditLog = _mapper.Map<AdminAuditLog>(viewModel);
+            auditLog.IPAddress = "test";
             auditLog.Date = DateTime.Now;
             auditLog.Id = new Guid();
             _adminAuditLog.Create(auditLog);

@@ -156,7 +156,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpPost("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HygeiaHospitalList>>))]
-        [Authorize(Roles = "SuperAdmin")]
+        //[Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> FilterHygeiaHealthCareProvider([FromQuery]PaginationQuery paginationQuery,string state, string city)
         {
             var FilterHealthCareProvider = await _insuranceService.FilterHealthCareProvider(paginationQuery, state, city);
@@ -321,7 +321,47 @@ namespace HealthBanc.Controllers.Insurance
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }        
+        }
+
+        /// <summary>
+        /// Returns Paginated healthinsured activity log based on email parameter. Applies for both corporate and individual users
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HealthInsuredActivityLog>>))]
+        public async Task<IActionResult> GetPaginatedActivityLogByEmail(PaginationQuery paginationQuery, string email)
+        {
+            var response = await _insuranceService.GetPaginatedActivityLogByEmail(paginationQuery,email);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Returns paginated health insured activity log for logged in users. Applies for both corporate and individual users
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HealthInsuredActivityLog>>))]
+        public async Task<IActionResult> GetLoggedInUserPaginatedActivityLog(PaginationQuery paginationQuery)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+
+            var response = await _insuranceService.GetLoggedInUserPaginatedActivityLog(paginationQuery, id);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
 
         /// <summary>
         /// Create Corporate insurance 
@@ -523,45 +563,11 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        ///Move List of company beneficiaries from inactive state to pending state
-        /// </summary>
-        /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [HttpPost("[action]")]
-        public async Task<IActionResult> MoveCompanyBeneficiaryFromInactiveToPendingState(BeneficiaryListViewModel beneficiaryListViewModel)
-        {
-            if (ModelState.IsValid)
-            {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-
-                if(beneficiaryListViewModel.Emails.Count < 1)
-                {
-                    return BadRequest(new ResponseMessage { Message = "No option was selected", Status = false });
-                }
-
-                var corporateUser = await _insuranceService.MoveCompanyBeneficiaryFromInactiveToPendingState(beneficiaryListViewModel, Id);
-                return Ok(corporateUser);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
-
-        /// <summary>
         /// Get Company insurance beneficiaries
         /// </summary>
         /// <param name="paginationQuery"></param>
         /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<InsuranceBeneficiaryDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
@@ -585,7 +591,7 @@ namespace HealthBanc.Controllers.Insurance
         /// Get corporate insurance dashboard analytics
         /// </summary>
         /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<CompanyProfileBeneficiaryAnalyticDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
@@ -606,7 +612,7 @@ namespace HealthBanc.Controllers.Insurance
         /// Get corporate insurance profile details
         /// </summary>
         /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<CompanyProfileDTO>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
