@@ -1,6 +1,8 @@
 ﻿using DataAccess.General.Implementation;
+using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models.Axa.Hygeia_Insurance;
+using Domain.Models.ReportAndLogs;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using System;
@@ -9,18 +11,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataAccess.HealthInsured.Implementation
+namespace DataAccess.General.Implementation
 {
-    public class HealthInsuredActivityLogRepository : BaseRepository<HealthInsuredActivityLog>, IHealthInsuredActivityLogRepository
+    public class ActivityLogRepository : BaseRepository<ActivityLog>, IActivityLogRepository
     {
-        public HealthInsuredActivityLogRepository(ApplicationDbContext context) : base(context)
+        public ActivityLogRepository(ApplicationDbContext context) : base(context)
         {
         }
 
-        public async Task<PagedResponse<HealthInsuredActivityLog>> GetPaginatedActivityLogByProfileId(PaginationQuery paginationQuery, int? individualProfileId, int? companyProfileId)
+        public async Task<PagedResponse<ActivityLog>> GetPaginatedActivityLogByProfileId(PaginationQuery paginationQuery, int? individualProfileId, int? companyProfileId,string service)
         {
-            var paginatedResponse = new PagedResponse<HealthInsuredActivityLog>();
-            var queryable = _context.HealthInsuredActivityLogs.AsQueryable();
+            var paginatedResponse = new PagedResponse<ActivityLog>();
+            var queryable = _context.ActivityLogs.Where(x => x.Service == service).AsQueryable();
             if (!(individualProfileId is null))
             {
                 queryable = queryable.Where(x => x.InsuranceUserProfileId == individualProfileId).AsQueryable();

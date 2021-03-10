@@ -172,7 +172,7 @@ namespace Application.Services.HealthInsured
             var enrollment = await AxamansardRegisterUser(enrollmentModel);
             if (!enrollment.Status)
             {
-                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed"
+                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, "Failed"
                     , enrollment.Message, "axamansard");
                 _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
                 await _repoWrapper.Save();
@@ -252,7 +252,7 @@ namespace Application.Services.HealthInsured
             var registration = await HygeiaRegisterUser(registrationModel);
             if (!registration.Status)
             {
-                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, "Failed", registration.Message,
+                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id,"Failed", registration.Message,
                     "hygeia");
                 _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
                 await _repoWrapper.Save();
@@ -539,8 +539,8 @@ namespace Application.Services.HealthInsured
 
         public async Task OnboardUsersToHygeia(int companyUserId)
         {
-            var companyProfile = await _repoWrapper.InsuranceProfile.QueryableCompanyProfile(companyUserId);
-            var insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus != "inactive");
+            var companyProfile = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
+            var insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == "pending");
             foreach (var item in insuranceUserProfiles)
             {
                 var result = await EnrollUserToHygeiaOnOnboarding(item);
@@ -674,6 +674,24 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Data = paginatedResponse, Status = true, Message = "Beneficiaries was fetched successfully" };
         }
 
+        public async Task<ResponseMessage> MoveCompanyBeneficiaryFromInactiveToPendingState(BeneficiaryListViewModel beneficiaryListViewModel, int userId)
+        {
+            var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
+            foreach(var item in beneficiaryListViewModel.Emails)
+            {
+                var insuranceUserProfile = await _repoWrapper.InsuranceProfile.GetByEmail(item);
+                if(insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == "inactive")
+                {
+                    insuranceUserProfile.CompanySubscribedStatus = "pending";
+                    companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
+                    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                    _repoWrapper.CompanyProfile.Update(companyprofile);
+                }
+            }
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true };
+        }
+
         public async Task<ResponseMessage> CorporateSubscribersAnalytics(int companyUserId)
         {
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByCompanyId(companyUserId);
@@ -727,73 +745,7 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
-        }
-
-        public async Task<ResponseMessage> GetLoggedInUserPaginatedActivityLog(PaginationQuery paginationQuery , int userId)
-        {
-            var individualUser = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-            if(individualUser is null)
-            {
-                var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-                if(!(corporateUser is null))
-                {
-                    var corporateUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery,null, corporateUser.Id);
-                    var paginatedResponse = new PagedResponse<HealthInsuredActivityLog>
-                    {
-                        Data = corporateUserActivityLog.Data,
-                        PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                        PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                        RecordCount = corporateUserActivityLog.RecordCount,
-                        PageCount = corporateUserActivityLog.PageCount
-                    };
-                    return new ResponseMessage { Data = paginatedResponse, Status = true };
-                }
-                return new ResponseMessage { Status = false, Message = "User activity log does not exist" };
-            }
-            var individualUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery,individualUser.Id,null);
-            var response = new PagedResponse<HealthInsuredActivityLog>
-            {
-                Data = individualUserActivityLog.Data,
-                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?) null,
-                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?) null,
-                RecordCount = individualUserActivityLog.RecordCount,
-                PageCount = individualUserActivityLog.PageCount
-            };
-            return new ResponseMessage { Data = response, Status = true };
-        }
-
-        public async Task<ResponseMessage> GetPaginatedActivityLogByEmail(PaginationQuery paginationQuery, string email)
-        {
-            var individualUser = await _repoWrapper.InsuranceProfile.GetByEmail(email);
-            if (individualUser is null)
-            {
-                var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
-                if (!(corporateUser is null))
-                {
-                    var corporateUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, null, corporateUser.Id);
-                    var paginatedResponse = new PagedResponse<HealthInsuredActivityLog>
-                    {
-                        Data = corporateUserActivityLog.Data,
-                        PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                        PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                        RecordCount = corporateUserActivityLog.RecordCount,
-                        PageCount = corporateUserActivityLog.PageCount
-                    };
-                    return new ResponseMessage { Data = paginatedResponse, Status = true };
-                }
-                return new ResponseMessage { Status = false, Message = "User activity log does not exist" };
-            }
-            var individualUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, individualUser.Id, null);
-            var response = new PagedResponse<HealthInsuredActivityLog>
-            {
-                Data = individualUserActivityLog.Data,
-                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                RecordCount = individualUserActivityLog.RecordCount,
-                PageCount = individualUserActivityLog.PageCount
-            };
-            return new ResponseMessage { Data = response, Status = true };
-        }
+        }        
 
         public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
         {

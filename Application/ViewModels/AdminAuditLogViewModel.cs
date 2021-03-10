@@ -12,26 +12,21 @@ namespace Application.ViewModels
         {
 
         }
-        public AdminAuditLogViewModel(int applicationUserId, int backendAdminUserId, string transactionId, string beforeEventContent, string actionApplied, string afterEventContent)
+        public AdminAuditLogViewModel(int applicationUserId, int backendAdminUserId,string actionApplied,string channel)
         {
             ApplicationUserId = applicationUserId;
             BackendAdminUserId = backendAdminUserId;
-            TransactionId = transactionId;
-            BeforeEventContent = beforeEventContent;
             ActionApplied = actionApplied;
-            AfterEventContent = afterEventContent;
+            Channel = channel;
         }
 
         [Required]
         public int ApplicationUserId { get; set; }
         [Required]
         public int BackendAdminUserId { get; set; }
-        public string TransactionId { get; set; }
-        [Required]
-        public string BeforeEventContent { get; set; }
         [Required]
         public string ActionApplied { get; set; }
         [Required]
-        public string AfterEventContent { get; set; }
+        public string Channel { get; set; }
     }
 }

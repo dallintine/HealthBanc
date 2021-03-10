@@ -1,4 +1,7 @@
-﻿using AutoMapper;
+﻿using Application.DTO;
+using Application.DTO.DashboardAnalyticsDTOs;
+using AutoMapper;
+using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
@@ -17,12 +20,14 @@ namespace Application.Services.Admin
         private readonly IMapper _mapper;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IServiceRepository _serviceRepository;
+        private readonly IRepositoryWrapper _repowrapper;
 
-        public Dashboard_Analytics(IMapper mapper, IApplicationUserRepository userRepository,IServiceRepository serviceRepository)
+        public Dashboard_Analytics(IMapper mapper, IApplicationUserRepository userRepository,IServiceRepository serviceRepository,IRepositoryWrapper repowrapper)
         {
             _mapper = mapper;
             _userRepository = userRepository;
             _serviceRepository = serviceRepository;
+            _repowrapper = repowrapper;
         }
 
         public async Task<DashboardDTO> GetUsersStatus()
@@ -141,6 +146,102 @@ namespace Application.Services.Admin
                 ServiceBreakdowns = serviceBreakdown.ServiceBreakdowns,
                 SignUpMonths = signUpAnalytics.SignUpMonths
             };
+        }
+
+        public async Task<ResponseMessage> GetHealthInsuredDashBoardAnalytics()
+        {
+            var users =  _repowrapper.InsuranceProfile.QueryAllInsuranceProfiles();
+            var totalUsers = await users.CountAsync();
+            var paymentReferences = _repowrapper.PaymentReference.QueryAllPaymentReference();
+            var totalRevenue = paymentReferences.Where(x => x.Status.ToLower().Trim() == "successful").Select(x => x.Amount).Sum();
+            var healthInsuredDashboard = new HealthInsuredDashboardDTO()
+            {
+                TotalUser = totalUsers,
+                ToatlRevenue = totalRevenue,
+                TotalPayoutDue = 0
+            };
+            return new ResponseMessage { Data = healthInsuredDashboard , Status= true, Message="Dashboard analytics was fectched successfully"};
+        }
+
+        public async Task<ResponseMessage> HealthInsuredUserAcquisition(int? Id)
+        {
+            // Gets a IQuerayble of all insurance users
+            var users = _repowrapper.InsuranceProfile.QueryAllInsuranceProfiles();
+
+            string[] months = new string[] { "Janaury", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+            var count = 1;
+            var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO();
+
+            // List of users with monthly signUp details {Name,Count}
+            healthInsuredDashboardDTO.UserAcquisitions = new List<UserAcquisition>();
+
+
+            // If Id is null, returns a list showing the number of users registered in a particular month for all years
+            if (Id is null)
+            {
+                foreach (var item in months)
+                {
+                    var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value.Month == count).CountAsync();
+                    var userAcquisition = new UserAcquisition(item, userRegisteredInParticularMonth);
+                    healthInsuredDashboardDTO.UserAcquisitions.Add(userAcquisition);
+                    count++;
+                }
+            }
+            // If Id is 1, returns a list showing the number of users registered in a particular month of present year
+            else if (Id == 1)
+            {
+                foreach (var item in months)
+                {
+                    var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
+                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == count).CountAsync();
+
+                    var userAcquisition = new UserAcquisition(item, userRegisteredInParticularMonth);
+                    healthInsuredDashboardDTO.UserAcquisitions.Add(userAcquisition);
+                    count++;
+                }
+            }
+
+            return new ResponseMessage { Data = healthInsuredDashboardDTO, Status = true, Message = "User acquisitions was fecthed successfully" };
+        }
+
+        public async Task<ResponseMessage> HealthInsuredSubscriberAcquisition(int? Id)
+        {
+            // Gets a IQuerayble of all insurance users
+            var users = _repowrapper.InsuranceProfile.QueryAllInsuranceProfiles();
+
+            string[] months = new string[] { "Janaury", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+            var count = 1;
+            var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO();
+
+            // List of users with monthly signUp details {Name,Count}
+            healthInsuredDashboardDTO.SubscriberAcquisitions = new List<SubscriberAcquisition>();
+
+
+            // If Id is null, returns a list showing the number of users registered in a particular month for all years
+            if (Id is null)
+            {
+                foreach (var item in months)
+                {
+                    var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value.Month == count && x.SubscriptionStatus == true).CountAsync();
+                    var userAcquisition = new SubscriberAcquisition(item, userRegisteredInParticularMonth);
+                    healthInsuredDashboardDTO.SubscriberAcquisitions.Add(userAcquisition);
+                    count++;
+                }
+            }
+            // If Id is 1, returns a list showing the number of users registered in a particular month of present year
+            else if (Id == 1)
+            {
+                foreach (var item in months)
+                {
+                    var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
+                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == count && x.SubscriptionStatus == true).CountAsync();
+
+                    var userAcquisition = new SubscriberAcquisition(item, userRegisteredInParticularMonth);
+                    healthInsuredDashboardDTO.SubscriberAcquisitions.Add(userAcquisition);
+                    count++;
+                }
+            }
+            return new ResponseMessage { Data = healthInsuredDashboardDTO, Status = true, Message = "Subscriber acquisitions was fecthed successfully" };
         }
     }
 }

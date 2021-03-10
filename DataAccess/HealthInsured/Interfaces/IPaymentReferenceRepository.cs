@@ -13,5 +13,6 @@ namespace DataAccess.HealthInsured.Interfaces
         Task<PaymentReference> GetById(int id);
         Task<PaymentReference> GetByReference(string reference);
         Task<PagedResponse<PaymentReference>> GetPaginatedPaymentReference(PaginationQuery paginationQuery,string email);
+        IQueryable<PaymentReference> QueryAllPaymentReference();
     }
 }
