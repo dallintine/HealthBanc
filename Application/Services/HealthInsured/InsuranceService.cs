@@ -409,7 +409,7 @@ namespace Application.Services.HealthInsured
                 UserId = userId,
                 CompanyEmail = corporateRegViewModel.Email,
                 CompanyName = corporateRegViewModel.Name,
-                InsuranceService = "Hygeia"
+                InsuranceService = InsuranceProvider.hygeia.ToString()
             };
 
             // Schedule otp removal after 5 minutes
@@ -510,7 +510,7 @@ namespace Application.Services.HealthInsured
                     var userId = createdUser.Data.Id;
                     var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
                     insuranceUserProfile.CompanyProfileId = companyId;
-                    insuranceUserProfile.InsuranceService = "Hygeia";
+                    insuranceUserProfile.InsuranceService = InsuranceProvider.hygeia.ToString();
                     insuranceUserProfile.Premium = Decimal.Parse("1000");
                     insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
                     insuranceUserProfile.UserId = userId;
