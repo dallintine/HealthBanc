@@ -1,6 +1,6 @@
 ﻿using Domain.Models;
 using Domain.Models.Axa.Hygeia_Insurance;
-using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 using Domain.Models.ExceptionLog;
 using Domain.Models.ReportAndLogs;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Domain.Models
+namespace Domain.Models.Axa_Hygeia_Insurance
 {
     /// <summary>
     /// Save the user insurance profile details
@@ -21,10 +21,26 @@ namespace Domain.Models
         /// The CompanyProfile Id. This can be nullable. Its null if the user is Insurance profile is registered as an individual and not registered under a company
         /// </summary>
         public int? CompanyProfileId { get; set; }
+       
+        public string _companySubscribedStatus;
         /// <summary>
-        /// If profile is registered under a company or group. Value can either be : "active","inactive","pending"
+        /// If profile is registered under a company or group. For Possible Providers <see cref="InsuranceProfile_CompanySubStatusValue"/>
         /// </summary>
-        public string CompanySubscribedStatus { get; set; }
+        public string CompanySubscribedStatus
+        {
+            get { return _companySubscribedStatus; }
+            set
+            {
+                if (Enum.IsDefined(typeof(InsuranceProfile_CompanySubStatusValue), value))
+                {
+                    _companySubscribedStatus = value;
+                }
+                else
+                {
+                    throw new ArgumentException("Value of InsuranceUserProfile.CompanySubscribedStatus is not valid. Please check defined enumerated values for channel in the InsuranceProfile_CompanySubStatusValue class");
+                }
+            }
+        }
         /// <summary>
         /// This is the Insurance Enrolle number
         /// </summary>
@@ -61,7 +77,12 @@ namespace Domain.Models
         public string StateOfResidence { get; set; }
         public string TownOfResidence { get; set; }
         /// <summary>
-        /// Represent user status in an insurance cycle. Value limited to "active","inactive",null
+        /// Represent the active status in an insurance cycle.
+        /// <remarks>
+        /// true = active
+        /// false = inactive
+        /// null = No subscription history
+        /// </remarks>
         /// </summary>
         public bool? ActiveStatus { get; set; }
         /// <summary>
@@ -73,13 +94,34 @@ namespace Domain.Models
         /// </summary>
         public DateTime StartActiveStatusDate { get; set; }
         /// <summary>
-        /// Insurance user subscription status. Value limited to "active","inactive",null
+        /// Insurance user subscription status. 
+        /// <remarks>
+        /// true = active subscription
+        /// false = inactive subscription
+        /// null = No subscription history
+        /// </remarks>
         /// </summary>
         public bool? SubscriptionStatus { get; set; }
+
+        public string _insuranceService;
         /// <summary>
-        /// Insurance Provider user was enrolled into. Value is limited to "hygeia","axamansard"
+        /// The Insurance Service provider. For Possible Providers <see cref="InsuranceProvider"/>
         /// </summary>
-        public string InsuranceService { get; set; }
+        public string InsuranceService
+        {
+            get { return _insuranceService; }
+            set
+            {
+                if (Enum.IsDefined(typeof(InsuranceProvider), value))
+                {
+                    _insuranceService = value;
+                }
+                else
+                {
+                    throw new ArgumentException("Value of InsuranceUserProfile.InsuranceService is not valid. Please check defined enumerated values for providers in the InsuranceProvider class");
+                }
+            }
+        }
         /// <summary>
         /// Date insurance profile was created
         /// </summary>
@@ -87,5 +129,15 @@ namespace Domain.Models
         public List<DebitCard> Cards { get; set; }
         public List<PaymentReference> PaymentReferences { get; set; }
         public List<ActivityLog> HealthInsuredActivityLogs { get; set; }
+    }
+
+    // <summary>
+    /// The Possible Values for <see cref="InsuranceUserProfile.CompanySubscribedStatus"/>
+    /// </summary>
+    public enum InsuranceProfile_CompanySubStatusValue
+    {
+        active,
+        inactive,
+        pending,
     }
 }

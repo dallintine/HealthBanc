@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Persistence;
 using Application.Interfaces;
-using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 using Domain.Models.Axa.Hygeia_Insurance;
 
 namespace Infrastructure.UploadService

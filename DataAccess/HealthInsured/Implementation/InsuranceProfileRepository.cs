@@ -1,6 +1,7 @@
 ﻿using DataAccess.General.Implementation;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
+using Domain.Models.Axa_Hygeia_Insurance;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using System;

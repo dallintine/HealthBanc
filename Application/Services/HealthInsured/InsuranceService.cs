@@ -12,7 +12,7 @@ using AutoMapper;
 using DataAccess;
 using Domain.Models;
 using Domain.Models.Axa.Hygeia_Insurance;
-using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 using Hangfire;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Http;

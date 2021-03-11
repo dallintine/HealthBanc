@@ -33,7 +33,7 @@ using Infrastructure.UploadService;
 using DataAccess;
 using Application.DTO.HealthInsured_AxaMansard;
 using Domain.Models.Axa.Hygeia_Insurance;
-using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 
 namespace HealthBanc.Controllers.Insurance
 {

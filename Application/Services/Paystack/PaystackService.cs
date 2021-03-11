@@ -4,6 +4,7 @@ using Application.Helpers.ThirdPartyAPI;
 using Application.ViewModels.Paystack;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
+using Domain.Models.Axa_Hygeia_Insurance;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -70,9 +71,11 @@ namespace Application.Services.Paystack
 
                         if(user is null)
                         {
-                            user = new InsuranceUserProfile();
-                            user.PhoneNumber = "";
-                            user.DateOfBirth = DateTime.Now;
+                            user = new InsuranceUserProfile
+                            {
+                                PhoneNumber = "",
+                                DateOfBirth = DateTime.Now
+                            };
                         }
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
                         var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber
@@ -86,11 +89,11 @@ namespace Application.Services.Paystack
                         return processStatusResponse;
                     }  
                 }
-                var message = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
-                var gatewayResponse = chargeCardResponse.data.gateway_response != null ? chargeCardResponse.data.gateway_response : "";
+                var message = chargeCardResponse.data.message ?? "";
+                var gatewayResponse = chargeCardResponse.data.gateway_response ?? "";
                 return new TokenizationResponse { Message = chargeCardResponse.message + ", " + message+","+ gatewayResponse, Status = false };
             }
-            var errorMessage = chargeCardResponse.data.message != null ? chargeCardResponse.data.message : "";
+            var errorMessage = chargeCardResponse.data.message ?? "";
             return new TokenizationResponse { Message = chargeCardResponse.message + ", " + errorMessage, Status = false };
         }
         public async Task<TokenizationResponse> SendOtp(string otp, string reference,string phoneNumber, DateTime dateOfBirth,string pin)
@@ -136,11 +139,11 @@ namespace Application.Services.Paystack
                         return processStatusResponse;
                     }
                 }
-                var message = otpResponse.data.message != null ? otpResponse.data.message : "";
-                var gatewayResponse = otpResponse.data.gateway_response != null ? otpResponse.data.gateway_response : "";
+                var message = otpResponse.data.message ?? "";
+                var gatewayResponse = otpResponse.data.gateway_response ?? "";
                 return new TokenizationResponse { Message = otpResponse.message + ", " + message+","+gatewayResponse, Status = false };
             }
-            var errorMessage = otpResponse.data.message != null ? otpResponse.data.message : "";
+            var errorMessage = otpResponse.data.message ?? "";
             return new TokenizationResponse { Message = otpResponse.message + ", " + errorMessage, Status = false };
         }
         public async Task<TokenizationResponse> ChargeAuthorization(ChargeAuthorization chargeAuthorization)
@@ -176,11 +179,11 @@ namespace Application.Services.Paystack
                         // Insufficient Funds
                         else if (chargeAuthorizationResponse.data.status == "failed")
                         {
-                            var message1 = chargeAuthorizationResponse.data.gateway_response != null ? chargeAuthorizationResponse.data.gateway_response : "";
+                            var message1 = chargeAuthorizationResponse.data.gateway_response ?? "";
                             return new TokenizationResponse { Message = chargeAuthorizationResponse.message + ", " + message1, Status = false, ResponseCode = 10 };
                         }
                     }
-                    var message2 = chargeAuthorizationResponse.data.gateway_response != null ? chargeAuthorizationResponse.data.gateway_response : "";
+                    var message2 = chargeAuthorizationResponse.data.gateway_response ?? "";
                     return new TokenizationResponse { Message = chargeAuthorizationResponse.message + ", " + message2, Status = false };
                 }
                 // Authorization code error
@@ -313,10 +316,10 @@ namespace Application.Services.Paystack
                         return processStatusResponse;
                     }                   
                 }
-                var message = birthdayResponse.data.message != null ? birthdayResponse.data.message : "";
+                var message = birthdayResponse.data.message ?? "";
                 return new TokenizationResponse { Message = birthdayResponse.message + ", " + message, Status = false };
             }
-            var errorMessage = birthdayResponse.data.message != null ? birthdayResponse.data.message : "";
+            var errorMessage = birthdayResponse.data.message ?? "";
             return new TokenizationResponse { Message = birthdayResponse.message + ", " + errorMessage, Status = false };
         }
         private async Task<TokenizationResponse> SubmitPhone(string reference, string phoneNumber, DateTime birthDate,string pin)
@@ -361,10 +364,10 @@ namespace Application.Services.Paystack
                         return processStatusResponse;
                     }
                 }
-                var message = phoneResponse.data.message != null ? phoneResponse.data.message : "";
+                var message = phoneResponse.data.message ?? "";
                 return new TokenizationResponse { Message = phoneResponse.message + ", " + message, Status = false };
             }
-            var errorMessage = phoneResponse.data.message != null ? phoneResponse.data.message : "";
+            var errorMessage = phoneResponse.data.message ?? "";
             return new TokenizationResponse { Message = phoneResponse.message + ", " + errorMessage, Status = false };
         }
         public async Task<TokenizationResponse> VerifyTransaction(string reference)
@@ -374,9 +377,8 @@ namespace Application.Services.Paystack
             var response = await httpClient.GetAsync($"{Options.VerifyTransaction}/{reference}");
             if (response.IsSuccessStatusCode)
             {
-                var verifyResponse = new ChargeCardResponse();
                 string apiResponse = await response.Content.ReadAsStringAsync();
-                verifyResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+                var verifyResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
                 if (verifyResponse.status == true)
                 {
                     if(verifyResponse.data.status == "success")
@@ -434,9 +436,8 @@ namespace Application.Services.Paystack
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             var response = await httpClient.GetAsync($"{Options.PayStackChargeCard}/{reference}");
 
-            var verifyResponse = new ChargeCardResponse();
             string apiResponse = await response.Content.ReadAsStringAsync();
-            verifyResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+            var verifyResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
 
             if (response.IsSuccessStatusCode)
             {               
@@ -470,11 +471,11 @@ namespace Application.Services.Paystack
                         return processStatusResponse;
                     }
                 }
-                var message = verifyResponse.data.message != null ? verifyResponse.data.message : "";
-                var gatewayResponse = verifyResponse.data.gateway_response != null ? verifyResponse.data.gateway_response : "";
+                var message = verifyResponse.data.message ?? "";
+                var gatewayResponse = verifyResponse.data.gateway_response ?? "";
                 return new TokenizationResponse { Message = verifyResponse.message + ", " + message+","+gatewayResponse, Status = false };
             }
-            var errorMessage = verifyResponse.data.message != null ? verifyResponse.data.message : "";
+            var errorMessage = verifyResponse.data.message ?? "";
             return new TokenizationResponse { Message = verifyResponse.message + ", " + errorMessage, Status = false };
         }        
 

@@ -3,6 +3,7 @@ using Application.DTO.HealthInsured_AxaMansard;
 using AutoMapper;
 using Domain.Models;
 using Domain.Models.Axa.Hygeia_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using System;
 using System.Collections.Generic;

@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Models.AxaMansard_Insurance
+namespace Domain.Models.Axa_Hygeia_Insurance
 {
     public class ScheduledPayment
     {
+        /// <summary>
+        /// Class to Handle ScheduledPayment Data
+        /// </summary>
         public ScheduledPayment()
         {
 
-        }
+        }        
         public ScheduledPayment(int userId, int? insuranceUserProfileId, Guid? scheduledEnrollmentId,int? companyProfileId, DateTime executionDate, string jobId, string status
             ,string message,string paymentReference,string insuranceService)
         {
@@ -33,35 +36,61 @@ namespace Domain.Models.AxaMansard_Insurance
         public int? CompanyProfileId { get; set; }
         public DateTime DateScheduled { get; set; }
         public DateTime ExecutionDate { get; set; }
+        /// <summary>
+        /// The Background Task/Job Id of scheduled payment
+        /// </summary>
         public string JobId { get; set; }
 
-        private string _status;
+        public string _status;
+        /// <summary>
+        /// The Status of scheduled payment. For Possible Providers <see cref="ScheduledPayment_StatusValue"/>
+        /// </summary>
         public string Status
         {
             get { return _status; }
             set
-            { if(Enum.IsDefined(typeof(StatusValue), value))
+            { if(Enum.IsDefined(typeof(ScheduledPayment_StatusValue), value))
                 {
                     _status = value;
                 }
                 else
                 {
-                    throw new ArgumentOutOfRangeException("Value of status is out of range. Please check defined enumerated values for status in the scheduledPayment class");
+                    throw new ArgumentException("Value of status is not valid. Please check defined enumerated values for status in the ScheduledPayment_StatusValue class");
                 }
             }
         }
         public string Message { get; set; }
         /// <summary>
-        /// This the payment referenc for the scheduled payment
+        /// This the payment reference for the scheduled payment
         /// </summary>
         public string PaymentReference { get; set; }
-        public string InsuranceService { get; set; }
+
+        public string _insuranceService;
+        /// <summary>
+        /// The Insurance Service provider. For Possible Providers <see cref="InsuranceProvider"/>
+        /// </summary>
+        public string InsuranceService
+        {
+            get { return _insuranceService; }
+            set
+            {
+                if (Enum.IsDefined(typeof(InsuranceProvider), value))
+                {
+                    _insuranceService = value;
+                }
+                else
+                {
+                    throw new ArgumentException("Value of ScheduledPayment.InsuranceService is not valid. Please check defined enumerated values for providers in the InsuranceProvider class");
+                }
+            }
+        }
         public ScheduledEnrollment ScheduledEnrollment { get; set; }        
     }
-    /// <summary>
-    /// The Possible Values for Status
+
+    // <summary>
+    /// The Possible Values for <see cref="ScheduledPayment.Status"/>
     /// </summary>
-    enum StatusValue
+    public enum ScheduledPayment_StatusValue
     {
         Processing,
         Terminated,

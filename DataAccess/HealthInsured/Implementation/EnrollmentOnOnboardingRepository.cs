@@ -1,6 +1,6 @@
 ﻿using DataAccess.General.Implementation;
 using DataAccess.HealthInsured.Interfaces;
-using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 using Persistence;
 using System;
 using System.Collections.Generic;

@@ -1,5 +1,6 @@
 ﻿using DataAccess.General.Interfaces;
-using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa.Hygeia_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 using System;
 using System.Collections.Generic;
 using System.Text;

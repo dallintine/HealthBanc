@@ -11,7 +11,7 @@ using AutoMapper;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
-using Domain.Models.AxaMansard_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 using Hangfire;
 using Hangfire.Server;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
@@ -258,7 +258,7 @@ namespace Application.Services.HealthInsured
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
                 //else, card status is 0;
-                var cardStatus = insuranceUserProfile.Cards.Count == 0 ? 1 : 0;
+                var cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int) DebitCard_StatusValue.primary : (int) DebitCard_StatusValue.secondary;
 
                 var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id,null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
@@ -358,7 +358,9 @@ namespace Application.Services.HealthInsured
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
                 //else, card status is 0;
-                var cardStatus = companyProfile.Cards.Count == 0 ? 1 : 0;
+
+                var cardStatus = companyProfile.Cards.Count == 0 ? (int) DebitCard_StatusValue.primary : (int) DebitCard_StatusValue.secondary;
+
 
                 var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
@@ -503,7 +505,7 @@ namespace Application.Services.HealthInsured
         {
             var jobId = context.BackgroundJob.Id;
             var insuranceProfile = await _insuranceProfileRepository.GetByUserIdAsync(userId);
-            var activeCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == 1);
+            var activeCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == (int) DebitCard_StatusValue.primary);
 
             //Get a charge authorization model to use in scheduled payment background process.
             var chageAuthorizationModel = new ChargeAuthorization()
@@ -609,7 +611,7 @@ namespace Application.Services.HealthInsured
         {
             var jobId = context.BackgroundJob.Id;
             var companyProfile = await _companyProfileRepository.GetCompanyProfileByUserId(userId);
-            var activeCard = companyProfile.Cards.FirstOrDefault(x => x.Status == 1);
+            var activeCard = companyProfile.Cards.FirstOrDefault(x => x.Status == (int) DebitCard_StatusValue.primary);
 
             //Get a charge authorization model to use in scheduled payment background process.
             var chageAuthorizationModel = new ChargeAuthorization()
@@ -639,6 +641,12 @@ namespace Application.Services.HealthInsured
                 await _scheduledPayment.Save();
                 await Task.CompletedTask;
             }
+            //Process Failed Status///////
+            ///DDDD////
+            ///////DDFff///
+            //////defvdcd////
+            //////weqws/////
+            //////wsxc/////
             await Task.CompletedTask;
         }
         
@@ -811,7 +819,7 @@ namespace Application.Services.HealthInsured
             {
                 return new ResponseMessage { Message = "Card was not found", ResponseCode=12 };
             }
-            if (newPrimaryCard.Status == 1)
+            if (newPrimaryCard.Status == (int) DebitCard_StatusValue.primary)
             {
                 return new ResponseMessage { Message = "This card is presently the primary card" };
             }
@@ -841,7 +849,7 @@ namespace Application.Services.HealthInsured
             var insuranceProfile = await _insuranceProfileRepository.GetByUserIdAsync(userId);
 
             if (card == null) return new ResponseMessage { Message = "Card  was not found", ResponseCode=12 };
-            if (card.Status == 1 && insuranceProfile.SubscriptionStatus == true) return new ResponseMessage { Message = "Kindly set a new card as" +
+            if (card.Status == (int) DebitCard_StatusValue.primary && insuranceProfile.SubscriptionStatus == true) return new ResponseMessage { Message = "Kindly set a new card as" +
                 "primary card to delete present primary card" };
 
             _cardRepository.Delete(card);
@@ -907,7 +915,7 @@ namespace Application.Services.HealthInsured
             {
                 return new ResponseMessage { Message = "Subscription is currently active", Status = false };
             }
-            var primaryCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == 1);
+            var primaryCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == (int) DebitCard_StatusValue.primary);
             if (primaryCard == null)
             {
                 return new ResponseMessage { Message = "Kindly add a primary card, then start the reactivation process" };
@@ -1233,6 +1241,51 @@ namespace Application.Services.HealthInsured
                         , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
                         _paymentReference.Create(paymentReference2);
                         await _paymentReference.Save();
+                    }
+                }
+                else
+                {
+                    var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
+                    if(companyProfile != null)
+                    {
+                        var paymentReference = await _paymentReference.GetByReference(reference);
+                        if (paymentReference != null)
+                        {
+                            if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
+                            {
+                                var tokenizationResponse = new TokenizationResponse
+                                {
+                                    Type = card_type,
+                                    LastDigit = last4,
+                                    AuthorizationCode = authorization_code,
+                                    Message = "Card was tokenize successfully",
+                                    Status = true,
+                                    Reference = paymentReference.Refernce,
+                                    ResponseCode = 0
+                                };
+                                await ProcessPaystackChargeCardResponse(tokenizationResponse, companyProfile,
+                                    paymentReference, paymentReference.Refernce, ipAddress, "nil");
+                                paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
+                                _paymentReference.Update(paymentReference);
+                                await _paymentReference.Save();
+                            }
+                            else
+                            {
+                                paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
+                                _paymentReference.Update(paymentReference);
+                                await _paymentReference.Save();
+                            }
+                        }
+                        else
+                        {
+                            // Create payment reference for the charge.
+                            var channel = companyProfile.InsuranceService == "hygeia" ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
+                            var paymentReference2 = new PaymentReference(channel, reference, null, companyProfile.Id, companyProfile.UserId
+                            , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
+                            _paymentReference.Create(paymentReference2);
+                            await _paymentReference.Save();
+                        }
                     }
                 }
             }

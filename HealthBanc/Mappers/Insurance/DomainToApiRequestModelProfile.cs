@@ -1,6 +1,7 @@
 ﻿using Application.API_RequestModel.HealthInsured;
 using AutoMapper;
 using Domain.Models;
+using Domain.Models.Axa_Hygeia_Insurance;
 using System;
 using System.Collections.Generic;
 using System.Text;

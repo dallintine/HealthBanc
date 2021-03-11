@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Models.AxaMansard_Insurance
+namespace Domain.Models.Axa_Hygeia_Insurance
 {
     public class EnrollmentOnReactivation
     {

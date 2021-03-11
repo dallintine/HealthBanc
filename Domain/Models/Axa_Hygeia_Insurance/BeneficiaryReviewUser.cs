@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Models.Axa.Hygeia_Insurance
+namespace Domain.Models.Axa_Hygeia_Insurance
 {
     public class BeneficiaryReviewUser
     {
@@ -17,6 +17,9 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         public string PhoneNumber { get; set; }
         public DateTime DateCreated { get; set; }
         public Decimal Amount { get; set; }
+        /// <summary>
+        /// Boolean value to specify if user was removed from beneficiary review list
+        /// </summary>
         public bool IsRemove { get; set; }
     }
 }

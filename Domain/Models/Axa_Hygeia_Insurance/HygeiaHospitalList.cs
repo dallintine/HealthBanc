@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Models.Axa.Hygeia_Insurance
+namespace Domain.Models.Axa_Hygeia_Insurance
 {
     public class HygeiaHospitalList
     {

@@ -1,4 +1,5 @@
 ﻿using Domain.Models.Axa.Hygeia_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -30,6 +31,9 @@ namespace Domain.Models
         public DateTime Date { get; set; }
 
         public string _channel;
+        /// <summary>
+        /// The Channel Payment was made from. For Possible Providers <see cref="PaymentReference_ChannelValue"/>
+        /// </summary>
         public string Channel
         {
             get { return _channel; }
@@ -45,13 +49,19 @@ namespace Domain.Models
                 }
             }
         }
+        /// <summary>
+        /// The reference string in correlation with paystack
+        /// </summary>
         public string Refernce { get; set; }
         public int? InsuranceUserProfileId { get; set; }
         public int? CompanyProfileId { get; set; }
         public int UserId { get; set; }
         public Decimal Amount { get; set; }
 
-        private string _status;
+        public string _status;
+        /// <summary>
+        /// Status of Payment transactions .For Possible Providers <see cref="PaymentReference_StatusValue"/>
+        /// </summary>
         public string Status
         {
             get { return _status; }
@@ -70,8 +80,9 @@ namespace Domain.Models
         public InsuranceUserProfile InsuranceUserProfile { get; set; }
         public CompanyProfile CompanyProfile { get; set; }
     }
+
     // <summary>
-    /// The Possible Values for Status
+    /// The Possible Values for <see cref="PaymentReference.Status"/>
     /// </summary>
     public enum PaymentReference_StatusValue
     {
@@ -83,7 +94,7 @@ namespace Domain.Models
     }
 
     // <summary>
-    /// The Possible Values for Channel
+    /// The Possible Values for <see cref="PaymentReference.Channel"/>
     /// </summary>
     public enum PaymentReference_ChannelValue
     {
