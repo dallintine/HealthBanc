@@ -99,6 +99,7 @@ namespace Application.Services.HealthInsured
             userProfile.InsuranceService ??= InsuranceProvider.Axamansard.ToString();
 
             var profile = _mapper.Map<InsuranceUserProfile>(userProfile);
+            profile.InsuranceService = userProfile.InsuranceService == "axamansard" ? InsuranceProvider.Axamansard.ToString() : InsuranceProvider.Hygeia.ToString();
             profile.UserId = user.Id;
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
