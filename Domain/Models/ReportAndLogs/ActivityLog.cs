@@ -24,6 +24,25 @@ namespace Domain.Models.ReportAndLogs
         public int? CompanyProfileId { get; set; }
         public string ActionApplied { get; set; }
         public DateTime Date { get; set; }
-        public string Service { get; set; }
+
+        public string _service;
+        /// <summary>
+        /// The HealthBanc Services. For Possible Providers <see cref="ServiceNames"/>
+        /// </summary>
+        public string Service
+        {
+            get { return _service; }
+            set
+            {
+                if (Enum.IsDefined(typeof(ServiceNames), value))
+                {
+                    _service = value;
+                }
+                else
+                {
+                    throw new ArgumentException("Value of ActivityLog.Service is not valid. Please check defined enumerated values for providers in the ServiceNames class");
+                }
+            }
+        }
     }
 }

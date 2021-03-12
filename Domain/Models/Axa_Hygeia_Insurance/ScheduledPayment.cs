@@ -95,6 +95,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         Processing,
         Terminated,
         Failed,
-        Successful
+        Successful,
+        Cancelled
     }
 }

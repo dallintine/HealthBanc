@@ -26,6 +26,7 @@ namespace DataAccess
         IAxaMansardHospitalListRepository AxaMansardHospitalList { get; }
         IActivityLogRepository HealthInsuredActivityLog { get; }
         IExceptionLogRepository ExceptionLog { get; }
+        IActivityLogRepository ActivityLog { get; }
 
         Task<int> Save();
     }

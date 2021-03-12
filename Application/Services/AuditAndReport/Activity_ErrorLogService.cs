@@ -1,5 +1,6 @@
 ﻿using Application.DTO;
 using DataAccess;
+using Domain.Models;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.ExceptionLog;
 using Domain.Models.ReportAndLogs;
@@ -42,7 +43,7 @@ namespace Application.Services.AuditAndReport
                 var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
                 if (!(corporateUser is null))
                 {
-                    var corporateUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, null, corporateUser.Id,"healthinsured");
+                    var corporateUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, null, corporateUser.Id, ServiceNames.HealthInsured.ToString());
                     var paginatedResponse = new PagedResponse<ActivityLog>
                     {
                         Data = corporateUserActivityLog.Data,
@@ -55,7 +56,7 @@ namespace Application.Services.AuditAndReport
                 }
                 return new ResponseMessage { Status = false, Message = "User activity log does not exist" };
             }
-            var individualUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, individualUser.Id, null, "healthinsured");
+            var individualUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, individualUser.Id, null, ServiceNames.HealthInsured.ToString());
             var response = new PagedResponse<ActivityLog>
             {
                 Data = individualUserActivityLog.Data,
@@ -75,7 +76,7 @@ namespace Application.Services.AuditAndReport
                 var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
                 if (!(corporateUser is null))
                 {
-                    var corporateUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, null, corporateUser.Id, "healthinsured");
+                    var corporateUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, null, corporateUser.Id, ServiceNames.HealthInsured.ToString());
                     var paginatedResponse = new PagedResponse<ActivityLog>
                     {
                         Data = corporateUserActivityLog.Data,
@@ -88,7 +89,7 @@ namespace Application.Services.AuditAndReport
                 }
                 return new ResponseMessage { Status = false, Message = "User activity log does not exist" };
             }
-            var individualUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, individualUser.Id, null, "healthinsured");
+            var individualUserActivityLog = await _repoWrapper.HealthInsuredActivityLog.GetPaginatedActivityLogByProfileId(paginationQuery, individualUser.Id, null, ServiceNames.HealthInsured.ToString());
             var response = new PagedResponse<ActivityLog>
             {
                 Data = individualUserActivityLog.Data,

@@ -287,29 +287,14 @@ namespace HealthBanc.Controllers.Insurance
             if (ModelState.IsValid)
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-                var checkIfUserHasBeenProfiled = await _insuranceProfileRepository.GetByUserIdAsync(Id);
-                if (checkIfUserHasBeenProfiled == null) return BadRequest(new ResponseMessage { Message = "User does not have a profile" });
+                int id = int.Parse(userId);
 
-                var updatedProfile = _mapper.Map(updateProfileViewModel, checkIfUserHasBeenProfiled);
-                try
+                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, id);
+                if (updateResponse.Status)
                 {
-                    updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName.Split(':')[0];
-                    updatedProfile.CPAddress = updateProfileViewModel.CareProviderName.Split(':')[1];
-                    updatedProfile.CPCity = updateProfileViewModel.CareProviderName.Split(":").Length == 3 ? updateProfileViewModel.CareProviderName.Split(":")[2] : "";
+                    return Ok(updateResponse);
                 }
-                catch (Exception ex)
-                {
-                    updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName;
-                }
-                _insuranceProfileRepository.Update(updatedProfile);
-                await _insuranceProfileRepository.Save();
-
-                var auditViewModel = new AuditLogViewModel(Id, null, null, "Updated HealthInsured Profile", "Updated HealthInsured profile");
-                var device = _auditLogServices.GetDevice(agent);
-                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel,IpAddress,device));
-                return Ok(new ResponseMessage { Status = true, Message = "Profile was updated successfully" });
-
+                return BadRequest(updateResponse);
             }
             //return validation errors
             var errors = new List<string>();

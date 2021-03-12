@@ -9,7 +9,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
     /// </summary>
     public enum InsuranceProvider
     {
-        axamansard,
-        hygeia
+        Axamansard,
+        Hygeia
     }
 }

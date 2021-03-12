@@ -1,6 +1,7 @@
 ﻿using DataAccess.General.Implementation;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
+using DataAccess.Logs.Interfaces;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.ReportAndLogs;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataAccess.General.Implementation
+namespace DataAccess.Logs.Implementation
 {
     public class ActivityLogRepository : BaseRepository<ActivityLog>, IActivityLogRepository
     {

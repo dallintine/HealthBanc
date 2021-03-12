@@ -16,27 +16,13 @@ namespace HealthBanc.Controllers.Activity_ErrorLog
 {
     [Route("v1/api/[controller]")]
     [ApiController]
-    public class Activity_ErrorLogController : ControllerBase
+    public class ActivityLogController : ControllerBase
     {
         public Activity_ErrorLogService _activity_ErrorLogService { get; }
 
-        public Activity_ErrorLogController(Activity_ErrorLogService activity_ErrorLogService)
+        public ActivityLogController(Activity_ErrorLogService activity_ErrorLogService)
         {
             _activity_ErrorLogService = activity_ErrorLogService;
-        }
-
-        /// <summary>
-        /// Get paginated error logs
-        /// </summary>
-        /// <param name="paginationQuery"></param>
-        /// <returns></returns>
-        [HttpPost("[action]")]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<ExceptionLog>>))]
-        public async Task<IActionResult> GetPaginatedErrorLog(PaginationQuery paginationQuery)
-        {
-            var response = await _activity_ErrorLogService.GetPaginatedErrorLog(paginationQuery);
-            return Ok(response);
         }
 
         /// <summary>

@@ -136,8 +136,8 @@ namespace Domain.Models.Axa_Hygeia_Insurance
     /// </summary>
     public enum InsuranceProfile_CompanySubStatusValue
     {
-        active,
-        inactive,
-        pending,
+        Active,
+        Inactive,
+        Pending,
     }
 }

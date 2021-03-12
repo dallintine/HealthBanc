@@ -13,6 +13,7 @@ using DataAccess;
 using Domain.Models;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.Axa_Hygeia_Insurance;
+using Domain.Models.ReportAndLogs;
 using Hangfire;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Http;
@@ -95,15 +96,14 @@ namespace Application.Services.HealthInsured
             var checkIfUserIsRegisteredAsCorporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(user.Id);
             if (!(checkIfUserIsRegisteredAsCorporateUser is null)) return new ResponseMessage { Status = false, Message = "Üser is registered as corporate user" };
 
-            userProfile.InsuranceService = userProfile.InsuranceService == null ? userProfile.InsuranceService = "axamansard"
-               : userProfile.InsuranceService = userProfile.InsuranceService;
+            userProfile.InsuranceService ??= InsuranceProvider.Axamansard.ToString();
 
             var profile = _mapper.Map<InsuranceUserProfile>(userProfile);
             profile.UserId = user.Id;
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
 
-            profile.TransId = (userProfile.InsuranceService == null | userProfile.InsuranceService == "axamansard") ? _uniqueIdentifier.GetUniqueCode(12) : "";
+            profile.TransId = (userProfile.InsuranceService == null | userProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _uniqueIdentifier.GetUniqueCode(12) : "";
             profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
             profile.InsuranceService = userProfile.InsuranceService;
 
@@ -120,6 +120,30 @@ namespace Application.Services.HealthInsured
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true};
+        }
+
+        public async Task<ResponseMessage> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel,int userId)
+        {
+            var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (checkIfUserHasBeenProfiled == null) return new ResponseMessage { Message = "User does not have a profile", Status=false };
+
+            var updatedProfile = _mapper.Map(updateProfileViewModel, checkIfUserHasBeenProfiled);
+            try
+            {
+                updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName.Split(':')[0];
+                updatedProfile.CPAddress = updateProfileViewModel.CareProviderName.Split(':')[1];
+                updatedProfile.CPCity = updateProfileViewModel.CareProviderName.Split(":").Length == 3 ? updateProfileViewModel.CareProviderName.Split(":")[2] : "";
+            }
+            catch (Exception ex)
+            {
+                updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName;
+            }
+            _repoWrapper.InsuranceProfile.Update(updatedProfile);
+
+            var activityLog = new ActivityLog(checkIfUserHasBeenProfiled.Id, null, "Updated HealthInsured Profile", ServiceNames.HealthInsured.ToString());
+            _repoWrapper.ActivityLog.Create(activityLog);
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true, Message = "Profile was updated successfully" };
         }
 
         public async Task<ResponseMessage> GetPaginatedInsuranceProfiles(PaginationQuery paginationQuery)
@@ -172,7 +196,7 @@ namespace Application.Services.HealthInsured
             var enrollment = await AxamansardRegisterUser(enrollmentModel);
             if (!enrollment.Status)
             {
-                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, "Failed"
+                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, EnrollmentOnOnboarding_StatusValue.Failed.ToString()
                     , enrollment.Message, "axamansard");
                 _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
                 await _repoWrapper.Save();
@@ -252,7 +276,7 @@ namespace Application.Services.HealthInsured
             var registration = await HygeiaRegisterUser(registrationModel);
             if (!registration.Status)
             {
-                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id,"Failed", registration.Message,
+                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id,EnrollmentOnOnboarding_StatusValue.Failed.ToString(), registration.Message,
                     "hygeia");
                 _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
                 await _repoWrapper.Save();
@@ -409,7 +433,7 @@ namespace Application.Services.HealthInsured
                 UserId = userId,
                 CompanyEmail = corporateRegViewModel.Email,
                 CompanyName = corporateRegViewModel.Name,
-                InsuranceService = InsuranceProvider.hygeia.ToString()
+                InsuranceService = InsuranceProvider.Hygeia.ToString()
             };
 
             // Schedule otp removal after 5 minutes
@@ -493,12 +517,12 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task<ResponseMessage> CreateInsuranceProfileForCompanyBeneficiaries(int companyId, List<BeneficiaryReviewUser> beneficiaryReviews)
         {
-            var companySubscribedStatus = "pending";
+            var companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
             var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyId);
 
             if (beneficiaryReviews is null){
                 beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.IsRemove == false).ToList();
-                companySubscribedStatus = "active";
+                companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
             }
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
             foreach (var item in beneficiaryReviews)
@@ -510,11 +534,11 @@ namespace Application.Services.HealthInsured
                     var userId = createdUser.Data.Id;
                     var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
                     insuranceUserProfile.CompanyProfileId = companyId;
-                    insuranceUserProfile.InsuranceService = InsuranceProvider.hygeia.ToString();
+                    insuranceUserProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
                     insuranceUserProfile.Premium = Decimal.Parse("1000");
                     insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
                     insuranceUserProfile.UserId = userId;
-                    if(companySubscribedStatus == "active")
+                    if(companySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString())
                     {
                         insuranceUserProfile.ActiveStatus = true;
                         insuranceUserProfile.SubscriptionStatus = true;
@@ -533,6 +557,9 @@ namespace Application.Services.HealthInsured
             {
                 _repoWrapper.BeneficiaryReview.DeleteRange(beneficiaries);
             }
+            var activityLog = new ActivityLog(null, companyprofile.Id, "New Beneficiairies Was Added", ServiceNames.HealthInsured.ToString());
+            _repoWrapper.ActivityLog.Create(activityLog);
+
             await _repoWrapper.Save();
             return new ResponseMessage { Message = "Profiles was created successfully", Status=true };
         }
@@ -540,7 +567,7 @@ namespace Application.Services.HealthInsured
         public async Task OnboardUsersToHygeia(int companyUserId)
         {
             var companyProfile = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
-            var insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == "pending");
+            var insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString());
             foreach (var item in insuranceUserProfiles)
             {
                 var result = await EnrollUserToHygeiaOnOnboarding(item);
@@ -631,6 +658,10 @@ namespace Application.Services.HealthInsured
             company.CompanySize = updateCorporateUserViewModel.CompanySize;
             company.ProfileCompleted = true;
             _repoWrapper.CompanyProfile.Update(company);
+
+            var activityLog = new ActivityLog(null, company.Id, "Company Profile Was Updated", ServiceNames.HealthInsured.ToString());
+            _repoWrapper.ActivityLog.Create(activityLog);
+
             await _repoWrapper.Save();
             var corporateprofileDTO = _mapper.Map<CompanyProfileDTO>(company);
             return new ResponseMessage { Message = "Company profile was updated successfully", Status = true,Data= corporateprofileDTO };
@@ -680,9 +711,9 @@ namespace Application.Services.HealthInsured
             foreach(var item in beneficiaryListViewModel.Emails)
             {
                 var insuranceUserProfile = await _repoWrapper.InsuranceProfile.GetByEmail(item);
-                if(insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == "inactive")
+                if(insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Inactive.ToString())
                 {
-                    insuranceUserProfile.CompanySubscribedStatus = "pending";
+                    insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
                     companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                     _repoWrapper.CompanyProfile.Update(companyprofile);
@@ -697,7 +728,7 @@ namespace Application.Services.HealthInsured
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByCompanyId(companyUserId);
 
             var activeBeneficiaryCount = companyProfile.InsuranceUserProfiles.Where(x => x.ActiveStatus == true).Count();
-            var pendingbeneficiarycount = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == "pending").Count();
+            var pendingbeneficiarycount = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).Count();
             var inactiveBeneficairyCount = companyProfile.InsuranceUserProfiles.Where(x => x.ActiveStatus == false).Count();
 
             var companyProfileBeneficiaryAnalyticDTO = new CompanyProfileBeneficiaryAnalyticDTO
@@ -727,7 +758,9 @@ namespace Application.Services.HealthInsured
             {
                 beneficiary.IsRemove = true;
                 _repoWrapper.BeneficiaryReview.Update(beneficiary);
+
                 await _repoWrapper.Save();
+
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };

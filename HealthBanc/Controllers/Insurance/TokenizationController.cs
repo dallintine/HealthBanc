@@ -280,16 +280,5 @@ namespace HealthBanc.Controllers.Insurance
             }
             return BadRequest(response);
         }
-
-        [HttpGet("[action]")]
-        public async Task<IActionResult> Create()
-        {
-            var response = await _tokenizationService.Create();
-            if (response.Status)
-            {
-                return Ok();
-            }
-            return BadRequest();
-        }
     }
 }
