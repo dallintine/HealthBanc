@@ -124,9 +124,14 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CityListDTO>>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public IActionResult GetTowns(string state,string insurancePovider)
         {
+            if(string.IsNullOrEmpty(state) || String.IsNullOrEmpty(insurancePovider))
+            {
+                return BadRequest(new ResponseMessage { Status = false, Message="State or insurance provider cannot be null"});
+            }
             var townList = _insuranceService.GetTowns(state, insurancePovider);
             return Ok(townList);
         }
@@ -143,6 +148,10 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetHealthProvider(string state, string city, string insuranceProvider)
         {
+            if (string.IsNullOrEmpty(state) || String.IsNullOrEmpty(insuranceProvider) || String.IsNullOrEmpty(city))
+            {
+                return BadRequest(new ResponseMessage { Status = false, Message = "State or insurance provider cannot be null" });
+            }
             var healthProvider = await _insuranceService.GetHealthProvider(state, city, insuranceProvider);
             return Ok(healthProvider);
         }

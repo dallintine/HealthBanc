@@ -93,7 +93,14 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
         {
-            userProfile.InsuranceService = userProfile.InsuranceService == "axamansard" ? InsuranceProvider.Axamansard.ToString() : InsuranceProvider.Hygeia.ToString();
+            if(userProfile.InsuranceService == "axamansard")
+            {
+                userProfile.InsuranceService = InsuranceProvider.Axamansard.ToString();
+            }
+            if(userProfile.InsuranceService == "hygeia")
+            {
+                userProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
+            }
 
             var checkIfUserIsRegisteredAsCorporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(user.Id);
             if (!(checkIfUserIsRegisteredAsCorporateUser is null)) return new ResponseMessage { Status = false, Message = "Üser is registered as corporate user" };
@@ -369,6 +376,7 @@ namespace Application.Services.HealthInsured
 
         public ResponseMessage GetTowns(string state, string insuranceProvider)
         {
+            
             var townListDTO = new CityListDTO();
             if (insuranceProvider.ToLowerInvariant() == "axamansard")
             {
