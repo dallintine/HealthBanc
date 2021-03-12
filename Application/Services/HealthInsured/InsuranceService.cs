@@ -93,13 +93,14 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
         {
+            userProfile.InsuranceService = userProfile.InsuranceService == "axamansard" ? InsuranceProvider.Axamansard.ToString() : InsuranceProvider.Hygeia.ToString();
+
             var checkIfUserIsRegisteredAsCorporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(user.Id);
             if (!(checkIfUserIsRegisteredAsCorporateUser is null)) return new ResponseMessage { Status = false, Message = "Üser is registered as corporate user" };
 
             userProfile.InsuranceService ??= InsuranceProvider.Axamansard.ToString();
 
             var profile = _mapper.Map<InsuranceUserProfile>(userProfile);
-            profile.InsuranceService = userProfile.InsuranceService == "axamansard" ? InsuranceProvider.Axamansard.ToString() : InsuranceProvider.Hygeia.ToString();
             profile.UserId = user.Id;
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
