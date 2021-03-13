@@ -30,7 +30,7 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<ExceptionLog>>))]
-        public async Task<IActionResult> GetPaginatedErrorLog(PaginationQuery paginationQuery)
+        public async Task<IActionResult> GetPaginatedErrorLog([FromQuery]PaginationQuery paginationQuery)
         {
             var response = await _activity_ErrorLogService.GetPaginatedErrorLog(paginationQuery);
             return Ok(response);

@@ -32,9 +32,9 @@ namespace HealthBanc.Controllers.Activity_ErrorLog
         /// <param name="email"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        //[Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<ActivityLog>>))]
-        public async Task<IActionResult> GetHealthInsuredPaginatedActivityLogByEmail(PaginationQuery paginationQuery, string email)
+        public async Task<IActionResult> GetHealthInsuredPaginatedActivityLogByEmail([FromQuery]PaginationQuery paginationQuery, string email)
         {
             var response = await _activity_ErrorLogService.GetHealthInsuredPaginatedActivityLogByEmail(paginationQuery, email);
             if (response.Status)
@@ -52,7 +52,7 @@ namespace HealthBanc.Controllers.Activity_ErrorLog
         [HttpPost("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<ActivityLog>>))]
-        public async Task<IActionResult> GetLoggedInUserHealthInsuredPaginatedActivityLog(PaginationQuery paginationQuery)
+        public async Task<IActionResult> GetLoggedInUserHealthInsuredPaginatedActivityLog([FromQuery]PaginationQuery paginationQuery)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);

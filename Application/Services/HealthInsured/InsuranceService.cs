@@ -206,7 +206,7 @@ namespace Application.Services.HealthInsured
             if (!enrollment.Status)
             {
                 var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, EnrollmentOnOnboarding_StatusValue.Failed.ToString()
-                    , enrollment.Message, "axamansard");
+                    , enrollment.Message,InsuranceProvider.Axamansard.ToString() );
                 _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
                 await _repoWrapper.Save();
             }
@@ -286,7 +286,7 @@ namespace Application.Services.HealthInsured
             if (!registration.Status)
             {
                 var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id,EnrollmentOnOnboarding_StatusValue.Failed.ToString(), registration.Message,
-                    "hygeia");
+                    InsuranceProvider.Hygeia.ToString());
                 _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
                 await _repoWrapper.Save();
                 return registration;
