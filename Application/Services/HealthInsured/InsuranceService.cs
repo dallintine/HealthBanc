@@ -221,23 +221,22 @@ namespace Application.Services.HealthInsured
                 var bearerRequest = await AxaMansardAuthentication();
                 if (bearerRequest.Status)
                 {
-                    // var httpClient = _httpClientFactory.CreateClient("AxaMansard");
-                    //httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerRequest.Data.Auth_token);
-                    //HttpContent content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
-                    //var response = await httpClient.PostAsync($"{Options.AxaMansardEnrollement}", content);
+                    var httpClient = _httpClientFactory.CreateClient("AxaMansard");
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerRequest.Data.Auth_token);
+                    HttpContent content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
+                    var response = await httpClient.PostAsync($"{Options.AxaMansardEnrollement}", content);
 
-                    //if (response.IsSuccessStatusCode)
-                    //{
-                    //string apiResponse = await response.Content.ReadAsStringAsync();
-                    //var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
-                    //if (authResponse.success)
-                    //{
-                    //    return new ResponseMessage { Status = true, Message = authResponse.message };
-                    //}
-                    //return new ResponseMessage { Status = true, Message = authResponse.message };
-                    //}
-                    //return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
-                    return new ResponseMessage { Status = true, Message = "Successful" };
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string apiResponse = await response.Content.ReadAsStringAsync();
+                        var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
+                        if (authResponse.success)
+                        {
+                            return new ResponseMessage { Status = true, Message = authResponse.message };
+                        }
+                        return new ResponseMessage { Status = true, Message = authResponse.message };
+                    }
+                    return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }
                 return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
