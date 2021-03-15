@@ -741,6 +741,7 @@ namespace Application.Services.HealthInsured
                 if (insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Inactive.ToString())
                 {
                     insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
+                    insuranceUserProfile.ActiveStatus = false;
                     companyprofile.NextCyclePremiumFee -= insuranceUserProfile.Premium;
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                     _repoWrapper.CompanyProfile.Update(companyprofile);
