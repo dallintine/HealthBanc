@@ -535,7 +535,7 @@ namespace HealthBanc.Controllers.Insurance
                     return BadRequest(new ResponseMessage { Message = "No option was selected", Status = false });
                 }
 
-                var corporateUser = await _insuranceService.MoveCompanyBeneficiaryFromInactiveToPendingState(beneficiaryListViewModel, Id);
+                var corporateUser = await _insuranceService.MoveCompanyBeneficiaryFromPendingToInactiveState(beneficiaryListViewModel, Id);
                 return Ok(corporateUser);
             }
             //return validation errors
