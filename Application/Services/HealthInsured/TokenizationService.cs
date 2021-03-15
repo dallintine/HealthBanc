@@ -789,7 +789,7 @@ namespace Application.Services.HealthInsured
             _repoWrapper.CompanyProfile.Update(companyProfile);
             await _repoWrapper.Save();
             return new ResponseMessage { Data = "Beneficiaries was deactivated successfully,beneficiaries will still remain active till insurance " +
-                "cycle ends.", Status = false };
+                "cycle ends.", Status = true };
         }
 
         /// <summary>
