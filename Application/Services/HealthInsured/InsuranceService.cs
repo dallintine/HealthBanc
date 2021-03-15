@@ -729,7 +729,25 @@ namespace Application.Services.HealthInsured
                 }
             }
             await _repoWrapper.Save();
-            return new ResponseMessage { Status = true };
+            return new ResponseMessage { Status = true ,Message = "Beneficiaries status was changed successfully" };
+        }
+
+        public async Task<ResponseMessage> MoveCompanyBeneficiaryFromPendingToInactiveState(BeneficiaryListViewModel beneficiaryListViewModel, int userId)
+        {
+            var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
+            foreach (var item in beneficiaryListViewModel.Emails)
+            {
+                var insuranceUserProfile = await _repoWrapper.InsuranceProfile.GetByEmail(item);
+                if (insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Inactive.ToString())
+                {
+                    insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
+                    companyprofile.NextCyclePremiumFee -= insuranceUserProfile.Premium;
+                    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                    _repoWrapper.CompanyProfile.Update(companyprofile);
+                }
+            }
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true, Message= "Beneficiaries status was changed successfully" };
         }
 
         public async Task<ResponseMessage> CorporateSubscribersAnalytics(int companyUserId)

@@ -517,6 +517,40 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
+        ///Move List of company beneficiaries from pending state to inactive state
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> MoveCompanyBeneficiaryFromPendingToInactiveState(BeneficiaryListViewModel beneficiaryListViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+
+                if (beneficiaryListViewModel.Emails.Count < 1)
+                {
+                    return BadRequest(new ResponseMessage { Message = "No option was selected", Status = false });
+                }
+
+                var corporateUser = await _insuranceService.MoveCompanyBeneficiaryFromInactiveToPendingState(beneficiaryListViewModel, Id);
+                return Ok(corporateUser);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
+        /// <summary>
         ///Move List of company beneficiaries from inactive state to pending state
         /// </summary>
         /// <returns></returns>
