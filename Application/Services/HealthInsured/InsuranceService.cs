@@ -738,7 +738,7 @@ namespace Application.Services.HealthInsured
             foreach (var item in beneficiaryListViewModel.Emails)
             {
                 var insuranceUserProfile = await _repoWrapper.InsuranceProfile.GetByEmail(item);
-                if (insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Inactive.ToString())
+                if (insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString())
                 {
                     insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                     insuranceUserProfile.ActiveStatus = false;
