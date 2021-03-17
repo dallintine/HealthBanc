@@ -12,8 +12,7 @@ namespace Application.DTO.HealthInsured_AxaMansard
         public string CompanySize { get; set; }
         public string InsuranceService { get; set; }
         public decimal? NextCyclePremiumFee { get; set; }
-        public DateTime NextPaymentDate { get; set; }
-
+        public DateTime? NextPaymentDate { get; set; }        
         public bool EmailConfirmed { get; set; }
         public bool ProfileCompleted { get; set; }
         public bool TokenizationCompleted { get; set; }

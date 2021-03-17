@@ -41,7 +41,7 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         /// <summary>
         /// Boolean value to indicate the company next insurance cycle payment date
         /// </summary>
-        public DateTime NextPaymentDate { get; set; }
+        public DateTime? NextPaymentDate { get; set; }
         /// <summary>
         /// Otp code that is used to confirm the company email
         /// </summary>

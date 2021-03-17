@@ -32,7 +32,7 @@ namespace HealthBanc.Controllers.Activity_ErrorLog
         /// <param name="email"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        //[Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<ActivityLog>>))]
         public async Task<IActionResult> GetHealthInsuredPaginatedActivityLogByEmail([FromQuery]PaginationQuery paginationQuery, string email)
         {
