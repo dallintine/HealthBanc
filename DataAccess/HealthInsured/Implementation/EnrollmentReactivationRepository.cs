@@ -15,9 +15,5 @@ namespace DataAccess.HealthInsured.Implementation
         public EnrollmentReactivationRepository(ApplicationDbContext context) : base(context)
         {
         }
-        public async Task<EnrollmentOnReactivation> GetScheduledAxaEnrollmenttByStatus(string status)
-        {
-            return await _context.EnrollmentOnReactivations.FirstOrDefaultAsync(x => x.Status == "Processing");
-        }
     }
 }

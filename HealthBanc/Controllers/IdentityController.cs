@@ -412,7 +412,7 @@ namespace HealthBanc.Controllers
             }
             catch(Exception ex)
             {
-                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get service used by user" });
+                return BadRequest(new ResponseMessage { Message = "An error occurred while trying to get service used by user : " +ex.Message.ToString() });
             }           
         }
 

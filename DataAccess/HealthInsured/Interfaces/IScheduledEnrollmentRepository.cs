@@ -9,6 +9,5 @@ namespace DataAccess.HealthInsured.Interfaces
 {
     public interface IScheduledEnrollmentRepository : IBaseRepository<ScheduledEnrollment>
     {
-        Task<ScheduledEnrollment> GetScheduledAxaEnrollmenttByJobId(string jobId);
     }
 }

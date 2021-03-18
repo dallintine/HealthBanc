@@ -15,10 +15,5 @@ namespace DataAccess.HealthInsured.Implementation
         public ScheduledEnrollmentRepository(ApplicationDbContext context) : base(context)
         {
         }
-
-        public async Task<ScheduledEnrollment> GetScheduledAxaEnrollmenttByJobId(string jobId)
-        {
-            return await _context.ScheduledEnrollments.FirstOrDefaultAsync(x => x.JobId == jobId);
-        }
     }
 }
