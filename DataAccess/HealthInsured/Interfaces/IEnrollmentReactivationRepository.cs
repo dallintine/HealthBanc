@@ -9,6 +9,5 @@ namespace DataAccess.HealthInsured.Interfaces
 {
     public interface IEnrollmentReactivationRepository : IBaseRepository<EnrollmentOnReactivation>
     {
-        Task<EnrollmentOnReactivation> GetScheduledAxaEnrollmenttByStatus(string status);
     }
 }

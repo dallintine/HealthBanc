@@ -10,10 +10,9 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         {
 
         }
-        public EnrollmentOnReactivation(int userId, int insuranceUserProfileId, DateTime executionDate, string status, string message,string insuranceService)
+        public EnrollmentOnReactivation(int insuranceUserProfileId, DateTime executionDate, string status, string message,string insuranceService)
         {
             Id = Guid.NewGuid();
-            UserId = userId;
             InsuranceUserProfileId = insuranceUserProfileId;
             DateScheduled = DateTime.Now;
             ExecutionDate = executionDate;
@@ -23,7 +22,6 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         }
 
         public Guid Id { get; set; }
-        public int UserId { get; set; }
         public int InsuranceUserProfileId { get; set; }
         public DateTime DateScheduled { get; set; }
         public DateTime ExecutionDate { get; set; }

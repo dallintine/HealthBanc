@@ -21,10 +21,9 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         /// <param name="status"></param>
         /// <param name="message"></param>
         /// <param name="serviceUsed"></param>
-        public EnrollmentOnOnboarding(int userId, int insuranceUserProfileId, string status, string message,string serviceUsed)
+        public EnrollmentOnOnboarding(int insuranceUserProfileId, string status, string message,string serviceUsed)
         {
             Id = Guid.NewGuid();
-            UserId = userId;
             InsuranceUserProfileId = insuranceUserProfileId;
             DateScheduled = DateTime.Now;
             Status = status;
@@ -33,10 +32,6 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         }
 
         public Guid Id { get; set; }
-        /// <summary>
-        /// ApplicationUser Id 
-        /// </summary>
-        public int UserId { get; set; }
         /// <summary>
         /// InsuranceUser Profile Id
         /// </summary>

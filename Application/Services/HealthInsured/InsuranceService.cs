@@ -93,15 +93,6 @@ namespace Application.Services.HealthInsured
 
         public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
         {
-            if(userProfile.InsuranceService == "axamansard")
-            {
-                userProfile.InsuranceService = InsuranceProvider.Axamansard.ToString();
-            }
-            if(userProfile.InsuranceService == "hygeia")
-            {
-                userProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
-            }
-
             var checkIfUserIsRegisteredAsCorporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(user.Id);
             if (!(checkIfUserIsRegisteredAsCorporateUser is null)) return new ResponseMessage { Status = false, Message = "Üser is registered as corporate user" };
 
@@ -124,7 +115,7 @@ namespace Application.Services.HealthInsured
             _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
             await _repoWrapper.Save();
 
-            var newServiceString = user.ServiceUsed + "HealthInsured,";
+            var newServiceString = user.ServiceUsed + ServiceNames.HealthInsured.ToString();
             user.ServiceUsed = newServiceString;
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
@@ -143,7 +134,7 @@ namespace Application.Services.HealthInsured
                 updatedProfile.CPAddress = updateProfileViewModel.CareProviderName.Split(':')[1];
                 updatedProfile.CPCity = updateProfileViewModel.CareProviderName.Split(":").Length == 3 ? updateProfileViewModel.CareProviderName.Split(":")[2] : "";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 updatedProfile.CareProviderName = updateProfileViewModel.CareProviderName;
             }
@@ -205,7 +196,7 @@ namespace Application.Services.HealthInsured
             var enrollment = await AxamansardRegisterUser(enrollmentModel);
             if (!enrollment.Status)
             {
-                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id, EnrollmentOnOnboarding_StatusValue.Failed.ToString()
+                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.Id, EnrollmentOnOnboarding_StatusValue.Failed.ToString()
                     , enrollment.Message,InsuranceProvider.Axamansard.ToString() );
                 _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
                 await _repoWrapper.Save();
@@ -284,7 +275,7 @@ namespace Application.Services.HealthInsured
             var registration = await HygeiaRegisterUser(registrationModel);
             if (!registration.Status)
             {
-                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.UserId, insuranceUserProfile.Id,EnrollmentOnOnboarding_StatusValue.Failed.ToString(), registration.Message,
+                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.Id,EnrollmentOnOnboarding_StatusValue.Failed.ToString(), registration.Message,
                     InsuranceProvider.Hygeia.ToString());
                 _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
                 await _repoWrapper.Save();
@@ -316,7 +307,7 @@ namespace Application.Services.HealthInsured
             }
             catch (Exception ex)
             {
-                //_logger.LogCritical("An error occurred while enrolling user to axa-mansard", ex);
+                _logger.LogCritical("An error occurred while enrolling user to hygeia", ex);
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to hygeia.Please try again later" };
             }
         }
@@ -348,7 +339,7 @@ namespace Application.Services.HealthInsured
                 if (corporateUser != null)
                 {
                     var corporateProfileState = new HealthInsuredProfileStateDTO(true, corporateUser.EmailConfirmed, corporateUser.ProfileCompleted
-                        , corporateUser.TokenizationCompleted, null);
+                        , corporateUser.TokenizationCompleted, corporateUser.InsuranceService);
                     return new ResponseMessage<HealthInsuredProfileStateDTO>
                     {
                         Data = corporateProfileState,
@@ -377,7 +368,7 @@ namespace Application.Services.HealthInsured
         {
             
             var townListDTO = new CityListDTO();
-            if (insuranceProvider.ToLowerInvariant() == "axamansard")
+            if (insuranceProvider.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower())
             {
                 var townList = _repoWrapper.AxaMansardHospitalList.GetTowns(state).Select(x => x.City).Distinct().ToList();
                 townListDTO.State = state;
@@ -406,7 +397,7 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task<ResponseMessage> GetHealthProvider(string state, string city,string insuranceProvider)
         {
-            if(insuranceProvider.ToLower() == "axamansard")
+            if(insuranceProvider.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower())
             {
                 var axaHospitalList = await _repoWrapper.AxaMansardHospitalList.GetHealthProviders(state, city);
                 return new ResponseMessage { Data = axaHospitalList, Status = true };
@@ -536,28 +527,21 @@ namespace Application.Services.HealthInsured
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
             foreach (var item in beneficiaryReviews)
             {
-                var user = _mapper.Map<ApplicationUser>(item);
-                var createdUser = await _identityService.RegisterUserWithoutPassword(user);
-                if (createdUser.Status)
+                var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
+                insuranceUserProfile.CompanyProfileId = companyId;
+                insuranceUserProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
+                insuranceUserProfile.Premium = Decimal.Parse("1000");
+                insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
+                if(companySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString())
                 {
-                    var userId = createdUser.Data.Id;
-                    var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
-                    insuranceUserProfile.CompanyProfileId = companyId;
-                    insuranceUserProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
-                    insuranceUserProfile.Premium = Decimal.Parse("1000");
-                    insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
-                    insuranceUserProfile.UserId = userId;
-                    if(companySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString())
-                    {
-                        insuranceUserProfile.ActiveStatus = true;
-                        insuranceUserProfile.SubscriptionStatus = true;
-                        insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-                        insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-                    }
-                    insuranceUserProfiles.Add(insuranceUserProfile);
-
-                    companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
+                    insuranceUserProfile.ActiveStatus = true;
+                    insuranceUserProfile.SubscriptionStatus = true;
+                    insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
+                    insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
                 }
+                insuranceUserProfiles.Add(insuranceUserProfile);
+
+                companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
             }
             _repoWrapper.CompanyProfile.Update(companyprofile);
             _repoWrapper.InsuranceProfile.CreateRange(insuranceUserProfiles);
@@ -620,7 +604,7 @@ namespace Application.Services.HealthInsured
             var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
             if (company == null)
             {
-                return new ResponseMessage { Message = "Company profile does not exist, please register as a corporate entity.",Status=false };
+                return new ResponseMessage { Message = "Company profile does not exist.",Status=false };
             }
             else if (company.EmailConfirmed)
             {

@@ -28,20 +28,13 @@ namespace HealthBanc.Controllers.Insurance
     {
         private readonly TokenizationService _tokenizationService;
         private readonly AuditLogService _auditLogServices;
-        private readonly IInsuranceProfileRepository _insuranceProfileRepository;
-        private readonly IMapper _mapper;
-        private readonly ILogger<TokenizationController> _logger;
         public string ipAddress;
         public StringValues agent;
 
-        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices,
-            IInsuranceProfileRepository insuranceProfileRepository,IMapper mapper, ILogger<TokenizationController> logger)
+        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices)
         {
             _tokenizationService = tokenizationService;
             _auditLogServices = auditLogServices;
-            _insuranceProfileRepository = insuranceProfileRepository;
-            _mapper = mapper;
-            _logger = logger;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -63,7 +56,7 @@ namespace HealthBanc.Controllers.Insurance
                 int id = int.Parse(userId);
                 var device = _auditLogServices.GetDevice(agent);
 
-                var chargeCardResponse = await _tokenizationService.TokenizeCard(chargeCard, id,ipAddress,device);
+                var chargeCardResponse = await _tokenizationService.TokenizeCard(chargeCard, id);
                 if (chargeCardResponse.Status)
                 {
                     return Ok(chargeCardResponse);
@@ -97,9 +90,8 @@ namespace HealthBanc.Controllers.Insurance
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
-                var device = _auditLogServices.GetDevice(agent);
 
-                var otpResponse = await _tokenizationService.SubmitOtp(otpViewModel, id,ipAddress,device);
+                var otpResponse = await _tokenizationService.SubmitOtp(otpViewModel, id);
                 if (otpResponse.Status)
                 {
                     return Ok(otpResponse);
@@ -170,9 +162,8 @@ namespace HealthBanc.Controllers.Insurance
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
-                var device = _auditLogServices.GetDevice(agent);
 
-                var changePrimaryCardResponse = await _tokenizationService.ChangePrimaryCard(cardId, id, ipAddress, device);
+                var changePrimaryCardResponse = await _tokenizationService.ChangePrimaryCard(cardId, id);
                 if (changePrimaryCardResponse.Status)
                 {
                     return Ok(changePrimaryCardResponse);
@@ -211,9 +202,8 @@ namespace HealthBanc.Controllers.Insurance
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
-                var device = _auditLogServices.GetDevice(agent);
 
-                var deleteCardResponse = await _tokenizationService.DeleteCard(cardId, id, ipAddress, device);
+                var deleteCardResponse = await _tokenizationService.DeleteCard(cardId, id);
                 if (deleteCardResponse.Status)
                 {
                     return Ok(deleteCardResponse);
@@ -248,9 +238,8 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var device = _auditLogServices.GetDevice(agent);
 
-            var reactivatewithPrimaryCardResponse = await _tokenizationService.ReactivateWithPresentPrimaryCard(id, ipAddress, device);
+            var reactivatewithPrimaryCardResponse = await _tokenizationService.ReactivateWithPresentPrimaryCard(id);
 
             if (reactivatewithPrimaryCardResponse.Status)
             {
