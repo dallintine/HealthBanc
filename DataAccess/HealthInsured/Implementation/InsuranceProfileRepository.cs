@@ -103,6 +103,10 @@ namespace DataAccess.HealthInsured.Implementation
             }
 
             //Sort the users
+            // 1 = order by firstname
+            //2 = order by lastname
+            //3 = order  by email
+            // 4 = order by date created
             queryable = paginationQuery.SortBy == 1 ? queryable.OrderBy(s => s.Othernames) : paginationQuery.SortBy == 2 ? queryable.OrderBy(s => s.Surname) :
                 paginationQuery.SortBy == 3 ? queryable.OrderBy(s => s.Email) : queryable.OrderByDescending(s => s.DateCreated);
 
