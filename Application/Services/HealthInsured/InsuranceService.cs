@@ -41,7 +41,6 @@ namespace Application.Services.HealthInsured
         private readonly IUniqueIdentifier _uniqueIdentifier;
         private readonly IEmailSender _emailSender;
         private readonly IFileProcessor _fileProcessor;
-        private readonly IdentityService _identityService;
         private readonly IRepositoryWrapper _repoWrapper;
 
         private AxaMansardConfiguration Options { get; }
@@ -50,8 +49,7 @@ namespace Application.Services.HealthInsured
 
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IMapper mapper, AuditLogService auditLogServices,
-            ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender, IdentityService identityService,
-             IOptions<HygeiaConfiguration> hygeiaAccessor, IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper,
+            ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender, IOptions<HygeiaConfiguration> hygeiaAccessor, IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper,
              IOptions<SubscriptionDuration> subscriptionAccessor)
         {
             _httpClientFactory = httpClientFactory;
@@ -61,7 +59,6 @@ namespace Application.Services.HealthInsured
             _uniqueIdentifier = uniqueIdentifier;
             _emailSender = emailSender;
             _fileProcessor = fileProcessor;
-            _identityService = identityService;
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
             _repoWrapper = repoWrapper;
@@ -227,8 +224,10 @@ namespace Application.Services.HealthInsured
                         }
                         return new ResponseMessage { Status = true, Message = authResponse.message };
                     }
+                    _logger.LogCritical("BadRequest Axamansard :");
                     return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }
+                _logger.LogCritical("BadRequest Axamansard :"+bearerRequest.Message);
                 return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
             catch (Exception ex)
@@ -301,8 +300,10 @@ namespace Application.Services.HealthInsured
                     {
                         return new ResponseMessage { Status = true, Message = authResponse.MemberId };
                     }
+                    BackgroundJob.Enqueue(() => HygeiaRegisterUser(model));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
+                BackgroundJob.Enqueue(() => HygeiaRegisterUser(model));
                 return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
             }
             catch (Exception ex)

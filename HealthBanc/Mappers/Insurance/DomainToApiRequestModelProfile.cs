@@ -40,7 +40,7 @@ namespace HealthBanc.Mappers.Insurance
               .ForMember(dest => dest.Phone, opt => opt.MapFrom(x => x.PhoneNumber))
               .ForMember(dest => dest.Email, opt => opt.MapFrom(x => x.Email))
               .ForMember(dest => dest.DOB, opt => opt.MapFrom(x => x.DateOfBirth))
-              .ForMember(dest => dest.Gender, opt => opt.MapFrom(x => x.Gender == "Male" ? "1" : "2"))
+              .ForMember(dest => dest.GenderId, opt => opt.MapFrom(x => x.Gender == "Male" ? "1" : "2"))
               .ForMember(dest => dest.Address, opt => opt.MapFrom(x => x.ContactAddress));
 
         }

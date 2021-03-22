@@ -33,6 +33,7 @@ namespace HealthBanc
                 return new ApplicationDbContext(optionsBuilder.Options);
             }
         }
+
         public static void Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder(args)
