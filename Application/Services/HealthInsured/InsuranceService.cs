@@ -518,6 +518,7 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task<ResponseMessage> CreateInsuranceProfileForCompanyBeneficiaries(int companyId, List<BeneficiaryReviewUser> beneficiaryReviews)
         {
+            int checkIfProfileEmailExistCount = 0;
             var companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
             var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyId);
 
@@ -528,6 +529,12 @@ namespace Application.Services.HealthInsured
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
             foreach (var item in beneficiaryReviews)
             {
+                var checkIfProfileEmailExist = await _repoWrapper.InsuranceProfile.GetByEmail(item.Email);
+                if(!(checkIfProfileEmailExist is null))
+                {
+                    checkIfProfileEmailExistCount++;
+                    continue;
+                }
                 var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
                 insuranceUserProfile.CompanyProfileId = companyId;
                 insuranceUserProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
@@ -555,7 +562,12 @@ namespace Application.Services.HealthInsured
             _repoWrapper.ActivityLog.Create(activityLog);
 
             await _repoWrapper.Save();
-            return new ResponseMessage { Message = "Profiles was created successfully", Status=true };
+            if(checkIfProfileEmailExistCount is 0)
+            {
+                return new ResponseMessage { Message = "Beneficiaries was added successfully", Status = true };
+            }
+            return new ResponseMessage { Message = "Beneficiaries was added successfully,however " + checkIfProfileEmailExistCount+" beneficiaries could not be added as their email exist under" +
+                "existing beneficiaries", Status = true };
         }
 
         public async Task OnboardUsersToHygeia(int companyUserId)
@@ -714,7 +726,7 @@ namespace Application.Services.HealthInsured
                 }
             }
             await _repoWrapper.Save();
-            return new ResponseMessage { Status = true ,Message = "Beneficiaries status was changed successfully" };
+            return new ResponseMessage { Status = true ,Message = "Beneficiaries was succesfully moved to pending list.Users will become active in the next cycle"};
         }
 
         public async Task<ResponseMessage> MoveCompanyBeneficiaryFromPendingToInactiveState(BeneficiaryListViewModel beneficiaryListViewModel, int userId)
@@ -733,7 +745,7 @@ namespace Application.Services.HealthInsured
                 }
             }
             await _repoWrapper.Save();
-            return new ResponseMessage { Status = true, Message= "Beneficiaries status was changed successfully" };
+            return new ResponseMessage { Status = true, Message= "Beneficiaries was succesfully moved to the inactive list" };
         }
 
         public async Task<ResponseMessage> CorporateSubscribersAnalytics(int companyUserId)

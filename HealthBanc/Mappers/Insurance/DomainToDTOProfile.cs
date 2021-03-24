@@ -23,6 +23,7 @@ namespace HealthBanc.Mappers.Insurance
 
             CreateMap<InsuranceUserProfile, InsuranceBeneficiaryDTO>()
                .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.Othernames +" "+x.Surname))
+               .ForMember(dest => dest.EnrolleNumber, opt => opt.MapFrom(x => x.TransId))
                .ForMember(dest => dest.Amount, opt => opt.MapFrom(x => x.Premium));
 
             CreateMap<CompanyProfile, CompanyProfileDTO>();

@@ -745,7 +745,7 @@ namespace Application.Services.HealthInsured
                 var insuranceUserProfile = await _repoWrapper.InsuranceProfile.GetByEmail(item);
                 if (companyProfile.InsuranceUserProfiles.Contains(insuranceUserProfile))
                 {
-                    if (insuranceUserProfile.CompanySubscribedStatus.ToLower() == InsuranceProfile_CompanySubStatusValue.Active.ToString())
+                    if (insuranceUserProfile.CompanySubscribedStatus.ToLower() == InsuranceProfile_CompanySubStatusValue.Active.ToString().ToLower())
                     {
                         insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                         insuranceUserProfile.SubscriptionStatus = false;
@@ -759,8 +759,8 @@ namespace Application.Services.HealthInsured
             companyProfile.NextCyclePremiumFee = nextCyclePremiumFee;
             _repoWrapper.CompanyProfile.Update(companyProfile);
             await _repoWrapper.Save();
-            return new ResponseMessage { Data = "Beneficiaries was deactivated successfully,beneficiaries will still remain active till insurance " +
-                "cycle ends.", Status = true };
+            return new ResponseMessage { Data = "Beneficiaries was deactivated successfully,beneficiaries will remain active till insurance " +
+                "cycle ends, and would be moved to the inactive list at the end of current cycle.", Status = true };
         }
 
         /// <summary>
