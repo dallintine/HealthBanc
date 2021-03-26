@@ -499,23 +499,39 @@ namespace Application.Services.HealthInsured
                             newCompanyBeneficiaries.Add(item);
                         }
                     }
-                    if(newCompanyBeneficiaries.Count > 0) await _repoWrapper.BeneficiaryReview.InsertEntities(newCompanyBeneficiaries);
 
-                    var beneficiariesReviewDTO = _mapper.Map<List<BeneficiaryReviewUser>, List<BeneficiaryReviewDTO>>(newCompanyBeneficiaries);
+                    if (newCompanyBeneficiaries.Count > 0)
+                    {
+                        await _repoWrapper.BeneficiaryReview.InsertEntities(newCompanyBeneficiaries);
+                    }
+
+                    var beneficaryReviewUser = await _repoWrapper.BeneficiaryReview.FilterBeneficiariesReview(new PaginationQuery(), companyProfile.Id);
+                    var beneficiariesReviewDTO = _mapper.Map<IEnumerable<BeneficiaryReviewUser>, IEnumerable<BeneficiaryReviewDTO>>(beneficaryReviewUser.Data);
 
                     var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
                     {
-                        Amount = beneficiariesReviewDTO.Select(x => x.Amount).Sum(),
+                        Amount = (beneficaryReviewUser.RecordCount * 1000),
                         Data = beneficiariesReviewDTO,
                         PageNumber = 1,
                         PageSize = 50,
-                        RecordCount = beneficiariesReviewDTO.Count,
-                        PageCount = Convert.ToInt32(Math.Ceiling((double)beneficiariesReviewDTO.Count / (double)50))
+                        RecordCount = beneficaryReviewUser.RecordCount,
+                        PageCount = beneficaryReviewUser.PageCount
                     };
+
+                    if (newCompanyBeneficiaries.Count != companyBeneficiaries.Count)
+                    {
+                        return new ResponseMessage
+                        {
+                            Data = paginatedResponse,
+                            Message = "Some beneficiaries could not be added to the beneficiay review list as they share duplicated emails with existing beneficiaires!.",
+                            Status = true
+                        };
+                    }
+
                     return new ResponseMessage
                     {
                         Data = paginatedResponse,
-                        Message = "Uploaded Successfully",
+                        Message = "Beneficiairies was added sucessfully",
                         Status = true
                     };
                 }
@@ -702,7 +718,7 @@ namespace Application.Services.HealthInsured
             var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
             {
                 Data = beneficiariesReviewDTO,
-                Amount = beneficiariesReviewDTO.Select(x => x.Amount).Sum(),
+                Amount = companyBeneficiaries.RecordCount * 1000,
                 PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
                 PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
                 RecordCount = companyBeneficiaries.RecordCount,
