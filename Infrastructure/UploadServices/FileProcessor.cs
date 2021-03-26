@@ -31,7 +31,7 @@ namespace Infrastructure.UploadService
         /// <summary>
         /// Upload an Excel File 
         /// </summary>
-        /// <param name="formFile"></param>
+        /// <param name="formFile"></param>S
         /// <returns></returns>
         public async Task<List<FileModel>> ProcessUserProfileFromExcelFile(IFormFile formFile)
         {
@@ -44,27 +44,35 @@ namespace Infrastructure.UploadService
 
                 var ws = _excelPackage.Workbook.Worksheets[0];
 
-                //int lastUsedColumn = ws.Dimension.End.Column;
-
-                //Let it take only 200 users per upload
-                int lastUsedColumn = 203;
-
-                for (int r = 3; r <= lastUsedColumn; r++)
+                var dataValidations = _excelPackage.Workbook.Worksheets[0].DataValidations;
+                var isProtected = _excelPackage.Workbook.Worksheets[0].Protection.IsProtected;
+                if(dataValidations.Count > 1 && isProtected)
                 {
-                    if (String.IsNullOrWhiteSpace(ws.Cells[r, 5].Value?.ToString()))
-                    {
-                        continue;
-                    }
-                    var excelModel = new FileModel();
-                    excelModel.FirstName = ws.Cells[r, 1].Value?.ToString();
-                    excelModel.LastName = ws.Cells[r, 2].Value?.ToString();
-                    excelModel.Address = ws.Cells[r, 3].Value?.ToString();
-                    excelModel.Gender = ws.Cells[r, 4].Value?.ToString();
-                    excelModel.DateOfBirth = ws.Cells[r, 5].Text.ToString();
-                    excelModel.Email = ws.Cells[r, 6].Value?.ToString();
-                    excelModel.PhoneNumber = ws.Cells[r, 7].Value?.ToString();
-                    excelModels.Add(excelModel);
+                    //int lastUsedColumn = ws.Dimension.End.Column;
 
+                    //Let it take only 200 users per upload
+                    int lastUsedColumn = 101;
+
+                    for (int r = 2; r <= lastUsedColumn; r++)
+                    {
+                        if (String.IsNullOrWhiteSpace(ws.Cells[r, 6].Value?.ToString()))
+                        {
+                            continue;
+                        }
+                        var excelModel = new FileModel();
+                        excelModel.FirstName = ws.Cells[r, 1].Value?.ToString();
+                        excelModel.LastName = ws.Cells[r, 2].Value?.ToString();
+                        excelModel.Address = ws.Cells[r, 3].Value?.ToString();
+                        excelModel.Gender = ws.Cells[r, 4].Value?.ToString();
+                        excelModel.DateOfBirth = ws.Cells[r, 5].Text.ToString();
+                        excelModel.Email = ws.Cells[r, 6].Value?.ToString();
+                        excelModel.PhoneNumber = ws.Cells[r, 7].Value?.ToString();
+                        excelModels.Add(excelModel);
+                    }
+                }
+                else
+                {
+                    excelModels = null;
                 }
             }
             return excelModels;

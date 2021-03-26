@@ -17,6 +17,11 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         /// Represent a scheduled Job/BackgroundService Id for pending insurance service Task
         /// </summary>
         public string PendingJobId { get; set; }
+
+        /// <summary>
+        /// Represent a scheduled Job/BackgroundService Id for scheduled email Task
+        /// </summary>
+        public string PendingEmailJobId { get; set; }
         public string CompanyName { get; set; }
         public string CompanyEmail { get; set; }
         public string PhoneNumber { get; set; }
@@ -42,6 +47,12 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         /// Boolean value to indicate the company next insurance cycle payment date
         /// </summary>
         public DateTime? NextPaymentDate { get; set; }
+
+        /// <summary>
+        /// Number of times scheduled payment Fails
+        /// </summary>
+        public int? FailedScheduledPaymentRetry { get; set; }
+
         /// <summary>
         /// Otp code that is used to confirm the company email
         /// </summary>

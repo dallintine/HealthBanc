@@ -461,6 +461,18 @@ namespace Application.Services.HealthInsured
             {
                 // Process excel list
                 var excelModel = await _fileProcessor.ProcessUserProfileFromExcelFile(file);
+
+                // If Excel file is not the one supplied from the application
+                if(excelModel is null)
+                {
+                    return new ResponseMessage { Message = "Excel file is not supported. Note: Kindly download excel file from your dashboard." };
+                }
+
+                if(excelModel.Count == 0)
+                {
+                    return new ResponseMessage { Message = "No data was read. Kindly add data to excel file" };
+                }
+
                 // Get company beneficaries from excel list
                 var companyBeneficiaries = _mapper.Map<List<FileModel>, List<BeneficiaryReviewUser>>(excelModel);
 
@@ -566,8 +578,7 @@ namespace Application.Services.HealthInsured
             {
                 return new ResponseMessage { Message = "Beneficiaries was added successfully", Status = true };
             }
-            return new ResponseMessage { Message = "Beneficiaries was added successfully,however " + checkIfProfileEmailExistCount+" beneficiaries could not be added as their email exist under" +
-                "existing beneficiaries", Status = true };
+            return new ResponseMessage { Message = "Beneficiaries was added successfully,however " + checkIfProfileEmailExistCount+" beneficiary could not be added as their email already exist!", Status = true };
         }
 
         public async Task OnboardUsersToHygeia(int companyUserId)
@@ -726,7 +737,7 @@ namespace Application.Services.HealthInsured
                 }
             }
             await _repoWrapper.Save();
-            return new ResponseMessage { Status = true ,Message = "Beneficiaries was succesfully moved to pending list.Users will become active in the next cycle"};
+            return new ResponseMessage { Status = true ,Message = "Beneficiary was moved to pending list succesfully.Users will become active in the next cycle" };
         }
 
         public async Task<ResponseMessage> MoveCompanyBeneficiaryFromPendingToInactiveState(BeneficiaryListViewModel beneficiaryListViewModel, int userId)
@@ -745,7 +756,7 @@ namespace Application.Services.HealthInsured
                 }
             }
             await _repoWrapper.Save();
-            return new ResponseMessage { Status = true, Message= "Beneficiaries was succesfully moved to the inactive list" };
+            return new ResponseMessage { Status = true, Message= "Beneficiary was moved to the inactive list succesfully" };
         }
 
         public async Task<ResponseMessage> CorporateSubscribersAnalytics(int companyUserId)
@@ -820,5 +831,6 @@ namespace Application.Services.HealthInsured
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
+
     }
 }
