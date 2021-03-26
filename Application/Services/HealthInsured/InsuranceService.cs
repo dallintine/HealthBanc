@@ -605,10 +605,20 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Message = "Beneficiaries was added successfully,however " + checkIfProfileEmailExistCount+" beneficiary could not be added as their email already exist!", Status = true };
         }
 
-        public async Task OnboardUsersToHygeia(int companyUserId)
+        public async Task OnboardUsersToHygeia(int companyUserId,string status)
         {
             var companyProfile = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
-            var insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString());
+            IQueryable<InsuranceUserProfile> insuranceUserProfiles;
+            if (status is null)
+            {
+                insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
+                x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString());
+            }
+            else
+            {
+                insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == status);
+            }
+
             foreach (var item in insuranceUserProfiles)
             {
                 var result = await EnrollUserToHygeiaOnOnboarding(item);

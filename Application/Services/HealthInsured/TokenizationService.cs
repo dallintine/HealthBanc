@@ -346,7 +346,7 @@ namespace Application.Services.HealthInsured
                     await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
 
                     //Background task to Enroll all users to hygeia.
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId));
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId,null));
 
                     companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
@@ -611,7 +611,7 @@ namespace Application.Services.HealthInsured
                 var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
                 if (chargeAuthorization.Status)
                 {
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(userId));
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(userId,InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
 
                     scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
                     scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
