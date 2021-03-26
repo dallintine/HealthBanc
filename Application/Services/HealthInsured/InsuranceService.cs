@@ -28,6 +28,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Application.Services.HealthInsured
@@ -300,6 +301,7 @@ namespace Application.Services.HealthInsured
                     {
                         return new ResponseMessage { Status = true, Message = authResponse.MemberId };
                     }
+                    Thread.Sleep(10000);
                     BackgroundJob.Enqueue(() => HygeiaRegisterUser(model));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
