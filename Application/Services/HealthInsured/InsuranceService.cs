@@ -508,9 +508,12 @@ namespace Application.Services.HealthInsured
                     var beneficaryReviewUser = await _repoWrapper.BeneficiaryReview.FilterBeneficiariesReview(new PaginationQuery(), companyProfile.Id);
                     var beneficiariesReviewDTO = _mapper.Map<IEnumerable<BeneficiaryReviewUser>, IEnumerable<BeneficiaryReviewDTO>>(beneficaryReviewUser.Data);
 
+                    var companyRevieews = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyProfile.Id);
+                    var totalAmount = companyRevieews.BeneficiaryReviewUsers.Where(x => x.IsRemove == false).Select(x => x.Amount).Sum();
+
                     var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
                     {
-                        Amount = (beneficaryReviewUser.RecordCount * 1000),
+                        Amount = totalAmount,
                         Data = beneficiariesReviewDTO,
                         PageNumber = 1,
                         PageSize = 50,
@@ -722,13 +725,16 @@ namespace Application.Services.HealthInsured
         {
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
 
+            var companyRevieews = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyProfile.Id);
+            var totalAmount = companyRevieews.BeneficiaryReviewUsers.Where(x => x.IsRemove == false).Select(x => x.Amount).Sum();
+
             var companyBeneficiaries = await _repoWrapper.BeneficiaryReview.FilterBeneficiariesReview(paginationQuery, companyProfile.Id);
             var beneficiariesReviewDTO = _mapper.Map<IEnumerable<BeneficiaryReviewUser>, IEnumerable<BeneficiaryReviewDTO>>(companyBeneficiaries.Data);
 
             var paginatedResponse = new PagedResponse<BeneficiaryReviewDTO>
             {
                 Data = beneficiariesReviewDTO,
-                Amount = companyBeneficiaries.RecordCount * 1000,
+                Amount = totalAmount,
                 PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
                 PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
                 RecordCount = companyBeneficiaries.RecordCount,
@@ -747,7 +753,7 @@ namespace Application.Services.HealthInsured
             var paginatedResponse = new PagedResponse<InsuranceBeneficiaryDTO>
             {
                 Data = beneficiariesDTO,
-                Amount = beneficiariesDTO.Select(x => x.Amount).Sum(),
+                Amount = companyProfile.NextCyclePremiumFee,
                 PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
                 PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
                 RecordCount = beneficiaries.RecordCount,
