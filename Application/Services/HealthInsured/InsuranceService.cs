@@ -301,8 +301,7 @@ namespace Application.Services.HealthInsured
                     {
                         return new ResponseMessage { Status = true, Message = authResponse.MemberId };
                     }
-                    Thread.Sleep(10000);
-                    BackgroundJob.Enqueue(() => HygeiaRegisterUser(model));
+                    BackgroundJob.Schedule(() => HygeiaRegisterUser(model),DateTime.Now.AddMinutes(10));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
                 BackgroundJob.Enqueue(() => HygeiaRegisterUser(model));
@@ -478,6 +477,13 @@ namespace Application.Services.HealthInsured
                 // Get company beneficaries from excel list
                 var companyBeneficiaries = _mapper.Map<List<FileModel>, List<BeneficiaryReviewUser>>(excelModel);
 
+                var checkForDisitnctBeneficiaryReviewEmail = companyBeneficiaries.Distinct(new BeneficiaryReviewUserEmailComparer());
+
+                if (companyBeneficiaries.Count != checkForDisitnctBeneficiaryReviewEmail.ToList().Count)
+                {
+                    return new ResponseMessage { Message = "Similar email was found in different rows, please go through the data and make sure emails are unique in all rows!" };
+                }
+
                 var newCompanyBeneficiaries = new List<BeneficiaryReviewUser>();
                 // If card is not tokenized we add users in the excel sheet to list of beneficiary Review users
                 if (!companyProfile.TokenizationCompleted)
@@ -521,7 +527,7 @@ namespace Application.Services.HealthInsured
                 Message = "Please confirm company email address",
                 Status = false
             };
-        }
+        }       
 
         /// <summary>
         /// This task adds the beneficiary as an application and insurance users. Also process maybe to set the user as a pending beneficiary or active beneficiary.
@@ -832,7 +838,23 @@ namespace Application.Services.HealthInsured
             _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
+        }       
+    }
+
+    internal class BeneficiaryReviewUserEmailComparer : IEqualityComparer<BeneficiaryReviewUser>
+    {
+        public bool Equals(BeneficiaryReviewUser x, BeneficiaryReviewUser y)
+        {
+            if (string.Equals(x.Email, y.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            return false;
         }
 
+        public int GetHashCode(BeneficiaryReviewUser obj)
+        {
+            return obj.Email.GetHashCode();
+        }
     }
 }
