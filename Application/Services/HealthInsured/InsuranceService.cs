@@ -507,7 +507,7 @@ namespace Application.Services.HealthInsured
                         await _repoWrapper.BeneficiaryReview.InsertEntities(newCompanyBeneficiaries);
                     }
 
-                    var beneficaryReviewUser = await _repoWrapper.BeneficiaryReview.FilterBeneficiariesReview(new PaginationQuery(), companyProfile.Id);
+                    var beneficaryReviewUser = await  _repoWrapper.BeneficiaryReview.FilterBeneficiariesReview(new PaginationQuery(), companyProfile.Id);
                     var beneficiariesReviewDTO = _mapper.Map<IEnumerable<BeneficiaryReviewUser>, IEnumerable<BeneficiaryReviewDTO>>(beneficaryReviewUser.Data);
 
                     var companyRevieews = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyProfile.Id);
