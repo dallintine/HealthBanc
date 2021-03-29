@@ -481,16 +481,18 @@ namespace Application.Services.HealthInsured
 
                 if (companyBeneficiaries.Count != checkForDisitnctBeneficiaryReviewEmail.ToList().Count)
                 {
-                    return new ResponseMessage { Message = "Similar email was found in different rows, please go through the data and make sure emails are unique in all rows!" };
+                    return new ResponseMessage { Message = "Similar email was found in different rows, please go through the excel data and make sure emails are unique in all rows!" };
                 }
 
                 var newCompanyBeneficiaries = new List<BeneficiaryReviewUser>();
                 // If card is not tokenized we add users in the excel sheet to list of beneficiary Review users
                 if (!companyProfile.TokenizationCompleted)
                 {
+                    var companyBeneficiaryReview = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyProfile.Id);
+                    var beneficiaryReviews = companyBeneficiaryReview.BeneficiaryReviewUsers;
                     foreach (var item in companyBeneficiaries)
                     {
-                        var checkIfItemEmailExist = await _repoWrapper.BeneficiaryReview.GetByEmail(item.Email);
+                        var checkIfItemEmailExist = beneficiaryReviews.Where(x => x.Email == item.Email).FirstOrDefault();
                         // Check to make sure beneficiary with the same email cant be uploaded twice
                         if(checkIfItemEmailExist is null)
                         {
