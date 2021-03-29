@@ -833,12 +833,17 @@ namespace Application.Services.HealthInsured
                 var insuranceUserProfile = await _repoWrapper.InsuranceProfile.GetByEmail(item);
                 if (companyProfile.InsuranceUserProfiles.Contains(insuranceUserProfile))
                 {
+                    if (insuranceUserProfile.CompanySubscribedStatus.ToLower() == InsuranceProfile_CompanySubStatusValue.Inactive.ToString().ToLower())
+                    {
+                        return new ResponseMessage { Data = "Beneficiary was previously deactivated, beneficiary will remain active and would be moved to the inactive list at the end of current cycle.", Status = true };
+                    }
+
                     if (insuranceUserProfile.CompanySubscribedStatus.ToLower() == InsuranceProfile_CompanySubStatusValue.Active.ToString().ToLower())
                     {
                         insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                         insuranceUserProfile.SubscriptionStatus = false;
                         BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.Id),insuranceUserProfile.EndActiveStatusDate);
-                    }
+                    }                   
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 }
             }
@@ -847,8 +852,8 @@ namespace Application.Services.HealthInsured
             companyProfile.NextCyclePremiumFee = nextCyclePremiumFee;
             _repoWrapper.CompanyProfile.Update(companyProfile);
             await _repoWrapper.Save();
-            return new ResponseMessage { Data = "Beneficiaries was deactivated successfully,beneficiaries will remain active till insurance " +
-                "cycle ends, and would be moved to the inactive list at the end of current cycle.", Status = true };
+            return new ResponseMessage { Data = "Beneficiariary was deactivated successfully,beneficiary will remain active and would be moved to the inactive list at the end of current cycle.", Status = true,
+                Message= "Beneficiary was deactivated successfully,beneficiary will remain active and would be moved to the inactive list at the end of current cycle."};
         }
 
         /// <summary>
