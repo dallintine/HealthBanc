@@ -488,13 +488,14 @@ namespace Application.Services.HealthInsured
                 // If card is not tokenized we add users in the excel sheet to list of beneficiary Review users
                 if (!companyProfile.TokenizationCompleted)
                 {
-                    var companyBeneficiaryReview = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyProfile.Id);
-                    var beneficiaryReviews = companyBeneficiaryReview.BeneficiaryReviewUsers;
                     foreach (var item in companyBeneficiaries)
                     {
-                        var checkIfItemEmailExist = beneficiaryReviews.Where(x => x.Email == item.Email).FirstOrDefault();
-                        // Check to make sure beneficiary with the same email cant be uploaded twice
-                        if(checkIfItemEmailExist is null)
+                        //Check beneficiary review list for existing email
+                        var beneficiaryReview = await _repoWrapper.BeneficiaryReview.GetByEmail(item.Email);
+                        //Check insurance profile list for existing email
+                        var beneficiary = await _repoWrapper.InsuranceProfile.GetByEmail(item.Email);
+
+                        if(beneficiaryReview is null && beneficiary is null)
                         {
                             item.CompanyProfileId = companyProfile.Id;
                             item.Amount = decimal.Parse("1000");
@@ -528,7 +529,7 @@ namespace Application.Services.HealthInsured
                         return new ResponseMessage
                         {
                             Data = paginatedResponse,
-                            Message = "Some beneficiaries could not be added to the beneficiay review list as they share duplicated emails with existing beneficiaires!.",
+                            Message = "Some beneficiaries could not be added to the beneficiay review list as their emails are duplicate of existing beneficiaires",
                             Status = true
                         };
                     }
@@ -559,10 +560,12 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task<ResponseMessage> CreateInsuranceProfileForCompanyBeneficiaries(int companyId, List<BeneficiaryReviewUser> beneficiaryReviews)
         {
+            // Count for existing duplicate emails
             int checkIfProfileEmailExistCount = 0;
             var companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
             var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyId);
 
+            // if beneficaryReview is null, means user just made payment and subscription status is set to active
             if (beneficiaryReviews is null){
                 beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.IsRemove == false).ToList();
                 companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
@@ -571,7 +574,8 @@ namespace Application.Services.HealthInsured
             foreach (var item in beneficiaryReviews)
             {
                 var checkIfProfileEmailExist = await _repoWrapper.InsuranceProfile.GetByEmail(item.Email);
-                if(!(checkIfProfileEmailExist is null))
+                // if email exist incerease checkIfProfileEmailExistCount count
+                if (!(checkIfProfileEmailExist is null))
                 {
                     checkIfProfileEmailExistCount++;
                     continue;
@@ -594,19 +598,27 @@ namespace Application.Services.HealthInsured
             }
             _repoWrapper.CompanyProfile.Update(companyprofile);
             _repoWrapper.InsuranceProfile.CreateRange(insuranceUserProfiles);
+
             var beneficiaries = companyprofile.BeneficiaryReviewUsers.ToList();
+            // Delete all beneficiary reveiews after moving users to the insurance profile list
             if(beneficiaries.Count > 0)
             {
                 _repoWrapper.BeneficiaryReview.DeleteRange(beneficiaries);
             }
-            var activityLog = new ActivityLog(null, companyprofile.Id, "New Beneficiairies Was Added", ServiceNames.HealthInsured.ToString());
-            _repoWrapper.ActivityLog.Create(activityLog);
+            // if at least one beneficiary was moved to insurace profile list
+            if(checkIfProfileEmailExistCount != beneficiaryReviews.Count)
+            {
+                var activityLog = new ActivityLog(null, companyprofile.Id, "New Beneficiairies Was Added", ServiceNames.HealthInsured.ToString());
+                _repoWrapper.ActivityLog.Create(activityLog);
+            }            
 
             await _repoWrapper.Save();
-            if(checkIfProfileEmailExistCount is 0)
+            // if duplicate emails do not exist
+            if (checkIfProfileEmailExistCount is 0)
             {
                 return new ResponseMessage { Message = "Beneficiaries was added successfully", Status = true };
             }
+            // if duplicate emails exist
             return new ResponseMessage { Message = "Beneficiaries was added successfully,however " + checkIfProfileEmailExistCount+" beneficiary could not be added as their email already exist!", Status = true };
         }
 
