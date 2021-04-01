@@ -283,7 +283,25 @@ namespace Application.Services.HealthInsured
 
                 if (!companyProfile.TokenizationCompleted)
                 {
-                    Thread.Sleep(10000);
+                    //method to create insurance profiles for the beneficiaires.
+                    await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
+
+                    //Background task to Enroll all users to hygeia.
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null));
+
+                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+                    //Background task to schedule debit at the end of next cycle
+                    companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+
+                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
+                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+                    _repoWrapper.CompanyProfile.Update(companyProfile);
+                    companyProfile.TokenizationCompleted = true;
+
+                    var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                    _repoWrapper.ActivityLog.Create(activityLog);
                 }
                 await _repoWrapper.Save();
 
@@ -483,8 +501,32 @@ namespace Application.Services.HealthInsured
                 };
 
                 var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
+                if (chargeAuthorization.Status)
+                {
+                    scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = ScheduledPayment_StatusValue.Successful.ToString();
+                    scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
+
+                    _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
+
+                    //Background task to Enroll pending users to hygeia.
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
+
+                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+                    //Background task to schedule debit at the end of next cycle
+                    companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+
+                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
+                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+                    companyProfile.TokenizationCompleted = true;
+
+                    _repoWrapper.CompanyProfile.Update(companyProfile);
+
+                    await _repoWrapper.Save();
+                }
                 // Insufficient funds
-                if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
+                else if(!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
                 {
                     var channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString();
 
@@ -1074,20 +1116,20 @@ namespace Application.Services.HealthInsured
                 }
                 await ProcessWebHook_SuccessfulInsuranceIndividualPayment(insuranceUserProfile, reference,amount);
             }
-            if (!(companyProfile is null))
-            {
-                // check if user card exist, if not add it
-                var card = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(companyProfile.UserId, last4);
-                if (card is null)
-                {
-                    var cardStatus = companyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+            //if (!(companyProfile is null))
+            //{
+            //    // check if user card exist, if not add it
+            //    var card = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(companyProfile.UserId, last4);
+            //    if (card is null)
+            //    {
+            //        var cardStatus = companyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
 
-                    var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
-                        , reference, authorization_code);
-                    _repoWrapper.Card.Create(debitCard);
-                }
-                await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
-            }
+            //        var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
+            //            , reference, authorization_code);
+            //        _repoWrapper.Card.Create(debitCard);
+            //    }
+            //    await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
+            //}
         }
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
@@ -1227,66 +1269,43 @@ namespace Application.Services.HealthInsured
             await _repoWrapper.Save();
         }
 
-        private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference,string amount)
-        {
-            if(decimal.Parse(amount) > 100)
-            {
-                if (!companyProfile.TokenizationCompleted)
-                {
-                    //method to create insurance profiles for the beneficiaires.
-                    var result = _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null).Result;
+        //private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference,string amount)
+        //{
+        //    if(decimal.Parse(amount) > 100)
+        //    {
+        //        if (companyProfile.TokenizationCompleted)
+        //        {
+        //            var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(companyProfile.PendingJobId);
+        //            scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = ScheduledPayment_StatusValue.Successful.ToString();
+        //            scheduledPaymentJob.PaymentReference = reference;
 
-                    //Background task to Enroll all users to hygeia.
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null));
+        //            _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
-                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+        //            //Background task to Enroll pending users to hygeia.
+        //            BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
 
-                    //Background task to schedule debit at the end of next cycle
-                    companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+        //            companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
-                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
-                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+        //            //Background task to schedule debit at the end of next cycle
+        //            companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
 
-                    _repoWrapper.CompanyProfile.Update(companyProfile);
-                    companyProfile.TokenizationCompleted = true;
+        //            companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
+        //                  DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
-                    var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
+        //            companyProfile.TokenizationCompleted = true;
 
-                    await _repoWrapper.Save();
-                }
-                else
-                {
-                    var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(companyProfile.PendingJobId);
-                    scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = ScheduledPayment_StatusValue.Successful.ToString();
-                    scheduledPaymentJob.PaymentReference = reference;
+        //            _repoWrapper.CompanyProfile.Update(companyProfile);
 
-                    _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
-
-                    //Background task to Enroll pending users to hygeia.
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
-
-                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-
-                    //Background task to schedule debit at the end of next cycle
-                    companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
-
-                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
-                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-
-                    _repoWrapper.CompanyProfile.Update(companyProfile);
-                    companyProfile.TokenizationCompleted = true;
-
-                    await _repoWrapper.Save();
-                }
-            }            
-            // Enqueue method to process refund 0f 50 naira test charge
-            else
-            {
-                BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
-            }
-            await _repoWrapper.Save();
-        }
+        //            await _repoWrapper.Save();
+        //        }
+        //    }            
+        //    // Enqueue method to process refund 0f 50 naira test charge
+        //    else
+        //    {
+        //        BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
+        //    }
+        //    await _repoWrapper.Save();
+        //}
 
         /// <summary>
         /// Function to send email reminder three days before subscription cysle ends.

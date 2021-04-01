@@ -441,7 +441,7 @@ namespace Application.Services.HealthInsured
             };
 
             // Schedule otp removal after 5 minutes
-            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId),DateTime.Now.AddMinutes(5));
+            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId),DateTime.Now.AddMinutes(2));
 
             company.OTPJobId = otpJobId;
             _repoWrapper.CompanyProfile.Create(company);
@@ -657,6 +657,8 @@ namespace Application.Services.HealthInsured
             {
                 var result = await EnrollUserToHygeiaOnOnboarding(item);
                 item.TransId = result.Message;
+                item.ActiveStatus = true;
+                item.SubscriptionStatus = true;
                 item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
                 _repoWrapper.InsuranceProfile.Update(item);
             }
@@ -710,7 +712,7 @@ namespace Application.Services.HealthInsured
                 BackgroundJob.Delete(company.OTPJobId);
             }
             // Schedule otp removal after 5 minutes
-            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId), DateTime.Now.AddMinutes(5));
+            var otpJobId = BackgroundJob.Schedule(() => RemoveOTP(userId), DateTime.Now.AddMinutes(2));
 
             company.OTPJobId = otpJobId;
             _repoWrapper.CompanyProfile.Update(company);
@@ -837,7 +839,7 @@ namespace Application.Services.HealthInsured
 
             var activeBeneficiaryCount = companyProfile.InsuranceUserProfiles.Where(x => x.ActiveStatus == true).Count();
             var pendingbeneficiarycount = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).Count();
-            var inactiveBeneficairyCount = companyProfile.InsuranceUserProfiles.Where(x => x.ActiveStatus == false).Count();
+            var inactiveBeneficairyCount = companyProfile.InsuranceUserProfiles.Where(x => x.ActiveStatus == false && x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Inactive.ToString()).Count();
 
             var companyProfileBeneficiaryAnalyticDTO = new CompanyProfileBeneficiaryAnalyticDTO
             {
