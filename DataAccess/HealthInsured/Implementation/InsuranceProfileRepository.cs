@@ -92,8 +92,8 @@ namespace DataAccess.HealthInsured.Implementation
             if (paginationQuery.Status != null)
             {
                 if (paginationQuery.Status == 1) queryable = queryable.Where(x => x.ActiveStatus == true).AsQueryable();
-                if (paginationQuery.Status == 2) queryable = queryable.Where(x => x.CompanySubscribedStatus == "pending").AsQueryable();
-                if (paginationQuery.Status == 3) queryable = queryable.Where(x => x.ActiveStatus == false).AsQueryable();
+                if (paginationQuery.Status == 2) queryable = queryable.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).AsQueryable();
+                if (paginationQuery.Status == 3) queryable = queryable.Where(x => x.ActiveStatus == false && x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Inactive.ToString()).AsQueryable();
             }
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))

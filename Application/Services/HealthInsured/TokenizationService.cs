@@ -472,7 +472,7 @@ namespace Application.Services.HealthInsured
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
 
             // If there is active or pending users
-            if (companyProfile.NextCyclePremiumFee > 1000)
+            if (companyProfile.NextCyclePremiumFee >= 1000)
             {
                 //Get a charge authorization model to use in scheduled payment background process.
                 var chageAuthorizationModel = new ChargeAuthorization()
@@ -974,7 +974,7 @@ namespace Application.Services.HealthInsured
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             if (chargeAuthorization.Status)
             {
-                Thread.Sleep(5000);
+                Thread.Sleep(10000);
                 return new ResponseMessage { Message = "Reactivation was successful." , Status = true, ResponseCode = chargeAuthorization.ResponseCode };
             }
             // Setfailed payment reference for transacation;

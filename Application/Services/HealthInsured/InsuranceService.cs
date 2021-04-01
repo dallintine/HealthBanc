@@ -588,6 +588,8 @@ namespace Application.Services.HealthInsured
                     var result = await _userManager.CreateAsync(user);
                     if (result.Succeeded)
                     {
+                        var newServiceString = user.ServiceUsed + ServiceNames.HealthInsured.ToString();
+                        user.ServiceUsed = newServiceString;
                         await _userManager.UpdateAsync(user);
                         await _userManager.AddToRoleAsync(user, "SuperAdmin");
 
