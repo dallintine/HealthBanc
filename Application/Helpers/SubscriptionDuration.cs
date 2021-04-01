@@ -8,6 +8,6 @@ namespace Application.Helpers
     public class SubscriptionDuration
     {
         public bool FreeTrial { get; set; }
-        public int FreeTrialDayDuration { get; set; }
+        public double FreeTrialDayDuration { get; set; }
     }
 }
