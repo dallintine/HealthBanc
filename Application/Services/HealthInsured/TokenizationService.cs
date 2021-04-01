@@ -1264,7 +1264,7 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
                     //Background task to Enroll pending users to hygeia.
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null));
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
 
                     companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 

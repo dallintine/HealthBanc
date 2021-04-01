@@ -657,6 +657,7 @@ namespace Application.Services.HealthInsured
             {
                 var result = await EnrollUserToHygeiaOnOnboarding(item);
                 item.TransId = result.Message;
+                item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
                 _repoWrapper.InsuranceProfile.Update(item);
             }
             await Task.CompletedTask;
