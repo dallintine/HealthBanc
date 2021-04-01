@@ -646,7 +646,7 @@ namespace Application.Services.HealthInsured
 
             var daysToCancelUserActivityStatus = insuranceProfile.EndActiveStatusDate;
             // check if date active cycle will end correspond with present date. if so set active cycle to false.
-            if (daysToCancelUserActivityStatus.Date == DateTime.Now.Date)
+            if (daysToCancelUserActivityStatus == DateTime.Now)
             {
                 insuranceProfile.ActiveStatus = false;
                 insuranceProfile.PendingJobId = null;
