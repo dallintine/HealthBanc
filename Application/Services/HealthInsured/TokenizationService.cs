@@ -1291,7 +1291,7 @@ namespace Application.Services.HealthInsured
         /// <param name="email"></param>
         /// <param name="userName"></param>
         /// <param name="context"></param>
-        private void SendEmailReminder(string email,string userName, PerformContext context)
+        public void SendEmailReminder(string email,string userName, PerformContext context)
         {            
             _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
         }
