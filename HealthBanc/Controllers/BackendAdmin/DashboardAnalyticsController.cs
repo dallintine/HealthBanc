@@ -111,9 +111,9 @@ namespace HealthBanc.Controllers.BackendAdmin
         [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredDashboardDTO>))]
         [HttpGet("[action]")]
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        public async Task<IActionResult> HealthInsuredDashBoardAnalytics()
+        public async Task<IActionResult> HealthInsuredDashBoardAnalytics([FromQuery] int? insuranceServiceId)
         {
-            var healthInsuredDashboard = await _dashboardAnalytics.GetHealthInsuredDashBoardAnalytics();
+            var healthInsuredDashboard = await _dashboardAnalytics.GetHealthInsuredDashBoardAnalytics(insuranceServiceId);
 
             return Ok(healthInsuredDashboard);
         }

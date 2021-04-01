@@ -5,6 +5,7 @@ using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
+using Domain.Models.Axa_Hygeia_Insurance;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -148,17 +149,38 @@ namespace Application.Services.Admin
             };
         }
 
-        public async Task<ResponseMessage> GetHealthInsuredDashBoardAnalytics()
+        public async Task<ResponseMessage> GetHealthInsuredDashBoardAnalytics(int? insuranceServiceId)
         {
             var users =  _repowrapper.InsuranceProfile.QueryAllInsuranceProfiles();
-            var totalUsers = await users.CountAsync();
             var paymentReferences = _repowrapper.PaymentReference.QueryAllPaymentReference();
-            var totalRevenue = paymentReferences.Where(x => x.Status.ToLower().Trim() == "successful").Select(x => x.Amount).Sum();
+
+            var totalUsers = 0;
+            var totalRevenue = decimal.Parse("0");
+            if(insuranceServiceId is null)
+            {
+                totalUsers = await users.CountAsync();
+                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString())).Select(x => x.Amount).Sum();
+            }
+            // fro hygeia
+            if(insuranceServiceId == 1)
+            {
+
+                totalUsers = await users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Hygeia.ToString())).CountAsync();
+                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.Equals(PaymentReference_ChannelValue.healthinsured_hygeia.ToString()))
+                    .Select(x => x.Amount).Sum();
+            }
+            if(insuranceServiceId == 2)
+            {
+                totalUsers = await users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Axamansard.ToString())).CountAsync();
+                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.Equals(PaymentReference_ChannelValue.healthinsured_axamansard.ToString()))
+                    .Select(x => x.Amount).Sum();
+            }
             var healthInsuredDashboard = new HealthInsuredDashboardDTO()
             {
                 TotalUser = totalUsers,
                 ToatlRevenue = totalRevenue,
-                TotalPayoutDue = 0
+                TotalPayoutDue = decimal.Parse("0"),
+                RevenueDue = decimal.Parse("0")
             };
             return new ResponseMessage { Data = healthInsuredDashboard , Status= true, Message="Dashboard analytics was fectched successfully"};
         }

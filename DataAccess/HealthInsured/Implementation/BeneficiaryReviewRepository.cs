@@ -35,9 +35,9 @@ namespace DataAccess.HealthInsured.Implementation
             }
             
             //Sort the users
-            queryable = paginationQuery.SortBy == 1 ? queryable.OrderByDescending(s => s.DateCreated) : paginationQuery.SortBy == 2 ? 
-                queryable.OrderBy(s => s.FirstName) : paginationQuery.SortBy == 3 ? queryable.OrderBy(s => s.LastName) :
-                queryable.OrderByDescending(s => s.Email);
+
+            queryable = paginationQuery.SortBy == 1 ? queryable.OrderBy(s => s.FirstName) : paginationQuery.SortBy == 2 ? queryable.OrderBy(s => s.LastName) :
+               paginationQuery.SortBy == 3 ? queryable.OrderBy(s => s.Email) : queryable.OrderByDescending(s => s.DateCreated);
 
             var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
 

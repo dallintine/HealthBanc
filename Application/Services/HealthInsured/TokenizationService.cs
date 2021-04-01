@@ -942,6 +942,9 @@ namespace Application.Services.HealthInsured
                 // Task to process scheduled payment at end of current active cycle
                 var jobId = await ProcessScheduledPayment(insuranceProfile);
 
+                // Schedule debit email reminder for user 
+                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+
                 insuranceProfile.SubscriptionStatus = true;
                 insuranceProfile.ActiveStatus = true;
                 insuranceProfile.PendingJobId = jobId;

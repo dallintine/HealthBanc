@@ -9,6 +9,7 @@ namespace Application.DTO.DashboardAnalyticsDTOs
         public int TotalUser { get; set; }
         public decimal ToatlRevenue { get; set; }
         public decimal TotalPayoutDue { get; set; }
+        public decimal RevenueDue { get; set; }
         public List<UserAcquisition> UserAcquisitions { get; set; }
         public List<SubscriberAcquisition> SubscriberAcquisitions { get; set; }
     }
