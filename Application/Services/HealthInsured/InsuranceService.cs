@@ -566,6 +566,7 @@ namespace Application.Services.HealthInsured
             int checkIfProfileEmailExistCount = 0;
             var companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
             var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyId);
+            companyprofile.NextCyclePremiumFee = decimal.Parse("0");
 
             // if beneficaryReview is null, means user just made payment and subscription status is set to active
             if (beneficiaryReviews is null){
@@ -594,6 +595,7 @@ namespace Application.Services.HealthInsured
                         await _userManager.AddToRoleAsync(user, "SuperAdmin");
 
                         var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
+                        insuranceUserProfile.UserId = user.Id;
                         insuranceUserProfile.CompanyProfileId = companyId;
                         insuranceUserProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
                         insuranceUserProfile.Premium = Decimal.Parse("1000");
