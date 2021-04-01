@@ -1,10 +1,16 @@
 ﻿using Application.API_RequestModel.Paystack;
 using Application.API_ResponseModel.Paystack;
+using Application.Helpers;
 using Application.Helpers.ThirdPartyAPI;
+using Application.Services.HealthInsured;
 using Application.ViewModels.Paystack;
+using DataAccess;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
+using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.Axa_Hygeia_Insurance;
+using Domain.Models.ReportAndLogs;
+using Hangfire;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -24,6 +30,7 @@ namespace Application.Services.Paystack
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IInsuranceProfileRepository _axaMansardUser;
         private readonly ILogger<PaystackService> _logger;
+
         private Helpers.Paystack Options { get; }
 
         public PaystackService(IHttpClientFactory httpClientFactory,IInsuranceProfileRepository axaMansardUser, IOptions<Helpers.Paystack> paystackAccessor,
@@ -503,6 +510,6 @@ namespace Application.Services.Paystack
                 }
             }
             await Task.CompletedTask;
-        }
+        }       
     }
 }

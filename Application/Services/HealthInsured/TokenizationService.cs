@@ -127,7 +127,7 @@ namespace Application.Services.HealthInsured
                 var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() 
                     : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                var paymentReference = new PaymentReference(channel,card.reference, insuranceProfile.Id, null, insuranceProfile.UserId.Value
+                var paymentReference = new PaymentReference(channel,card.reference, insuranceProfile.Id, null, insuranceProfile.UserId
                 , insuranceProfile.Premium, PaymentReference_StatusValue.Pending.ToString());
                 _repoWrapper.PaymentReference.Create(paymentReference);
                 await _repoWrapper.Save();
@@ -141,7 +141,6 @@ namespace Application.Services.HealthInsured
             }
             return new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false };
         }
-
 
         /// <summary>
         /// This is used to process card tokenization for corporate org.This method process the charge amount and process api Request that would be
@@ -235,70 +234,13 @@ namespace Application.Services.HealthInsured
                 //else, card status is 0;
                 var cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int) DebitCard_StatusValue.primary : (int) DebitCard_StatusValue.secondary;
 
-                var debitCard = new DebitCard(insuranceUserProfile.UserId.Value, insuranceUserProfile.Id,null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
+                var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id,null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
                 _repoWrapper.Card.Create(debitCard);
 
-                // Check if user does not have a subscrption status. That User is tokenizing card for the first time.
-                if (insuranceUserProfile.SubscriptionStatus == null)
-                {
-                    //Send user details to insurance provider when payment is successfully
-                    if(insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
-                    {
-                        var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
-                        if (response.Status)
-                        {
-                            insuranceUserProfile.TransId = response.Message;
-                        }
-                        else
-                        {
-                            insuranceUserProfile.TransId = "NA";
-                        }
-                    }
-                    else
-                    {
-                        await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
-                    }       
-
-                    insuranceUserProfile.EndActiveStatusDate = _subscriptionAccessor.FreeTrial is true ?  DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration * 2) 
-                        : DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-
-                    // Schedule Payment for user tokenizing card for the first time.
-                    var getScheduledPaymentJobId = await ProcessScheduledPayment(insuranceUserProfile);
-
-                    insuranceUserProfile.PendingEmailJobId = _subscriptionAccessor.FreeTrial is true ? BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
-                           DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration * 2).Subtract(new TimeSpan(3, 0, 0, 0)))
-                       : BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
-                           DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-
-                    // Save scheduled debit job Id
-                    insuranceUserProfile.PendingJobId = getScheduledPaymentJobId;
-
-                    insuranceUserProfile.SubscriptionStatus = true;
-                    insuranceUserProfile.ActiveStatus = true;
-                    insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-
-                    checkprofileComplete.TokenizationCompleted = true;
-                    _repoWrapper.InsuranceCompletionProfile.Update(checkprofileComplete);
-
-                    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-
-                    SendSuccesfulSubscriptionMail(insuranceUserProfile.Email, insuranceUserProfile.Surname, insuranceUserProfile.TransId, insuranceUserProfile.CareProviderName);
-
-                    var activityLog2 = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog2);
-
-                    //Create Audit thats user subscrption changed 
-                    var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Subscription Status Changed",ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                }
-                // Enqueue method to process refund 0f 50 naira test charge
-                else
-                {
-                    BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(cardReference,(50*100).ToString()));
-                }
-                await _repoWrapper.Save();               
-
+                checkprofileComplete.TokenizationCompleted = true;
+                _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                await _repoWrapper.Save();  
 
                 return new ResponseMessage
                 {
@@ -335,40 +277,13 @@ namespace Application.Services.HealthInsured
 
                 var cardStatus = companyProfile.Cards.Count == 0 ? (int) DebitCard_StatusValue.primary : (int) DebitCard_StatusValue.secondary;
 
-
                 var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
                 _repoWrapper.Card.Create(debitCard);
 
                 if (!companyProfile.TokenizationCompleted)
                 {
-                    //method to create insurance profiles for the beneficiaires.
-                    await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
-
-                    //Background task to Enroll all users to hygeia.
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId,null));
-
-                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-
-                    //Background task to schedule debit at the end of next cycle
-                    var getScheduledPaymentJobId = await ProcessScheduledPayment(companyProfile);
-
-                    // Save scheduled debit job Id
-                    companyProfile.PendingJobId = getScheduledPaymentJobId;
-
-                    companyProfile.PendingEmailJobId =  BackgroundJob.Schedule(() => SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
-                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-
-                    companyProfile.TokenizationCompleted = true;
-                    _repoWrapper.CompanyProfile.Update(companyProfile);
-
-                    var activityLog = new ActivityLog(null,companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                }
-                // Enqueue method to process refund 0f 50 naira test charge
-                else
-                {
-                    BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(cardReference, (50 * 100).ToString()));
+                    Thread.Sleep(10000);
                 }
                 await _repoWrapper.Save();
 
@@ -435,7 +350,7 @@ namespace Application.Services.HealthInsured
         {
             var executionDate = insuranceProfile.EndActiveStatusDate;
 
-            var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(insuranceProfile.UserId.Value,
+            var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(insuranceProfile.UserId,
                  insuranceProfile.Id, null), executionDate);
 
             if(insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
@@ -444,7 +359,7 @@ namespace Application.Services.HealthInsured
                     InsuranceProvider.Hygeia.ToString());
                 _repoWrapper.ScheduledEnrollment.Create(processingAxaEnrollment);
 
-                var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId.Value, insuranceProfile.Id, processingAxaEnrollment.Id,null,
+                var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId, insuranceProfile.Id, processingAxaEnrollment.Id,null,
                 executionDate, jobId, ScheduledPayment_StatusValue.Processing.ToString(), null, null, InsuranceProvider.Hygeia.ToString());
                 _repoWrapper.ScheduledPayment.Create(processingScheduledPayment);
             }
@@ -454,7 +369,7 @@ namespace Application.Services.HealthInsured
                     InsuranceProvider.Axamansard.ToString());
                 _repoWrapper.ScheduledEnrollment.Create(processingAxaEnrollment);
 
-                var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId.Value, insuranceProfile.Id, processingAxaEnrollment.Id, null,
+                var processingScheduledPayment = new ScheduledPayment(insuranceProfile.UserId, insuranceProfile.Id, processingAxaEnrollment.Id, null,
                 executionDate, jobId, ScheduledPayment_StatusValue.Processing.ToString(), null, null, InsuranceProvider.Axamansard.ToString());
                 _repoWrapper.ScheduledPayment.Create(processingScheduledPayment);
             } 
@@ -498,51 +413,13 @@ namespace Application.Services.HealthInsured
 
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
-            if (chargeAuthorization.Status)
-            {
-                scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
-                scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
-
-                insuranceProfile.SubscriptionStatus = true; insuranceProfile.ActiveStatus = true;
-                insuranceProfile.StartActiveStatusDate = DateTime.Now; insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-
-                if(insuranceProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceProfile.InsuranceService == null)
-                {
-                    var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceProfile);
-                    var enrollment = await _insuranceSerivce.AxamansardRegisterUser(enrollmentModel);
-                    if (enrollment.Status)
-                    {
-                        scheduledPaymentJob.ScheduledEnrollment.Status = ScheduledEnrollment_StatusValue.Successful.ToString(); scheduledPaymentJob.ScheduledEnrollment.Message = enrollment.Message;
-                    }
-                    else
-                    {
-                        scheduledPaymentJob.ScheduledEnrollment.Status = ScheduledEnrollment_StatusValue.Failed.ToString(); scheduledPaymentJob.ScheduledEnrollment.Message = enrollment.Message;
-                    }
-                    _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
-                }
-                else
-                {
-                    scheduledPaymentJob.ScheduledEnrollment.Status = ScheduledEnrollment_StatusValue.Successful.ToString(); scheduledPaymentJob.ScheduledEnrollment.Message = "Succesful";
-                }               
-
-                // Schedule debit email reminder for user 
-                var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),
-                    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-
-                var newJobId = await ProcessScheduledPayment(insuranceProfile);
-                insuranceProfile.PendingJobId = newJobId; insuranceProfile.PendingEmailJobId = emailReminderJobId;
-                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-
-                await _repoWrapper.Save();
-                await Task.CompletedTask;
-            }
             // Insufficient funds
-            else if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
+            if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
             {
                 var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() 
                     : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId.Value
+                var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                     , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _repoWrapper.PaymentReference.Create(paymentReference);
 
@@ -558,15 +435,14 @@ namespace Application.Services.HealthInsured
                 await _repoWrapper.InsuranceProfile.Save();
                 BackgroundJob.Delete(jobId);
 
-                SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
-                await Task.CompletedTask;
+                _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
             }
             // Failed
             else
             {
                 var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId.Value
+                var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _repoWrapper.PaymentReference.Create(paymentReference);
 
@@ -581,9 +457,7 @@ namespace Application.Services.HealthInsured
                 await _repoWrapper.Save();
                 BackgroundJob.Delete(jobId);
 
-                SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
-
-                await Task.CompletedTask;
+                _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
             }
             await Task.CompletedTask;
         }
@@ -609,25 +483,8 @@ namespace Application.Services.HealthInsured
                 };
 
                 var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
-                if (chargeAuthorization.Status)
-                {
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(userId,InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
-
-                    scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
-                    scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
-                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-
-                    var newJobId = await ProcessScheduledPayment(companyProfile);
-                    companyProfile.PendingJobId = newJobId;
-
-                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
-                             DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-
-                    _repoWrapper.CompanyProfile.Update(companyProfile);
-                    await _repoWrapper.Save();
-                }
                 // Insufficient funds
-                else if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
+                if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
                 {
                     var channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString();
 
@@ -649,7 +506,7 @@ namespace Application.Services.HealthInsured
                         _repoWrapper.CompanyProfile.Update(companyProfile);
                         await _repoWrapper.InsuranceProfile.Save();
 
-                        SendCompanyEmailOnFailedDebit(companyProfile.CompanyName, companyProfile.CompanyName, companyProfile.NextCyclePremiumFee.ToString(), companyProfile.NextPaymentDate.Value.ToLongDateString());
+                        _insuranceSerivce.SendCompanyEmailOnFailedDebit(companyProfile.CompanyName, companyProfile.CompanyName, companyProfile.NextCyclePremiumFee.ToString(), companyProfile.NextPaymentDate.Value.ToLongDateString());
                     }
                     else
                     {
@@ -686,7 +543,7 @@ namespace Application.Services.HealthInsured
                         _repoWrapper.CompanyProfile.Update(companyProfile);
                         await _repoWrapper.InsuranceProfile.Save();
 
-                        SendCompanyEmailOnFailedDebit(companyProfile.CompanyName, companyProfile.CompanyName, companyProfile.NextCyclePremiumFee.ToString(), companyProfile.NextPaymentDate.Value.ToLongDateString());
+                        _insuranceSerivce.SendCompanyEmailOnFailedDebit(companyProfile.CompanyName, companyProfile.CompanyName, companyProfile.NextCyclePremiumFee.ToString(), companyProfile.NextPaymentDate.Value.ToLongDateString());
                     }
                     else
                     {
@@ -751,7 +608,7 @@ namespace Application.Services.HealthInsured
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (insuranceProfile.SubscriptionStatus == false)
             {
-                return new ResponseMessage { Message = "User has no active subscription", Status = false };
+                return new ResponseMessage { Message = "You have no subscription", Status = false };
             }
 
             var scheduledJobId = insuranceProfile.PendingJobId;
@@ -772,7 +629,7 @@ namespace Application.Services.HealthInsured
             else
             {
                 //Check if a user has a pending debit on scheduled subscription reactivation
-                var scheduledReactivatedPayment = await _repoWrapper.PaymentOnReactivation.GetScheduledPaymentByJobId(scheduledJobId, insuranceProfile.UserId.Value);
+                var scheduledReactivatedPayment = await _repoWrapper.PaymentOnReactivation.GetScheduledPaymentByJobId(scheduledJobId, insuranceProfile.UserId);
                 if(scheduledReactivatedPayment != null)
                 {
                     BackgroundJob.Delete(scheduledJobId);
@@ -1113,77 +970,21 @@ namespace Application.Services.HealthInsured
             // Call Paystack service. Debit user using card authorization code
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             if (chargeAuthorization.Status)
-            {  
-                //Create data to track user enrollment and payment
-                var enrollomentOnOnboading = new EnrollmentOnOnboarding(insuranceProfile.Id, null, null,null);
-
-                if(insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
-                {
-                    // Send user details to hygeia
-                    var registrationModel = _mapper.Map<RegistrationModel>(insuranceProfile);
-                    var registration = await _insuranceSerivce.HygeiaRegisterUser(registrationModel);
-                    if (registration.Status)
-                    {
-                        enrollomentOnOnboading.Status = EnrollmentOnOnboarding_StatusValue.Successful.ToString(); enrollomentOnOnboading.Message = registration.Message;
-                        enrollomentOnOnboading.Serviceused = InsuranceProvider.Hygeia.ToString();
-                        _repoWrapper.EnrollmentOnOnboarding.Create(enrollomentOnOnboading);
-                    }
-                    else
-                    {
-                        enrollomentOnOnboading.Status = EnrollmentOnOnboarding_StatusValue.Failed.ToString(); enrollomentOnOnboading.Message = registration.Message;
-                        enrollomentOnOnboading.Serviceused = InsuranceProvider.Hygeia.ToString();
-                        _repoWrapper.EnrollmentOnOnboarding.Create(enrollomentOnOnboading);
-                    }
-                }
-                else
-                {
-                    var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceProfile);
-                    // Send user details to axamansard
-                    var enrollment = await _insuranceSerivce.AxamansardRegisterUser(enrollmentModel);
-
-                    if (enrollment.Status)
-                    {
-                        enrollomentOnOnboading.Status = EnrollmentOnOnboarding_StatusValue.Successful.ToString(); enrollomentOnOnboading.Message = enrollment.Message;
-                        enrollomentOnOnboading.Serviceused = InsuranceProvider.Axamansard.ToString();
-                        _repoWrapper.EnrollmentOnOnboarding.Create(enrollomentOnOnboading);
-                    }
-                    else
-                    {
-                        enrollomentOnOnboading.Status = EnrollmentOnOnboarding_StatusValue.Failed.ToString(); enrollomentOnOnboading.Message = enrollment.Message;
-                        enrollomentOnOnboading.Serviceused = InsuranceProvider.Axamansard.ToString();
-                        _repoWrapper.EnrollmentOnOnboarding.Create(enrollomentOnOnboading);
-                    }
-                }        
-
-                // Dont change the position of this, comes before the  background ProcessScheduledPayment is called !!!
-                insuranceProfile.StartActiveStatusDate = DateTime.Now;
-                insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-
-                //Schedule job to debit user every 28 days
-                var getScheduledPaymentJobId = await ProcessScheduledPayment(insuranceProfile);
-
-                // Schedule debit email reminder for user 
-                var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-
-                insuranceProfile.PendingEmailJobId = emailReminderJobId;
-                insuranceProfile.SubscriptionStatus = true; insuranceProfile.PendingJobId = getScheduledPaymentJobId;
-                insuranceProfile.ActiveStatus = true; 
-                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-
-                await _repoWrapper.Save();
+            {
+                Thread.Sleep(5000);
                 return new ResponseMessage { Message = "Reactivation was successful." , Status = true, ResponseCode = chargeAuthorization.ResponseCode };
             }
-            // Set payment reference for transacation;
+            // Setfailed payment reference for transacation;
             var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() 
                 : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-            var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId.Value
+            var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
             _repoWrapper.PaymentReference.Create(paymentReference);
             await _repoWrapper.Save();
 
             return new ResponseMessage { Message = chargeAuthorization.Message, Status =false, ResponseCode = chargeAuthorization.ResponseCode };
-        }        
+        }
 
         /// <summary>
         /// 
@@ -1195,7 +996,7 @@ namespace Application.Services.HealthInsured
         /// <param name="last4"></param>
         /// <param name="card_type"></param>
         /// <returns></returns>
-        public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type,string amount)
+        public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type, string amount)
         {
             if (@event == "charge.success")
             {
@@ -1205,93 +1006,283 @@ namespace Application.Services.HealthInsured
                     var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                     if (paymentReference != null)
                     {
-                        if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
-                        {
-                            var checkprofileComplete = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(insuranceProfile.UserId.Value);
-
-                            var tokenizationResponse = new TokenizationResponse
-                            {
-                                Type = card_type,
-                                LastDigit = last4,
-                                AuthorizationCode = authorization_code,
-                                Message = "Card was tokenize successfully",
-                                Status = true,
-                                Reference = paymentReference.Refernce,
-                                ResponseCode = 0
-                            };
-                            await ProcessPaystackChargeCardResponse(tokenizationResponse, insuranceProfile,
-                                checkprofileComplete, paymentReference, paymentReference.Refernce);
-                            paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
-                            _repoWrapper.PaymentReference.Update(paymentReference);
-                            await _repoWrapper.Save();
-                        }
-                        else
-                        {
-                            paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
-                            _repoWrapper.PaymentReference.Update(paymentReference);
-                            await _repoWrapper.Save();
-                        }
+                        paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
+                        _repoWrapper.PaymentReference.Update(paymentReference);
                     }
                     else
                     {
                         // Create payment reference for the charge.
-                        var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() 
+                        var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                             : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                        var paymentReference2 = new PaymentReference(channel,reference, insuranceProfile.Id,null, insuranceProfile.UserId.Value
+                        var paymentReference2 = new PaymentReference(channel, reference, insuranceProfile.Id, null, insuranceProfile.UserId
                         , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
                         _repoWrapper.PaymentReference.Create(paymentReference2);
-                        await _repoWrapper.Save();
                     }
+                    await _repoWrapper.Save();
+                    await ValidateWebHookSuccesfulInsurancePayment(insuranceProfile, null, reference, authorization_code, last4, card_type, amount);
                 }
                 else
                 {
                     var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
-                    if(companyProfile != null)
+                    if (companyProfile != null)
                     {
                         var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                         if (paymentReference != null)
                         {
-                            if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
-                            {
-                                var tokenizationResponse = new TokenizationResponse
-                                {
-                                    Type = card_type,
-                                    LastDigit = last4,
-                                    AuthorizationCode = authorization_code,
-                                    Message = "Card was tokenize successfully",
-                                    Status = true,
-                                    Reference = paymentReference.Refernce,
-                                    ResponseCode = 0
-                                };
-                                await ProcessPaystackChargeCardResponse(tokenizationResponse, companyProfile,
-                                    paymentReference, paymentReference.Refernce);
-                                paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
-                                _repoWrapper.PaymentReference.Update(paymentReference);
-                                await _repoWrapper.Save();
-                            }
-                            else
-                            {
-                                paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
-                                _repoWrapper.PaymentReference.Update(paymentReference);
-                                await _repoWrapper.Save();
-                            }
+                            paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
+                            _repoWrapper.PaymentReference.Update(paymentReference);
                         }
                         else
                         {
                             // Create payment reference for the charge.
-                            var channel = companyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() 
+                            var channel = companyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                                 : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
                             var paymentReference2 = new PaymentReference(channel, reference, null, companyProfile.Id, companyProfile.UserId
                             , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
                             _repoWrapper.PaymentReference.Create(paymentReference2);
-                            await _repoWrapper.Save();
                         }
+                        await _repoWrapper.Save();
+                        await ValidateWebHookSuccesfulInsurancePayment(null, companyProfile, reference, authorization_code, last4, card_type, amount);
                     }
                 }
             }
             await Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Method to make sure Users get value for their insurance payment
+        /// </summary>
+        /// <returns></returns>
+        private async Task ValidateWebHookSuccesfulInsurancePayment(InsuranceUserProfile insuranceUserProfile, CompanyProfile companyProfile, string reference, string authorization_code, string last4, string card_type,string amount)
+        {
+            if (!(insuranceUserProfile is null))
+            {
+                // check if user card exist, if not add it
+                var card = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(insuranceUserProfile.UserId, last4);
+                if (card is null)
+                {
+                    var cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+
+                    var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, cardStatus, last4, card_type
+                        , reference, authorization_code);
+                    _repoWrapper.Card.Create(debitCard);
+                }
+                await ProcessWebHook_SuccessfulInsuranceIndividualPayment(insuranceUserProfile, reference,amount);
+            }
+            if (!(companyProfile is null))
+            {
+                // check if user card exist, if not add it
+                var card = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(companyProfile.UserId, last4);
+                if (card is null)
+                {
+                    var cardStatus = companyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+
+                    var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
+                        , reference, authorization_code);
+                    _repoWrapper.Card.Create(debitCard);
+                }
+                await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
+            }
+        }
+
+        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
+        {
+            if(decimal.Parse(amount) > 100)
+            {
+                // If user is making payment for the first time, or making an immediate reactivation
+                if(insuranceUserProfile.SubscriptionStatus is null || (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false))
+                {
+                    //Send user details to insurance provider when payment is successfully
+                    if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+                    {
+                        var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
+                        if (response.Status)
+                        {
+                            insuranceUserProfile.TransId = response.Message;
+                        }
+                        else
+                        {
+                            insuranceUserProfile.TransId = "NA";
+                        }
+                    }
+                    else
+                    {
+                        await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                    }
+                }
+
+                // If payment is scheduled
+                if(insuranceUserProfile.SubscriptionStatus is true && insuranceUserProfile.ActiveStatus is true)
+                {
+                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceUserProfile, reference);
+                }
+
+                // If user is making payment for the first time,
+                if (insuranceUserProfile.SubscriptionStatus == null)
+                {
+                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
+                }
+
+                // if user is  making an immediate reactivation or if it is a scheduled debit
+                if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
+                {
+                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
+                }
+            }            
+            // Enqueue method to process refund 0f 50 naira test charge
+            else
+            {
+                BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
+            }
+        }
+
+        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
+        {
+            insuranceUserProfile.EndActiveStatusDate = _subscriptionAccessor.FreeTrial is true ? DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration * 2)
+                        : DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+            // Schedule debit email reminder for user 
+            insuranceUserProfile.PendingEmailJobId = _subscriptionAccessor.FreeTrial is true ? BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+                   DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration * 2).Subtract(new TimeSpan(3, 0, 0, 0)))
+               : BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+                   DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+            //Schedule job to debit user every 28 days
+            insuranceUserProfile.PendingJobId = await ProcessScheduledPayment(insuranceUserProfile);
+
+            var checkprofileComplete = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(insuranceUserProfile.UserId);
+            checkprofileComplete.TokenizationCompleted = true;
+            _repoWrapper.InsuranceCompletionProfile.Update(checkprofileComplete);
+
+            _insuranceSerivce.SendSuccesfulSubscriptionMail(insuranceUserProfile.Email, insuranceUserProfile.Surname, insuranceUserProfile.TransId, insuranceUserProfile.CareProviderName);
+
+            var activityLog2 = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+            _repoWrapper.ActivityLog.Create(activityLog2);
+
+            insuranceUserProfile.SubscriptionStatus = true;
+            insuranceUserProfile.ActiveStatus = true;
+            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
+
+            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+
+            //Create Audit thats user subscrption changed 
+            var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
+            _repoWrapper.ActivityLog.Create(activityLog);
+            await _repoWrapper.Save();
+        }
+
+        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
+        {
+            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+            //Schedule job to debit user every 28 days
+            insuranceUserProfile.PendingJobId = await ProcessScheduledPayment(insuranceUserProfile);
+
+            // Schedule debit email reminder for user 
+            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+
+            insuranceUserProfile.SubscriptionStatus = true;
+            insuranceUserProfile.ActiveStatus = true;
+            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
+            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+
+            //Create Audit thats user subscrption changed 
+            var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
+            _repoWrapper.ActivityLog.Create(activityLog);
+
+            await _repoWrapper.Save();
+        }
+
+        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, string reference)
+        {
+            var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(insuranceUserProfile.PendingJobId);
+            scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = ScheduledPayment_StatusValue.Successful.ToString();
+            scheduledPaymentJob.PaymentReference = reference;
+
+            _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
+
+            if (insuranceUserProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceUserProfile.InsuranceService == null)
+            {
+                await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+            }
+
+            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+            //Schedule job to debit user every 28 days
+            insuranceUserProfile.PendingJobId = await ProcessScheduledPayment(insuranceUserProfile);
+
+            // Schedule debit email reminder for user 
+            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+
+            insuranceUserProfile.SubscriptionStatus = true;
+            insuranceUserProfile.ActiveStatus = true;
+            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
+
+            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+            await _repoWrapper.Save();
+        }
+
+        private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference,string amount)
+        {
+            if(decimal.Parse(amount) > 100)
+            {
+                if (!companyProfile.TokenizationCompleted)
+                {
+                    //method to create insurance profiles for the beneficiaires.
+                    var result = _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null).Result;
+
+                    //Background task to Enroll all users to hygeia.
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null));
+
+                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+                    //Background task to schedule debit at the end of next cycle
+                    companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+
+                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
+                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+                    _repoWrapper.CompanyProfile.Update(companyProfile);
+                    companyProfile.TokenizationCompleted = true;
+
+                    var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                    _repoWrapper.ActivityLog.Create(activityLog);
+
+                    await _repoWrapper.Save();
+                }
+                else
+                {
+                    var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(companyProfile.PendingJobId);
+                    scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = ScheduledPayment_StatusValue.Successful.ToString();
+                    scheduledPaymentJob.PaymentReference = reference;
+
+                    _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
+
+                    //Background task to Enroll pending users to hygeia.
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null));
+
+                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
+                    //Background task to schedule debit at the end of next cycle
+                    companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+
+                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
+                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+                    _repoWrapper.CompanyProfile.Update(companyProfile);
+                    companyProfile.TokenizationCompleted = true;
+
+                    await _repoWrapper.Save();
+                }
+            }            
+            // Enqueue method to process refund 0f 50 naira test charge
+            else
+            {
+                BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
+            }
+            await _repoWrapper.Save();
         }
 
         /// <summary>
@@ -1300,31 +1291,9 @@ namespace Application.Services.HealthInsured
         /// <param name="email"></param>
         /// <param name="userName"></param>
         /// <param name="context"></param>
-        public void SendEmailReminder(string email,string userName, PerformContext context)
+        private void SendEmailReminder(string email,string userName, PerformContext context)
         {            
             _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
-        }
-
-        /// <summary>
-        /// Function to send successful subscription email.Send this only to user when subscription status is null
-        /// </summary>
-        /// <param name="email"></param>
-        /// <param name="userName"></param>
-        /// <param name="enroleeNumber"></param>
-        /// <param name="healthCareProvider"></param>
-        public void SendSuccesfulSubscriptionMail(string email, string userName,string enroleeNumber,string healthCareProvider)
-        {
-            _emailSender.HealthInsuredSubscriptionMail(email,"Active Free Trial",userName,enroleeNumber,healthCareProvider);
-        }
-
-        public void SendEmailOnFailedDebit(string email,string userName,string premium)
-        {
-            _emailSender.HealthInsuredFailedDebit(email, "Failed Transaction", userName, premium);
-        }
-
-        public void SendCompanyEmailOnFailedDebit(string email, string userName, string premium, string stopDate)
-        {
-            _emailSender.HealthInsuredFailedCompanyDebit(email, "Failed Transaction", userName, premium, stopDate);
         }
 
         //Deprecated to be removed in future versions
@@ -1350,7 +1319,7 @@ namespace Application.Services.HealthInsured
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
 
             // Get  payment on reactivation data. 
-            var paymentOnReactivation = await _repoWrapper.PaymentOnReactivation.GetScheduledPaymentByJobId(insuranceProfile.PendingJobId, insuranceProfile.UserId.Value);
+            var paymentOnReactivation = await _repoWrapper.PaymentOnReactivation.GetScheduledPaymentByJobId(insuranceProfile.PendingJobId, insuranceProfile.UserId);
             if (chargeAuthorization.Status)
             {
                 paymentOnReactivation.Status = PaymentOnReactivation_StatusValue.Successful.ToString(); paymentOnReactivation.Message = chargeAuthorization.Message;
@@ -1410,7 +1379,7 @@ namespace Application.Services.HealthInsured
                 // Set payment reference for failed transacation;
                 var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, insuranceProfile.UserId.Value
+                var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, insuranceProfile.UserId
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _repoWrapper.PaymentReference.Create(paymentReference);
                 await _repoWrapper.Save();
@@ -1424,7 +1393,7 @@ namespace Application.Services.HealthInsured
                 insuranceProfile.ActiveStatus = false;
                 _repoWrapper.InsuranceProfile.Update(insuranceProfile);
 
-                SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
+                _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
             }
             else
             {
@@ -1432,7 +1401,7 @@ namespace Application.Services.HealthInsured
                 var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                     : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, insuranceProfile.UserId.Value
+                var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, insuranceProfile.UserId
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                 _repoWrapper.PaymentReference.Create(paymentReference);
                 await _repoWrapper.PaymentReference.Save();
@@ -1446,7 +1415,7 @@ namespace Application.Services.HealthInsured
                 insuranceProfile.ActiveStatus = false;
                 _repoWrapper.InsuranceProfile.Update(insuranceProfile);
 
-                SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
+                _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
             }
             await _repoWrapper.Save();
             await Task.CompletedTask;

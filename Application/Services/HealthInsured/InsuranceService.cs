@@ -15,6 +15,7 @@ using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.Axa_Hygeia_Insurance;
 using Domain.Models.ReportAndLogs;
 using Hangfire;
+using Hangfire.Server;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -47,11 +48,11 @@ namespace Application.Services.HealthInsured
         private AxaMansardConfiguration Options { get; }
         private HygeiaConfiguration _hygeiaAccessor { get; }
         private SubscriptionDuration _subscriptionAccessor { get; }
-
+        public UserManager<ApplicationUser> _userManager { get; }
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IMapper mapper, AuditLogService auditLogServices,
             ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender, IOptions<HygeiaConfiguration> hygeiaAccessor, IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper,
-             IOptions<SubscriptionDuration> subscriptionAccessor)
+             IOptions<SubscriptionDuration> subscriptionAccessor, UserManager<ApplicationUser> userManager)
         {
             _httpClientFactory = httpClientFactory;
             _mapper = mapper;
@@ -63,6 +64,7 @@ namespace Application.Services.HealthInsured
             Options = axaAccessor.Value;
             _hygeiaAccessor = hygeiaAccessor.Value;
             _repoWrapper = repoWrapper;
+            _userManager = userManager;
             _subscriptionAccessor = subscriptionAccessor.Value ;
         }
 
@@ -529,7 +531,7 @@ namespace Application.Services.HealthInsured
                         return new ResponseMessage
                         {
                             Data = paginatedResponse,
-                            Message = "Some beneficiaries could not be added to the beneficiay review list as their emails are duplicate of existing beneficiaires",
+                            Message = "Some beneficiaries could not be added to the beneficiay review list as their emails are duplicate of existing users",
                             Status = true
                         };
                     }
@@ -573,28 +575,39 @@ namespace Application.Services.HealthInsured
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
             foreach (var item in beneficiaryReviews)
             {
-                var checkIfProfileEmailExist = await _repoWrapper.InsuranceProfile.GetByEmail(item.Email);
-                // if email exist incerease checkIfProfileEmailExistCount count
-                if (!(checkIfProfileEmailExist is null))
+                // if email exist incerease checkIfProfileEmailExistCount count               
+                var checkUserEmail = await _userManager.FindByEmailAsync(item.Email);
+                if (!(checkUserEmail is null))
                 {
                     checkIfProfileEmailExistCount++;
                     continue;
                 }
-                var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
-                insuranceUserProfile.CompanyProfileId = companyId;
-                insuranceUserProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
-                insuranceUserProfile.Premium = Decimal.Parse("1000");
-                insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
-                if(companySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString())
+                if (checkUserEmail == null)
                 {
-                    insuranceUserProfile.ActiveStatus = true;
-                    insuranceUserProfile.SubscriptionStatus = true;
-                    insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-                    insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-                }
-                insuranceUserProfiles.Add(insuranceUserProfile);
+                    var user = _mapper.Map<ApplicationUser>(item);
+                    var result = await _userManager.CreateAsync(user);
+                    if (result.Succeeded)
+                    {
+                        await _userManager.UpdateAsync(user);
+                        await _userManager.AddToRoleAsync(user, "SuperAdmin");
 
-                companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
+                        var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
+                        insuranceUserProfile.CompanyProfileId = companyId;
+                        insuranceUserProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
+                        insuranceUserProfile.Premium = Decimal.Parse("1000");
+                        insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
+                        if (companySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString())
+                        {
+                            insuranceUserProfile.ActiveStatus = true;
+                            insuranceUserProfile.SubscriptionStatus = true;
+                            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
+                            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                        }
+                        insuranceUserProfiles.Add(insuranceUserProfile);
+
+                        companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
+                    }
+                }                
             }
             _repoWrapper.CompanyProfile.Update(companyprofile);
             _repoWrapper.InsuranceProfile.CreateRange(insuranceUserProfiles);
@@ -626,11 +639,13 @@ namespace Application.Services.HealthInsured
         {
             var companyProfile = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
             IQueryable<InsuranceUserProfile> insuranceUserProfiles;
+            // Onboard users with an active company subscription status
             if (status is null)
             {
                 insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
                 x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString());
             }
+            // Onboard users with a pending company subscription status
             else
             {
                 insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == status);
@@ -868,7 +883,34 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
-        }        
+        }
+
+        public void SendEmailReminder(string email, string userName, PerformContext context)
+        {
+            _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName);
+        }
+
+        /// <summary>
+        /// Function to send successful subscription email.Send this only to user when subscription status is null
+        /// </summary>
+        /// <param name="email"></param>
+        /// <param name="userName"></param>
+        /// <param name="enroleeNumber"></param>
+        /// <param name="healthCareProvider"></param>
+        public void SendSuccesfulSubscriptionMail(string email, string userName, string enroleeNumber, string healthCareProvider)
+        {
+            _emailSender.HealthInsuredSubscriptionMail(email, "Active Free Trial", userName, enroleeNumber, healthCareProvider);
+        }
+
+        public void SendEmailOnFailedDebit(string email, string userName, string premium)
+        {
+            _emailSender.HealthInsuredFailedDebit(email, "Failed Transaction", userName, premium);
+        }
+
+        public void SendCompanyEmailOnFailedDebit(string email, string userName, string premium, string stopDate)
+        {
+            _emailSender.HealthInsuredFailedCompanyDebit(email, "Failed Transaction", userName, premium, stopDate);
+        }
 
         public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
         {
