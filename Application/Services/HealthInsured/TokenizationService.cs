@@ -512,7 +512,7 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
                     //Task to Enroll pending users to hygeia.
-                    await  _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
+                    await  _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString());
 
                     companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
