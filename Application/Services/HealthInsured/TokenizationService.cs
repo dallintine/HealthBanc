@@ -484,13 +484,16 @@ namespace Application.Services.HealthInsured
         public async Task SchedulePaymentLogic(int userId, PerformContext context)
         {
             var jobId = context.BackgroundJob.Id;
-            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByCompanyId(userId);
             var activeCard = companyProfile.Cards.FirstOrDefault(x => x.Status == (int) DebitCard_StatusValue.primary);
+
+            var premiumFee = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString() ||
+            x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).Select(x => x.Premium).Sum();
 
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
 
             // If there is active or pending users
-            if (companyProfile.NextCyclePremiumFee >= 1000)
+            if (premiumFee >= 1000)
             {
                 //Get a charge authorization model to use in scheduled payment background process.
                 var chageAuthorizationModel = new ChargeAuthorization()
