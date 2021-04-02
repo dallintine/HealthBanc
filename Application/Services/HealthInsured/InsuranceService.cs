@@ -661,6 +661,8 @@ namespace Application.Services.HealthInsured
                 item.TransId = result.Message;
                 item.ActiveStatus = true;
                 item.SubscriptionStatus = true;
+                item.StartActiveStatusDate = DateTime.Now;
+                item.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
                 item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
                 _repoWrapper.InsuranceProfile.Update(item);
             }

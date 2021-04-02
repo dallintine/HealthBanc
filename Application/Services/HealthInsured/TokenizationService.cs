@@ -499,7 +499,7 @@ namespace Application.Services.HealthInsured
                 var chageAuthorizationModel = new ChargeAuthorization()
                 {
                     email = companyProfile.CompanyEmail,
-                    amount = (companyProfile.NextCyclePremiumFee * 100).ToString(),
+                    amount = (premiumFee * 100).ToString(),
                     authorization_code = activeCard.Authorization_Code
                 };
 
@@ -691,6 +691,7 @@ namespace Application.Services.HealthInsured
 
             var daysToCancelUserActivityStatus = insuranceProfile.EndActiveStatusDate;
             // check if date active cycle will end correspond with present date. if so set active cycle to false.
+            //if (daysToCancelUserActivityStatus.Date == DateTime.Now.Date)
             if (daysToCancelUserActivityStatus == DateTime.Now)
             {
                 insuranceProfile.ActiveStatus = false;
