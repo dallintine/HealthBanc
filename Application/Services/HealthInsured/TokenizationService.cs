@@ -283,13 +283,13 @@ namespace Application.Services.HealthInsured
 
                 if (!companyProfile.TokenizationCompleted)
                 {
+                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+
                     //method to create insurance profiles for the beneficiaires.
                     await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
 
                     //Background task to Enroll all users to hygeia.
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null));
-
-                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value));
 
                     //Background task to schedule debit at the end of next cycle
                     companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
@@ -490,6 +490,12 @@ namespace Application.Services.HealthInsured
             var premiumFee = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString() ||
             x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).Select(x => x.Premium).Sum();
 
+            // set the next repayment date at first trial i.e when there is no failed payment attempt !!!!!
+            if(companyProfile.FailedScheduledPaymentRetry is null)
+            {
+                companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+            }
+
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
 
             // If there is active or pending users
@@ -512,9 +518,7 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
                     //Task to Enroll pending users to hygeia.
-                    await  _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString());
-
-                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                    await _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString(), companyProfile.NextPaymentDate.Value);
 
                     //Background task to schedule debit at the end of next cycle
                     companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
@@ -522,6 +526,7 @@ namespace Application.Services.HealthInsured
                     companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
                           DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
+                    companyProfile.FailedScheduledPaymentRetry = null;
                     companyProfile.TokenizationCompleted = true;
 
                     _repoWrapper.CompanyProfile.Update(companyProfile);
@@ -534,7 +539,7 @@ namespace Application.Services.HealthInsured
                     var channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString();
 
                     var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, null, companyProfile.Id, companyProfile.UserId
-                        , companyProfile.NextCyclePremiumFee.Value, PaymentReference_StatusValue.Failed.ToString());
+                        , premiumFee, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
 
                     scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Terminated.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
@@ -544,21 +549,23 @@ namespace Application.Services.HealthInsured
 
                     if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 15)
                     {
-                        companyProfile.PendingEmailJobId = null; companyProfile.NextPaymentDate = DateTime.Now.AddHours(3);
+                        companyProfile.PendingEmailJobId = null; 
 
-                        companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+                        companyProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), DateTime.Now.AddDays(_subscriptionAccessor.FailedDebitRetrialDuration));
                         companyProfile.FailedScheduledPaymentRetry += 1;
                         _repoWrapper.CompanyProfile.Update(companyProfile);
-                        await _repoWrapper.InsuranceProfile.Save();
+                        await _repoWrapper.Save();
 
-                        _insuranceSerivce.SendCompanyEmailOnFailedDebit(companyProfile.CompanyName, companyProfile.CompanyName, companyProfile.NextCyclePremiumFee.ToString(), companyProfile.NextPaymentDate.Value.ToLongDateString());
+                        _insuranceSerivce.SendCompanyEmailOnFailedDebit(companyProfile.CompanyEmail, companyProfile.CompanyName, premiumFee.ToString()
+                            , companyProfile.NextPaymentDate.Value.AddDays(2).ToLongDateString());
                     }
                     else
                     {
-                        companyProfile.PendingEmailJobId = null; companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-                        companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile); companyProfile.FailedScheduledPaymentRetry = null;
+                        companyProfile.PendingEmailJobId = null; 
+                        companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+                        companyProfile.FailedScheduledPaymentRetry = null;
                         _repoWrapper.CompanyProfile.Update(companyProfile);
-                        await _repoWrapper.InsuranceProfile.Save();
+                        await _repoWrapper.Save();
 
                         await DeactivateAllCompanybeneficiaries(companyProfile.UserId);
                         //Send email
@@ -570,7 +577,7 @@ namespace Application.Services.HealthInsured
                     var channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString();
 
                     var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, null, companyProfile.Id, companyProfile.UserId
-                        , companyProfile.NextCyclePremiumFee.Value, PaymentReference_StatusValue.Failed.ToString());
+                        , premiumFee, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
 
                     scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Failed.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
@@ -581,21 +588,23 @@ namespace Application.Services.HealthInsured
 
                     if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 15)
                     {
-                        companyProfile.PendingEmailJobId = null; companyProfile.NextPaymentDate = DateTime.Now.AddHours(3);
+                        companyProfile.PendingEmailJobId = null; 
 
-                        companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+                        companyProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), DateTime.Now.AddDays(_subscriptionAccessor.FailedDebitRetrialDuration));
                         companyProfile.FailedScheduledPaymentRetry += 1;
                         _repoWrapper.CompanyProfile.Update(companyProfile);
-                        await _repoWrapper.InsuranceProfile.Save();
+                        await _repoWrapper.Save();
 
-                        _insuranceSerivce.SendCompanyEmailOnFailedDebit(companyProfile.CompanyName, companyProfile.CompanyName, companyProfile.NextCyclePremiumFee.ToString(), companyProfile.NextPaymentDate.Value.ToLongDateString());
+                        _insuranceSerivce.SendCompanyEmailOnFailedDebit(companyProfile.CompanyEmail, companyProfile.CompanyName, premiumFee.ToString()
+                            , companyProfile.NextPaymentDate.Value.AddDays(2).ToLongDateString());
                     }
                     else
                     {
-                        companyProfile.PendingEmailJobId = null; companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-                        companyProfile.PendingEmailJobId = await ProcessScheduledPayment(companyProfile); companyProfile.FailedScheduledPaymentRetry = null;
+                        companyProfile.PendingEmailJobId = null; 
+                        companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+                        companyProfile.FailedScheduledPaymentRetry = null;
                         _repoWrapper.CompanyProfile.Update(companyProfile);
-                        await _repoWrapper.InsuranceProfile.Save();
+                        await _repoWrapper.Save();
 
                         await DeactivateAllCompanybeneficiaries(companyProfile.UserId);
 
@@ -607,11 +616,10 @@ namespace Application.Services.HealthInsured
             {
                 scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = "No users to make payment For";
                 scheduledPaymentJob.PaymentReference = "";
-                companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-
                 var newJobId2 = await ProcessScheduledPayment(companyProfile);
                 companyProfile.PendingJobId = newJobId2;
                 companyProfile.PendingEmailJobId = null;
+                companyProfile.FailedScheduledPaymentRetry = null;
                 _repoWrapper.CompanyProfile.Update(companyProfile);
                 await _repoWrapper.Save();
             }
@@ -750,10 +758,6 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 }
             }
-            var nextCyclePremiumFee = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus.ToLower() == InsuranceProfile_CompanySubStatusValue.Active.ToString().ToLower()).Select(x => x.Premium)
-                .Sum();
-            companyProfile.NextCyclePremiumFee = nextCyclePremiumFee;
-            _repoWrapper.CompanyProfile.Update(companyProfile);
             await _repoWrapper.Save();
             return new ResponseMessage { Data = "Beneficiariary was deactivated successfully,beneficiary will remain active and would be moved to the inactive list at the end of current cycle.", Status = true,
                 Message= "Beneficiary was deactivated successfully,beneficiary will remain active and would be moved to the inactive list at the end of current cycle."};

@@ -9,5 +9,6 @@ namespace Application.Helpers
     {
         public bool FreeTrial { get; set; }
         public double FreeTrialDayDuration { get; set; }
+        public double FailedDebitRetrialDuration { get; set; }
     }
 }

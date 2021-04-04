@@ -566,7 +566,6 @@ namespace Application.Services.HealthInsured
             int checkIfProfileEmailExistCount = 0;
             var companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
             var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyId);
-            companyprofile.NextCyclePremiumFee = decimal.Parse("0");
 
             // if beneficaryReview is null, means user just made payment and subscription status is set to active
             if (beneficiaryReviews is null){
@@ -600,6 +599,7 @@ namespace Application.Services.HealthInsured
                         insuranceUserProfile.InsuranceService = InsuranceProvider.Hygeia.ToString();
                         insuranceUserProfile.Premium = Decimal.Parse("1000");
                         insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
+                        insuranceUserProfile.CompanyName = companyprofile.CompanyName;
                         if (companySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString())
                         {
                             insuranceUserProfile.ActiveStatus = true;
@@ -608,12 +608,9 @@ namespace Application.Services.HealthInsured
                             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
                         }
                         insuranceUserProfiles.Add(insuranceUserProfile);
-
-                        companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
                     }
                 }                
             }
-            _repoWrapper.CompanyProfile.Update(companyprofile);
             _repoWrapper.InsuranceProfile.CreateRange(insuranceUserProfiles);
 
             var beneficiaries = companyprofile.BeneficiaryReviewUsers.ToList();
@@ -639,7 +636,7 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Message = "Beneficiaries was added successfully,however " + checkIfProfileEmailExistCount+" beneficiary could not be added as their email already exist!", Status = true };
         }
 
-        public async Task OnboardUsersToHygeia(int companyUserId,string status)
+        public async Task OnboardUsersToHygeia(int companyUserId,string status,DateTime endActiveStatusDate)
         {
             var companyProfile = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
             var insuranceUserProfiles = new  List<InsuranceUserProfile>();
@@ -662,7 +659,7 @@ namespace Application.Services.HealthInsured
                 item.ActiveStatus = true;
                 item.SubscriptionStatus = true;
                 item.StartActiveStatusDate = DateTime.Now;
-                item.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                item.EndActiveStatusDate = endActiveStatusDate;
                 item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
                 _repoWrapper.InsuranceProfile.Update(item);
             }
@@ -683,6 +680,9 @@ namespace Application.Services.HealthInsured
                 {
                     if (otp == corporateUser.OTPCode)
                     {
+                        var user = await _userManager.FindByIdAsync(userId.ToString());
+                        user.ServiceUsed += ServiceNames.HealthInsured.ToString();
+                        _repoWrapper.ApplicationUser.Update(user);
                         corporateUser.EmailConfirmed = true;
                         corporateUser.OTPCode = null;
                         BackgroundJob.Delete(corporateUser.OTPJobId);
@@ -791,7 +791,7 @@ namespace Application.Services.HealthInsured
             var paginatedResponse = new PagedResponse<InsuranceBeneficiaryDTO>
             {
                 Data = beneficiariesDTO,
-                Amount = companyProfile.NextCyclePremiumFee,
+                Amount = beneficiaries.RecordCount * 1000,
                 PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
                 PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
                 RecordCount = beneficiaries.RecordCount,
@@ -806,12 +806,14 @@ namespace Application.Services.HealthInsured
             foreach(var item in beneficiaryListViewModel.Emails)
             {
                 var insuranceUserProfile = await _repoWrapper.InsuranceProfile.GetByEmail(item);
-                if(insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Inactive.ToString())
+                if(insuranceUserProfile != null)
                 {
-                    insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
-                    companyprofile.NextCyclePremiumFee += insuranceUserProfile.Premium;
-                    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-                    _repoWrapper.CompanyProfile.Update(companyprofile);
+                    if(insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Inactive.ToString())
+                    {
+                        insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
+                        _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                        _repoWrapper.CompanyProfile.Update(companyprofile);
+                    }                    
                 }
             }
             await _repoWrapper.Save();
@@ -824,13 +826,15 @@ namespace Application.Services.HealthInsured
             foreach (var item in beneficiaryListViewModel.Emails)
             {
                 var insuranceUserProfile = await _repoWrapper.InsuranceProfile.GetByEmail(item);
-                if (insuranceUserProfile != null && insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString())
+                if (insuranceUserProfile != null)
                 {
-                    insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
-                    insuranceUserProfile.ActiveStatus = false;
-                    companyprofile.NextCyclePremiumFee -= insuranceUserProfile.Premium;
-                    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-                    _repoWrapper.CompanyProfile.Update(companyprofile);
+                    if (insuranceUserProfile.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString())
+                    {
+                        insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
+                        insuranceUserProfile.ActiveStatus = false;
+                        _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                        _repoWrapper.CompanyProfile.Update(companyprofile);
+                    }                   
                 }
             }
             await _repoWrapper.Save();

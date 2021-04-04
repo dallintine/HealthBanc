@@ -173,7 +173,7 @@ namespace HealthBanc.Controllers
                     return Unauthorized(new ResponseMessage { Message = "Your account has been locked, you exceeded the maximum failed password attempt. Kindly unlock your account by resetting your password", Status = false });
                 }
 
-                //check that the user is not null and that his password is correct
+                //check that the user password is correct
                 if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
                 {
                     var response = await _identityService.Login2(user, loginViewModel);
@@ -183,6 +183,7 @@ namespace HealthBanc.Controllers
                     }
                     return Ok(response);
                 }
+                //increase access failed count
                 await _userManager.AccessFailedAsync(user);
                 var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, true);
                 _logoutLogRepository.Create(loginLog);

@@ -21,6 +21,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         /// The CompanyProfile Id. This can be nullable. Its null if the user is Insurance profile is registered as an individual and not registered under a company
         /// </summary>
         public int? CompanyProfileId { get; set; }
+        public string CompanyName { get; set; }
        
         public string _companySubscribedStatus;
         /// <summary>

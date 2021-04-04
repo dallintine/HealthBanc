@@ -68,7 +68,7 @@ namespace HealthBanc
             {
                 options.SignIn.RequireConfirmedEmail = true;                
                 options.Lockout.AllowedForNewUsers = true;
-                options.Lockout.MaxFailedAccessAttempts = 3;
+                options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = DateTime.Now.AddYears(100) - DateTime.Now;
                 options.User.RequireUniqueEmail = true;
                 options.Password.RequireDigit = true;

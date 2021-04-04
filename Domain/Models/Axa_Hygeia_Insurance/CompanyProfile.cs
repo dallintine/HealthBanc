@@ -40,10 +40,6 @@ namespace Domain.Models.Axa.Hygeia_Insurance
         /// </summary>
         public bool TokenizationCompleted { get; set; }
         /// <summary>
-        /// Boolean value to indicate the company next insurance cycle premium fee
-        /// </summary>
-        public decimal? NextCyclePremiumFee { get; set; }
-        /// <summary>
         /// Boolean value to indicate the company next insurance cycle payment date
         /// </summary>
         public DateTime? NextPaymentDate { get; set; }
