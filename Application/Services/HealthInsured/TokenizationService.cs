@@ -491,13 +491,7 @@ namespace Application.Services.HealthInsured
             var activeCard = companyProfile.Cards.FirstOrDefault(x => x.Status == (int) DebitCard_StatusValue.primary);
 
             var premiumFee = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString() ||
-            x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).Select(x => x.Premium).Sum();
-
-            // set the next repayment date at first trial i.e when there is no failed payment attempt !!!!!
-            if(companyProfile.FailedScheduledPaymentRetry is null)
-            {
-                companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
-            }
+            x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).Select(x => x.Premium).Sum();            
 
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
             if(scheduledPaymentJob is null)
@@ -506,6 +500,13 @@ namespace Application.Services.HealthInsured
                 scheduledPaymentJob.JobId = jobId; scheduledPaymentJob.CompanyProfileId = companyProfile.Id; scheduledPaymentJob.UserId = companyProfile.UserId;
                 scheduledPaymentJob.InsuranceService = companyProfile.InsuranceService;
                 _repoWrapper.ScheduledPayment.Create(scheduledPaymentJob);
+                await _repoWrapper.Save();
+            }
+
+            // set the next repayment date at first trial i.e when there is no failed payment attempt !!!!!
+            if (companyProfile.FailedScheduledPaymentRetry is null)
+            {
+                companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
             }
 
             // If there is active or pending users
