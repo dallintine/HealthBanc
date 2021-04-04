@@ -95,7 +95,7 @@ namespace Infrastructure.Mail
 
         public void HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium,string stopDate)
         {
-            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\faileddebit.html";
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\failedcompany_debit.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium).Replace("StopDate",stopDate);
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");

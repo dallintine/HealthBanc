@@ -286,10 +286,13 @@ namespace Application.Services.HealthInsured
                     companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
                     //method to create insurance profiles for the beneficiaires.
-                    await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
+                   var result =  await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
 
-                    //Background task to Enroll all users to hygeia.
-                    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value));
+                    if (result.Status)
+                    {
+                        //Background task to Enroll all users to hygeia.
+                        BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value));
+                    }                   
 
                     //Background task to schedule debit at the end of next cycle
                     companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
@@ -497,6 +500,12 @@ namespace Application.Services.HealthInsured
             }
 
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
+            if(scheduledPaymentJob is null)
+            {
+                scheduledPaymentJob.JobId = jobId; scheduledPaymentJob.CompanyProfileId = companyProfile.Id; scheduledPaymentJob.UserId = companyProfile.UserId;
+                scheduledPaymentJob.InsuranceService = companyProfile.InsuranceService;
+                _repoWrapper.ScheduledPayment.Create(scheduledPaymentJob);
+            }
 
             // If there is active or pending users
             if (premiumFee >= 1000)
@@ -547,7 +556,7 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
 
-                    if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 15)
+                    if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 2)
                     {
                         companyProfile.PendingEmailJobId = null; 
 
@@ -586,7 +595,7 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
 
-                    if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 15)
+                    if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 2)
                     {
                         companyProfile.PendingEmailJobId = null; 
 
