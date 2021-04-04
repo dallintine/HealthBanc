@@ -502,6 +502,7 @@ namespace Application.Services.HealthInsured
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
             if(scheduledPaymentJob is null)
             {
+                scheduledPaymentJob = new ScheduledPayment();
                 scheduledPaymentJob.JobId = jobId; scheduledPaymentJob.CompanyProfileId = companyProfile.Id; scheduledPaymentJob.UserId = companyProfile.UserId;
                 scheduledPaymentJob.InsuranceService = companyProfile.InsuranceService;
                 _repoWrapper.ScheduledPayment.Create(scheduledPaymentJob);
