@@ -563,7 +563,7 @@ namespace Application.Services.HealthInsured
                         companyProfile.PendingEmailJobId = null; 
 
                         companyProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), DateTime.Now.AddDays(_subscriptionAccessor.FailedDebitRetrialDuration));
-                        companyProfile.FailedScheduledPaymentRetry += 1;
+                        companyProfile.FailedScheduledPaymentRetry = companyProfile.FailedScheduledPaymentRetry.HasValue ? companyProfile.FailedScheduledPaymentRetry += 1 : 1;
                         _repoWrapper.CompanyProfile.Update(companyProfile);
                         await _repoWrapper.Save();
 
@@ -602,7 +602,7 @@ namespace Application.Services.HealthInsured
                         companyProfile.PendingEmailJobId = null; 
 
                         companyProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), DateTime.Now.AddDays(_subscriptionAccessor.FailedDebitRetrialDuration));
-                        companyProfile.FailedScheduledPaymentRetry += 1;
+                        companyProfile.FailedScheduledPaymentRetry = companyProfile.FailedScheduledPaymentRetry.HasValue ? companyProfile.FailedScheduledPaymentRetry += 1 : 1;
                         _repoWrapper.CompanyProfile.Update(companyProfile);
                         await _repoWrapper.Save();
 
