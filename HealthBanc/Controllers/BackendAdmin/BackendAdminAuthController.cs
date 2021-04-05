@@ -209,10 +209,14 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
+                // Get logged in admin userID
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
 
-                string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                //get logged in admin mail
+                string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                // remove the .admin from the userMail
+                var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
 
                 if (!createAdminViewModel.Email.EndsWith("@sterling.ng"))
                 {
@@ -224,7 +228,7 @@ namespace HealthBanc.Controllers
                 var checkIfUserExist = await _userRepository.FindByUniqueUsername(createAdminViewModel.UserName);
                 if (checkIfUserExist != null) return BadRequest(new ResponseMessage { Message = "Username Already Exist" });
 
-                var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+                var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
 
                 var admin = new ApplicationUser()
                 {
@@ -290,15 +294,19 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
-        [Authorize(Roles = "Super-Administrator")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpPost("[action]")]
         public async Task<IActionResult> ChangeAdminRole([FromQuery] string email,int roleId)
         {
+            //Get logged in admin userid
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+            //get logged in admin mail
+            string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
+            // remove the .admin from the userMail
+            var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
+            var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
 
             var adminUserMail = email + ".admin";
             var user = await _userManager.FindByEmailAsync(adminUserMail);
@@ -330,7 +338,7 @@ namespace HealthBanc.Controllers
         /// </summary>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize(Roles = "Super-Administrator")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAdminRoles()
         {
@@ -345,15 +353,19 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
-        [Authorize(Roles = "Super-Administrator")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpGet("[action]")]
         public async Task<IActionResult> RemoveAdmin([FromQuery]string email)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            string userMail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var backedAdmin = await _adminRepository.GetAdminByEmail(userMail);
+
+            //get logged in admin mail
+            string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
+            // remove the .admin from the userMail
+            var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
+            var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
 
             var adminUserMail = email + ".admin";
             var user = await _userManager.FindByEmailAsync(adminUserMail);
