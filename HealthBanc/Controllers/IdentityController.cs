@@ -176,7 +176,7 @@ namespace HealthBanc.Controllers
                 //check that the user password is correct
                 if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
                 {
-                    var response = await _identityService.Login2(user, loginViewModel);
+                    var response = await _identityService.Login2(user);
                     if (response.Status != true)
                     {
                         return BadRequest(response);
@@ -337,11 +337,12 @@ namespace HealthBanc.Controllers
                             }
                             foreach (var item in hashedPassword)
                             {
-                                var checkForValidPassword = _passwordHasher.Check(item, changePassword.ConfirmPassword);
-                                if (checkForValidPassword.Verified == true)
+                                var (Verified, NeedsUpgrade) = _passwordHasher.Check(item, changePassword.ConfirmPassword);
+                                if (Verified == true)
                                 {
                                     return BadRequest(new ResponseMessage { Message = "The password you entered has been used before,please try another" });
                                 }
+                                var checkForValidPassword = _passwordHasher.Check(item, changePassword.ConfirmPassword);
                             }
                         }                      
                         

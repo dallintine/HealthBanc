@@ -32,37 +32,29 @@ namespace Application.Services.Identity
 {
     public class IdentityService
     {
-        private readonly ILogger<IdentityService> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IEmailSender _emailSender;
         private readonly IApplicationUserRepository _userRepository;
-        private readonly IClassOrRoleRepository _classOrRole;
-        private readonly IMapper _mapper;
         private readonly JwtSettings _jwtsettings;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPasswordChangeRepository _passwordChangeRepository;
         private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
         private AppEndpoint Options { get; }
-        private Application.Helpers.Environment _environmentAccessor { get; }
 
 
 
-        public IdentityService(ILogger<IdentityService> logger, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
-             IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository, IClassOrRoleRepository classOrRole, IMapper mapper,
+        public IdentityService( UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
+             IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository,
               TokenValidationParameters tokenValidationParameters,IPasswordHasher passwordHasher,IPasswordChangeRepository passwordChangeRepository,
-              IUserLogin_LogoutLogRepository _LogoutLogRepository, IOptions<AppEndpoint> optionAccessor, IOptions<Application.Helpers.Environment> environmentAccessor)
+              IUserLogin_LogoutLogRepository _LogoutLogRepository, IOptions<AppEndpoint> optionAccessor)
         {
             Options = optionAccessor.Value;
-            _environmentAccessor = environmentAccessor.Value;
-            _logger = logger;
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
             _emailSender = emailSender;
             _userRepository = userRepository;
-            _classOrRole = classOrRole;
-            _mapper = mapper;
             _jwtsettings = jwtsettings.Value;
             _tokenValidationParameters = tokenValidationParameters;
             _passwordHasher = passwordHasher;
@@ -148,7 +140,7 @@ namespace Application.Services.Identity
             return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
         }
 
-        public async Task<ResponseMessage> Login2(ApplicationUser user, LoginViewModel loginModel)
+        public async Task<ResponseMessage> Login2(ApplicationUser user)
         {
             await _userManager.ResetAccessFailedCountAsync(user);
 
@@ -257,20 +249,16 @@ namespace Application.Services.Identity
         public string GenerateRefreshToken()
         {
             var randomNumber = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(randomNumber);
-                return Convert.ToBase64String(randomNumber);
-            }
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
 
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {            
             var tokenHandler = new JwtSecurityTokenHandler();
-            SecurityToken securityToken;
-            var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out securityToken);
-            var jwtSecurityToken = securityToken as JwtSecurityToken;
-            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out SecurityToken securityToken);
+            if (!(securityToken is JwtSecurityToken jwtSecurityToken) || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
                 throw new SecurityTokenException("Invalid token");
             return principal;
         }
@@ -314,8 +302,8 @@ namespace Application.Services.Identity
                     }
                     foreach (var item in hashedPassword)
                     {
-                        var checkForValidPassword = _passwordHasher.Check(item, viewModel.ConfirmPassword);
-                        if (checkForValidPassword.Verified == true)
+                        var (Verified, NeedsUpgrade) = _passwordHasher.Check(item, viewModel.ConfirmPassword);
+                        if (Verified == true)
                         {
                             return new ResponseMessage { Message = "The password you entered has been used before,please try another" };
                         }

@@ -40,7 +40,7 @@ namespace Application.Services.HealthInsured
         private readonly IEmailSender _emailSender;
         private readonly IRepositoryWrapper _repoWrapper;
 
-        private SubscriptionDuration _subscriptionAccessor { get; }
+        private SubscriptionDuration SubscriptionAccessor { get; }
 
         public TokenizationService(IMapper mapper, PaystackService paystackService,InsuranceService insuranceSerivce,
             IOptions<SubscriptionDuration> subscriptionAccessor, IEmailSender emailSender,IRepositoryWrapper repoWrapper)
@@ -49,7 +49,7 @@ namespace Application.Services.HealthInsured
             _paystackService = paystackService;
             _insuranceSerivce = insuranceSerivce;
             _emailSender = emailSender;
-            _subscriptionAccessor = subscriptionAccessor.Value;
+            SubscriptionAccessor = subscriptionAccessor.Value;
             _repoWrapper = repoWrapper;
         }
 
@@ -283,7 +283,7 @@ namespace Application.Services.HealthInsured
 
                 if (!companyProfile.TokenizationCompleted)
                 {
-                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                    companyProfile.NextPaymentDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
                     //method to create insurance profiles for the beneficiaires.
                    var result =  await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
@@ -298,7 +298,7 @@ namespace Application.Services.HealthInsured
                     companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
 
                     companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
-                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                          DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
                     _repoWrapper.CompanyProfile.Update(companyProfile);
                     companyProfile.TokenizationCompleted = true;
@@ -496,9 +496,13 @@ namespace Application.Services.HealthInsured
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
             if(scheduledPaymentJob is null)
             {
-                scheduledPaymentJob = new ScheduledPayment();
-                scheduledPaymentJob.JobId = jobId; scheduledPaymentJob.CompanyProfileId = companyProfile.Id; scheduledPaymentJob.UserId = companyProfile.UserId;
-                scheduledPaymentJob.InsuranceService = companyProfile.InsuranceService;
+                scheduledPaymentJob = new ScheduledPayment
+                {
+                    JobId = jobId,
+                    CompanyProfileId = companyProfile.Id,
+                    UserId = companyProfile.UserId,
+                    InsuranceService = companyProfile.InsuranceService
+                };
                 _repoWrapper.ScheduledPayment.Create(scheduledPaymentJob);
                 await _repoWrapper.Save();
             }
@@ -506,7 +510,7 @@ namespace Application.Services.HealthInsured
             // set the next repayment date at first trial i.e when there is no failed payment attempt !!!!!
             if (companyProfile.FailedScheduledPaymentRetry is null)
             {
-                companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                companyProfile.NextPaymentDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
             }
 
             // If there is active or pending users
@@ -535,12 +539,20 @@ namespace Application.Services.HealthInsured
                     companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
 
                     companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
-                          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                          DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
                     companyProfile.FailedScheduledPaymentRetry = null;
                     companyProfile.TokenizationCompleted = true;
 
                     _repoWrapper.CompanyProfile.Update(companyProfile);
+
+                    var companyBeneficiaires = companyProfile.InsuranceUserProfiles;
+                    foreach(var item in companyBeneficiaires)
+                    {
+                        item.StartActiveStatusDate = DateTime.Now;
+                        item.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+                    }
+                    _repoWrapper.InsuranceProfile.UpdateRange(companyBeneficiaires);
 
                     await _repoWrapper.Save();
                 }
@@ -562,7 +574,7 @@ namespace Application.Services.HealthInsured
                     {
                         companyProfile.PendingEmailJobId = null; 
 
-                        companyProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), DateTime.Now.AddDays(_subscriptionAccessor.FailedDebitRetrialDuration));
+                        companyProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), DateTime.Now.AddDays(SubscriptionAccessor.FailedDebitRetrialDuration));
                         companyProfile.FailedScheduledPaymentRetry = companyProfile.FailedScheduledPaymentRetry.HasValue ? companyProfile.FailedScheduledPaymentRetry += 1 : 1;
                         _repoWrapper.CompanyProfile.Update(companyProfile);
                         await _repoWrapper.Save();
@@ -602,7 +614,7 @@ namespace Application.Services.HealthInsured
                     {
                         companyProfile.PendingEmailJobId = null; 
 
-                        companyProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), DateTime.Now.AddDays(_subscriptionAccessor.FailedDebitRetrialDuration));
+                        companyProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(companyProfile.UserId, null), DateTime.Now.AddDays(SubscriptionAccessor.FailedDebitRetrialDuration));
                         companyProfile.FailedScheduledPaymentRetry = companyProfile.FailedScheduledPaymentRetry.HasValue ? companyProfile.FailedScheduledPaymentRetry += 1 : 1;
                         _repoWrapper.CompanyProfile.Update(companyProfile);
                         await _repoWrapper.Save();
@@ -1205,14 +1217,14 @@ namespace Application.Services.HealthInsured
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
         {
-            insuranceUserProfile.EndActiveStatusDate = _subscriptionAccessor.FreeTrial is true ? DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration * 2)
-                        : DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+            insuranceUserProfile.EndActiveStatusDate = SubscriptionAccessor.FreeTrial is true ? DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration * 2)
+                        : DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             // Schedule debit email reminder for user 
-            insuranceUserProfile.PendingEmailJobId = _subscriptionAccessor.FreeTrial is true ? BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
-                   DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration * 2).Subtract(new TimeSpan(3, 0, 0, 0)))
+            insuranceUserProfile.PendingEmailJobId = SubscriptionAccessor.FreeTrial is true ? BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+                   DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration * 2).Subtract(new TimeSpan(3, 0, 0, 0)))
                : BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
-                   DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                   DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
             //Schedule job to debit user every 28 days
             insuranceUserProfile.PendingJobId = await ProcessScheduledPayment(insuranceUserProfile);
@@ -1240,7 +1252,7 @@ namespace Application.Services.HealthInsured
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
         {
-            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             //Schedule job to debit user every 28 days
             insuranceUserProfile.PendingJobId = await ProcessScheduledPayment(insuranceUserProfile);
@@ -1273,7 +1285,7 @@ namespace Application.Services.HealthInsured
                 await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
             }
 
-            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             //Schedule job to debit user every 28 days
             insuranceUserProfile.PendingJobId = await ProcessScheduledPayment(insuranceUserProfile);
@@ -1401,14 +1413,14 @@ namespace Application.Services.HealthInsured
 
                 // Set the EndActiveStatusDate for the insurance profile before calling the background process ProcessScheduledPayment !!!!
                 insuranceProfile.StartActiveStatusDate = DateTime.Now;
-                insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
                 //Schedule job to debit user every 28 days
                 var getScheduledPaymentJobId = await ProcessScheduledPayment(insuranceProfile);
 
                 // Schedule debit email reminder for user 
                 var emailReminderJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),
-                    DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
                 insuranceProfile.PendingEmailJobId = emailReminderJobId;
                 insuranceProfile.PendingJobId = getScheduledPaymentJobId;

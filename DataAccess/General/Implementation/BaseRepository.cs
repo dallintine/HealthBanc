@@ -64,6 +64,11 @@ namespace DataAccess.General.Implementation
             _context.Entry(entity).State = EntityState.Modified;
         }
 
+        public void UpdateRange(List<T> entity)
+        {
+            _context.UpdateRange(entity);
+        }
+
         public async Task InsertEntities(List<T> entities)
         {
             if (entities == null || entities.Count == 0)

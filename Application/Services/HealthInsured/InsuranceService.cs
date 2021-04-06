@@ -46,9 +46,9 @@ namespace Application.Services.HealthInsured
         private readonly IRepositoryWrapper _repoWrapper;
 
         private AxaMansardConfiguration Options { get; }
-        private HygeiaConfiguration _hygeiaAccessor { get; }
-        private SubscriptionDuration _subscriptionAccessor { get; }
-        public UserManager<ApplicationUser> _userManager { get; }
+        private HygeiaConfiguration HygeiaAccessor { get; }
+        private SubscriptionDuration SubscriptionAccessor { get; }
+        public UserManager<ApplicationUser> UserManager { get; }
 
         public InsuranceService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IMapper mapper, AuditLogService auditLogServices,
             ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender, IOptions<HygeiaConfiguration> hygeiaAccessor, IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper,
@@ -62,10 +62,10 @@ namespace Application.Services.HealthInsured
             _emailSender = emailSender;
             _fileProcessor = fileProcessor;
             Options = axaAccessor.Value;
-            _hygeiaAccessor = hygeiaAccessor.Value;
+            HygeiaAccessor = hygeiaAccessor.Value;
             _repoWrapper = repoWrapper;
-            _userManager = userManager;
-            _subscriptionAccessor = subscriptionAccessor.Value ;
+            UserManager = userManager;
+            SubscriptionAccessor = subscriptionAccessor.Value ;
         }
 
         public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId,string ipAddress,string device)
@@ -290,11 +290,11 @@ namespace Application.Services.HealthInsured
         {
             try
             {
-                model.PlanId = _hygeiaAccessor.HygeiaPlanCode;
+                model.PlanId = HygeiaAccessor.HygeiaPlanCode;
                 var httpClient = _httpClientFactory.CreateClient("Hygeia");
                 var dictionObj = model.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(model).ToString());
                 HttpContent content = new FormUrlEncodedContent(dictionObj);
-                var response = await httpClient.PostAsync($"{_hygeiaAccessor.HygeiaRegistration}", content);
+                var response = await httpClient.PostAsync($"{HygeiaAccessor.HygeiaRegistration}", content);
                 if (response.IsSuccessStatusCode)
                 {
                     string apiResponse = await response.Content.ReadAsStringAsync();
@@ -319,7 +319,7 @@ namespace Application.Services.HealthInsured
         public async Task<ResponseMessage> HygeiaDeactivateUser(string enrollNumber)
         {
             var httpClient = _httpClientFactory.CreateClient("Hygeia");
-            var response = await httpClient.PutAsync($"{_hygeiaAccessor.HygeiaDeactivate}/{enrollNumber}", null);
+            var response = await httpClient.PutAsync($"{HygeiaAccessor.HygeiaDeactivate}/{enrollNumber}", null);
 
             string apiResponse = await response.Content.ReadAsStringAsync();
             var deactivateResponse = JsonConvert.DeserializeObject<HygeiaDeactivateResponse>(apiResponse);
@@ -576,7 +576,7 @@ namespace Application.Services.HealthInsured
             foreach (var item in beneficiaryReviews)
             {
                 // if email exist incerease checkIfProfileEmailExistCount count               
-                var checkUserEmail = await _userManager.FindByEmailAsync(item.Email);
+                var checkUserEmail = await UserManager.FindByEmailAsync(item.Email);
                 if (!(checkUserEmail is null))
                 {
                     checkIfProfileEmailExistCount++;
@@ -585,13 +585,13 @@ namespace Application.Services.HealthInsured
                 if (checkUserEmail == null)
                 {
                     var user = _mapper.Map<ApplicationUser>(item);
-                    var result = await _userManager.CreateAsync(user);
+                    var result = await UserManager.CreateAsync(user);
                     if (result.Succeeded)
                     {
                         var newServiceString = user.ServiceUsed + ServiceNames.HealthInsured.ToString();
                         user.ServiceUsed = newServiceString;
-                        await _userManager.UpdateAsync(user);
-                        await _userManager.AddToRoleAsync(user, "SuperAdmin");
+                        await UserManager.UpdateAsync(user);
+                        await UserManager.AddToRoleAsync(user, "SuperAdmin");
 
                         var insuranceUserProfile = _mapper.Map<InsuranceUserProfile>(item);
                         insuranceUserProfile.UserId = user.Id;
@@ -600,12 +600,13 @@ namespace Application.Services.HealthInsured
                         insuranceUserProfile.Premium = Decimal.Parse("1000");
                         insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
                         insuranceUserProfile.CompanyName = companyprofile.CompanyName;
+                        insuranceUserProfile.PhoneNumber = insuranceUserProfile.PhoneNumber.StartsWith("0") ? insuranceUserProfile.PhoneNumber : "0" + insuranceUserProfile.PhoneNumber;
                         if (companySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString())
                         {
                             insuranceUserProfile.ActiveStatus = true;
                             insuranceUserProfile.SubscriptionStatus = true;
                             insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-                            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+                            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
                         }
                         insuranceUserProfiles.Add(insuranceUserProfile);
                     }
@@ -681,7 +682,7 @@ namespace Application.Services.HealthInsured
                 {
                     if (otp == corporateUser.OTPCode)
                     {
-                        var user = await _userManager.FindByIdAsync(userId.ToString());
+                        var user = await UserManager.FindByIdAsync(userId.ToString());
                         user.ServiceUsed += ServiceNames.HealthInsured.ToString();
                         _repoWrapper.ApplicationUser.Update(user);
                         corporateUser.EmailConfirmed = true;

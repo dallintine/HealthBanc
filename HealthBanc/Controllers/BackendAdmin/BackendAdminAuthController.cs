@@ -93,8 +93,10 @@ namespace HealthBanc.Controllers
                 else
                 {
                     var httpClient = _httpClientFactory.CreateClient("Fiorano");
-                    var loginCredentials = new ADCredentialsRoot();
-                    loginCredentials.AD_Credentials = new ADCredentials();
+                    var loginCredentials = new ADCredentialsRoot
+                    {
+                        AD_Credentials = new ADCredentials()
+                    };
                     loginCredentials.AD_Credentials.AD_Username = aDCredentials.AD_Username;
                     loginCredentials.AD_Credentials.AD_Password = aDCredentials.AD_Password;
                     HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
@@ -423,8 +425,6 @@ namespace HealthBanc.Controllers
             user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(7);
             _userRepository.Update(user);
 
-            var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-            var adminLogin_LogoutLog = new AdminLogin_LogoutLog(user.Id, user.Email, true, false, false, false, loginOutHours);
             await _userRepository.Save();
 
             var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
@@ -445,20 +445,16 @@ namespace HealthBanc.Controllers
         private string GenerateRefreshToken()
         {
             var randomNumber = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(randomNumber);
-                return Convert.ToBase64String(randomNumber);
-            }
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
 
         private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            SecurityToken securityToken;
-            var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out securityToken);
-            var jwtSecurityToken = securityToken as JwtSecurityToken;
-            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out SecurityToken securityToken);
+            if (!(securityToken is JwtSecurityToken jwtSecurityToken) || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
                 throw new SecurityTokenException("Invalid token");
             return principal;
         }

@@ -21,20 +21,18 @@ namespace Infrastructure.Mail
 {
     public class EmailSender : IEmailSender
     {
-        private readonly ILogger<EmailSender> _logger;
         private readonly IWebHostEnvironment _environment;
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public Application.Helpers.Environment _environmentAccessor { get; }
-        private EmailAuth _emailAccessor { get; }
-        public EmailSender(ILogger<EmailSender> logger,IOptions<Application.Helpers.Environment>environmentAccessor
+        public Application.Helpers.Environment EnvironmentAccessor { get; }
+        private EmailAuth EmailAccessor { get; }
+        public EmailSender(IOptions<Application.Helpers.Environment>environmentAccessor
             ,IWebHostEnvironment environment, IHttpClientFactory httpClientFactory,IOptions<EmailAuth> emailAccessor)
         {
-            _logger = logger;
             _environment = environment;
             _httpClientFactory = httpClientFactory;
-            _emailAccessor = emailAccessor.Value;
-            _environmentAccessor = environmentAccessor.Value;
+            EmailAccessor = emailAccessor.Value;
+            EnvironmentAccessor = environmentAccessor.Value;
         }
 
 
@@ -124,7 +122,7 @@ namespace Infrastructure.Mail
         {
             var httpClient = _httpClientFactory.CreateClient("EmailSender");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(emailRequest), Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync($"{_emailAccessor.EmailNotificationNotify}", content);
+            var response = await httpClient.PostAsync($"{EmailAccessor.EmailNotificationNotify}", content);
 
             await response.Content.ReadAsStringAsync();
         }
