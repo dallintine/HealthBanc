@@ -663,6 +663,7 @@ namespace Application.Services.HealthInsured
                 item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
                 _repoWrapper.InsuranceProfile.Update(item);
             }
+           await _repoWrapper.Save();
             await Task.CompletedTask;
         }
 

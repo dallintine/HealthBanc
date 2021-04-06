@@ -765,7 +765,7 @@ namespace Application.Services.HealthInsured
                     {
                         insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                         insuranceUserProfile.SubscriptionStatus = false;
-                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.Id),insuranceUserProfile.EndActiveStatusDate);
+                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.Id),companyProfile.NextPaymentDate.Value);
                     }                   
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 }
