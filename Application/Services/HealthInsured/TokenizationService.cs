@@ -579,7 +579,8 @@ namespace Application.Services.HealthInsured
                         await _repoWrapper.Save();
 
                         await DeactivateAllCompanybeneficiaries(companyProfile.UserId);
-                        //Send email
+
+                        _insuranceSerivce.SendCompanyDeactivationMail(companyProfile.CompanyEmail, companyProfile.CompanyName, premiumFee.ToString());
                     }
                 }
                 // Failed
@@ -619,7 +620,7 @@ namespace Application.Services.HealthInsured
 
                         await DeactivateAllCompanybeneficiaries(companyProfile.UserId);
 
-                        //Send email  , Deactivate all users.
+                        _insuranceSerivce.SendCompanyDeactivationMail(companyProfile.CompanyEmail, companyProfile.CompanyName, premiumFee.ToString());
                     }
                 }
             }

@@ -925,6 +925,11 @@ namespace Application.Services.HealthInsured
             _emailSender.HealthInsuredFailedCompanyDebit(email, "Failed Transaction", userName, premium, stopDate);
         }
 
+        public void SendCompanyDeactivationMail(string email, string userName, string premium)
+        {
+            _emailSender.HealthInsuredCompanyDeactivation(email, "Deactivate Beneficiaries", userName, premium);
+        }
+
         public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
         {
             var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
