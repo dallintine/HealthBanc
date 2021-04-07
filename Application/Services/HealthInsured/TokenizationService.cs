@@ -1316,36 +1316,37 @@ namespace Application.Services.HealthInsured
             await _repoWrapper.Save();
         }
 
-        //private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference,string amount)
+        //private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference, string amount)
         //{
-        //    if(decimal.Parse(amount) > 100)
+        //    if (decimal.Parse(amount) > 100)
         //    {
-        //        if (companyProfile.TokenizationCompleted)
-        //        {
-        //            var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(companyProfile.PendingJobId);
-        //            scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = ScheduledPayment_StatusValue.Successful.ToString();
-        //            scheduledPaymentJob.PaymentReference = reference;
+        //        if(!(companyProfile.))
+        //        //if (companyProfile.TokenizationCompleted)
+        //        //{
+        //        //    var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(companyProfile.PendingJobId);
+        //        //    scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = ScheduledPayment_StatusValue.Successful.ToString();
+        //        //    scheduledPaymentJob.PaymentReference = reference;
 
-        //            _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
+        //        //    _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
-        //            //Background task to Enroll pending users to hygeia.
-        //            BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
+        //        //    //Background task to Enroll pending users to hygeia.
+        //        //    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString()));
 
-        //            companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
+        //        //    companyProfile.NextPaymentDate = DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration);
 
-        //            //Background task to schedule debit at the end of next cycle
-        //            companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
+        //        //    //Background task to schedule debit at the end of next cycle
+        //        //    companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
 
-        //            companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
-        //                  DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+        //        //    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
+        //        //          DateTime.Now.AddDays(_subscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
-        //            companyProfile.TokenizationCompleted = true;
+        //        //    companyProfile.TokenizationCompleted = true;
 
-        //            _repoWrapper.CompanyProfile.Update(companyProfile);
+        //        //    _repoWrapper.CompanyProfile.Update(companyProfile);
 
-        //            await _repoWrapper.Save();
-        //        }
-        //    }            
+        //        //    await _repoWrapper.Save();
+        //        //}
+        //    }
         //    // Enqueue method to process refund 0f 50 naira test charge
         //    else
         //    {
