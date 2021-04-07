@@ -501,6 +501,7 @@ namespace Application.Services.HealthInsured
                         {
                             item.CompanyProfileId = companyProfile.Id;
                             item.Amount = decimal.Parse("1000");
+                            item.PhoneNumber = item.PhoneNumber.StartsWith("0") ? item.PhoneNumber : "0" + item.PhoneNumber;
                             newCompanyBeneficiaries.Add(item);
                         }
                     }

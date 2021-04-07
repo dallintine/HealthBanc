@@ -737,7 +737,7 @@ namespace Application.Services.HealthInsured
             else
             {
                 // Schedule task to render user status inactive when cycle ends
-                var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceProfile.Id), daysToCancelUserActivityStatus);
+                var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceProfile.UserId), daysToCancelUserActivityStatus);
                 insuranceProfile.PendingJobId = jobId;
                 insuranceProfile.PendingEmailJobId = null;
             }
@@ -777,7 +777,7 @@ namespace Application.Services.HealthInsured
                     {
                         insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                         insuranceUserProfile.SubscriptionStatus = false;
-                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.Id),companyProfile.NextPaymentDate.Value);
+                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.UserId),companyProfile.NextPaymentDate.Value);
                     }                   
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 }
@@ -814,7 +814,7 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task ProcessUserActiveStatusCancellation(int userId)
         {
-            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(userId);
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
                 await _insuranceSerivce.HygeiaDeactivateUser(insuranceProfile.TransId);
@@ -822,6 +822,13 @@ namespace Application.Services.HealthInsured
             insuranceProfile.ActiveStatus = false;
             _repoWrapper.InsuranceProfile.Update(insuranceProfile);
             await _repoWrapper.Save();
+            var confirmInsuranceActiveStatus = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if(insuranceProfile.ActiveStatus is true)
+            {
+                insuranceProfile.ActiveStatus = false;
+                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                await _repoWrapper.Save();
+            }
             await Task.CompletedTask;
         }
 
