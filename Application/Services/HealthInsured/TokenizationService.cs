@@ -29,6 +29,7 @@ using DataAccess;
 using Application.ViewModels.HealthInsured;
 using Domain.Models.ReportAndLogs;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Services.HealthInsured
 {
@@ -38,17 +39,19 @@ namespace Application.Services.HealthInsured
         private readonly PaystackService _paystackService;
         private readonly InsuranceService _insuranceSerivce;
         private readonly IEmailSender _emailSender;
+        private readonly ILogger<TokenizationService> _logger;
         private readonly IRepositoryWrapper _repoWrapper;
 
         private SubscriptionDuration SubscriptionAccessor { get; }
 
         public TokenizationService(IMapper mapper, PaystackService paystackService,InsuranceService insuranceSerivce,
-            IOptions<SubscriptionDuration> subscriptionAccessor, IEmailSender emailSender,IRepositoryWrapper repoWrapper)
+            IOptions<SubscriptionDuration> subscriptionAccessor, IEmailSender emailSender,IRepositoryWrapper repoWrapper,ILogger<TokenizationService> logger)
         {
             _mapper = mapper;
             _paystackService = paystackService;
             _insuranceSerivce = insuranceSerivce;
             _emailSender = emailSender;
+            _logger = logger;
             SubscriptionAccessor = subscriptionAccessor.Value;
             _repoWrapper = repoWrapper;
         }
@@ -546,7 +549,7 @@ namespace Application.Services.HealthInsured
 
                     _repoWrapper.CompanyProfile.Update(companyProfile);
 
-                    var companyBeneficiaires = companyProfile.InsuranceUserProfiles;
+                    var companyBeneficiaires = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
                     foreach(var item in companyBeneficiaires)
                     {
                         item.StartActiveStatusDate = DateTime.Now;
@@ -814,6 +817,7 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task ProcessUserActiveStatusCancellation(int userId)
         {
+            _logger.LogCritical("Hit Methid");
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
@@ -822,13 +826,17 @@ namespace Application.Services.HealthInsured
             insuranceProfile.ActiveStatus = false;
             _repoWrapper.InsuranceProfile.Update(insuranceProfile);
             await _repoWrapper.Save();
+            _logger.LogCritical("Save method");
+            _logger.LogCritical(insuranceProfile.ActiveStatus.ToString());
             var confirmInsuranceActiveStatus = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-            if(insuranceProfile.ActiveStatus is true)
+            _logger.LogCritical(confirmInsuranceActiveStatus.ActiveStatus.ToString());
+            if (insuranceProfile.ActiveStatus is true)
             {
                 insuranceProfile.ActiveStatus = false;
                 _repoWrapper.InsuranceProfile.Update(insuranceProfile);
                 await _repoWrapper.Save();
             }
+            _logger.LogCritical(insuranceProfile.ActiveStatus.ToString());
             await Task.CompletedTask;
         }
 

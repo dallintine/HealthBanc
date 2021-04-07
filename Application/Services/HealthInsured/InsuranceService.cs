@@ -640,18 +640,18 @@ namespace Application.Services.HealthInsured
 
         public async Task OnboardUsersToHygeia(int companyUserId,string status,DateTime endActiveStatusDate)
         {
-            var companyProfile = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
+            var insuranceProfiles = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
             var insuranceUserProfiles = new  List<InsuranceUserProfile>();
             // Onboard users with an active company subscription status
             if (status is null)
             {
-                insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
+                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
                 x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
             }
             // Onboard users with a pending company subscription status
             else
             {
-                insuranceUserProfiles = companyProfile.Where(x => x.CompanySubscribedStatus == status).ToList();
+                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == status).ToList();
             }
 
             foreach (var item in insuranceUserProfiles)
