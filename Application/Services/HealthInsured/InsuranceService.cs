@@ -306,7 +306,7 @@ namespace Application.Services.HealthInsured
                     BackgroundJob.Schedule(() => HygeiaRegisterUser(model),DateTime.Now.AddMinutes(10));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
-                BackgroundJob.Enqueue(() => HygeiaRegisterUser(model));
+                BackgroundJob.Schedule(() => HygeiaRegisterUser(model), DateTime.Now.AddMinutes(10));
                 return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
             }
             catch (Exception ex)
