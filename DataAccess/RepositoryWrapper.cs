@@ -33,7 +33,19 @@ namespace DataAccess
         private IActivityLogRepository _healthInsuredActivityLogRepository;
         private IExceptionLogRepository _exceptionLogRepository;
         private IActivityLogRepository _activityLogRepository;
+        private IAdminAuditLogRepository _adminAuditLogRepository;
 
+        public IAdminAuditLogRepository AdminAuditLog
+        {
+            get
+            {
+                if (_adminAuditLogRepository == null)
+                {
+                    _adminAuditLogRepository = new AdminAuditLogRepository(_context);
+                }
+                return _adminAuditLogRepository;
+            }
+        }
 
         public IApplicationUserRepository ApplicationUser
         {

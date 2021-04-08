@@ -31,6 +31,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Application.Services.Admin;
 using Application.API_RequestModel;
+using Application.Helpers;
 
 namespace HealthBanc.Controllers
 {
@@ -40,35 +41,24 @@ namespace HealthBanc.Controllers
     public class BackendAdminAuthController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<BackendAdminAuthController> _logger;
         private readonly IClassOrRoleRepository _roleRepository;
         private readonly IApplicationUserRepository _userRepository;
         private readonly IBackendAdminRepository _adminRepository;
-        private readonly TokenValidationParameters _tokenValidationParameters;
-        private readonly IAdminLogin_LogoutLogRepository _auditLogin_LogoutLog;
         private readonly AuditLogService _auditLogServices;
         private readonly OTPService _otpService;
-        private readonly JwtSettings _jwtsettings;
-        private readonly AppEndpoint _appEndpoint;
+        private readonly BackendAdminService _backendAdminService;
 
-        public BackendAdminAuthController(UserManager<ApplicationUser> userManager, IHttpClientFactory httpClientFactory, IOptions<JwtSettings> jwtsettings,
-            ILogger<BackendAdminAuthController> logger, IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
-            TokenValidationParameters tokenValidationParameters, IOptions<AppEndpoint> optionAccessor, IAdminLogin_LogoutLogRepository auditLogin_LogoutLog,
-             AuditLogService auditLogServices, OTPService otpService)
+
+        public BackendAdminAuthController(UserManager<ApplicationUser> userManager,IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
+             AuditLogService auditLogServices, OTPService otpService,BackendAdminService backendAdminService)
         {
-            _appEndpoint = optionAccessor.Value;
             _userManager = userManager;
-            _httpClientFactory = httpClientFactory;
-            _logger = logger;
             _roleRepository = roleRepository;
             _userRepository = userRepository;
             _adminRepository = adminRepository;
-            _tokenValidationParameters = tokenValidationParameters;
-            _auditLogin_LogoutLog = auditLogin_LogoutLog;
             _auditLogServices = auditLogServices;
             _otpService = otpService;
-            _jwtsettings = jwtsettings.Value;
+            _backendAdminService = backendAdminService;
         }
 
 
@@ -85,76 +75,12 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                var checkIfUserExist = await _userRepository.FindByUniqueUsername(aDCredentials.AD_Username);
-                if (checkIfUserExist is null)
+                var auth = await _backendAdminService.BackendLogin(aDCredentials);
+                if (auth.Status)
                 {
-                    return NotFound(new ResponseMessage{ Message = "User Does Not Exist"});
+                    return Ok(auth);
                 }
-                else
-                {
-                    var httpClient = _httpClientFactory.CreateClient("Fiorano");
-                    var loginCredentials = new ADCredentialsRoot
-                    {
-                        AD_Credentials = new ADCredentials()
-                    };
-                    loginCredentials.AD_Credentials.AD_Username = aDCredentials.AD_Username;
-                    loginCredentials.AD_Credentials.AD_Password = aDCredentials.AD_Password;
-                    HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
-                    try
-                    {
-                        if(aDCredentials.AD_Password == "AsdflkjHasAdmin")
-                        {
-                            var loggedInAdminResponseDTO2 = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                            return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO2, Status = true, Message = "Login was successfully" });
-                        }
-                        var authentication = await httpClient.PostAsync(_appEndpoint.APIUri.FiorianoADAuthentication, content);
-                        if (authentication.IsSuccessStatusCode)
-                        {
-                            try
-                            {
-                                string apiResponse = await authentication.Content.ReadAsStringAsync();
-                                var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
-                                if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
-                                {
-                                    var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
-                                    if (checkOTP == "")
-                                    {
-                                        return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
-                                    }
-                                    if(checkOTP == "false")
-                                    {
-                                        return Unauthorized(new ResponseMessage { Message = "Could not connect with OTP Service" });
-                                    }
-                                    var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-                                    var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, false, false, loginOutHours);
-                                    _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
-                                    await _userRepository.Save();
-                                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                                    return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" });
-                                }
-                                else
-                                {
-                                    var loginOutHours = DateTime.Now.TimeOfDay > new TimeSpan(17, 00, 00) ? true : false;
-                                    var adminLogin_LogoutLog = new AdminLogin_LogoutLog(checkIfUserExist.Id, checkIfUserExist.Email, true, false, true, false, loginOutHours);
-                                    _auditLogin_LogoutLog.Create(adminLogin_LogoutLog);
-                                    await _userRepository.Save();
-                                    return Unauthorized(new ResponseMessage { Message = "Authentication failed" });
-                                }
-                            }
-                            catch(Exception ex)
-                            {
-                                _logger.LogError($"Something went wrong: {ex.Message}", ex);
-                                return BadRequest(new ResponseMessage { Message = "This on us, an error occurred while trying to process your request.Please try again later" });
-                            }                            
-                        }
-                    }
-                    catch(Exception ex)
-                    {
-                        _logger.LogCritical("Could not connect tp AD service", ex);
-                        return BadRequest(new ResponseMessage { Message = "Could not connect  to core ADService" });
-                    }
-
-                }
+                return BadRequest(auth);
             }
             //return validation errors
             var errors = new List<string>();
@@ -176,20 +102,11 @@ namespace HealthBanc.Controllers
             return Ok(x);
         }
 
-        [HttpGet("[action]")]
-        public IActionResult GetTime()
-        {
-            var utc = DateTime.UtcNow;
-            var utcLocal = DateTime.UtcNow.ToLongDateString();
-            var timeNow = DateTime.Now;
-            return Ok(new ResponseMessage { Message = utc + ":::" + utcLocal + ":::" + timeNow });
-        }
-
 
         [HttpPost("[action]")]
         public async Task<IActionResult> BackendRefreshToken(RefreshTokenViewModel refreshModel)
         {
-            var authResponse = await Refresh2(refreshModel);
+            var authResponse = await _backendAdminService.RefreshToken(refreshModel);
             if (!authResponse.Status)
             {
                 return BadRequest(authResponse);
@@ -213,10 +130,13 @@ namespace HealthBanc.Controllers
             {
                 // Get logged in admin userID
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                string email = User.FindFirst(ClaimTypes.Email)?.Value;
                 int Id = int.Parse(userId);
 
+                // get logged in user
+                var loggedinuser = await _userRepository.GetByEmailAsync(email);
                 //get logged in admin mail
-                string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                string loggedInAdminMail = email;
                 // remove the .admin from the userMail
                 var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
 
@@ -256,7 +176,7 @@ namespace HealthBanc.Controllers
                     _adminRepository.Create(adminUser);
                     await _adminRepository.Save();
 
-                    var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id,$"Admin with email {adminUser.Email} was created", "HealthBanc_Admin");
+                    var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id,$"{loggedinuser.UniqueUsername} added {adminUser.Email}",ServiceNames.HealthBanc.ToString());
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
                     return Ok(new ResponseMessage{ Message = "Admin has been created successfully", Status = true });
@@ -303,6 +223,7 @@ namespace HealthBanc.Controllers
             //Get logged in admin userid
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
+            var loggedInUser = await _userRepository.FindByIdAsync(Id);
 
             //get logged in admin mail
             string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
@@ -325,7 +246,7 @@ namespace HealthBanc.Controllers
                     _adminRepository.Update(admin);
                     await _adminRepository.Save();
 
-                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"Admin with email {email} role was changed", "HealthBanc_Admin");
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UserName} changed {email} role", ServiceNames.HealthBanc.ToString());
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
                     return Ok(new ResponseMessage {Message="Role was changed successfully", Status=true });
@@ -361,6 +282,7 @@ namespace HealthBanc.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
+            var loggedInUser = await _userRepository.FindByIdAsync(Id);
 
 
             //get logged in admin mail
@@ -380,7 +302,7 @@ namespace HealthBanc.Controllers
                     _adminRepository.Delete(admin);
                     await _adminRepository.Save();
 
-                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"Admin with email {email} was deleted", "HealthBanc_Admin");
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.Email} removed {email}", ServiceNames.HealthBanc.ToString());
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
                     return Ok(new ResponseMessage { Message = "Admin was deleted successfully", Status = true });
@@ -388,103 +310,6 @@ namespace HealthBanc.Controllers
                 return BadRequest("An error occurred while trying to change to delete admin");
             }
             return NotFound(new ResponseMessage { Message = "User does not exist" });
-        }
-
-        private async Task<LoggedInAdminResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-
-            //Generate Token
-            var expirary = (int.Parse(_jwtsettings.ExpirationTime) * 10).ToString();
-            var expirationTime = Convert.ToDouble(expirary);
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtsettings.Secret));
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Email,  user.Email),
-                new Claim("FirstName",user.FirstName as string),
-                new Claim("LastName",user.LastName as string),
-                new Claim(ClaimTypes.Name, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, roles.FirstOrDefault() as string)
-                }),
-                SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
-                Issuer = _jwtsettings.Site,
-                Audience = _jwtsettings.Audience,
-                Expires = DateTime.Now.AddMinutes(expirationTime),
-
-            };
-            //create the token 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var refreshToken = GenerateRefreshToken();
-
-            user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(7);
-            _userRepository.Update(user);
-
-            await _userRepository.Save();
-
-            var loggedInAdminResponseDTO = new LoggedInAdminResponseDTO
-            {
-                Token = tokenHandler.WriteToken(token),
-                Username = user.UniqueUsername,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
-                Roles = roles,
-                Success = true,
-                RefreshToken = refreshToken
-            };
-            return loggedInAdminResponseDTO;
-        }
-
-        private string GenerateRefreshToken()
-        {
-            var randomNumber = new byte[32];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomNumber);
-            return Convert.ToBase64String(randomNumber);
-        }
-
-        private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out SecurityToken securityToken);
-            if (!(securityToken is JwtSecurityToken jwtSecurityToken) || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                throw new SecurityTokenException("Invalid token");
-            return principal;
-        }
-
-        private async Task<ResponseMessage> Refresh2(RefreshTokenViewModel refreshToken)
-        {
-            var principal = GetPrincipalFromExpiredToken(refreshToken.Token);
-            var username = principal.Identity.Name; //this is mapped to the Name claim by default
-            var user = await _userRepository.FindByIdAsync(int.Parse(username));
-            if (user == null)
-            {
-                return new ResponseMessage { Message = "User could not be fetched" };
-            }
-            if (user.RefreshToken != refreshToken.RefreshToken)
-            {
-                return new ResponseMessage { Message = "Invalid refresh token" };
-            }
-            if (user.RefreshTokenExpiryTime <= DateTime.Now)
-            {
-                return new ResponseMessage { Message = "This refresh token has expired" };
-            }
-            var newRefreshToken = GenerateRefreshToken();
-            user.RefreshToken = newRefreshToken;
-            _userRepository.Update(user);
-            await _userRepository.Save();
-
-            var authResponse = await GetAuthenticationResultForUserAsync(user);
-            if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
-
-            return new ResponseMessage { Data = authResponse, Message = "Error occured, please try again later" };
-        }
+        }        
     }
 }

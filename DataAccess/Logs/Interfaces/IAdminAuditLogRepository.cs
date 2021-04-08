@@ -9,5 +9,6 @@ namespace DataAccess.Logs.Interfaces
 {
     public interface IAdminAuditLogRepository : IBaseRepository<AdminAuditLog>
     {
+        Task<PagedResponse<AdminAuditLog>> GetPaginatedAdminActivityLog(PaginationQuery paginationQuery, string channel);
     }
 }

@@ -62,8 +62,8 @@ namespace HealthBanc
             services.Configure<ImageStorage>(Configuration.GetSection("ImageStorage"));
             services.Configure<EmailAuth>(Configuration.GetSection("EmailAuth"));
             services.Configure<HygeiaConfiguration>(Configuration.GetSection("HygeiaConfiguration"));
-
-
+            services.Configure<AdminAuthSettings>(Configuration.GetSection("AdminAuthSettings"));
+            
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
                 options.SignIn.RequireConfirmedEmail = true;                

@@ -90,6 +90,7 @@ namespace HealthBanc
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddScoped<Activity_ErrorLogService>();
             services.AddScoped<IdentityService>();
+            services.AddScoped<BackendAdminService>();
             services.AddScoped<IApplicationUserRepository, ApplicationUserRepository>();
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<IClassOrRoleRepository, ClassOrRoleRepository>();

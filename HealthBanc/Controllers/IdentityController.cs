@@ -63,7 +63,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> RegisterUser([FromBody] Application.ViewModels.UserReg_Login.RegistrationViewModel registrationViewModel)
+        public async Task<IActionResult> RegisterUser([FromBody] RegistrationViewModel registrationViewModel)
         {
             if (ModelState.IsValid)
             {

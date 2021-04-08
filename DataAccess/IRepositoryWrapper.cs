@@ -27,6 +27,7 @@ namespace DataAccess
         IActivityLogRepository HealthInsuredActivityLog { get; }
         IExceptionLogRepository ExceptionLog { get; }
         IActivityLogRepository ActivityLog { get; }
+        IAdminAuditLogRepository AdminAuditLog { get; }
 
         Task<int> Save();
     }

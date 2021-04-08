@@ -64,5 +64,25 @@ namespace HealthBanc.Controllers.Activity_ErrorLog
             }
             return BadRequest(response);
         }
+
+        /// <summary>
+        /// Returns paginated backend acivity logs
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <param name="channel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<AdminAuditLog>>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        public async Task<IActionResult> GetAdminActivityLogs([FromQuery]PaginationQuery paginationQuery,string channel)
+        {
+            var response = await _activity_ErrorLogService.GetAdminActivityLogs(paginationQuery, channel);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
     }
 }
