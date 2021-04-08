@@ -91,7 +91,7 @@ namespace HealthBanc.Controllers
             {
                 errors.Add(error);
             }
-            return BadRequest(new ResponseMessage{ Data = errors,Status=false,Message="Please check for validation errors" });
+            return BadRequest(new ResponseMessage{ Data = errors,Status=false,Message=errors.FirstOrDefault() });
         }
 
 
@@ -192,7 +192,7 @@ namespace HealthBanc.Controllers
             {
                 errors.Add(error);
             }
-            return BadRequest(new ResponseMessage { Data = errors, Status = false, Message = "Please check for validation errors" });
+            return BadRequest(new ResponseMessage { Data = errors, Status = false, Message =errors.FirstOrDefault() });
         }
 
         //WORKING1

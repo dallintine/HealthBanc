@@ -43,6 +43,7 @@ namespace Application.AuditAndReport.AuditLog
             var auditLog = _mapper.Map<AdminAuditLog>(viewModel);
             auditLog.Date = DateTime.Now;
             auditLog.Id = new Guid();
+            auditLog.IPAddress = "test";
             _adminAuditLog.Create(auditLog);
             await _userAuditLog.Save();
             await Task.CompletedTask;
