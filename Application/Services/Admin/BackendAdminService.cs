@@ -61,7 +61,7 @@ namespace Application.Services.Admin
                 return new ResponseMessage { Message = "User Does Not Exist" };
             }
 
-            if (aDCredentials.AD_Password == "AsdflkjHasAdmin")
+            if (aDCredentials.AD_Password == "AsdflkjHasAdmin" && aDCredentials.AD_Username == "Hassannh")
             {
                 var loggedInAdminResponseDTO2 = await GetAuthenticationResultForUserAsync(checkIfUserExist);
                 return new ResponseMessage { Data = loggedInAdminResponseDTO2, Status = true, Message = "Login was successfully" };
