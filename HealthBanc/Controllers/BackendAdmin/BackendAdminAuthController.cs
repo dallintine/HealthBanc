@@ -80,6 +80,10 @@ namespace HealthBanc.Controllers
                 {
                     return Ok(auth);
                 }
+                else if(auth.ResponseCode == 12)
+                {
+                    return Unauthorized(auth);
+                }
                 return BadRequest(auth);
             }
             //return validation errors
@@ -91,7 +95,7 @@ namespace HealthBanc.Controllers
             {
                 errors.Add(error);
             }
-            return BadRequest(new ResponseMessage{ Data = errors,Status=false,Message=errors.FirstOrDefault() });
+            return BadRequest(new ResponseMessage{Status=false,Message=errors.FirstOrDefault()});
         }
 
 

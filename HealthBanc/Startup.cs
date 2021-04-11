@@ -46,8 +46,13 @@ namespace HealthBanc
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection")));
-            services.AddHangfireServer();            
-            
+            services.AddHangfireServer();
+
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.SuppressModelStateInvalidFilter = true;
+            });
+
             /////////////////////////////////////Register Services//////////////////////////////
 
             services.AddAutoMapper(typeof(Startup));

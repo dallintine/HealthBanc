@@ -152,8 +152,8 @@ namespace Application.Services.Admin
                 {
                     return new ResponseMessage {Status = true, Message = "Login was successfully" };
                 }
-                _logger.LogCritical("Could not connnect with ADCredentials password sevice", await authentication.Content.ReadAsStringAsync());
-                return new ResponseMessage { Message = "Password is invalid or has expired" };
+                _logger.LogCritical("Wrong Ad Password", await authentication.Content.ReadAsStringAsync());
+                return new ResponseMessage { Message = "Password is invalid or has expired", ResponseCode = 12 };
             }
             _logger.LogCritical("Could not connnect with ADCredentials password sevice", await authentication.Content.ReadAsStringAsync());
             return new ResponseMessage { Message = "Could not connect to Password ADService" };
@@ -164,7 +164,7 @@ namespace Application.Services.Admin
             var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
             if (checkOTP == "")
             {
-                return new ResponseMessage { Message = "OTP validation failed" };
+                return new ResponseMessage { Message = "OTP validation failed" , ResponseCode = 12 };
             }
             _logger.LogCritical(checkOTP);
             if (checkOTP == "false")
