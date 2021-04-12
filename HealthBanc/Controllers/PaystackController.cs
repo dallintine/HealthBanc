@@ -58,7 +58,7 @@ namespace HealthBanc.Controllers
             {
                 _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + " : " + DateTime.Now.ToLongDateString() + " : "+ webHookResponse.data.customer.email + " : " + webHookResponse.data.amount.ToString());
 
-                var amount = webHookResponse.data.amount / 10;
+                var amount = webHookResponse.data.amount / 100;
                 BackgroundJob.Enqueue(() => _tokenizationService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
                     webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
                 return Ok();
