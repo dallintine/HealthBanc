@@ -439,50 +439,52 @@ namespace Application.Services.HealthInsured
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(jobId);
             // Insufficient funds
-            if (!chargeAuthorization.Status && chargeAuthorization.ResponseCode == 10)
+            if (!chargeAuthorization.Status)
             {
-                var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() 
+                if(chargeAuthorization.ResponseCode == 10)
+                {
+                    var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                     : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
-                _repoWrapper.PaymentReference.Create(paymentReference);
+                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, insuranceProfile.UserId
+                        , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
+                    _repoWrapper.PaymentReference.Create(paymentReference);
 
-                scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Terminated.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
-                scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
+                    scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Terminated.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
+                    scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
 
-                scheduledPaymentJob.ScheduledEnrollment.Status = ScheduledEnrollment_StatusValue.Terminated.ToString(); scheduledPaymentJob.ScheduledEnrollment.Message = "Terminated";
-                scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
+                    scheduledPaymentJob.ScheduledEnrollment.Status = ScheduledEnrollment_StatusValue.Terminated.ToString(); scheduledPaymentJob.ScheduledEnrollment.Message = "Terminated";
+                    scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
 
-                insuranceProfile.PendingJobId = null; insuranceProfile.SubscriptionStatus = false;
-                insuranceProfile.ActiveStatus = false;
-                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                await _repoWrapper.InsuranceProfile.Save();
-                BackgroundJob.Delete(jobId);
+                    insuranceProfile.PendingJobId = null; insuranceProfile.SubscriptionStatus = false;
+                    insuranceProfile.ActiveStatus = false;
+                    _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                    await _repoWrapper.InsuranceProfile.Save();
+                    BackgroundJob.Delete(jobId);
 
-                _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
-            }
-            // Failed
-            else
-            {
-                var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+                    _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
+                }
+                else
+                {
+                    var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
-                   , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
-                _repoWrapper.PaymentReference.Create(paymentReference);
+                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, insuranceProfile.UserId
+                       , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
+                    _repoWrapper.PaymentReference.Create(paymentReference);
 
-                scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Failed.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
-                scheduledPaymentJob.ScheduledEnrollment.Status = ScheduledEnrollment_StatusValue.Terminated.ToString(); scheduledPaymentJob.ScheduledEnrollment.Message = "Terminated";
-                scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
-                _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
+                    scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Failed.ToString(); scheduledPaymentJob.Message = chargeAuthorization.Message;
+                    scheduledPaymentJob.ScheduledEnrollment.Status = ScheduledEnrollment_StatusValue.Terminated.ToString(); scheduledPaymentJob.ScheduledEnrollment.Message = "Terminated";
+                    scheduledPaymentJob.PaymentReference = chargeAuthorization.Reference;
+                    _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
-                insuranceProfile.PendingJobId = null; insuranceProfile.SubscriptionStatus = false;
-                insuranceProfile.ActiveStatus = false;
-                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                await _repoWrapper.Save();
-                BackgroundJob.Delete(jobId);
+                    insuranceProfile.PendingJobId = null; insuranceProfile.SubscriptionStatus = false;
+                    insuranceProfile.ActiveStatus = false;
+                    _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                    await _repoWrapper.Save();
+                    BackgroundJob.Delete(jobId);
 
-                _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
+                    _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
+                }                
             }
             await Task.CompletedTask;
         }
