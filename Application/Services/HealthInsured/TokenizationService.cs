@@ -1194,7 +1194,7 @@ namespace Application.Services.HealthInsured
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
                     int cardStatus = companyProfile.NextPaymentDate == null ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
-                    var debitCard = new DebitCard(insuranceUserProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
+                    var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
                     , reference, authorization_code);
                     _repoWrapper.Card.Create(debitCard);
 
