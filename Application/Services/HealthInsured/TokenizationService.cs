@@ -241,10 +241,15 @@ namespace Application.Services.HealthInsured
                     , cardReference, chargeCardResponse.AuthorizationCode);
                 _repoWrapper.Card.Create(debitCard);
 
+
+                var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                _repoWrapper.ActivityLog.Create(activityLog);
+
                 checkprofileComplete.TokenizationCompleted = true;
                 _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-                await _repoWrapper.Save();  
+                await _repoWrapper.Save();
 
+                Thread.Sleep(10000);
                 return new ResponseMessage
                 {
                     Data = chargeCardResponse,
@@ -285,8 +290,7 @@ namespace Application.Services.HealthInsured
                 _repoWrapper.Card.Create(debitCard);
 
                 if (!companyProfile.TokenizationCompleted)
-                {
-                    Thread.Sleep(10000);
+                {                    
                     //companyProfile.NextPaymentDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
                     ////method to create insurance profiles for the beneficiaires.
@@ -308,9 +312,10 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.CompanyProfile.Update(companyProfile);
                    
                 }
-                //var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-                //_repoWrapper.ActivityLog.Create(activityLog);
+                var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                _repoWrapper.ActivityLog.Create(activityLog);
                 await _repoWrapper.Save();
+                Thread.Sleep(10000);
 
                 return new ResponseMessage
                 {
@@ -1095,12 +1100,18 @@ namespace Application.Services.HealthInsured
         {
             if (@event == "charge.success")
             {
+                var status = "";
+
                 var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
                 if (insuranceProfile != null)
                 {
                     var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                     if (paymentReference != null)
                     {
+                        if(paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
+                        {
+                            status = PaymentReference_StatusValue.Send_Url.ToString();
+                        }
                         paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
                         _repoWrapper.PaymentReference.Update(paymentReference);
                     }
@@ -1115,7 +1126,7 @@ namespace Application.Services.HealthInsured
                         _repoWrapper.PaymentReference.Create(paymentReference2);
                     }
                     await _repoWrapper.Save();
-                    await ValidateWebHookSuccesfulInsurancePayment(insuranceProfile, null, reference, authorization_code, last4, card_type, amount);
+                    await ValidateWebHookSuccesfulInsurancePayment(insuranceProfile, null, reference, authorization_code, last4, card_type, amount,status);
                 }
                 else
                 {
@@ -1139,7 +1150,7 @@ namespace Application.Services.HealthInsured
                             _repoWrapper.PaymentReference.Create(paymentReference2);
                         }
                         await _repoWrapper.Save();
-                        await ValidateWebHookSuccesfulInsurancePayment(null, companyProfile, reference, authorization_code, last4, card_type, amount);
+                        await ValidateWebHookSuccesfulInsurancePayment(null, companyProfile, reference, authorization_code, last4, card_type, amount,status);
                     }
                 }
             }
@@ -1150,34 +1161,32 @@ namespace Application.Services.HealthInsured
         /// Method to make sure Users get value for their insurance payment
         /// </summary>
         /// <returns></returns>
-        private async Task ValidateWebHookSuccesfulInsurancePayment(InsuranceUserProfile insuranceUserProfile, CompanyProfile companyProfile, string reference, string authorization_code, string last4, string card_type,string amount)
+        private async Task ValidateWebHookSuccesfulInsurancePayment(InsuranceUserProfile insuranceUserProfile, CompanyProfile companyProfile, string reference, string authorization_code, string last4, string card_type,string amount,string status)
         {
             if (!(insuranceUserProfile is null))
             {
-                // check if user card exist, if not add it
-                var card = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(insuranceUserProfile.UserId, last4);
-                if (card is null)
+                if(decimal.Parse(amount) < 100)
                 {
-                    var cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
-
-                    var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, cardStatus, last4, card_type
+                    if (status == PaymentReference_StatusValue.Send_Url.ToString())
+                    {
+                        var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, (int)DebitCard_StatusValue.secondary, last4, card_type
                         , reference, authorization_code);
-                    _repoWrapper.Card.Create(debitCard);
+                        _repoWrapper.Card.Create(debitCard);
+
+
+                        var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                        _repoWrapper.ActivityLog.Create(activityLog);
+                        await _repoWrapper.Save();
+                    }
+                    BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
                 }
-                await ProcessWebHook_SuccessfulInsuranceIndividualPayment(insuranceUserProfile, reference,amount);
+                else
+                {
+                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment(insuranceUserProfile, reference, amount);
+                }
             }
             if (!(companyProfile is null))
             {
-                // check if user card exist, if not add it
-                var card = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(companyProfile.UserId, last4);
-                if (card is null)
-                {
-                    var cardStatus = companyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
-
-                    var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
-                        , reference, authorization_code);
-                    _repoWrapper.Card.Create(debitCard);
-                }
                 await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
             }
         }
@@ -1225,12 +1234,7 @@ namespace Application.Services.HealthInsured
                 {
                     await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
                 }
-            }            
-            // Enqueue method to process refund 0f 50 naira test charge
-            else
-            {
-                BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
-            }
+            }    
         }
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
@@ -1252,9 +1256,6 @@ namespace Application.Services.HealthInsured
             _repoWrapper.InsuranceCompletionProfile.Update(checkprofileComplete);
 
             _insuranceSerivce.SendSuccesfulSubscriptionMail(insuranceUserProfile.Email, insuranceUserProfile.Surname, insuranceUserProfile.TransId, insuranceUserProfile.CareProviderName);
-
-            var activityLog2 = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-            _repoWrapper.ActivityLog.Create(activityLog2);
 
             insuranceUserProfile.SubscriptionStatus = true;
             insuranceUserProfile.ActiveStatus = true;
@@ -1345,6 +1346,7 @@ namespace Application.Services.HealthInsured
 
                     companyProfile.TokenizationCompleted = true;
                     _repoWrapper.CompanyProfile.Update(companyProfile);
+                    await _repoWrapper.Save();
                 }         
             }
             // Enqueue method to process refund 0f 50 naira test charge
@@ -1352,10 +1354,6 @@ namespace Application.Services.HealthInsured
             {
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
             }
-
-            var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-            _repoWrapper.ActivityLog.Create(activityLog);
-            await _repoWrapper.Save();
             await Task.CompletedTask;
         }
 
