@@ -498,7 +498,7 @@ namespace Application.Services.HealthInsured
         public async Task SchedulePaymentLogic(int userId, PerformContext context)
         {
             var jobId = context.BackgroundJob.Id;
-            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByCompanyId(userId);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByUserId(userId);
             var activeCard = companyProfile.Cards.FirstOrDefault(x => x.Status == (int) DebitCard_StatusValue.primary);
 
             var premiumFee = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString() ||
@@ -1136,6 +1136,10 @@ namespace Application.Services.HealthInsured
                         var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                         if (paymentReference != null)
                         {
+                            if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
+                            {
+                                status = PaymentReference_StatusValue.Send_Url.ToString();
+                            }
                             paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
                             _repoWrapper.PaymentReference.Update(paymentReference);
                         }
@@ -1187,6 +1191,18 @@ namespace Application.Services.HealthInsured
             }
             if (!(companyProfile is null))
             {
+                if (status == PaymentReference_StatusValue.Send_Url.ToString())
+                {
+                    int cardStatus = companyProfile.NextPaymentDate == null ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                    var debitCard = new DebitCard(insuranceUserProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
+                    , reference, authorization_code);
+                    _repoWrapper.Card.Create(debitCard);
+
+
+                    var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                    _repoWrapper.ActivityLog.Create(activityLog);
+                    await _repoWrapper.Save();
+                }
                 await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
             }
         }

@@ -11,7 +11,7 @@ namespace DataAccess.HealthInsured.Interfaces
     public interface ICompanyProfileRepository : IBaseRepository<CompanyProfile>
     {
         Task<CompanyProfile> GetCompanyBeneficiaryReviewUsersByCompanyId(int companyId);
-        Task<CompanyProfile> GetCompanyInsuranceUserProfilesByCompanyId(int userId);
+        Task<CompanyProfile> GetCompanyInsuranceUserProfilesByUserId(int userId);
         Task<CompanyProfile> GetCompanyProfileByEmail(string email);
         Task<CompanyProfile> GetCompanyProfileByUserId(int userId);
     }
