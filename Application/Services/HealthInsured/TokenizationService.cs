@@ -1153,7 +1153,7 @@ namespace Application.Services.HealthInsured
             {
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
-                    int cardStatus = companyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                    int cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
                     var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, cardStatus, last4, card_type
                     , reference, authorization_code);
                     _repoWrapper.Card.Create(debitCard);
