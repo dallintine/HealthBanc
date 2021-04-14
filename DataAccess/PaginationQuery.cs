@@ -10,7 +10,7 @@ namespace DataAccess
         public PaginationQuery()
         {
             PageNumber = 1;
-            PageSize = 5;
+            PageSize = 20;
             SortBy = 1;
         }
         public PaginationQuery(int pageNumber,int pageSize,string searchText,int sortBy)
