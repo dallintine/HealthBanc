@@ -982,7 +982,7 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Message = "Kindly add a primary card, then start the reactivation process" };
             }
 
-            // Check is user is in an active cycle
+            // Check is user is not in an active cycle
             if (insuranceProfile.ActiveStatus == false)
             {
                 return await ProcessReactivationFlow(insuranceProfile, primaryCard.Authorization_Code,null);
@@ -1053,7 +1053,7 @@ namespace Application.Services.HealthInsured
             if (chargeAuthorization.Status)
             {
                 //Give time for webhook to process reactivation
-                Thread.Sleep(10000);
+                Thread.Sleep(15000);
                 return new ResponseMessage { Message = "Reactivation was successful." , Status = true, ResponseCode = chargeAuthorization.ResponseCode };
             }
             // Setfailed payment reference for transacation;
@@ -1151,25 +1151,18 @@ namespace Application.Services.HealthInsured
         {
             if (!(insuranceUserProfile is null))
             {
-                if(decimal.Parse(amount) < 100)
+                if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
-                    if (status == PaymentReference_StatusValue.Send_Url.ToString())
-                    {
-                        var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, (int)DebitCard_StatusValue.secondary, last4, card_type
-                        , reference, authorization_code);
-                        _repoWrapper.Card.Create(debitCard);
+                    var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, (int)DebitCard_StatusValue.secondary, last4, card_type
+                    , reference, authorization_code);
+                    _repoWrapper.Card.Create(debitCard);
 
 
-                        var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-                        _repoWrapper.ActivityLog.Create(activityLog);
-                        await _repoWrapper.Save();
-                    }
-                    BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
+                    var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                    _repoWrapper.ActivityLog.Create(activityLog);
+                    await _repoWrapper.Save();
                 }
-                else
-                {
-                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment(insuranceUserProfile, reference, amount);
-                }
+                await ProcessWebHook_SuccessfulInsuranceIndividualPayment(insuranceUserProfile, reference, amount);
             }
             if (!(companyProfile is null))
             {
@@ -1232,7 +1225,11 @@ namespace Application.Services.HealthInsured
                 {
                     await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
                 }
-            }    
+            }
+            else
+            {
+                BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
+            }
         }
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
