@@ -290,24 +290,7 @@ namespace Application.Services.HealthInsured
                 _repoWrapper.Card.Create(debitCard);
 
                 if (!companyProfile.TokenizationCompleted)
-                {                    
-                    //companyProfile.NextPaymentDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
-
-                    ////method to create insurance profiles for the beneficiaires.
-                    //var result = await _insuranceSerivce.CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, null);
-
-                    //if (result.Status)
-                    //{
-                    //    //Background task to Enroll all users to hygeia.
-                    //    BackgroundJob.Enqueue(() => _insuranceSerivce.OnboardUsersToHygeia(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value));
-                    //}
-
-                    ////Background task to schedule debit at the end of next cycle
-                    //companyProfile.PendingJobId = await ProcessScheduledPayment(companyProfile);
-
-                    //companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
-                    //      DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-
+                { 
                     companyProfile.TokenizationCompleted = true;
                     _repoWrapper.CompanyProfile.Update(companyProfile);
                    
@@ -315,7 +298,7 @@ namespace Application.Services.HealthInsured
                 var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
                 await _repoWrapper.Save();
-                Thread.Sleep(10000);
+                Thread.Sleep(15000);
 
                 return new ResponseMessage
                 {
@@ -590,8 +573,10 @@ namespace Application.Services.HealthInsured
                         _repoWrapper.CompanyProfile.Update(companyProfile);
                         await _repoWrapper.Save();
 
+                        var leftProbationHours = (48 - (companyProfile.FailedScheduledPaymentRetry * 4));
+                        var probationendDate = DateTime.Now.AddHours(Double.Parse(leftProbationHours.ToString()));
                         _insuranceSerivce.SendCompanyEmailOnFailedDebit(companyProfile.CompanyEmail, companyProfile.CompanyName, premiumFee.ToString()
-                            , companyProfile.NextPaymentDate.Value.AddDays(2).ToLongDateString());
+                            , probationendDate.ToLongDateString());
                     }
                     else
                     {
@@ -630,8 +615,10 @@ namespace Application.Services.HealthInsured
                         _repoWrapper.CompanyProfile.Update(companyProfile);
                         await _repoWrapper.Save();
 
+                        var leftProbationHours = (48 - (companyProfile.FailedScheduledPaymentRetry * 4));
+                        var probationendDate = DateTime.Now.AddHours(Double.Parse(leftProbationHours.ToString()));
                         _insuranceSerivce.SendCompanyEmailOnFailedDebit(companyProfile.CompanyEmail, companyProfile.CompanyName, premiumFee.ToString()
-                            , companyProfile.NextPaymentDate.Value.AddDays(2).ToLongDateString());
+                            , probationendDate.ToLongDateString());
                     }
                     else
                     {
@@ -734,13 +721,12 @@ namespace Application.Services.HealthInsured
 
             var daysToCancelUserActivityStatus = insuranceProfile.EndActiveStatusDate;
             // check if date active cycle will end correspond with present date. if so set active cycle to false.
-            //if (daysToCancelUserActivityStatus.Date == DateTime.Now.Date)
-            if (daysToCancelUserActivityStatus == DateTime.Now)
+            if (daysToCancelUserActivityStatus.Date == DateTime.Now.Date)
             {
                 insuranceProfile.ActiveStatus = false;
                 insuranceProfile.PendingJobId = null;
                 insuranceProfile.PendingEmailJobId = null;
-                if(insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString())
+                if(insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
                 {
                     await _insuranceSerivce.HygeiaDeactivateUser(insuranceProfile.TransId);
                 }
@@ -805,7 +791,7 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task DeactivateAllCompanybeneficiaries(int companyUserId)
         {
-            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByUserId(companyUserId);
             foreach(var item in companyProfile.InsuranceUserProfiles)
             {
                 await _insuranceSerivce.HygeiaDeactivateUser(item.TransId);
@@ -825,7 +811,6 @@ namespace Application.Services.HealthInsured
         /// <returns></returns>
         public async Task ProcessUserActiveStatusCancellation(int userId)
         {
-            _logger.LogCritical("Hit Methid");
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
@@ -834,17 +819,13 @@ namespace Application.Services.HealthInsured
             insuranceProfile.ActiveStatus = false;
             _repoWrapper.InsuranceProfile.Update(insuranceProfile);
             await _repoWrapper.Save();
-            _logger.LogCritical("Save method");
-            _logger.LogCritical(insuranceProfile.ActiveStatus.ToString());
-            var confirmInsuranceActiveStatus = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-            _logger.LogCritical(confirmInsuranceActiveStatus.ActiveStatus.ToString());
-            if (insuranceProfile.ActiveStatus is true)
+            var insuranceProfile2 = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (insuranceProfile2.ActiveStatus is true)
             {
                 insuranceProfile.ActiveStatus = false;
                 _repoWrapper.InsuranceProfile.Update(insuranceProfile);
                 await _repoWrapper.Save();
             }
-            _logger.LogCritical(insuranceProfile.ActiveStatus.ToString());
             await Task.CompletedTask;
         }
 
@@ -1071,6 +1052,7 @@ namespace Application.Services.HealthInsured
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             if (chargeAuthorization.Status)
             {
+                //Give time for webhook to process reactivation
                 Thread.Sleep(10000);
                 return new ResponseMessage { Message = "Reactivation was successful." , Status = true, ResponseCode = chargeAuthorization.ResponseCode };
             }
