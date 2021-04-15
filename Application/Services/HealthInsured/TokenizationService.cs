@@ -564,7 +564,7 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
 
-                    if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 2)
+                    if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 11)
                     {
                         companyProfile.PendingEmailJobId = null; 
 
@@ -606,7 +606,7 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
 
 
-                    if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 2)
+                    if (companyProfile.FailedScheduledPaymentRetry is null || companyProfile.FailedScheduledPaymentRetry < 11)
                     {
                         companyProfile.PendingEmailJobId = null; 
 
