@@ -2,7 +2,6 @@
 using Application.API_ResponseModel.Paystack;
 using Application.Helpers;
 using Application.Helpers.ThirdPartyAPI;
-using Application.Services.HealthInsured;
 using Application.ViewModels.Paystack;
 using DataAccess;
 using DataAccess.HealthInsured.Interfaces;

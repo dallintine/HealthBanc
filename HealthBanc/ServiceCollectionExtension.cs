@@ -1,8 +1,9 @@
 ﻿using Application.AuditAndReport.AuditLog;
+using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Interfaces;
 using Application.Services.Admin;
 using Application.Services.AuditAndReport;
-using Application.Services.HealthInsured;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services.Identity;
 using Application.Services.Paystack;
 using DataAccess;

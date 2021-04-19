@@ -32,7 +32,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Application.Services.HealthInsured
+namespace Application.HealthInsured_AxaMansard_Service.Insurance
 {
     public class InsuranceService
     {

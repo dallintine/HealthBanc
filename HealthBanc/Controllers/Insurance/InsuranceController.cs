@@ -27,13 +27,14 @@ using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Cors;
 using Application.AuditAndReport.AuditLog;
 using Application.API_ResponseModel.HealthInsured;
-using Application.Services.HealthInsured;
 using Application.ViewModels.HealthInsured;
 using Infrastructure.UploadService;
 using DataAccess;
 using Application.DTO.HealthInsured_AxaMansard;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.Axa_Hygeia_Insurance;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
+using Application.HealthInsured_AxaMansard_Service.Insurance;
 
 namespace HealthBanc.Controllers.Insurance
 {

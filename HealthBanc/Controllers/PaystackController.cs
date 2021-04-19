@@ -15,13 +15,13 @@ using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using System;
 using System.Threading.Tasks;
-using Application.Services.HealthInsured;
 using System.Text;
 using System.Security.Cryptography;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using System.Linq;
 using System.Collections.Generic;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
 
 namespace HealthBanc.Controllers
 {

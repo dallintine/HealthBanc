@@ -152,7 +152,7 @@ namespace Application.Services.Admin
                 {
                     return new ResponseMessage {Status = true, Message = "Login was successfully" };
                 }
-                _logger.LogCritical("Wrong Ad Password", await authentication.Content.ReadAsStringAsync());
+                _logger.LogCritical("Wrong Ad Password : "+ apiResponse);
                 return new ResponseMessage { Message = "Password is invalid or has expired", ResponseCode = 12 };
             }
             _logger.LogCritical("Could not connnect with ADCredentials password sevice", await authentication.Content.ReadAsStringAsync());

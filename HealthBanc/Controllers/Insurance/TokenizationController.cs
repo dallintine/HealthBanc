@@ -17,8 +17,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Application.Services.HealthInsured;
 using Application.ViewModels.HealthInsured;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -268,6 +268,13 @@ namespace HealthBanc.Controllers.Insurance
                 return Ok(response);
             }
             return BadRequest(response);
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult Test()
+        {
+            _tokenizationService.Test2();
+            return Ok();
         }
     }
 }

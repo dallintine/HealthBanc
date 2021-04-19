@@ -30,8 +30,9 @@ using Application.ViewModels.HealthInsured;
 using Domain.Models.ReportAndLogs;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Application.HealthInsured_AxaMansard_Service.Insurance;
 
-namespace Application.Services.HealthInsured
+namespace Application.Services.HealthInsured_AxaMansard.Insurance
 {
     public class TokenizationService
     {
@@ -1487,6 +1488,11 @@ namespace Application.Services.HealthInsured
             }
             await _repoWrapper.Save();
             await Task.CompletedTask;
+        }
+
+        public void Test2()
+        {
+            BackgroundJob.Schedule(() => SendEmailReminder("has@gmail.com", "has", null),DateTime.Now.AddDays(3));
         }
     } 
 }
