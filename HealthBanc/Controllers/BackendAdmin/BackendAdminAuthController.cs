@@ -250,7 +250,7 @@ namespace HealthBanc.Controllers
                     _adminRepository.Update(admin);
                     await _adminRepository.Save();
 
-                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UserName} changed {email} role", ServiceNames.HealthBanc.ToString());
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} changed {email} role", ServiceNames.HealthBanc.ToString());
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
                     return Ok(new ResponseMessage {Message="Role was changed successfully", Status=true });
@@ -306,7 +306,7 @@ namespace HealthBanc.Controllers
                     _adminRepository.Delete(admin);
                     await _adminRepository.Save();
 
-                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.Email} removed {email}", ServiceNames.HealthBanc.ToString());
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} removed {email}", ServiceNames.HealthBanc.ToString());
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
                     return Ok(new ResponseMessage { Message = "Admin was deleted successfully", Status = true });
