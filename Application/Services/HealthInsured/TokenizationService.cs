@@ -1200,7 +1200,7 @@ namespace Application.Services.HealthInsured
                         }
                         else
                         {
-                            insuranceUserProfile.TransId = "NA";
+                            insuranceUserProfile.TransId = "Pending";
                         }
                     }
                     else

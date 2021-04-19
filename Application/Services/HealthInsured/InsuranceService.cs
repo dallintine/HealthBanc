@@ -754,7 +754,10 @@ namespace Application.Services.HealthInsured
             foreach (var item in insuranceUserProfiles)
             {
                 var result = await EnrollUserToHygeiaOnOnboarding(item);
-                item.TransId = result.Message;
+                if (result.Status)
+                {
+                    item.TransId = result.Message;
+                }
                 item.ActiveStatus = true;
                 item.SubscriptionStatus = true;
                 item.StartActiveStatusDate = DateTime.Now;
@@ -1044,7 +1047,9 @@ namespace Application.Services.HealthInsured
             _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
-        }       
+        }
+
+       
     }
 
     internal class BeneficiaryReviewUserEmailComparer : IEqualityComparer<BeneficiaryReviewUser>
