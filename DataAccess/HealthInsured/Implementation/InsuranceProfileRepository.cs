@@ -67,7 +67,8 @@ namespace DataAccess.HealthInsured.Implementation
             // If filer is not 1 filter out for axamansard
             if (!(paginationQuery.Filter is null))
             {
-                queryable = paginationQuery.Filter is 1 ? queryable.Where(x => x.InsuranceService.Equals(InsuranceProvider.Hygeia.ToString())) : queryable.Where(x => (x.InsuranceService.Equals(InsuranceProvider.Axamansard.ToString())));
+                queryable = paginationQuery.Filter.Value == 1 ? queryable.Where(x => x.InsuranceService == InsuranceProvider.Hygeia.ToString()).AsQueryable() 
+                    : queryable.Where(x => x.InsuranceService == InsuranceProvider.Axamansard.ToString()).AsQueryable();
             }
 
             var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
