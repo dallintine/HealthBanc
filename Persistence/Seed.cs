@@ -124,14 +124,24 @@ namespace Persistence
                 {
                     userManager.AddToRoleAsync(user, "Super-Administrator").Wait();
 
-                    BackendAdminUser adminUser = new BackendAdminUser()
+                    var adminUser =await context.BackendAdminUsers.FirstOrDefaultAsync(x => x.Email == "hassan.hassan@sterling.ng");
+                    if(adminUser is null)
                     {
-                        Email = "hassan.hassan@sterling.ng",
-                        FirstName = "Hassan",
-                        LastName = "Hassan",
-                        ClassOrRoleId = 6
-                    };
-                    context.BackendAdminUsers.Add(adminUser);
+                        BackendAdminUser adminUser2 = new BackendAdminUser()
+                        {
+                            Email = "hassan.hassan@sterling.ng",
+                            FirstName = "Hassan",
+                            LastName = "Hassan",
+                            ClassOrRoleId = 6
+                        };
+                        context.BackendAdminUsers.Add(adminUser2);
+                    }
+                    else
+                    {
+                        adminUser.ClassOrRoleId = 6;
+                        context.BackendAdminUsers.Update(adminUser);
+                    }
+                    
                     await context.SaveChangesAsync();
                 }
             }
@@ -164,25 +174,6 @@ namespace Persistence
                     await context.SaveChangesAsync();
                 }
             }
-            else
-            {
-                var user = await userManager.FindByEmailAsync("Esther.nwowo@sterling.ng.admin");
-                var checkRole = await userManager.IsInRoleAsync(user, "Super-Administrator");
-                if (checkRole == false)
-                {
-                    userManager.AddToRoleAsync(user, "Super-Administrator").Wait();
-
-                    BackendAdminUser adminUser = new BackendAdminUser()
-                    {
-                        Email = "Esther.nwowo@sterling.ng",
-                        FirstName = "Esther",
-                        LastName = "Nwowo",
-                        ClassOrRoleId = 6
-                    };
-                    context.BackendAdminUsers.Add(adminUser);
-                    await context.SaveChangesAsync();
-                }
-            }
 
             if (await userManager.FindByEmailAsync("constance.okosodo@sterling.ng.admin") == null)
             {
@@ -208,25 +199,6 @@ namespace Persistence
                 if (result.Succeeded)
                 {
                     userManager.AddToRoleAsync(user, "Super-Administrator").Wait();
-                    context.BackendAdminUsers.Add(adminUser);
-                    await context.SaveChangesAsync();
-                }
-            }
-            else
-            {
-                var user = await userManager.FindByEmailAsync("constance.okosodo@sterling.ng.admin");
-                var checkRole = await userManager.IsInRoleAsync(user, "Super-Administrator");
-                if (checkRole == false)
-                {
-                    userManager.AddToRoleAsync(user, "Super-Administrator").Wait();
-
-                    BackendAdminUser adminUser = new BackendAdminUser()
-                    {
-                        Email = "constance.okosodo@sterling.ng",
-                        FirstName = "Constance",
-                        LastName = "Okosodo",
-                        ClassOrRoleId = 6
-                    };
                     context.BackendAdminUsers.Add(adminUser);
                     await context.SaveChangesAsync();
                 }

@@ -10,6 +10,7 @@ using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -191,6 +192,8 @@ namespace Application.Services.Admin
             var users = _repowrapper.InsuranceProfile.QueryAllInsuranceProfiles();
 
             string[] months = new string[] { "Janaury", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+            string[] days = new string[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+            string[] weeks = new string[] { "First Week", "Second Week", "Third Week", "Fourth Week" };
             var count = 1;
             var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO();
 
@@ -198,12 +201,14 @@ namespace Application.Services.Admin
             healthInsuredDashboardDTO.UserAcquisitions = new List<UserAcquisition>();
 
 
-            // If Id is null, returns a list showing the number of users registered in a particular month for all years
+            // If Id is null, returns a list showing the number of users registered in a particular month of present year
             if (Id is null)
             {
                 foreach (var item in months)
                 {
-                    var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value.Month == count).CountAsync();
+                    var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
+                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == count).CountAsync();
+
                     var userAcquisition = new UserAcquisition(item, userRegisteredInParticularMonth);
                     healthInsuredDashboardDTO.UserAcquisitions.Add(userAcquisition);
                     count++;
@@ -212,12 +217,30 @@ namespace Application.Services.Admin
             // If Id is 1, returns a list showing the number of users registered in a particular month of present year
             else if (Id == 1)
             {
-                foreach (var item in months)
+                foreach (var item in weeks)
                 {
                     var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
-                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == count).CountAsync();
+                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == count).ToListAsync();
 
-                    var userAcquisition = new UserAcquisition(item, userRegisteredInParticularMonth);
+                    var userRegisterdInWeek = processUserInMonth(userRegisteredInParticularMonth, count);
+
+                    var userAcquisition = new UserAcquisition(userRegisterdInWeek.Name, userRegisterdInWeek.Count);
+                    healthInsuredDashboardDTO.UserAcquisitions.Add(userAcquisition);
+                    count++;
+                }
+            }
+            // If Id is 2, returns a list showing the number of users registered in a present week of year
+            else
+            {
+                var startOfWeek = processStartOfPresentWeek(DateTime.Now);
+                var endOfWeek = startOfWeek.AddDays(7);
+                foreach (var item in days)
+                {
+                    var userRegisterdInPresentWeek = await users.Where(x => x.DateCreated.Value >= startOfWeek && x.DateCreated.Value < endOfWeek).ToListAsync();
+
+                    var userRegisteredInDay = processUserInWeek(userRegisterdInPresentWeek, count, startOfWeek);
+
+                    var userAcquisition = new UserAcquisition(userRegisteredInDay.Name, userRegisteredInDay.Count);
                     healthInsuredDashboardDTO.UserAcquisitions.Add(userAcquisition);
                     count++;
                 }
@@ -232,7 +255,8 @@ namespace Application.Services.Admin
             var users = _repowrapper.InsuranceProfile.QueryAllInsuranceProfiles();
 
             string[] months = new string[] { "Janaury", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
-            string[] week = new string[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+            string[] days = new string[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+            string[] weeks = new string[] { "First Week", "Second Week", "Third Week", "Fourth Week" };
             var count = 1;
             var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO();
 
@@ -240,43 +264,213 @@ namespace Application.Services.Admin
             healthInsuredDashboardDTO.SubscriberAcquisitions = new List<SubscriberAcquisition>();
 
 
-            // If Id is null, returns a list showing the number of users registered in a particular month for all years
+            // If Id is null, returns a list showing the number of users subscribed in a present year
             if (Id is null)
             {
                 foreach (var item in months)
                 {
-                    var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value.Month == count && x.SubscriptionStatus == true).CountAsync();
-                    var userAcquisition = new SubscriberAcquisition(item, userRegisteredInParticularMonth);
+                    var userSubscribedInParticularMonth = await users.Where(x => x.DateCreated.Value
+                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == count && x.SubscriptionStatus != null).CountAsync();
+                    var userAcquisition = new SubscriberAcquisition(item, userSubscribedInParticularMonth);
                     healthInsuredDashboardDTO.SubscriberAcquisitions.Add(userAcquisition);
                     count++;
                 }
             }
-            // If Id is 1, returns a list showing the number of users registered in a particular month of present year
+            // If Id is 1, returns a list showing the number of users subscribed in a month of present year
             else if (Id == 1)
             {
-                foreach (var item in months)
+                foreach (var item in weeks)
                 {
-                    var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
-                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == count && x.SubscriptionStatus == true).CountAsync();
+                    var userSubscribedInParticularMonth = await users.Where(x => x.DateCreated.Value
+                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == DateTime.Now.Month && x.SubscriptionStatus != null).ToListAsync();
 
-                    var userAcquisition = new SubscriberAcquisition(item, userRegisteredInParticularMonth);
+                    var usersubscribedInWeek = processUserInMonth(userSubscribedInParticularMonth,count);
+                    healthInsuredDashboardDTO.SubscriberAcquisitions.Add(usersubscribedInWeek);
+                    count++;
+                }
+            }
+            // If Id is 2, returns a list showing the number of users subscribed in a present week of year
+            else
+            {
+                var startOfWeek = processStartOfPresentWeek(DateTime.Now);
+                var endOfWeek = startOfWeek.AddDays(7);
+                foreach (var item in days)
+                {
+                    var userSubscribedInPresentWeek = await users.Where(x => x.DateCreated.Value >= startOfWeek && x.DateCreated.Value < endOfWeek && x.SubscriptionStatus != null).ToListAsync();
+
+                    var userAcquisition = processUserInWeek(userSubscribedInPresentWeek, count, startOfWeek);
                     healthInsuredDashboardDTO.SubscriberAcquisitions.Add(userAcquisition);
                     count++;
                 }
             }
-            //else
-            //{
-            //    foreach (var item in week)
-            //    {
-            //        var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
-            //        . == DateTime.Now.Month && x.DateCreated.Value.da == count && x.SubscriptionStatus == true).CountAsync();
+            return new ResponseMessage { Data = healthInsuredDashboardDTO, Status = true, Message = "Subscriber acquisitions was fecthed successfully" };            
+        }
 
-            //        var userAcquisition = new SubscriberAcquisition(item, userRegisteredInParticularMonth);
-            //        healthInsuredDashboardDTO.SubscriberAcquisitions.Add(userAcquisition);
-            //        count++;
-            //    }
-            //}
-            return new ResponseMessage { Data = healthInsuredDashboardDTO, Status = true, Message = "Subscriber acquisitions was fecthed successfully" };
+        private DateTime processStartOfPresentWeek(DateTime date)
+        {
+            DateTime dt = DateTime.ParseExact(date.ToString(), "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+
+            bool isSunday = dt.DayOfWeek == 0;
+            var dayOfweek = isSunday == false ? (int)dt.DayOfWeek : 7;
+
+            DateTime startOfWeek = dt.AddDays(((int)(dayOfweek) * -1) + 1);
+            return startOfWeek;
+        }
+
+        private SubscriberAcquisition processUserInWeek(List<InsuranceUserProfile> insuranceProfiles, int count, DateTime weekStart)
+        {            
+            if (count is 1)
+            {
+                var userCountMonday = insuranceProfiles.Where(x => x.DateCreated.Value == weekStart).Count();
+                return new SubscriberAcquisition("Monday", userCountMonday);
+            }
+            else if (count is 2)
+            {
+                var userCountTuesday = insuranceProfiles.Where(x => x.DateCreated.Value == weekStart.AddDays(1)).Count();
+                return new SubscriberAcquisition("Tuesday", userCountTuesday);
+
+            }
+            else if (count is 3)
+            {
+                var userCountWednesday = insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(2)).Count();
+                return new SubscriberAcquisition("Wednesday", userCountWednesday);
+            }
+            else if (count is 4)
+            {
+                var userCountThursday = insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(3)).Count();
+                return new SubscriberAcquisition("Thursday", userCountThursday);
+            }
+            else if (count is 5)
+            {
+                var userCountFriday = insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(4)).Count();
+                return new SubscriberAcquisition("Friday", userCountFriday);
+            }
+            else if (count is 6)
+            {
+                var userCountSaturday = insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(5)).Count();
+                return new SubscriberAcquisition("Saturday", userCountSaturday);
+            }
+            else
+            {
+                var userCountSunday= insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(6)).Count();
+                return new SubscriberAcquisition("Sunday", userCountSunday);
+            }
+        }
+
+        private SubscriberAcquisition processUserInMonth(List<InsuranceUserProfile> insuranceProfiles,int count)
+        {
+            var presentDay = DateTime.Now;
+            var presentMonth = new DateTime(presentDay.Year, presentDay.Month, 1);
+            var firstWeekOfMonth = presentMonth;
+            var secondWeekOfMonth = firstWeekOfMonth.AddDays(7);
+            var thirdWeekOfMonth = secondWeekOfMonth.AddDays(7);
+            var fourthWeekOfMonth = thirdWeekOfMonth.AddDays(7);
+
+            if(count is 1)
+            {
+                var userCountFirstWeek = insuranceProfiles.Where(x => x.DateCreated.Value < secondWeekOfMonth).Count();
+                return new SubscriberAcquisition("First Week",userCountFirstWeek);
+            }
+            else if(count is 2)
+            {
+                var userCountSecondWeek = insuranceProfiles.Where(x => x.DateCreated.Value >= secondWeekOfMonth && x.DateCreated.Value < thirdWeekOfMonth).Count();
+                return new SubscriberAcquisition("Second Week", userCountSecondWeek);
+
+            }
+            else if (count is 3)
+            {
+                var userCountThirdWeek = insuranceProfiles.Where(x => x.DateCreated.Value >= thirdWeekOfMonth && x.DateCreated.Value < fourthWeekOfMonth).Count();
+                return new SubscriberAcquisition("Third Week", userCountThirdWeek);
+
+            }
+            else
+            {
+                var userCountFourthWeek = insuranceProfiles.Where(x => x.DateCreated.Value >= fourthWeekOfMonth).Count();
+                return new SubscriberAcquisition("Fourth Week", userCountFourthWeek);
+            }
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//atediff(week, @dateOne, @dateTwo) as weekdiff
+
+
+//if (week == 1)
+//{
+//    foreach (var item in insuranceProfiles)
+//    {
+
+//    }
+//    var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
+//    var d1 = firstWeekOfMonth.Date.AddDays(-1 * (int)cal.GetDayOfWeek(firstWeekOfMonth));
+//    var d2 = date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(date));
+
+//    return d1 == d2;
+//}
+//else if(week == 2)
+//{
+//    var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
+//    var d1 = secondWeekOfMonth.Date.AddDays(-1 * (int)cal.GetDayOfWeek(secondWeekOfMonth));
+//    var d2 = date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(date));
+
+//    return d1 == d2;
+//}
+//else if (week == 3)
+//{
+//    var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
+//    var d1 = thirdWeekOfMonth.Date.AddDays(-1 * (int)cal.GetDayOfWeek(thirdWeekOfMonth));
+//    var d2 = date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(date));
+
+//    return d1 == d2;
+//}
+//else
+//{
+//    var cal = System.Globalization.DateTimeFormatInfo.CurrentInfo.Calendar;
+//    var d1 = fourthWeekOfMonth.Date.AddDays(-1 * (int)cal.GetDayOfWeek(fourthWeekOfMonth));
+//    var d2 = date.Date.AddDays(-1 * (int)cal.GetDayOfWeek(date));
+
+//    return d1 == d2;
+//}
