@@ -113,7 +113,11 @@ namespace Persistence
                 if (result.Succeeded)
                 {
                     userManager.AddToRoleAsync(user, "Super-Administrator").Wait();
-                    context.BackendAdminUsers.Add(adminUser);
+                    var admin = await context.BackendAdminUsers.FirstOrDefaultAsync(x => x.Email == adminUser.Email);
+                    if (admin is null)
+                    {
+                        context.BackendAdminUsers.Add(adminUser);
+                    }
                     await context.SaveChangesAsync();
                 }
             }
@@ -171,7 +175,11 @@ namespace Persistence
                 if (result.Succeeded)
                 {
                     userManager.AddToRoleAsync(user, "Super-Administrator").Wait();
-                    context.BackendAdminUsers.Add(adminUser);
+                    var admin = await context.BackendAdminUsers.FirstOrDefaultAsync(x => x.Email == adminUser.Email);
+                    if(admin is null)
+                    {
+                        context.BackendAdminUsers.Add(adminUser);
+                    }                    
                     await context.SaveChangesAsync();
                 }
             }
@@ -200,7 +208,11 @@ namespace Persistence
                 if (result.Succeeded)
                 {
                     userManager.AddToRoleAsync(user, "Super-Administrator").Wait();
-                    context.BackendAdminUsers.Add(adminUser);
+                    var admin = await context.BackendAdminUsers.FirstOrDefaultAsync(x => x.Email == adminUser.Email);
+                    if (admin is null)
+                    {
+                        context.BackendAdminUsers.Add(adminUser);
+                    }
                     await context.SaveChangesAsync();
                 }
             }

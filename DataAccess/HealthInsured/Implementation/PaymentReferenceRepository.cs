@@ -43,9 +43,10 @@ namespace DataAccess.HealthInsured.Implementation
             //if status is 3 returns failed transactions
             if (paginationQuery.Status != null)
             {
-                if (paginationQuery.Status == 1) queryable = queryable.Where(x => x.Status.ToLower().Trim() == "successfully").AsQueryable();
-                if (paginationQuery.Status == 2) queryable = queryable.Where(x => x.Status.ToLower().Trim() != "successfully" && x.Status.ToLower().Trim() != "failed").AsQueryable();
-                if (paginationQuery.Status == 3) queryable = queryable.Where(x => x.Status.ToLower().Trim() == "failed").AsQueryable();
+                if (paginationQuery.Status == 1) queryable = queryable.Where(x => x.Status.ToLower().Trim() == PaymentReference_StatusValue.Successful.ToString()).AsQueryable();
+                if (paginationQuery.Status == 2) queryable = queryable.Where(x => x.Status.ToLower().Trim() != PaymentReference_StatusValue.Successful.ToString()
+                && x.Status.ToLower().Trim() != PaymentReference_StatusValue.Failed.ToString()).AsQueryable();
+                if (paginationQuery.Status == 3) queryable = queryable.Where(x => x.Status.ToLower().Trim() == PaymentReference_StatusValue.Failed.ToString()).AsQueryable();
             }
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))
