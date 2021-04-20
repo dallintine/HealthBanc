@@ -232,6 +232,7 @@ namespace Application.Services.Admin
             var users = _repowrapper.InsuranceProfile.QueryAllInsuranceProfiles();
 
             string[] months = new string[] { "Janaury", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
+            string[] week = new string[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
             var count = 1;
             var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO();
 
@@ -263,6 +264,18 @@ namespace Application.Services.Admin
                     count++;
                 }
             }
+            //else
+            //{
+            //    foreach (var item in week)
+            //    {
+            //        var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
+            //        . == DateTime.Now.Month && x.DateCreated.Value.da == count && x.SubscriptionStatus == true).CountAsync();
+
+            //        var userAcquisition = new SubscriberAcquisition(item, userRegisteredInParticularMonth);
+            //        healthInsuredDashboardDTO.SubscriberAcquisitions.Add(userAcquisition);
+            //        count++;
+            //    }
+            //}
             return new ResponseMessage { Data = healthInsuredDashboardDTO, Status = true, Message = "Subscriber acquisitions was fecthed successfully" };
         }
     }
