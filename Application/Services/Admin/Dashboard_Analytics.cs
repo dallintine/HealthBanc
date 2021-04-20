@@ -220,7 +220,7 @@ namespace Application.Services.Admin
                 foreach (var item in weeks)
                 {
                     var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
-                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == count).ToListAsync();
+                    .Year == DateTime.Now.Year && x.DateCreated.Value.Month == DateTime.Now.Month).ToListAsync();
 
                     var userRegisterdInWeek = processUserInMonth(userRegisteredInParticularMonth, count);
 
@@ -236,7 +236,7 @@ namespace Application.Services.Admin
                 var endOfWeek = startOfWeek.AddDays(7);
                 foreach (var item in days)
                 {
-                    var userRegisterdInPresentWeek = await users.Where(x => x.DateCreated.Value >= startOfWeek && x.DateCreated.Value < endOfWeek).ToListAsync();
+                    var userRegisterdInPresentWeek = await users.Where(x => x.DateCreated.Value.Date >= startOfWeek.Date && x.DateCreated.Value.Date < endOfWeek.Date).ToListAsync();
 
                     var userRegisteredInDay = processUserInWeek(userRegisterdInPresentWeek, count, startOfWeek);
 
@@ -296,7 +296,7 @@ namespace Application.Services.Admin
                 var endOfWeek = startOfWeek.AddDays(7);
                 foreach (var item in days)
                 {
-                    var userSubscribedInPresentWeek = await users.Where(x => x.DateCreated.Value >= startOfWeek && x.DateCreated.Value < endOfWeek && x.SubscriptionStatus != null).ToListAsync();
+                    var userSubscribedInPresentWeek = await users.Where(x => x.DateCreated.Value.Date >= startOfWeek.Date && x.DateCreated.Value.Date < endOfWeek.Date && x.SubscriptionStatus != null).ToListAsync();
 
                     var userAcquisition = processUserInWeek(userSubscribedInPresentWeek, count, startOfWeek);
                     healthInsuredDashboardDTO.SubscriberAcquisitions.Add(userAcquisition);
@@ -308,7 +308,7 @@ namespace Application.Services.Admin
 
         private DateTime processStartOfPresentWeek(DateTime date)
         {
-            DateTime dt = DateTime.ParseExact(date.ToString(), "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+            DateTime dt = date;
 
             bool isSunday = dt.DayOfWeek == 0;
             var dayOfweek = isSunday == false ? (int)dt.DayOfWeek : 7;
@@ -321,38 +321,38 @@ namespace Application.Services.Admin
         {            
             if (count is 1)
             {
-                var userCountMonday = insuranceProfiles.Where(x => x.DateCreated.Value == weekStart).Count();
+                var userCountMonday = insuranceProfiles.Where(x => x.DateCreated.Value.Date == weekStart.Date).Count();
                 return new SubscriberAcquisition("Monday", userCountMonday);
             }
             else if (count is 2)
             {
-                var userCountTuesday = insuranceProfiles.Where(x => x.DateCreated.Value == weekStart.AddDays(1)).Count();
+                var userCountTuesday = insuranceProfiles.Where(x => x.DateCreated.Value.Date == weekStart.AddDays(1).Date).Count();
                 return new SubscriberAcquisition("Tuesday", userCountTuesday);
 
             }
             else if (count is 3)
             {
-                var userCountWednesday = insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(2)).Count();
+                var userCountWednesday = insuranceProfiles.Where(x => x.DateCreated.Value.Date >= weekStart.AddDays(2).Date).Count();
                 return new SubscriberAcquisition("Wednesday", userCountWednesday);
             }
             else if (count is 4)
             {
-                var userCountThursday = insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(3)).Count();
+                var userCountThursday = insuranceProfiles.Where(x => x.DateCreated.Value.Date >= weekStart.AddDays(3).Date).Count();
                 return new SubscriberAcquisition("Thursday", userCountThursday);
             }
             else if (count is 5)
             {
-                var userCountFriday = insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(4)).Count();
+                var userCountFriday = insuranceProfiles.Where(x => x.DateCreated.Value.Date >= weekStart.AddDays(4).Date).Count();
                 return new SubscriberAcquisition("Friday", userCountFriday);
             }
             else if (count is 6)
             {
-                var userCountSaturday = insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(5)).Count();
+                var userCountSaturday = insuranceProfiles.Where(x => x.DateCreated.Value.Date >= weekStart.AddDays(5).Date).Count();
                 return new SubscriberAcquisition("Saturday", userCountSaturday);
             }
             else
             {
-                var userCountSunday= insuranceProfiles.Where(x => x.DateCreated.Value >= weekStart.AddDays(6)).Count();
+                var userCountSunday= insuranceProfiles.Where(x => x.DateCreated.Value.Date >= weekStart.AddDays(6).Date).Count();
                 return new SubscriberAcquisition("Sunday", userCountSunday);
             }
         }
