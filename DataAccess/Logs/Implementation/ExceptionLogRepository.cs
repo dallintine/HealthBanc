@@ -22,6 +22,12 @@ namespace DataAccess.Logs.Implementation
             var paginatedResponse = new PagedResponse<ExceptionLog>();
             var queryable = _context.ExceptionLogs.AsQueryable();
 
+
+            if (!string.IsNullOrEmpty(paginationQuery.SearchText))
+            {
+                queryable = queryable.Where(x => x.ErrorDate.Date.ToString() == paginationQuery.SearchText.ToString());
+            }
+
             //Sort the users
             queryable =  queryable.OrderByDescending(s => s.ErrorDate);
 

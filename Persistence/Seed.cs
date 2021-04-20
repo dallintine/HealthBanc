@@ -25,6 +25,7 @@ namespace Persistence
                  new AppRole() { Name = "Analyst", NormalizedName = "ANALYST" }
             };
 
+
             foreach (var item in roles)
             {
                 var roleExist = await roleManager.RoleExistsAsync(item.Name);
