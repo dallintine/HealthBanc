@@ -269,12 +269,5 @@ namespace HealthBanc.Controllers.Insurance
             }
             return BadRequest(response);
         }
-
-        [HttpGet("[action]")]
-        public IActionResult Test()
-        {
-            _tokenizationService.Test2();
-            return Ok();
-        }
     }
 }

@@ -1489,11 +1489,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await _repoWrapper.Save();
             await Task.CompletedTask;
         }
-
-        public void Test2()
-        {
-            BackgroundJob.Schedule(() => SendEmailReminder("has@gmail.com", "has", null),DateTime.Now.AddDays(3));
-        }
     } 
 }
 
