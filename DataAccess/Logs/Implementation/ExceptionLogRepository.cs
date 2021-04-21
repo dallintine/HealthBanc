@@ -25,7 +25,8 @@ namespace DataAccess.Logs.Implementation
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))
             {
-                queryable = queryable.Where(x => x.ErrorDate.Date.ToString("o").Substring(0,10).Equals(paginationQuery.SearchText.Substring(0, 10)));
+                var searchDate = paginationQuery.SearchText.Substring(0, 10);
+                queryable = queryable.Where(x => x.ErrorDate.Date.ToString("o").Substring(0,10).Equals(searchDate));
             }
 
             //Sort the users
