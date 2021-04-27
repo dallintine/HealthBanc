@@ -47,10 +47,10 @@ namespace HealthBanc.Controllers
         private readonly AuditLogService _auditLogServices;
         private readonly OTPService _otpService;
         private readonly BackendAdminService _backendAdminService;
-        private readonly RoleManager<ApplicationUser> _roleManager;
+        //private readonly RoleManager<ApplicationUser> _roleManager;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager,IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
-             AuditLogService auditLogServices, OTPService otpService,BackendAdminService backendAdminService,RoleManager<ApplicationUser> roleManager)
+             AuditLogService auditLogServices, OTPService otpService,BackendAdminService backendAdminService)
         {
             _userManager = userManager;
             _roleRepository = roleRepository;
@@ -59,7 +59,6 @@ namespace HealthBanc.Controllers
             _auditLogServices = auditLogServices;
             _otpService = otpService;
             _backendAdminService = backendAdminService;
-            _roleManager = roleManager;
         }
 
 
@@ -348,15 +347,15 @@ namespace HealthBanc.Controllers
                 
         }
 
-        [HttpGet("[action]")]
-        public IActionResult GetAllAdminUserRoles(string password)
-        {
-            if(password == "AsdflkjHasAdmin")
-            {
-                var roles = _roleManager.Roles.ToList();
-                return Ok(new ResponseMessage { Data = roles, Message = "Admin roles was fetched susseffully" });
-            }
-            return BadRequest();            
-        }
+        //[HttpGet("[action]")]
+        //public IActionResult GetAllAdminUserRoles(string password)
+        //{
+        //    if(password == "AsdflkjHasAdmin")
+        //    {
+        //        var roles = _roleManager.Roles.ToList();
+        //        return Ok(new ResponseMessage { Data = roles, Message = "Admin roles was fetched susseffully" });
+        //    }
+        //    return BadRequest();            
+        //}
     }
 }
