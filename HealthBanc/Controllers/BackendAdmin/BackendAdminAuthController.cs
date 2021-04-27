@@ -47,10 +47,10 @@ namespace HealthBanc.Controllers
         private readonly AuditLogService _auditLogServices;
         private readonly OTPService _otpService;
         private readonly BackendAdminService _backendAdminService;
-
+        private readonly RoleManager<ApplicationUser> _roleManager;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager,IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
-             AuditLogService auditLogServices, OTPService otpService,BackendAdminService backendAdminService)
+             AuditLogService auditLogServices, OTPService otpService,BackendAdminService backendAdminService,RoleManager<ApplicationUser> roleManager)
         {
             _userManager = userManager;
             _roleRepository = roleRepository;
@@ -59,6 +59,7 @@ namespace HealthBanc.Controllers
             _auditLogServices = auditLogServices;
             _otpService = otpService;
             _backendAdminService = backendAdminService;
+            _roleManager = roleManager;
         }
 
 
@@ -284,7 +285,8 @@ namespace HealthBanc.Controllers
         public async Task<IActionResult> GetAdminRoles()
         {
             var roles = await _roleRepository.GetAdminRoles();
-            return Ok(new ResponseMessage {Data=roles,Message="Admin roles was fetched susseffully"});                    
+            var newRoles = roles.Take(4);
+            return Ok(new ResponseMessage {Data= newRoles, Message="Admin roles was fetched susseffully"});                    
         }
 
         //WORKING1
@@ -332,6 +334,29 @@ namespace HealthBanc.Controllers
                 return NotFound(new ResponseMessage { Message = "User does not exist" });
             }
             return BadRequest(new ResponseMessage { Message = "You do not have the authority to remove an admin,contact the Super Admin" });
-        }        
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetAllAdminBackendRoles(string password)
+        {
+            if (password == "AsdflkjHasAdmin")
+            {
+                var roles = await _roleRepository.GetAdminRoles();
+                return Ok(new ResponseMessage { Data = roles, Message = "Admin roles was fetched susseffully" });
+            }
+            return BadRequest();
+                
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult GetAllAdminUserRoles(string password)
+        {
+            if(password == "AsdflkjHasAdmin")
+            {
+                var roles = _roleManager.Roles.ToList();
+                return Ok(new ResponseMessage { Data = roles, Message = "Admin roles was fetched susseffully" });
+            }
+            return BadRequest();            
+        }
     }
 }

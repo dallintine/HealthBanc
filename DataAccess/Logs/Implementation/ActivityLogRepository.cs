@@ -34,6 +34,7 @@ namespace DataAccess.Logs.Implementation
             }
             var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
 
+            queryable = queryable.OrderByDescending(x => x.Date);
             var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).AsQueryable();
             paginatedResponse.Data = await newQueryable.ToListAsync();
             var recordCount2 = await queryable.CountAsync();
