@@ -154,7 +154,7 @@ namespace Application.Services.Admin
             //Generate Token
             var expirationTime = Convert.ToDouble(JwtSettings.ExpirationTime);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtSettings.Secret2));
+            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtSettings.Secret));
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
