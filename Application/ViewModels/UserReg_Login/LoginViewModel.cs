@@ -8,9 +8,9 @@ namespace Application.ViewModels.UserReg_Login
 {
     public class LoginViewModel
     {
-        [Required]
+        [Required, DataType(DataType.EmailAddress)]
         public string EmailAddress { get; set; }
-        [Required]
+        [Required, DataType(DataType.Password)]
         public string Password { get; set; }
     }
 }

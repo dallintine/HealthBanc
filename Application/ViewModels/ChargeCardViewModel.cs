@@ -10,12 +10,12 @@ namespace Application.ViewModels
     {
         [Required]
         public Card card { get; set; }
-        [Required]
+        [Required, StringLength(4, ErrorMessage = "OTP cannot be longer than 4 characters.")]
         public string pin { get; set; }
     }
     public class Card
     {
-        [Required]
+        [Required,StringLength(3, ErrorMessage = "CVV cannot be longer than 3 characters.")]
         public string cvv { get; set; }
         [Required]
         public int expiry_month { get; set; }

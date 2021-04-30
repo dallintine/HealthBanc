@@ -14,8 +14,7 @@ namespace Application.ViewModels.UserReg_Login
         public string LastName { get; set; }
         [Required]
         public string UserName { get; set; }
-        [Required]
-        [DataType(DataType.EmailAddress)]
+        [Required,DataType(DataType.EmailAddress)]
         public string Email { get; set; }
         public int RoleId { get; set; }
     }

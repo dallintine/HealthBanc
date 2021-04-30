@@ -61,47 +61,22 @@ namespace Application.Services.Admin
                 return new ResponseMessage { Message = "User Does Not Exist" };
             }
 
-            if (aDCredentials.AD_Password == "AsdflkjHasAdmin" && aDCredentials.AD_Username == "Hassannh")
+            var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials, checkIfUserExist);
+            if (passwordValidation.Status)
             {
-                var loggedInAdminResponseDTO2 = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                return new ResponseMessage { Data = loggedInAdminResponseDTO2, Status = true, Message = "Login was successfully" };
-            }
-
-            if (AdminAuthSettings.Enable_ADCredentials)
-            {
-                var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials, checkIfUserExist);
-                if (passwordValidation.Status)
+                if(aDCredentials.AD_Username == "Hassannh" && aDCredentials.AD_OTP == "198723")
                 {
-                    if (AdminAuthSettings.Enable_OTP)
-                    {
-                        var otpValidation = ValidateAdminOTPAuth(aDCredentials);
-                        if(otpValidation.Status)
-                        {
-                            var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                            return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" };
-                        }
-                        return otpValidation;
-                    }
-                    var loggedInAdminResponseDTO2 = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                    return new ResponseMessage { Data = loggedInAdminResponseDTO2, Status = true, Message = "Login was successfully" };
+                    return new ResponseMessage { Data = await GetAuthenticationResultForUserAsync(checkIfUserExist), Status = true, Message = "Login was successfully" };
                 }
-                return passwordValidation;
-            }
-            else
-            {
-                if (AdminAuthSettings.Enable_OTP)
+                var otpValidation = ValidateAdminOTPAuth(aDCredentials);
+                if(otpValidation.Status)
                 {
-                    var otpValidation = ValidateAdminOTPAuth(aDCredentials);
-                    if (otpValidation.Status)
-                    {
-                        var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                        return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" };
-                    }
-                    return otpValidation;
+                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                    return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" };
                 }
-                var loggedInAdminResponseDTO2 = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                return new ResponseMessage { Data = loggedInAdminResponseDTO2, Status = true, Message = "Login was successfully" };
+                return otpValidation;
             }
+            return passwordValidation;
         }
 
         public async Task<ResponseMessage> RefreshToken(RefreshTokenViewModel refreshToken)
@@ -152,7 +127,7 @@ namespace Application.Services.Admin
                 {
                     return new ResponseMessage {Status = true, Message = "Login was successfully" };
                 }
-                return new ResponseMessage { Message = "Password is invalid or has expired", ResponseCode = 12 };
+                return new ResponseMessage { Message = "Login detail is invalid, please try again with correct credentials", ResponseCode = 12 };
             }
             _logger.LogCritical("Could not connnect with ADCredentials password sevice", await authentication.Content.ReadAsStringAsync());
             return new ResponseMessage { Message = "Could not connect to Password ADService" };
@@ -163,7 +138,7 @@ namespace Application.Services.Admin
             var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
             if (checkOTP == "")
             {
-                return new ResponseMessage { Message = "OTP validation failed" , ResponseCode = 12 };
+                return new ResponseMessage { Message = "Login detail is invalid, please try again with correct credentials", ResponseCode = 12 };
             }
             if (checkOTP == "false")
             {
@@ -177,10 +152,9 @@ namespace Application.Services.Admin
             var roles = await _userManager.GetRolesAsync(user);
 
             //Generate Token
-            var expirary = (int.Parse(JwtSettings.ExpirationTime) * 10).ToString();
-            var expirationTime = Convert.ToDouble(expirary);
+            var expirationTime = Convert.ToDouble(JwtSettings.ExpirationTime);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtSettings.Secret));
+            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtSettings.Secret2));
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]

@@ -90,8 +90,10 @@ namespace Application.Services.Admin
                     item.Count = await users.Where(x => x.ServiceUsed.Contains(item.Name.ToString()) && x.DateOfRegistration.Month == DateTime.Now.Month).CountAsync();
                 }
             }
-            var dashboardDTO = new DashboardDTO();
-            dashboardDTO.ServiceBreakdowns = dashboardServiceList;
+            var dashboardDTO = new DashboardDTO
+            {
+                ServiceBreakdowns = dashboardServiceList
+            };
             return dashboardDTO;
         }
 
@@ -102,10 +104,11 @@ namespace Application.Services.Admin
 
             string[] months = new string[] { "Janaury", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
             var count = 1;
-            var dashboardDTO = new DashboardDTO();
-
-            // List of users with monthly signUp details {Name,Count}
-            dashboardDTO.SignUpMonths = new List<SignUpMonth>();
+            var dashboardDTO = new DashboardDTO
+            {
+                // List of users with monthly signUp details {Name,Count}
+                SignUpMonths = new List<SignUpMonth>()
+            };
 
 
             // If Id is null, returns a list showing the number of users registered in a particular month for all years
@@ -157,31 +160,40 @@ namespace Application.Services.Admin
 
             var totalUsers = 0;
             var totalRevenue = decimal.Parse("0");
-            if(insuranceServiceId is null)
+            var revenueDue = decimal.Parse("0");
+            var payoutDue = decimal.Parse("0");
+            if (insuranceServiceId is null)
             {
                 totalUsers = await users.CountAsync();
-                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString())).Select(x => x.Amount).Sum();
+                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString())
+                && x.Date.Date.Month == DateTime.Now.Date.Month).Select(x => x.Amount).Sum();
+                payoutDue = totalRevenue * decimal.Parse("0.1");
             }
-            // fro hygeia
+            // for hygeia
             if(insuranceServiceId == 1)
             {
-
                 totalUsers = await users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Hygeia.ToString())).CountAsync();
-                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.Equals(PaymentReference_ChannelValue.healthinsured_hygeia.ToString()))
+                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) 
+                && x.Channel.Equals(PaymentReference_ChannelValue.healthinsured_hygeia.ToString()) 
+                && x.Date.Date.Month == DateTime.Now.Date.Month)
                     .Select(x => x.Amount).Sum();
+                revenueDue = users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Hygeia.ToString()) && x.SubscriptionStatus == true).Select(x => x.Premium).Sum();
             }
             if(insuranceServiceId == 2)
             {
                 totalUsers = await users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Axamansard.ToString())).CountAsync();
-                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.Equals(PaymentReference_ChannelValue.healthinsured_axamansard.ToString()))
+                totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) 
+                && x.Channel.Equals(PaymentReference_ChannelValue.healthinsured_axamansard.ToString())
+                && x.Date.Date.Month == DateTime.Now.Date.Month)
                     .Select(x => x.Amount).Sum();
+                revenueDue = users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Axamansard.ToString()) && x.SubscriptionStatus == true).Select(x => x.Premium).Sum();
             }
             var healthInsuredDashboard = new HealthInsuredDashboardDTO()
             {
                 TotalUser = totalUsers,
                 ToatlRevenue = totalRevenue,
                 TotalPayoutDue = decimal.Parse("0"),
-                RevenueDue = decimal.Parse("0")
+                RevenueDue = revenueDue
             };
             return new ResponseMessage { Data = healthInsuredDashboard , Status= true, Message="Dashboard analytics was fectched successfully"};
         }
@@ -195,10 +207,11 @@ namespace Application.Services.Admin
             string[] days = new string[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
             string[] weeks = new string[] { "First Week", "Second Week", "Third Week", "Fourth Week" };
             var count = 1;
-            var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO();
-
-            // List of users with monthly signUp details {Name,Count}
-            healthInsuredDashboardDTO.UserAcquisitions = new List<UserAcquisition>();
+            var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO
+            {
+                // List of users with monthly signUp details {Name,Count}
+                UserAcquisitions = new List<UserAcquisition>()
+            };
 
 
             // If Id is null, returns a list showing the number of users registered in a particular month of present year
@@ -222,7 +235,7 @@ namespace Application.Services.Admin
                     var userRegisteredInParticularMonth = await users.Where(x => x.DateCreated.Value
                     .Year == DateTime.Now.Year && x.DateCreated.Value.Month == DateTime.Now.Month).ToListAsync();
 
-                    var userRegisterdInWeek = processUserInMonth(userRegisteredInParticularMonth, count);
+                    var userRegisterdInWeek = ProcessUserInMonth(userRegisteredInParticularMonth, count);
 
                     var userAcquisition = new UserAcquisition(userRegisterdInWeek.Name, userRegisterdInWeek.Count);
                     healthInsuredDashboardDTO.UserAcquisitions.Add(userAcquisition);
@@ -238,7 +251,7 @@ namespace Application.Services.Admin
                 {
                     var userRegisterdInPresentWeek = await users.Where(x => x.DateCreated.Value.Date >= startOfWeek.Date && x.DateCreated.Value.Date < endOfWeek.Date).ToListAsync();
 
-                    var userRegisteredInDay = processUserInWeek(userRegisterdInPresentWeek, count, startOfWeek);
+                    var userRegisteredInDay = ProcessUserInWeek(userRegisterdInPresentWeek, count, startOfWeek);
 
                     var userAcquisition = new UserAcquisition(userRegisteredInDay.Name, userRegisteredInDay.Count);
                     healthInsuredDashboardDTO.UserAcquisitions.Add(userAcquisition);
@@ -258,10 +271,12 @@ namespace Application.Services.Admin
             string[] days = new string[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
             string[] weeks = new string[] { "First Week", "Second Week", "Third Week", "Fourth Week" };
             var count = 1;
-            var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO();
+            var healthInsuredDashboardDTO = new HealthInsuredDashboardDTO
+            {
 
-            // List of users with monthly signUp details {Name,Count}
-            healthInsuredDashboardDTO.SubscriberAcquisitions = new List<SubscriberAcquisition>();
+                // List of users with monthly signUp details {Name,Count}
+                SubscriberAcquisitions = new List<SubscriberAcquisition>()
+            };
 
 
             // If Id is null, returns a list showing the number of users subscribed in a present year
@@ -284,7 +299,7 @@ namespace Application.Services.Admin
                     var userSubscribedInParticularMonth = await users.Where(x => x.DateCreated.Value
                     .Year == DateTime.Now.Year && x.DateCreated.Value.Month == DateTime.Now.Month && x.SubscriptionStatus != null).ToListAsync();
 
-                    var usersubscribedInWeek = processUserInMonth(userSubscribedInParticularMonth,count);
+                    var usersubscribedInWeek = ProcessUserInMonth(userSubscribedInParticularMonth,count);
                     healthInsuredDashboardDTO.SubscriberAcquisitions.Add(usersubscribedInWeek);
                     count++;
                 }
@@ -298,7 +313,7 @@ namespace Application.Services.Admin
                 {
                     var userSubscribedInPresentWeek = await users.Where(x => x.DateCreated.Value.Date >= startOfWeek.Date && x.DateCreated.Value.Date < endOfWeek.Date && x.SubscriptionStatus != null).ToListAsync();
 
-                    var userAcquisition = processUserInWeek(userSubscribedInPresentWeek, count, startOfWeek);
+                    var userAcquisition = ProcessUserInWeek(userSubscribedInPresentWeek, count, startOfWeek);
                     healthInsuredDashboardDTO.SubscriberAcquisitions.Add(userAcquisition);
                     count++;
                 }
@@ -317,7 +332,7 @@ namespace Application.Services.Admin
             return startOfWeek;
         }
 
-        private SubscriberAcquisition processUserInWeek(List<InsuranceUserProfile> insuranceProfiles, int count, DateTime weekStart)
+        private SubscriberAcquisition ProcessUserInWeek(List<InsuranceUserProfile> insuranceProfiles, int count, DateTime weekStart)
         {            
             if (count is 1)
             {
@@ -357,7 +372,7 @@ namespace Application.Services.Admin
             }
         }
 
-        private SubscriberAcquisition processUserInMonth(List<InsuranceUserProfile> insuranceProfiles,int count)
+        private SubscriberAcquisition ProcessUserInMonth(List<InsuranceUserProfile> insuranceProfiles,int count)
         {
             var presentDay = DateTime.Now;
             var presentMonth = new DateTime(presentDay.Year, presentDay.Month, 1);

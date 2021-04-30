@@ -47,7 +47,6 @@ namespace HealthBanc.Controllers
         private readonly AuditLogService _auditLogServices;
         private readonly OTPService _otpService;
         private readonly BackendAdminService _backendAdminService;
-        //private readonly RoleManager<ApplicationUser> _roleManager;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager,IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
              AuditLogService auditLogServices, OTPService otpService,BackendAdminService backendAdminService)
