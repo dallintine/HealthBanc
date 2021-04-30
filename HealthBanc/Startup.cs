@@ -167,9 +167,12 @@ namespace HealthBanc
             {
                 options.AddPolicy("Cors",
                     builder =>
-                        builder.WithOrigins(baseUrlValues.HealthBancFrontendBase, paystackUrlValues.PayStackBaseAddress, axaMansardValues.AxaMansardBaseAddress
-                        , sterlingOTPConfigValues.Url, baseUrlValues.FiorianoBaseAddress, emailValues.EmailNotificationBaseUrl,hygeiaValues.HygeiaBaseAddress,"https://localhost:5000",
-                        "http://localhost:3000", "https://localhost:3000"));
+                        //builder.WithOrigins(baseUrlValues.HealthBancFrontendBase, paystackUrlValues.PayStackBaseAddress, axaMansardValues.AxaMansardBaseAddress
+                        //, sterlingOTPConfigValues.Url, baseUrlValues.FiorianoBaseAddress, emailValues.EmailNotificationBaseUrl,hygeiaValues.HygeiaBaseAddress,"https://localhost:5000",
+                        //"http://localhost:3000", "https://localhost:3000"));
+                        builder.AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
             });
 
             //---------------------------- CORS setting---------------------------------------------------------//

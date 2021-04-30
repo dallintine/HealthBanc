@@ -66,13 +66,13 @@ namespace Application.Services.Admin
             {
                 if(aDCredentials.AD_Username == "Hassannh" && aDCredentials.AD_OTP == "198723")
                 {
-                    return new ResponseMessage { Data = await GetAuthenticationResultForUserAsync(checkIfUserExist), Status = true, Message = "Login was successfully" };
+                    return new ResponseMessage { Data = await GetAuthenticationResultForUserAsync(checkIfUserExist), Status = true, Message = "Login was successful" };
                 }
                 var otpValidation = ValidateAdminOTPAuth(aDCredentials);
                 if(otpValidation.Status)
                 {
                     var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                    return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successfully" };
+                    return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
                 }
                 return otpValidation;
             }
