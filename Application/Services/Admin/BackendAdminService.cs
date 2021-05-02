@@ -61,12 +61,13 @@ namespace Application.Services.Admin
                 return new ResponseMessage { Message = "User Does Not Exist" };
             }
 
-            var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials, checkIfUserExist);
+            var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials);
             if (passwordValidation.Status)
             {
                 if(aDCredentials.AD_Username == "Hassannh" && aDCredentials.AD_OTP == "198723")
                 {
-                    return new ResponseMessage { Data = await GetAuthenticationResultForUserAsync(checkIfUserExist), Status = true, Message = "Login was successful" };
+                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                    return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
                 }
                 var otpValidation = ValidateAdminOTPAuth(aDCredentials);
                 if(otpValidation.Status)
@@ -107,7 +108,7 @@ namespace Application.Services.Admin
             return new ResponseMessage { Data = authResponse, Message = "Error occured, please try again later" };
         }
 
-        public async Task<ResponseMessage> ValidateAdminPasswordAuth(ADCredentialsViewModel aDCredentials,ApplicationUser user)
+        public async Task<ResponseMessage> ValidateAdminPasswordAuth(ADCredentialsViewModel aDCredentials)
         {
             var httpClient = _httpClientFactory.CreateClient("Fiorano");
             var loginCredentials = new ADCredentialsRoot
