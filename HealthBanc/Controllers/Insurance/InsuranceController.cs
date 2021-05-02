@@ -715,6 +715,8 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "Super-Administrator")]
+        [ProducesResponseType(200, Type = typeof(File))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public IActionResult DownloadIdentifiers(int count)
         {
             var checkRole = User.IsInRole("Super-Administrator");
@@ -739,7 +741,7 @@ namespace HealthBanc.Controllers.Insurance
                     {
                         workbook.SaveAs(stream);
                         var content = stream.ToArray();
-                        return Ok(new ResponseMessage { Data = File(content, contentType, fileName), Status = true });
+                        return File(content, contentType, fileName);
                     }
                 }
             }
