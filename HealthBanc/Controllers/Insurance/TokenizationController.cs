@@ -253,7 +253,7 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <param name="beneficiaryListViewModel"></param>
         /// <returns></returns>
-        //[Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]

@@ -1035,6 +1035,9 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
         public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
         {
+            var presentHospitalList = _repoWrapper.AxaMansardHospitalList.GetAll().ToList();
+            _repoWrapper.AxaMansardHospitalList.DeleteRange(presentHospitalList);
+            await _repoWrapper.Save();
             var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
             _repoWrapper.AxaMansardHospitalList.CreateRange(hospitalList);
             await _repoWrapper.Save();
@@ -1043,13 +1046,19 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
         public async Task<ResponseMessage> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
         {
+            var presentHospitalList = _repoWrapper.HygeiaHospitalList.GetAll().ToList();
+            _repoWrapper.HygeiaHospitalList.DeleteRange(presentHospitalList);
+            await _repoWrapper.Save();
             var hospitalList = await _fileProcessor.UploadHygeiaHospitalListFromExcel(formFile);
             _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
-
-       
+        
+        public string GetUniqueCode(int count)
+        {
+            return _uniqueIdentifier.GetUniqueCode(12);
+        }
     }
 
     internal class BeneficiaryReviewUserEmailComparer : IEqualityComparer<BeneficiaryReviewUser>

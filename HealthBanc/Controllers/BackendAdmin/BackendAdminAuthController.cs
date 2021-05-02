@@ -95,16 +95,7 @@ namespace HealthBanc.Controllers
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage{Status=false,Message=errors.FirstOrDefault()});
-        }
-
-
-        [HttpGet("[action]")]
-        public IActionResult ConsumeOTPSoapService(string username,string otp)
-        {
-            var x = _otpService.SOAPManual(otp, username);
-            return Ok(x);
-        }
-
+        }        
 
         [HttpPost("[action]")]
         public async Task<IActionResult> BackendRefreshToken(RefreshTokenViewModel refreshModel)
@@ -335,26 +326,11 @@ namespace HealthBanc.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> GetAllAdminBackendRoles(string password)
+        [Authorize(Roles = "Super-Administrator")]
+        public async Task<IActionResult> GetAllAdminBackendRoles()
         {
-            if (password == "AsdflkjHasAdmin")
-            {
-                var roles = await _roleRepository.GetAdminRoles();
-                return Ok(new ResponseMessage { Data = roles, Message = "Admin roles was fetched susseffully" });
-            }
-            return BadRequest();
-                
+            var roles = await _roleRepository.GetAdminRoles();
+            return Ok(new ResponseMessage { Data = roles, Message = "Admin roles was fetched susseffully" });                
         }
-
-        //[HttpGet("[action]")]
-        //public IActionResult GetAllAdminUserRoles(string password)
-        //{
-        //    if(password == "AsdflkjHasAdmin")
-        //    {
-        //        var roles = _roleManager.Roles.ToList();
-        //        return Ok(new ResponseMessage { Data = roles, Message = "Admin roles was fetched susseffully" });
-        //    }
-        //    return BadRequest();            
-        //}
     }
 }

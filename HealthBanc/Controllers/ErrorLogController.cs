@@ -33,6 +33,14 @@ namespace HealthBanc.Controllers
         public async Task<IActionResult> GetPaginatedErrorLog([FromQuery]PaginationQuery paginationQuery)
         {
             var response = await _activity_ErrorLogService.GetPaginatedErrorLog(paginationQuery);
+            try
+            {
+               var checkStringFromat =  DateTime.Parse(paginationQuery.SearchText).Date;
+            }
+            catch(Exception)
+            {
+                return BadRequest(new ResponseMessage { Message = "String not in a valid format" });
+            }
             return Ok(response);
         }
     }

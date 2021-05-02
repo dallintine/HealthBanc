@@ -35,6 +35,7 @@ using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.Axa_Hygeia_Insurance;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
+using ClosedXML.Excel;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -67,6 +68,7 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(List<string>))]
         public List<string> GetState()
         {
@@ -88,7 +90,7 @@ namespace HealthBanc.Controllers.Insurance
         [HttpPost("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
         public async Task<IActionResult> CreateUserInsuranceProfile([FromForm] UserProfileviewModel userProfile)
         {
             if (ModelState.IsValid)
@@ -123,7 +125,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="state"></param>
         /// <param name="insurancePovider"></param> 
         /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CityListDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
@@ -146,7 +148,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpGet("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<AxaMansardHospitalList>>))]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
         public async Task<IActionResult> GetHealthProvider(string state, string city, string insuranceProvider)
         {
             if (string.IsNullOrEmpty(state) || String.IsNullOrEmpty(insuranceProvider) || String.IsNullOrEmpty(city))
@@ -166,7 +168,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpPost("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HygeiaHospitalList>>))]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
         public async Task<IActionResult> FilterHygeiaHealthCareProvider([FromQuery]PaginationQuery paginationQuery,string state, string city)
         {
             var FilterHealthCareProvider = await _insuranceService.FilterHealthCareProvider(paginationQuery, state, city);
@@ -178,7 +180,7 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         public IActionResult AxaMansardGetHealthPlans()
         {
@@ -427,7 +429,7 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<BeneficiaryReviewDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
@@ -453,7 +455,7 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <param name="paginationQuery"></param>
         /// <returns></returns>
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<BeneficiaryReviewDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
@@ -478,7 +480,7 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <param name="email"></param>
         /// <returns></returns>
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
@@ -500,7 +502,7 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <param name="email"></param>
         /// <returns></returns>
-        [Authorize]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
@@ -652,34 +654,96 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(companyProfile);
         }
 
+        /// <summary>
+        /// Upload Axamansard Hospital List
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="passcode"></param>
+        /// <returns></returns>
         [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> UploadAxamansardHospitalListToDb(IFormFile file,string passcode)
         {
             if(passcode == "docUpload1963.")
             {
-                var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
-                if (result.Status)
+                var checkRole = User.IsInRole("Super-Administrator");
+                if (checkRole)
                 {
-                    return Ok(result);
+                    var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
+                    if (result.Status)
+                    {
+                        return Ok(result);
+                    }
+                    return BadRequest();
                 }
-                return BadRequest();
+                return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
             }            
             return BadRequest(new ResponseMessage { Message="Wrong passcode"});
         }
 
+        /// <summary>
+        /// Upload Hygeia hospital List
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="passcode"></param>
+        /// <returns></returns>
         [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> UploadHygeiaHospitalListToDb(IFormFile file,string passcode)
         {
             if (passcode == "docUpload1963.")
             {
-                var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
-                if (result.Status)
+                var checkRole = User.IsInRole("Super-Administrator");
+                if (checkRole)
                 {
-                    return Ok(result);
+                    var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
+                    if (result.Status)
+                    {
+                        return Ok(result);
+                    }
+                    return BadRequest();
                 }
-                return BadRequest();
+                return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
             }
             return BadRequest(new ResponseMessage { Message = "Wrong passcode" });
+        }
+        
+        /// <summary>
+        /// Generate Unique identifier
+        /// </summary>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
+        public IActionResult DownloadIdentifiers(int count)
+        {
+            var checkRole = User.IsInRole("Super-Administrator");
+            if (checkRole)
+            {
+                string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                string fileName = "identifiers.xlsx";
+                using (var workbook = new XLWorkbook())
+                {
+                    IXLWorksheet worksheet =
+                    workbook.Worksheets.Add("Identifiers");
+                    worksheet.Cell(2, 1).Value = "Id";
+                    worksheet.Cell(2, 2).Value = "Unique Identifier";
+
+                    for (int index = 2; index <= count; index++)
+                    {
+                        worksheet.Cell(index, 1).Value = index - 1;
+                        worksheet.Cell(index, 2).Value = _insuranceService.GetUniqueCode(count);
+                        worksheet.Cell(index, 2).DataType = XLDataType.Text;
+                    }
+                    using (var stream = new MemoryStream())
+                    {
+                        workbook.SaveAs(stream);
+                        var content = stream.ToArray();
+                        return Ok(new ResponseMessage { Data = File(content, contentType, fileName), Status = true });
+                    }
+                }
+            }
+            return BadRequest(new ResponseMessage { Message = "You do not have permission to access this resource" });
         }
     }
 }
