@@ -722,6 +722,9 @@ namespace HealthBanc.Controllers.Insurance
             var checkRole = User.IsInRole("Super-Administrator");
             if (checkRole)
             {
+                if (count < 1) return BadRequest(new ResponseMessage { Message = "Count has to be larger than zero" });
+                if (count >150) return BadRequest(new ResponseMessage { Message = "Count has to be less than 150" });
+
                 string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 string fileName = "identifiers.xlsx";
                 using (var workbook = new XLWorkbook())
@@ -731,7 +734,7 @@ namespace HealthBanc.Controllers.Insurance
                     worksheet.Cell(2, 1).Value = "Id";
                     worksheet.Cell(2, 2).Value = "Unique Identifier";
 
-                    for (int index = 2; index <= count; index++)
+                    for (int index = 2; index <= count+1; index++)
                     {
                         worksheet.Cell(index, 1).Value = index - 1;
                         worksheet.Cell(index, 2).Value = _insuranceService.GetUniqueCode(count);
