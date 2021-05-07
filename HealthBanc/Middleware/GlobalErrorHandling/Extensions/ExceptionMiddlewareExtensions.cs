@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace HealthBanc.Middleware.GlobalErrorHandling.Extensions
 {
@@ -51,14 +52,27 @@ namespace HealthBanc.Middleware.GlobalErrorHandling.Extensions
                         }                             
 
                         logger.Error($"Something went wrong: {contextFeature.Error}");
-                        await context.Response.WriteAsync(new ResponseMessage()
+                        await context.Response.WriteAsync(new ErrorMessage()
                         {
-                            ResponseCode = context.Response.StatusCode,
-                            Message = "This on us, an error occurred while trying to process your request.Please try again later"
+                            responseCode = context.Response.StatusCode,
+                            message = "This on us, an error occurred while trying to process your request.Please try again later"
                         }.ToString());
                     }
                 });
             });
+        }
+
+        private class ErrorMessage
+        {
+            public bool status { get; set; }
+            public int responseCode { get; set; }
+            public string message { get; set; }
+            public object data { get; set; }
+
+            public override string ToString()
+            {
+                return JsonConvert.SerializeObject(this);
+            }
         }
     }
 }
