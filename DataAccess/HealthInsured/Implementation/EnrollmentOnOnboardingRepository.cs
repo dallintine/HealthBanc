@@ -19,7 +19,8 @@ namespace DataAccess.HealthInsured.Implementation
 
         public async Task<EnrollmentOnOnboarding> GetLastEnrollmentByInsuranceProfileId(int insuranceProfileId)
         {
-            return await _context.EnrollmentOnOnboardings.Where(x => x.InsuranceUserProfileId == insuranceProfileId).LastOrDefaultAsync();
+            var enrollments = await _context.EnrollmentOnOnboardings.Where(x => x.InsuranceUserProfileId == insuranceProfileId).ToListAsync();
+            return enrollments.LastOrDefault();
         }
     }
 }
