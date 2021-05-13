@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Persistence;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace DataAccess.HealthInsured.Implementation
 
         public async Task<EnrollmentOnOnboarding> GetLastEnrollmentByInsuranceProfileId(int insuranceProfileId)
         {
-            return await _context.EnrollmentOnOnboardings.LastOrDefaultAsync(x => x.InsuranceUserProfileId == insuranceProfileId);
+            return await _context.EnrollmentOnOnboardings.Where(x => x.InsuranceUserProfileId == insuranceProfileId).LastOrDefaultAsync();
         }
     }
 }
