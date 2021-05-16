@@ -57,27 +57,28 @@ namespace HealthBanc.Controllers
             //};
             //if (paystackIpaddress.Contains(ipAddress))
             //{
-            //    _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + " : " + DateTime.Now.ToLongDateString() + " : "+ webHookResponse.data.customer.email + " : " + webHookResponse.data.amount.ToString());
+            //    _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + " : " + DateTime.Now.ToLongDateString() + " : " + webHookResponse.data.customer.email + " : " + webHookResponse.data.amount.ToString());
 
             //    var amount = webHookResponse.data.amount / 100;
             //    BackgroundJob.Enqueue(() => _tokenizationService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
             //        webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
             //    return Ok();
             //}
-            //return Ok();
-            BackgroundJob.Enqueue(() => PaystackBackgroundProcessor(ipAddress, webHookResponse));
+            ////return Ok();
+            var ipToValidate = ipAddress;
+            BackgroundJob.Enqueue(() => PaystackBackgroundProcessor(ipToValidate, webHookResponse));
             return Ok();
         }     
         
-        public void PaystackBackgroundProcessor(string ipAddress,PaystackWebHookResponse webHookResponse)
+        public void PaystackBackgroundProcessor(string ipToValidate, PaystackWebHookResponse webHookResponse)
         {
             var paystackIpaddress = new List<string>()
             {
                 "52.49.173.169","52.214.14.220","52.31.139.75"
             };
-            if (paystackIpaddress.Contains(ipAddress))
+            if (paystackIpaddress.Contains(ipToValidate))
             {
-                _logger.LogInformation("Hit Pasytackwebhook.Successfully" + ipAddress + " : " + DateTime.Now.ToLongDateString() + " : " + webHookResponse.data.customer.email + " : " + webHookResponse.data.amount.ToString());
+                _logger.LogInformation("Hit Pasytackwebhook.Successfully" + ipToValidate + " : " + DateTime.Now.ToLongDateString() + " : " + webHookResponse.data.customer.email + " : " + webHookResponse.data.amount.ToString());
 
                 var amount = webHookResponse.data.amount / 100;
                 BackgroundJob.Enqueue(() => _tokenizationService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
