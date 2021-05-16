@@ -57,19 +57,14 @@ namespace HealthBanc.Controllers
             };
             if (paystackIpaddress.Contains(ipAddress))
             {
-                BackgroundJob.Enqueue(() => PaystackBackgroundProcessor(webHookResponse));
+                _logger.LogCritical("Hit Pasytackwebhook.Successfully" + ipAddress + " : " + DateTime.Now.ToLongDateString() + " : "+ webHookResponse.data.customer.email + " : " + webHookResponse.data.amount.ToString());
+
+                var amount = webHookResponse.data.amount / 100;
+                BackgroundJob.Enqueue(() => _tokenizationService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
+                    webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
                 return Ok();
             }
-            return Ok();            
-        }     
-        
-        public void PaystackBackgroundProcessor(PaystackWebHookResponse webHookResponse)
-        {
-            _logger.LogInformation("Hit Pasytackwebhook.Successfully : " + DateTime.Now.ToLongDateString() + " : " + webHookResponse.data.customer.email + " : " + webHookResponse.data.amount.ToString());
-
-            var amount = webHookResponse.data.amount / 100;
-            BackgroundJob.Enqueue(() => _tokenizationService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
-                webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
-        }
+            return Ok();
+        }          
     }
 }
