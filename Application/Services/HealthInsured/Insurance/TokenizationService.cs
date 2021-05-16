@@ -1081,6 +1081,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <returns></returns>
         public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type, string amount)
         {
+            _logger.LogCritical("Hit Pasytackwebhook.Successfully : " + DateTime.Now.ToLongDateString() + " : " + email + " : " + amount.ToString());
+
             if (@event == "charge.success")
             {
                 var status = "";
