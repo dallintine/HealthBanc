@@ -60,6 +60,7 @@ namespace Application.Services.Admin
             {
                 return new ResponseMessage { Message = "User Does Not Exist" };
             }
+            if (!(checkIfUserExist.LockoutEnd is null)) return new ResponseMessage { Message = "Your account has been disabled, please contact admin." };
 
             var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials);
             if (passwordValidation.Status)

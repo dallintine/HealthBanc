@@ -325,6 +325,92 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "You do not have the authority to remove an admin,contact the Super Admin" });
         }
 
+        /// <summary>
+        /// Disable Admin
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> DisableAdmin([FromQuery] string email)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var loggedInUser = await _userRepository.FindByIdAsync(Id);
+
+            var checkRole = User.IsInRole("Super-Administrator");
+            if (checkRole)
+            {
+                //get logged in admin mail
+                string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                // remove the .admin from the userMail
+                var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
+                var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
+
+                var adminUserMail = email + ".admin";
+                var user = await _userManager.FindByEmailAsync(adminUserMail);
+                if (user != null)
+                {
+                    user.LockoutEnd = DateTime.Now.AddYears(100);
+                    _userRepository.Update(user);
+                    await _userRepository.Save();
+
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} disabled {email}", ServiceNames.HealthBanc.ToString());
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
+                    return Ok(new ResponseMessage { Message = "Admin was disabled successfully", Status = true });
+                }
+                return NotFound(new ResponseMessage { Message = "User does not exist" });
+            }
+            return BadRequest(new ResponseMessage { Message = "You do not have the authority to disable an admin,contact the Super Admin" });
+        }
+
+        /// <summary>
+        /// Enable Admin
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> EnableAdmin([FromQuery] string email)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var loggedInUser = await _userRepository.FindByIdAsync(Id);
+
+            var checkRole = User.IsInRole("Super-Administrator");
+            if (checkRole)
+            {
+                //get logged in admin mail
+                string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
+                // remove the .admin from the userMail
+                var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
+                var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
+
+                var adminUserMail = email + ".admin";
+                var user = await _userManager.FindByEmailAsync(adminUserMail);
+                if (user != null)
+                {
+                    user.LockoutEnd = null;
+                    _userRepository.Update(user);
+                    await _userRepository.Save();
+
+                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} enabled {email}", ServiceNames.HealthBanc.ToString());
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
+                    return Ok(new ResponseMessage { Message = "Admin was enabled successfully", Status = true });
+                }
+                return NotFound(new ResponseMessage { Message = "User does not exist" });
+            }
+            return BadRequest(new ResponseMessage { Message = "You do not have the authority to enable an admin,contact the Super Admin" });
+        }
+
         [HttpGet("[action]")]
         [Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> GetAllAdminBackendRoles()
