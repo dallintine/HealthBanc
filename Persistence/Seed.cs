@@ -85,7 +85,6 @@ namespace Persistence
                 var oustedService = await context.Services.Where(x => x.Id > 2).ToListAsync();
                 context.Services.RemoveRange(oustedService);
             }
-
             await context.SaveChangesAsync();
 
 

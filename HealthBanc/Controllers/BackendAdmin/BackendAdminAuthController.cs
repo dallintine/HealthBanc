@@ -32,6 +32,7 @@ using System.Xml;
 using Application.Services.Admin;
 using Application.API_RequestModel;
 using Application.Helpers;
+using DataAccess;
 
 namespace HealthBanc.Controllers
 {
@@ -356,7 +357,11 @@ namespace HealthBanc.Controllers
                 {
                     user.LockoutEnd = DateTime.Now.AddYears(100);
                     _userRepository.Update(user);
-                    await _userRepository.Save();
+
+                    var adminToDisable = await _adminRepository.GetAdminByEmail(email);
+                    adminToDisable.Disabled = true;
+                    _adminRepository.Update(adminToDisable);
+                    await _adminRepository.Save();
 
                     var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} disabled {email}", ServiceNames.HealthBanc.ToString());
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
@@ -399,7 +404,11 @@ namespace HealthBanc.Controllers
                 {
                     user.LockoutEnd = null;
                     _userRepository.Update(user);
-                    await _userRepository.Save();
+
+                    var adminToEnable = await _adminRepository.GetAdminByEmail(email);
+                    adminToEnable.Disabled = false;
+                    _adminRepository.Update(adminToEnable);
+                    await _adminRepository.Save();
 
                     var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} enabled {email}", ServiceNames.HealthBanc.ToString());
                     BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
