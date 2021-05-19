@@ -121,8 +121,7 @@ namespace Application.Services.Identity
                 if (result.Succeeded)
                 {
                     await _userManager.UpdateAsync(user);
-                    await _userManager.AddToRoleAsync(user, "SuperAdmin");
-                    
+                    await _userManager.AddToRoleAsync(user, "SuperAdmin");                    
                     await SendUserEmailVerificationAsync(user);
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
