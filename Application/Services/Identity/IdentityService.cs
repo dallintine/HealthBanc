@@ -74,7 +74,8 @@ namespace Application.Services.Identity
                     FirstName = registrationViewModel.FirstName,
                     LastName = registrationViewModel.LastName,
                     PhoneNumber = registrationViewModel.PhoneNumber,
-                    DateOfRegistration = DateTime.Now
+                    DateOfRegistration = DateTime.Now,
+                    EmailConfirmed = true
                 };
 
                 var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
@@ -82,11 +83,7 @@ namespace Application.Services.Identity
                 {
                     await _userManager.UpdateAsync(user);
                     await _userManager.AddToRoleAsync(user, "SuperAdmin");
-                    var confirmResult = await SendUserEmailVerificationAsync(user);
-                    if(confirmResult.Status != true)
-                    {
-                        return confirmResult;
-                    }
+                    await SendUserEmailVerificationAsync(user);
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
@@ -102,6 +99,48 @@ namespace Application.Services.Identity
                 }
             }
             return new ResponseMessage { Message = "Email Already Exist",Status = false };
+        }
+
+        public async Task<ResponseMessage> SocialMediaRegistrationLink(RegistrationViewModel registrationViewModel)
+        {
+            var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
+            if (checkUserEmail == null)
+            {
+                var user = new ApplicationUser
+                {
+                    UserName = registrationViewModel.EmailAddress,
+                    Email = registrationViewModel.EmailAddress,
+                    FirstName = registrationViewModel.FirstName,
+                    LastName = registrationViewModel.LastName,
+                    PhoneNumber = registrationViewModel.PhoneNumber,
+                    DateOfRegistration = DateTime.Now,
+                    EmailConfirmed = true
+                };
+
+                var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
+                if (result.Succeeded)
+                {
+                    await _userManager.UpdateAsync(user);
+                    await _userManager.AddToRoleAsync(user, "SuperAdmin");
+                    
+                    await SendUserEmailVerificationAsync(user);
+                    var password = _passwordHasher.Hash(registrationViewModel.Password);
+                    user.HashedPasswordHistory = $"{password},";
+                    await _userManager.UpdateAsync(user);
+                    var authResponse = await GetAuthenticationResultForUserAsync(user);
+                    if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
+                    return new ResponseMessage
+                    {
+                        Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
+                        Status = true
+                    };
+                }
+                else
+                {
+                    return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Status = false };
+                }
+            }
+            return new ResponseMessage { Message = "Email Already Exist", Status = false };
         }
 
         public async Task<ResponseMessage<ApplicationUser>> RegisterUserWithoutPassword(ApplicationUser appUser)

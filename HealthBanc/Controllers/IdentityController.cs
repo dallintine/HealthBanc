@@ -87,6 +87,38 @@ namespace HealthBanc.Controllers
             return BadRequest(errors);
         }
 
+        /// <summary>
+        /// Social Media registration Link
+        /// </summary>
+        /// <param name="registrationViewModel"></param>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> SocialMediaRegistrationLink([FromBody] RegistrationViewModel registrationViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel);
+                if (response.Status == true)
+                {
+                    return Ok(response);
+                }
+                return BadRequest(response);
+            }
+            //return validation errors
+            var errors = new List<ResponseMessage>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(new ResponseMessage() { Message = error, Status = false });
+                _logger.LogInformation(error);
+            }
+            return BadRequest(errors);
+        }
+
         //WORKING1
         /// <summary>
         /// This Confirms the UserEmail
