@@ -81,5 +81,11 @@ namespace DataAccess.HealthInsured.Implementation
             return _context.PaymentReferences.AsQueryable();
         }
 
+        public async Task<List<PaymentReference>> CorrectPaymentReference(DateTime date)
+        {
+            var response = await _context.PaymentReferences.Where(x => x.Date < date).ToListAsync();
+            return response;
+        }
+
     }
 }
