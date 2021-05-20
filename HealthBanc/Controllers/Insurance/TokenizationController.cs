@@ -278,10 +278,24 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [ProducesResponseType(200, Type = typeof(IActionResult))]
         [HttpPost("[action]")]
-        public IActionResult CorrectPaymentReference(DateTime date)
+        public async Task<IActionResult> CorrectPaymentReference(DateTime date)
         {
-            _tokenizationService.CorrectPaymentReference(date);
+            await _tokenizationService.CorrectPaymentReference(date);
             return Ok();
+        }
+
+        /// <summary>
+        /// Action to correct payment reference
+        /// </summary>
+        /// <param name="date"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [HttpPost("[action]")]
+        public async Task<IActionResult> GetPaymentReference(DateTime date)
+        {
+            var response = await _tokenizationService.GetPaymentReference(date);
+            return Ok(response);
         }
     }
 }

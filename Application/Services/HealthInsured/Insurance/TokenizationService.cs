@@ -1365,16 +1365,33 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
         }
 
-        public async void CorrectPaymentReference(DateTime date)
+        public async Task CorrectPaymentReference(DateTime date)
         {
             var referenceToBeCorrected = await _repoWrapper.PaymentReference.CorrectPaymentReference(date);
             foreach(var item in referenceToBeCorrected)
             {
-                item.Amount /= 100;
+                if(item.Amount == 2000 || item.Amount == 1000)
+                {
+                   item.Amount = 100;
+                }
+                if (item.Amount == 100000)
+                {
+                    item.Amount = 1000;
+                }
             }
 
             _repoWrapper.PaymentReference.UpdateRange(referenceToBeCorrected);
-            await _repoWrapper.Save();
+            await _repoWrapper.PaymentReference.Save();
+        }
+
+        public async Task<ResponseMessage> GetPaymentReference(DateTime date)
+        {
+            var referenceToBeCorrected = await _repoWrapper.PaymentReference.CorrectPaymentReference(date);
+            return new ResponseMessage
+            {
+                Data = referenceToBeCorrected,
+                Status = true
+            };
         }
     } 
 }
