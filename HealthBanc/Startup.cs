@@ -159,17 +159,13 @@ namespace HealthBanc
             var sterlingOTPConfigValues = sterlingOTPConfig.Get<SterlingOtpConfig>();
 
 
-            //////////////////////////////////////////////////////////////////////////////////
-
 
             //---------------------------- CORS setting---------------------------------------------------------//
             services.AddCors(options =>
             {
                 options.AddPolicy("Cors",
                     builder =>
-                        builder.WithOrigins(baseUrlValues.HealthBancFrontendBase, paystackUrlValues.PayStackBaseAddress, axaMansardValues.AxaMansardBaseAddress
-                        , sterlingOTPConfigValues.Url, baseUrlValues.FiorianoBaseAddress, emailValues.EmailNotificationBaseUrl, hygeiaValues.HygeiaBaseAddress, "https://localhost:5000",
-                        "http://localhost:3000", "https://localhost:3000")
+                    builder.AllowAnyOrigin()
                         .AllowAnyHeader()
                         .AllowAnyMethod());
             });
