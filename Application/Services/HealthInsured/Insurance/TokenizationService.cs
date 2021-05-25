@@ -1189,7 +1189,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
         {
             // If payment is scheduled
-            if(insuranceUserProfile.SubscriptionStatus is true && insuranceUserProfile.ActiveStatus is true)
+            if(insuranceUserProfile.SubscriptionStatus is true && insuranceUserProfile.ActiveStatus is true && (decimal.Parse(amount) >= decimal.Parse("1000")))
             {
                 await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceUserProfile, reference);
             }
