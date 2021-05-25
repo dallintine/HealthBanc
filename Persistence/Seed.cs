@@ -13,79 +13,79 @@ namespace Persistence
     {
         public static async Task SeedData(ApplicationDbContext context, UserManager<ApplicationUser> userManager,RoleManager<AppRole> roleManager)
         {
-            //var roles = new List<AppRole>() {
-            //     new AppRole() { Name = "SuperAdmin", NormalizedName = "SUPERADMIN" },
-            //     new AppRole() { Name = "Test2", NormalizedName = "TEST2" },
-            //     new AppRole() { Name = "Test3", NormalizedName = "TEST3" },
-            //     new AppRole() { Name = "Test4", NormalizedName = "TEST4" },
-            //     new AppRole() { Name = "Test5", NormalizedName = "TEST5" },
-            //     new AppRole() { Name = "Super-Administrator", NormalizedName = "SUPER-ADMINISTRATOR" },
-            //     new AppRole() { Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
-            //     new AppRole() { Name = "Technical-Support", NormalizedName = "TECHNICAL-SUPPORT" },
-            //     new AppRole() { Name = "Analyst", NormalizedName = "ANALYST" }
-            //};
+            var roles = new List<AppRole>() {
+                 new AppRole() { Name = "SuperAdmin", NormalizedName = "SUPERADMIN" },
+                 new AppRole() { Name = "Test2", NormalizedName = "TEST2" },
+                 new AppRole() { Name = "Test3", NormalizedName = "TEST3" },
+                 new AppRole() { Name = "Test4", NormalizedName = "TEST4" },
+                 new AppRole() { Name = "Test5", NormalizedName = "TEST5" },
+                 new AppRole() { Name = "Super-Administrator", NormalizedName = "SUPER-ADMINISTRATOR" },
+                 new AppRole() { Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
+                 new AppRole() { Name = "Technical-Support", NormalizedName = "TECHNICAL-SUPPORT" },
+                 new AppRole() { Name = "Analyst", NormalizedName = "ANALYST" }
+            };
 
 
-            //foreach (var item in roles)
-            //{
-            //    var roleExist = await roleManager.RoleExistsAsync(item.Name);
-            //    if (!roleExist)
-            //    {
-            //        await roleManager.CreateAsync(item);
-            //    }
-            //}
+            foreach (var item in roles)
+            {
+                var roleExist = await roleManager.RoleExistsAsync(item.Name);
+                if (!roleExist)
+                {
+                    await roleManager.CreateAsync(item);
+                }
+            }
 
-            //var classRoles = new List<ClassOrRole>()
-            //{
-            //   new ClassOrRole() { Name = "SuperAdmin" },
-            //   new ClassOrRole() { Name = "Test2"},
-            //   new ClassOrRole() { Name = "Test3"},
-            //   new ClassOrRole() { Name = "Test4"},
-            //   new ClassOrRole() { Name = "Test5" },
-            //   new ClassOrRole() { Name = "Super-Administrator"},
-            //   new ClassOrRole() { Name = "Administrator"},
-            //   new ClassOrRole() { Name = "Technical-Support"},
-            //   new ClassOrRole() { Name = "Analyst"}
-            //};
+            var classRoles = new List<ClassOrRole>()
+            {
+               new ClassOrRole() { Name = "SuperAdmin" },
+               new ClassOrRole() { Name = "Test2"},
+               new ClassOrRole() { Name = "Test3"},
+               new ClassOrRole() { Name = "Test4"},
+               new ClassOrRole() { Name = "Test5" },
+               new ClassOrRole() { Name = "Super-Administrator"},
+               new ClassOrRole() { Name = "Administrator"},
+               new ClassOrRole() { Name = "Technical-Support"},
+               new ClassOrRole() { Name = "Analyst"}
+            };
 
-            //foreach (var item in classRoles)
-            //{
-            //    var roleExist = await context.ClassOrRoles.Where(x => x.Name == item.Name).FirstOrDefaultAsync();
-            //    if (roleExist == null)
-            //    {
-            //        await context.ClassOrRoles.AddAsync(item);
-            //    }
-            //}
+            foreach (var item in classRoles)
+            {
+                var roleExist = await context.ClassOrRoles.Where(x => x.Name == item.Name).FirstOrDefaultAsync();
+                if (roleExist == null)
+                {
+                    await context.ClassOrRoles.AddAsync(item);
+                }
+            }
 
-            //var classRolesCount = await context.ClassOrRoles.ToListAsync();
-            //if (classRolesCount.Count > 9)
-            //{
-            //    var oustedRoles = await context.ClassOrRoles.Where(x => x.Id > 9).ToListAsync();
-            //    context.ClassOrRoles.RemoveRange(oustedRoles);
-            //}
+            var classRolesCount = await context.ClassOrRoles.ToListAsync();
+            if (classRolesCount.Count > 9)
+            {
+                var oustedRoles = await context.ClassOrRoles.Where(x => x.Id > 9).ToListAsync();
+                context.ClassOrRoles.RemoveRange(oustedRoles);
+            }
 
-            //var appServices = new List<Service>()
-            //{
-            //    new Service() { Name="HealthMall"},
-            //    new Service() {Name="HealthInsured"}
-            //};
+            var appServices = new List<Service>()
+            {
+                new Service() { Name="HealthMall"},
+                new Service() {Name="HealthInsured"}
+            };
 
-            //foreach (var item in appServices)
-            //{
-            //    var serviceExist = await context.Services.Where(x => x.Name == item.Name).FirstOrDefaultAsync();
-            //    if (serviceExist == null)
-            //    {
-            //        await context.Services.AddAsync(item);
-            //    }
-            //}
+            foreach (var item in appServices)
+            {
+                var serviceExist = await context.Services.Where(x => x.Name == item.Name).FirstOrDefaultAsync();
+                if (serviceExist == null)
+                {
+                    await context.Services.AddAsync(item);
+                }
+            }
 
-            //var serviceCount = await context.Services.ToListAsync();
-            //if (serviceCount.Count > 2)
-            //{
-            //    var oustedService = await context.Services.Where(x => x.Id > 2).ToListAsync();
-            //    context.Services.RemoveRange(oustedService);
-            //}
-            //await context.SaveChangesAsync();
+            var serviceCount = await context.Services.ToListAsync();
+            if (serviceCount.Count > 2)
+            {
+                var oustedService = await context.Services.Where(x => x.Id > 2).ToListAsync();
+                context.Services.RemoveRange(oustedService);
+            }
+            await context.SaveChangesAsync();
 
 
             if (await userManager.FindByEmailAsync("hassan.hassan@sterling.ng.admin") == null)
@@ -150,38 +150,7 @@ namespace Persistence
                 }
             }
 
-            if (await userManager.FindByEmailAsync("constance.okosodo@sterling.ng.admin") == null)
-            {
-                ApplicationUser user = new ApplicationUser()
-                {
-                    UniqueUsername = "Okosodoec",
-                    UserName = "constance.okosodo@sterling.ng.admin",
-                    Email = "constance.okosodo@sterling.ng.admin",
-                    FirstName = "Constance",
-                    LastName = "Okosodo",
-                    EmailConfirmed = true
-                };
-                BackendAdminUser adminUser = new BackendAdminUser()
-                {
-                    Email = "constance.okosodo@sterling.ng",
-                    FirstName = "Constance",
-                    LastName = "Okosodo",
-                    ClassOrRoleId = 6
-                };
-
-                var result = userManager.CreateAsync(user).Result;
-
-                if (result.Succeeded)
-                {
-                    userManager.AddToRoleAsync(user, "Super-Administrator").Wait();
-                    var admin = await context.BackendAdminUsers.FirstOrDefaultAsync(x => x.Email == adminUser.Email);
-                    if (admin is null)
-                    {
-                        context.BackendAdminUsers.Add(adminUser);
-                    }
-                    await context.SaveChangesAsync();
-                }
-            }
+            
 
             await Task.CompletedTask;            
         }
