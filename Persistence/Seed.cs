@@ -80,6 +80,7 @@ namespace Persistence
             }
 
             var serviceCount = await context.Services.ToListAsync();
+
             if (serviceCount.Count > 2)
             {
                 var oustedService = await context.Services.Where(x => x.Id > 2).ToListAsync();
