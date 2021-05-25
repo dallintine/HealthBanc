@@ -31,6 +31,7 @@ using Infrastructure.PasswordManager;
 using Domain.Models;
 using Persistence;
 using Application.Helpers.Jwt_Authorization;
+using Hangfire.Dashboard;
 
 namespace HealthBanc
 {
@@ -240,14 +241,20 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters)
         {
-            var hangfireSecret = new JwtSettings();
-            Configuration.GetSection(nameof(JwtSettings)).Bind(hangfireSecret);
-            app.UseHangfireDashboard($"/apiResponse1963.", new DashboardOptions
+            var options = new DashboardOptions
             {
-                Authorization = new[] { new MyAuthorizationFilter() }
-            });
+                Authorization = new IDashboardAuthorizationFilter[]
+                {
+                    new MyAuthorizationFilter(tokenValidationParameters, logger,"Super-Administrator")
+                }
+            };
+            //app.UseHangfireDashboard($"/apiResponse1963.", new DashboardOptions
+            //{
+            //    Authorization = new[] { new MyAuthorizationFilter() }
+            //});
+            app.UseHangfireDashboard("/apiResponse1963.", options);
 
             ServicePointManager.ServerCertificateValidationCallback +=
                (sender, certificate, chain, errors) =>
