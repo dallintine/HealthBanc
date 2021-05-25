@@ -118,7 +118,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 // If the user is neither active nor  deactivated. Means user tokenizing for card first time
                 if (insuranceProfile.SubscriptionStatus == null)
                 {                   
-                    card.amount = (insuranceProfile.Premium * 100).ToString();
+                    card.amount = (50 * 100).ToString();
                 }
                 // If the user is not tokenizing for the first time
                 // we do a test charge of 50 naria to get authorization code to use in future transactions, we send amount in Kobo\
@@ -1188,47 +1188,28 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
         {
-            if(decimal.Parse(amount) > 100)
+            // If payment is scheduled
+            if(insuranceUserProfile.SubscriptionStatus is true && insuranceUserProfile.ActiveStatus is true)
             {
-                // If user is making payment for the first time, or making an immediate reactivation
-                if(insuranceUserProfile.SubscriptionStatus is null || (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false))
-                {
-                    //Send user details to insurance provider when payment is successfully
-                    if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
-                    {
-                        var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
-                        if (response.Status)
-                        {
-                            insuranceUserProfile.TransId = response.Message;
-                        }
-                        else
-                        {
-                            insuranceUserProfile.TransId = "Pending";
-                        }
-                    }
-                    else
-                    {
-                        await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
-                    }
-                }
-
-                // If payment is scheduled
-                if(insuranceUserProfile.SubscriptionStatus is true && insuranceUserProfile.ActiveStatus is true)
-                {
-                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceUserProfile, reference);
-                }
-                // If user is making payment for the first time,
-                else if (insuranceUserProfile.SubscriptionStatus == null)
-                {
-                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
-                }
-                // if user is  making an immediate reactivation or if it is a scheduled debit
-                else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
+                await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceUserProfile, reference);
+            }
+            // If user is making payment for the first time,
+            else if (insuranceUserProfile.SubscriptionStatus == null)
+            {
+                await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
+                await SendDetailsToInsuranceProvider(insuranceUserProfile);
+            }
+            // if user is  making an immediate reactivation
+            else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
+            {
+                if (decimal.Parse(amount) >= decimal.Parse("1000"))
                 {
                     await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
+                    await SendDetailsToInsuranceProvider(insuranceUserProfile);
                 }
             }
-            else
+
+            if(decimal.Parse(amount) <= decimal.Parse("100"))
             {
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
             }
@@ -1236,13 +1217,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
         {
-            insuranceUserProfile.EndActiveStatusDate = SubscriptionAccessor.FreeTrial is true ? DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration * 2)
-                        : DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             // Schedule debit email reminder for user 
-            insuranceUserProfile.PendingEmailJobId = SubscriptionAccessor.FreeTrial is true ? BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
-                   DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration * 2).Subtract(new TimeSpan(3, 0, 0, 0)))
-               : BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
             //Schedule job to debit user every 28 days
@@ -1354,6 +1332,26 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await Task.CompletedTask;
         }
 
+        private async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)
+        {
+            if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+            {
+                var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
+                if (response.Status)
+                {
+                    insuranceUserProfile.TransId = response.Message;
+                }
+                else
+                {
+                    insuranceUserProfile.TransId = "Pending";
+                }
+            }
+            else
+            {
+                await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+            }
+        }
+
         /// <summary>
         /// Function to send email reminder three days before subscription cysle ends.
         /// </summary>
@@ -1363,35 +1361,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         public void SendEmailReminder(string email,string userName, PerformContext context)
         {            
             _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
-        }
-
-        public async Task CorrectPaymentReference(DateTime date)
-        {
-            var referenceToBeCorrected = await _repoWrapper.PaymentReference.CorrectPaymentReference(date);
-            foreach(var item in referenceToBeCorrected)
-            {
-                if(item.Amount == 2000 || item.Amount == 1000)
-                {
-                   item.Amount = 100;
-                }
-                if (item.Amount == 100000)
-                {
-                    item.Amount = 1000;
-                }
-            }
-
-            _repoWrapper.PaymentReference.UpdateRange(referenceToBeCorrected);
-            await _repoWrapper.PaymentReference.Save();
-        }
-
-        public async Task<ResponseMessage> GetPaymentReference(DateTime date)
-        {
-            var referenceToBeCorrected = await _repoWrapper.PaymentReference.CorrectPaymentReference(date);
-            return new ResponseMessage
-            {
-                Data = referenceToBeCorrected,
-                Status = true
-            };
         }
     } 
 }
