@@ -10,5 +10,9 @@ namespace Application.Helpers
         public string HygeiaRegistration { get; set; }
         public string HygeiaPlanCode { get; set; }
         public string HygeiaDeactivate { get; set; }
+        public string HygeiaAuth { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public string GrantType { get; set; }
     }
 }

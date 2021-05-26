@@ -28,6 +28,7 @@ namespace DataAccess
         IExceptionLogRepository ExceptionLog { get; }
         IActivityLogRepository ActivityLog { get; }
         IAdminAuditLogRepository AdminAuditLog { get; }
+        IEncryptedAcessTokenRepository EncryptedAcessToken { get; }
 
         Task<int> Save();
     }

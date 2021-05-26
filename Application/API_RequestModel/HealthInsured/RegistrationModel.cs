@@ -14,5 +14,6 @@ namespace Application.API_RequestModel.HealthInsured
         public string GenderId { get; set; }
         public string Phone { get; set; }
         public string Address { get; set; }
+        public bool DataConsent { get; set; }
     }
 }

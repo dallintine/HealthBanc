@@ -34,6 +34,19 @@ namespace DataAccess
         private IExceptionLogRepository _exceptionLogRepository;
         private IActivityLogRepository _activityLogRepository;
         private IAdminAuditLogRepository _adminAuditLogRepository;
+        private IEncryptedAcessTokenRepository _encryptedAcessTokenRepository;
+
+        public IEncryptedAcessTokenRepository EncryptedAcessToken
+        {
+            get
+            {
+                if (_encryptedAcessTokenRepository == null)
+                {
+                    _encryptedAcessTokenRepository = new EncryptedAcessTokenRepository(_context);
+                }
+                return _encryptedAcessTokenRepository;
+            }
+        }
 
         public IAdminAuditLogRepository AdminAuditLog
         {
