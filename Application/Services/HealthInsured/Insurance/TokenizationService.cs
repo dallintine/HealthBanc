@@ -1343,12 +1343,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
                 if (response.Status)
                 {
-                    insuranceUserProfile.TransId = response.Message;
+                    insuranceUserProfile.TransId = response.Message;                    
                 }
                 else
                 {
                     insuranceUserProfile.TransId = "Pending";
                 }
+                _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                await _repoWrapper.Save();
             }
             else
             {

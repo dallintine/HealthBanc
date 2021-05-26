@@ -245,6 +245,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             catch (Exception ex)
             {
                 _logger.LogCritical("An error occurred while enrolling user to axa-mansard", ex);
+                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddMinutes(60));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
             }
         }
