@@ -1200,16 +1200,16 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // If user is making payment for the first time,
             else if (insuranceUserProfile.SubscriptionStatus == null)
             {
-                await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
                 await SendDetailsToInsuranceProvider(insuranceUserProfile);
+                await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
             }
             // if user is  making an immediate reactivation
             else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
             {
                 if (decimal.Parse(amount) >= decimal.Parse("1000"))
                 {
-                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
                     await SendDetailsToInsuranceProvider(insuranceUserProfile);
+                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
                 }
             }
 

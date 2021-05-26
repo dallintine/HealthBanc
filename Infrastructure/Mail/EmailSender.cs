@@ -58,7 +58,15 @@ namespace Infrastructure.Mail
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthinsured_subscription.html";
             string html = System.IO.File.ReadAllText(path);
-            var newHtml = html.Replace("UserName", userName).Replace("HealthServiceProviderName", healthCareProvider).Replace("EnroleeNumber", enroleeNumber);
+            string newHtml = html.Replace("UserName", userName).Replace("HealthServiceProviderName", healthCareProvider);
+            if (enroleeNumber == "" || enroleeNumber == "Pending" || enroleeNumber == null)
+            {
+                newHtml = html.Replace("EnroleeNumber", "pending and would be provided soon. This can be accessed via your dashbard");
+            }
+            else
+            {
+                newHtml = html.Replace("EnroleeNumber", enroleeNumber);
+            }
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
