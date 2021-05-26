@@ -686,6 +686,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 return new ResponseMessage { Message = "You have no subscription", Status = false };
             }
+            if(insuranceProfile.TransId == null || insuranceProfile.TransId == "" || insuranceProfile.TransId == "Pending")
+            {
+                return new ResponseMessage { Message = "Please try cancel your subscription after your enrollee number has been processed. this should take less than 2 working days" };
+            }
 
             var scheduledJobId = insuranceProfile.PendingJobId;
 
