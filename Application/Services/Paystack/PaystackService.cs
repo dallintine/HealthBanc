@@ -99,8 +99,7 @@ namespace Application.Services.Paystack
                 var gatewayResponse = chargeCardResponse.data.gateway_response ?? "";
                 return new TokenizationResponse { Message = chargeCardResponse.message + ", " + message+","+ gatewayResponse, Status = false };
             }
-            var errorMessage = chargeCardResponse.data.message ?? "";
-            return new TokenizationResponse { Message = chargeCardResponse.message + ", " + errorMessage, Status = false };
+            return new TokenizationResponse { Message = chargeCardResponse.message , Status = false };
         }
         public async Task<TokenizationResponse> SendOtp(string otp, string reference,string phoneNumber, DateTime dateOfBirth,string pin)
         {
