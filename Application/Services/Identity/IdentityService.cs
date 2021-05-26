@@ -74,8 +74,7 @@ namespace Application.Services.Identity
                     FirstName = registrationViewModel.FirstName,
                     LastName = registrationViewModel.LastName,
                     PhoneNumber = registrationViewModel.PhoneNumber,
-                    DateOfRegistration = DateTime.Now,
-                    EmailConfirmed = true
+                    DateOfRegistration = DateTime.Now
                 };
 
                 var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
