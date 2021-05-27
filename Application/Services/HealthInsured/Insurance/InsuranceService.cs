@@ -348,9 +348,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     {
                         BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddMinutes(60));
                         return new ResponseMessage { Status = false, Message = "" };
-                    }
-                    _repoWrapper.EncryptedAcessToken.Create(new EncryptedAcessToken { HygeiaAccessToken = bearerRequest.Message });
-                    await _repoWrapper.Save();                    
+                    }              
                     bearerToken = bearerRequest.Message;
                 }
                 else
@@ -429,7 +427,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                             _repoWrapper.EncryptedAcessToken.Update(encryptedAccesstoken);
                             await _repoWrapper.Save();
                         }
-                        RecurringJob.AddOrUpdate(() => HygeiaGetAuthToken(),Cron.MinuteInterval(5));
+                        RecurringJob.AddOrUpdate(() => HygeiaGetAuthToken(),Cron.HourInterval(12));
                         return new ResponseMessage { Status = true, Message = authResponse.Access_Token };
                     }
                     _logger.LogError("Hygeia Unsuccessfully response : " + apiResponse, authResponse);
@@ -490,8 +488,6 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddMinutes(60));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
-                _repoWrapper.EncryptedAcessToken.Create(new EncryptedAcessToken { HygeiaAccessToken = bearerRequest.Message });
-                await _repoWrapper.Save();
                 bearerToken = bearerRequest.Message;
             }
             else
