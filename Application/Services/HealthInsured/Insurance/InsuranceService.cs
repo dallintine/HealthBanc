@@ -480,7 +480,27 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         /// <returns></returns>
         public async Task<ResponseMessage> HygeiaDeactivateUser(string enrollNumber)
         {
+            var encrytedAccess = await _repoWrapper.EncryptedAcessToken.GetEncryptedToken();
+            string bearerToken;
+            if (encrytedAccess == null)
+            {
+                var bearerRequest = await HygeiaGetAuthToken();
+                if (!bearerRequest.Status)
+                {
+                    BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddMinutes(60));
+                    return new ResponseMessage { Status = false, Message = "" };
+                }
+                _repoWrapper.EncryptedAcessToken.Create(new EncryptedAcessToken { HygeiaAccessToken = bearerRequest.Message });
+                await _repoWrapper.Save();
+                bearerToken = bearerRequest.Message;
+            }
+            else
+            {
+                bearerToken = encrytedAccess.HygeiaAccessToken;
+            }
+
             var httpClient = _httpClientFactory.CreateClient("Hygeia");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
             var response = await httpClient.PutAsync($"{HygeiaAccessor.HygeiaDeactivate}/{enrollNumber}", null);
 
             string apiResponse = await response.Content.ReadAsStringAsync();
@@ -494,7 +514,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 return new ResponseMessage { Message = "User was previously deactivated", Status = false };
             }
             _logger.LogCritical(" Bad request when trying to deactivate user from hygeia  : " + apiResponse);
-            BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddMinutes(30));
+            BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddMinutes(60));
             return new ResponseMessage { Message = "Could not process Hygeia response", Status = false };
         }
 
