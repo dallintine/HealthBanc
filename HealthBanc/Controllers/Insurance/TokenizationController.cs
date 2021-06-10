@@ -270,18 +270,5 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(response);
         }
 
-        /// <summary>
-        /// Action to resend failed hygei reg
-        /// </summary>
-        /// <param name="email"></param>
-        /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> ResendFailedHygeiRegBackgroundServiceWithAuth(string email)
-        {
-            await _tokenizationService.ResendFailedHygeiRegBackgroundServiceWithAuth(email);
-            return Ok();
-        }
     }
 }
