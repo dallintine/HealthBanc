@@ -1358,28 +1358,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
         }
 
-        public async Task ResendFailedHygeiRegBackgroundServiceWithAuth(string email)
-        {
-            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
-            var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceProfile);
-            if (response.Status)
-            {
-                insuranceProfile.TransId = response.Message;
-                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                await _repoWrapper.Save();
-                var enrollmentModel = await _repoWrapper.EnrollmentOnOnboarding.GetLastEnrollmentByInsuranceProfileId(insuranceProfile.Id);
-                enrollmentModel.Status = EnrollmentOnOnboarding_StatusValue.Successful.ToString();
-                _repoWrapper.EnrollmentOnOnboarding.Update(enrollmentModel);
-                await _repoWrapper.Save();
-            }
-            else
-            {
-                insuranceProfile.TransId = "Pending";
-                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                await _repoWrapper.Save();
-            }            
-        }
-
         /// <summary>
         /// Function to send email reminder three days before subscription cysle ends.
         /// </summary>
