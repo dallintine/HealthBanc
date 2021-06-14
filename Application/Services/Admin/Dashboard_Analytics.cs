@@ -20,22 +20,18 @@ namespace Application.Services.Admin
     public class Dashboard_Analytics
     {
         private readonly IMapper _mapper;
-        private readonly IApplicationUserRepository _userRepository;
-        private readonly IServiceRepository _serviceRepository;
         private readonly IRepositoryWrapper _repowrapper;
 
-        public Dashboard_Analytics(IMapper mapper, IApplicationUserRepository userRepository,IServiceRepository serviceRepository,IRepositoryWrapper repowrapper)
+        public Dashboard_Analytics(IMapper mapper,IRepositoryWrapper repowrapper)
         {
             _mapper = mapper;
-            _userRepository = userRepository;
-            _serviceRepository = serviceRepository;
             _repowrapper = repowrapper;
         }
 
         public async Task<DashboardDTO> GetUsersStatus()
         {
             // Gets a IQuerayble of all application users
-            var users = _userRepository.GetQueraybaleUser();
+            var users = _repowrapper.ApplicationUser.GetQueraybaleUser();
 
             // Gets a count of all application users
             var registeredUsers = await users.CountAsync();
@@ -58,10 +54,10 @@ namespace Application.Services.Admin
         public async Task<DashboardDTO> GetServiceBreakdown(int? Id)
         {
             // Gets a IQuerayble of all application users
-            var users = _userRepository.GetQueraybaleUser();
+            var users = _repowrapper.ApplicationUser.GetQueraybaleUser();
 
             //Gets list of all present Healthbanc service
-            var services = await _serviceRepository.GetServicesAsync();
+            var services = await _repowrapper.Service.GetServicesAsync();
 
             // Maps the present Healthbanc services to a Service Breakdown DTO ( {Id,Name,Count} )
             var dashboardServiceList = _mapper.Map<List<Service>, List<ServiceBreakdown>>(services);
@@ -100,7 +96,7 @@ namespace Application.Services.Admin
         public async Task<DashboardDTO> GetSignUpAnalytics(int? Id)
         {
             // Gets a IQuerayble of all application users
-            var users = _userRepository.GetQueraybaleUser();
+            var users = _repowrapper.ApplicationUser.GetQueraybaleUser();
 
             string[] months = new string[] { "Janaury", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
             var count = 1;

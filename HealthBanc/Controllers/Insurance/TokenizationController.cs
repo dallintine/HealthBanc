@@ -269,6 +269,5 @@ namespace HealthBanc.Controllers.Insurance
             }
             return BadRequest(response);
         }
-
     }
 }

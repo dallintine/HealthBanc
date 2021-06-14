@@ -5,6 +5,7 @@ using Application.Helpers.ThirdPartyAPI;
 using Application.Interfaces;
 using Application.ViewModels.UserReg_Login;
 using AutoMapper;
+using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
@@ -35,31 +36,26 @@ namespace Application.Services.Identity
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IEmailSender _emailSender;
-        private readonly IApplicationUserRepository _userRepository;
+        private readonly IRepositoryWrapper _repoWrapper;
         private readonly JwtSettings _jwtsettings;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly IPasswordHasher _passwordHasher;
-        private readonly IPasswordChangeRepository _passwordChangeRepository;
-        private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
         private AppEndpoint Options { get; }
 
 
 
         public IdentityService( UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
-             IOptions<JwtSettings> jwtsettings, IApplicationUserRepository userRepository,
-              TokenValidationParameters tokenValidationParameters,IPasswordHasher passwordHasher,IPasswordChangeRepository passwordChangeRepository,
-              IUserLogin_LogoutLogRepository _LogoutLogRepository, IOptions<AppEndpoint> optionAccessor)
+             IOptions<JwtSettings> jwtsettings, IRepositoryWrapper repoWrapper,
+              TokenValidationParameters tokenValidationParameters,IPasswordHasher passwordHasher, IOptions<AppEndpoint> optionAccessor)
         {
             Options = optionAccessor.Value;
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
             _emailSender = emailSender;
-            _userRepository = userRepository;
+            _repoWrapper = repoWrapper;
             _jwtsettings = jwtsettings.Value;
             _tokenValidationParameters = tokenValidationParameters;
-            _passwordHasher = passwordHasher;
-            _passwordChangeRepository = passwordChangeRepository;
-            _logoutLogRepository = _LogoutLogRepository;            
+            _passwordHasher = passwordHasher;     
         }
 
         public async Task<ResponseMessage> RegisterUser(RegistrationViewModel registrationViewModel)
@@ -162,7 +158,7 @@ namespace Application.Services.Identity
         public async Task<ResponseMessage> ConfirmEmail(string userId, string emailToken)
         {
             var decryptedUserId = _encryptAndDecrypt.DecryptString(userId, "hfahkbak78r32rg87griva..");
-            var user = await _userRepository.FindByIdAsync(int.Parse(decryptedUserId));
+            var user = await _repoWrapper.ApplicationUser.FindByIdAsync(int.Parse(decryptedUserId));
 
             var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
             var result = await _userManager.ConfirmEmailAsync(user, decryptedEmailToken);
@@ -191,7 +187,7 @@ namespace Application.Services.Identity
         {
             var principal = GetPrincipalFromExpiredToken(refreshToken.Token);
             var username = principal.Identity.Name; //this is mapped to the Name claim by default
-            var user = await _userRepository.FindByIdAsync(int.Parse(username));
+            var user = await _repoWrapper.ApplicationUser.FindByIdAsync(int.Parse(username));
             if (user == null)
             {
                 return new ResponseMessage<LoggedInResponseDTO> { Message = "User could not be fetched" };
@@ -206,8 +202,8 @@ namespace Application.Services.Identity
             }
             var newRefreshToken = GenerateRefreshToken();
             user.RefreshToken = newRefreshToken;
-            _userRepository.Update(user);
-            await _userRepository.Save();
+            _repoWrapper.ApplicationUser.Update(user);
+            await _repoWrapper.Save();
 
             var authResponse = await GetAuthenticationResultForUserAsync(user);
             if (authResponse.Success) return new ResponseMessage<LoggedInResponseDTO> { Data = authResponse, Status = true, Message = "User was logged in successfully" };
@@ -253,12 +249,8 @@ namespace Application.Services.Identity
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(5);
             user.LastLoginDate = DateTime.Now;
-            _userRepository.Update(user);
-            await _userRepository.Save();
-
-            var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, false);
-            _logoutLogRepository.Create(loginLog);
-            await _userRepository.Save();
+            _repoWrapper.ApplicationUser.Update(user);
+            await _repoWrapper.Save();
 
             var loggedInResponse = new LoggedInResponseDTO
             {
@@ -366,8 +358,8 @@ namespace Application.Services.Identity
                                 user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
                                 await _userManager.UpdateAsync(user);
                                 var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, false, true);
-                                _passwordChangeRepository.Create(passwordChangehistory);
-                                await _passwordChangeRepository.Save();
+                                _repoWrapper.PasswordChange.Create(passwordChangehistory);
+                                await _repoWrapper.Save();
                                 return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                             }
                         }
@@ -379,7 +371,7 @@ namespace Application.Services.Identity
                     await _userManager.UpdateAsync(user);
 
                     var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, false, true);
-                    _passwordChangeRepository.Create(passwordChangehistory2);
+                    _repoWrapper.PasswordChange.Create(passwordChangehistory2);
                     return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                 }
                 else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))

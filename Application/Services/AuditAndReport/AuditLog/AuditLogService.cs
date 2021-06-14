@@ -1,5 +1,6 @@
 ﻿using Application.ViewModels;
 using AutoMapper;
+using DataAccess;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
 using Domain.Models.ReportAndLogs;
@@ -15,15 +16,13 @@ namespace Application.AuditAndReport.AuditLog
 {
     public class AuditLogService
     {
-        private readonly IUserAuditLogRepository _userAuditLog;
         private readonly IMapper _mapper;
-        private readonly IAdminAuditLogRepository _adminAuditLog;
+        private readonly IRepositoryWrapper _repoWrapper;
 
-        public AuditLogService(IUserAuditLogRepository userAuditLog,IMapper mapper, IAdminAuditLogRepository adminAuditLog)
+        public AuditLogService(IMapper mapper,IRepositoryWrapper repoWrapper)
         {
-            _userAuditLog = userAuditLog;
             _mapper = mapper;
-            _adminAuditLog = adminAuditLog;
+            _repoWrapper = repoWrapper;
         }
 
         public async Task UserCreateAuditLog(AuditLogViewModel viewModel, string ip, string device)
@@ -33,8 +32,8 @@ namespace Application.AuditAndReport.AuditLog
             auditLog.Device = device;
             auditLog.Date = DateTime.Now;
             auditLog.Id = new Guid();
-            _userAuditLog.Create(auditLog);
-            await _userAuditLog.Save();
+            _repoWrapper.UserAuditLog.Create(auditLog);
+            await _repoWrapper.Save();
             await Task.CompletedTask;
         }
 
@@ -44,8 +43,8 @@ namespace Application.AuditAndReport.AuditLog
             auditLog.Date = DateTime.Now;
             auditLog.Id = new Guid();
             auditLog.IPAddress = "test";
-            _adminAuditLog.Create(auditLog);
-            await _userAuditLog.Save();
+            _repoWrapper.AdminAuditLog.Create(auditLog);
+            await _repoWrapper.Save();
             await Task.CompletedTask;
         }
 

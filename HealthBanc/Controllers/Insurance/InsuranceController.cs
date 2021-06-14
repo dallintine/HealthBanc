@@ -36,6 +36,7 @@ using Domain.Models.Axa_Hygeia_Insurance;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using ClosedXML.Excel;
+using Application.Services.HealthInsured.Insurance;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -45,20 +46,22 @@ namespace HealthBanc.Controllers.Insurance
     {
         private readonly InsuranceService _insuranceService;
         private readonly IMapper _mapper;
-        private readonly IInsuranceProfileRepository _insuranceProfileRepository;
+        private readonly IRepositoryWrapper _repoWerapper;
         private readonly AuditLogService _auditLogServices;
         private readonly IHttpContextAccessor _accessor;
+        private readonly CorporateInsuranceService _corporateInsuranceService;
         public string IpAddress;
         public StringValues agent;
 
-        public InsuranceController(InsuranceService insuranceService, IMapper mapper, IInsuranceProfileRepository insuranceProfileRepository,
-            AuditLogService auditLogServices,IHttpContextAccessor accessor)
+        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IRepositoryWrapper repoWerapper,AuditLogService auditLogServices,IHttpContextAccessor accessor,
+            CorporateInsuranceService corporateInsuranceService)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
-            _insuranceProfileRepository = insuranceProfileRepository;
+            _repoWerapper = repoWerapper;
             _auditLogServices = auditLogServices;
             _accessor = accessor;
+            _corporateInsuranceService = corporateInsuranceService;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -261,7 +264,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            var profile = await _insuranceProfileRepository.GetByUserIdAsync(Id);
+            var profile = await _repoWerapper.InsuranceProfile.GetByUserIdAsync(Id);
             if(profile != null)
             {
                 var profileDTO = _mapper.Map<IndividualProfileDTO>(profile);
@@ -334,7 +337,7 @@ namespace HealthBanc.Controllers.Insurance
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
-                var corporateRegistration = await _insuranceService.CreateCorporateUser(corporateRegViewModel, Id);
+                var corporateRegistration = await _corporateInsuranceService.CreateCorporateUser(corporateRegViewModel, Id);
                 if (corporateRegistration.Status)
                 {
                     return Ok(corporateRegistration);
@@ -366,7 +369,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            var confirmOtp = await _insuranceService.ConfirmOtp(otp, Id);
+            var confirmOtp = await _corporateInsuranceService.ConfirmOtp(otp, Id);
             if (confirmOtp.Status)
             {
                 return Ok(confirmOtp);
@@ -386,7 +389,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            var resendOtp = await _insuranceService.ResendOtp(Id);
+            var resendOtp = await _corporateInsuranceService.ResendOtp(Id);
             if (resendOtp.Status)
             {
                 return Ok(resendOtp);
@@ -409,7 +412,7 @@ namespace HealthBanc.Controllers.Insurance
             {                
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
-                var corporateUser = await _insuranceService.UpdateCorporateUser(updateCorporateUserViewModel, Id);
+                var corporateUser = await _corporateInsuranceService.UpdateCorporateUser(updateCorporateUserViewModel, Id);
                 return Ok(corporateUser);
             }
             //return validation errors
@@ -442,7 +445,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var response = await _insuranceService.UploadUserProfileFromExcelFile(file.FileUpload, Id);
+            var response = await _corporateInsuranceService.UploadUserProfileFromExcelFile(file.FileUpload, Id);
             if (response.Status)
             {
                 return Ok(response);
@@ -464,7 +467,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var beneficiariesResponse = await _insuranceService.GetBeneficiariesReview(paginationQuery, Id);
+            var beneficiariesResponse = await _corporateInsuranceService.GetBeneficiariesReview(paginationQuery, Id);
             if (beneficiariesResponse.Status)
             {
                 return Ok(beneficiariesResponse);
@@ -489,7 +492,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var response = await _insuranceService.RemoveCompanyBeneficiary(email, Id);
+            var response = await _corporateInsuranceService.RemoveCompanyBeneficiary(email, Id);
             if (response.Status)
             {
                 return Ok(response);
@@ -511,7 +514,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var response = await _insuranceService.RestoreCompanyBeneficiary(email, Id);
+            var response = await _corporateInsuranceService.RestoreCompanyBeneficiary(email, Id);
             if (response.Status)
             {
                 return Ok(response);
@@ -538,7 +541,7 @@ namespace HealthBanc.Controllers.Insurance
                     return BadRequest(new ResponseMessage { Message = "No option was selected", Status = false });
                 }
 
-                var corporateUser = await _insuranceService.MoveCompanyBeneficiaryFromPendingToInactiveState(beneficiaryListViewModel, Id);
+                var corporateUser = await _corporateInsuranceService.MoveCompanyBeneficiaryFromPendingToInactiveState(beneficiaryListViewModel, Id);
                 return Ok(corporateUser);
             }
             //return validation errors
@@ -572,7 +575,7 @@ namespace HealthBanc.Controllers.Insurance
                     return BadRequest(new ResponseMessage { Message = "No option was selected", Status = false });
                 }
 
-                var corporateUser = await _insuranceService.MoveCompanyBeneficiaryFromInactiveToPendingState(beneficiaryListViewModel, Id);
+                var corporateUser = await _corporateInsuranceService.MoveCompanyBeneficiaryFromInactiveToPendingState(beneficiaryListViewModel, Id);
                 return Ok(corporateUser);
             }
             //return validation errors
@@ -601,7 +604,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var beneficiariesResponse = await _insuranceService.GetCompanyBeneficiaries(paginationQuery, Id);
+            var beneficiariesResponse = await _corporateInsuranceService.GetCompanyBeneficiaries(paginationQuery, Id);
             if (beneficiariesResponse.Status)
             {
                 return Ok(beneficiariesResponse);
@@ -625,7 +628,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var analytics = await _insuranceService.CorporateSubscribersAnalytics(Id);
+            var analytics = await _corporateInsuranceService.CorporateSubscribersAnalytics(Id);
             if (analytics.Status)
             {
                 return Ok(analytics);
@@ -646,7 +649,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
 
-            var companyProfile = await _insuranceService.GetCompanyProfileDetails(Id);
+            var companyProfile = await _corporateInsuranceService.GetCompanyProfileDetails(Id);
             if (companyProfile.Status)
             {
                 return Ok(companyProfile);
@@ -737,7 +740,7 @@ namespace HealthBanc.Controllers.Insurance
                     for (int index = 2; index <= count+1; index++)
                     {
                         worksheet.Cell(index, 1).Value = index - 1;
-                        worksheet.Cell(index, 2).Value = _insuranceService.GetUniqueCode(count);
+                        worksheet.Cell(index, 2).Value = _insuranceService.GetUniqueCode();
                         worksheet.Cell(index, 2).DataType = XLDataType.Text;
                     }
                     using (var stream = new MemoryStream())

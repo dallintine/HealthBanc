@@ -27,17 +27,17 @@ namespace Application.Services.Paystack
     public class PaystackService
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IInsuranceProfileRepository _axaMansardUser;
         private readonly ILogger<PaystackService> _logger;
+        private readonly IRepositoryWrapper _repoWrapper;
 
         private Helpers.Paystack Options { get; }
 
-        public PaystackService(IHttpClientFactory httpClientFactory,IInsuranceProfileRepository axaMansardUser, IOptions<Helpers.Paystack> paystackAccessor,
-            ILogger<PaystackService> logger)
+        public PaystackService(IHttpClientFactory httpClientFactory,IOptions<Helpers.Paystack> paystackAccessor,
+            ILogger<PaystackService> logger,IRepositoryWrapper repoWrapper)
         {
             _httpClientFactory = httpClientFactory;
-            _axaMansardUser = axaMansardUser;
             _logger = logger;
+            _repoWrapper = repoWrapper;
             Options = paystackAccessor.Value;
         }
         
@@ -73,7 +73,7 @@ namespace Application.Services.Paystack
                     // check if sucess is neither failes, success or timeout means response code is 13
                     else
                     {
-                        var user = await _axaMansardUser.GetByUserIdAsync(id);
+                        var user = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(id);
 
                         if(user is null)
                         {

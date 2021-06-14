@@ -42,23 +42,16 @@ namespace HealthBanc.Controllers
     public class BackendAdminAuthController : ControllerBase
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IClassOrRoleRepository _roleRepository;
-        private readonly IApplicationUserRepository _userRepository;
-        private readonly IBackendAdminRepository _adminRepository;
         private readonly AuditLogService _auditLogServices;
-        private readonly OTPService _otpService;
         private readonly BackendAdminService _backendAdminService;
+        private readonly IRepositoryWrapper _repoWrapper;
 
-        public BackendAdminAuthController(UserManager<ApplicationUser> userManager,IClassOrRoleRepository roleRepository,IApplicationUserRepository userRepository,IBackendAdminRepository adminRepository,
-             AuditLogService auditLogServices, OTPService otpService,BackendAdminService backendAdminService)
+        public BackendAdminAuthController(UserManager<ApplicationUser> userManager, AuditLogService auditLogServices, BackendAdminService backendAdminService,IRepositoryWrapper repoWrapper)
         {
             _userManager = userManager;
-            _roleRepository = roleRepository;
-            _userRepository = userRepository;
-            _adminRepository = adminRepository;
             _auditLogServices = auditLogServices;
-            _otpService = otpService;
             _backendAdminService = backendAdminService;
+            _repoWrapper = repoWrapper;
         }
 
 
@@ -126,66 +119,22 @@ namespace HealthBanc.Controllers
                 // Get logged in admin userID
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 string email = User.FindFirst(ClaimTypes.Email)?.Value;
-                int Id = int.Parse(userId);
+                int Id = int.Parse(userId);            
 
                 var checkRole = User.IsInRole("Super-Administrator");
                 if (checkRole)
                 {
-                    // get logged in user
-                    var loggedinuser = await _userRepository.GetByEmailAsync(email);
-                    //get logged in admin mail
-                    string loggedInAdminMail = email;
-                    // remove the .admin from the userMail
-                    var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
-
-                    if (!createAdminViewModel.Email.EndsWith("@sterling.ng"))
+                    var response = await _backendAdminService.CreateBackendAdmin(createAdminViewModel, email, Id);
+                    if (response.Status)
                     {
-                        return BadRequest(new ResponseMessage { Message = "Email is not a valid sterling email" });
+                        return Ok(response);
                     }
-
-                    var checkEmail = await _userManager.FindByEmailAsync($"{createAdminViewModel.Email}.admin");
-                    if (checkEmail != null) return BadRequest(new ResponseMessage { Message = "Email Already Exist" });
-                    var checkIfUserExist = await _userRepository.FindByUniqueUsername(createAdminViewModel.UserName);
-                    if (checkIfUserExist != null) return BadRequest(new ResponseMessage { Message = "Username Already Exist" });
-
-                    var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
-
-                    var admin = new ApplicationUser()
-                    {
-                        FirstName = createAdminViewModel.FirstName,
-                        LastName = createAdminViewModel.LastName,
-                        Email = createAdminViewModel.Email + ".admin",
-                        UserName = createAdminViewModel.Email + ".admin",
-                        UniqueUsername = createAdminViewModel.UserName,
-                        EmailConfirmed = true
-                    };
-                    var result = _userManager.CreateAsync(admin).Result;
-                    if (result.Succeeded)
-                    {
-                        var role = await _roleRepository.GetRole(createAdminViewModel.RoleId);
-                        await _userManager.AddToRoleAsync(admin, role.Name);
-                        BackendAdminUser adminUser = new BackendAdminUser()
-                        {
-                            Email = createAdminViewModel.Email,
-                            FirstName = createAdminViewModel.FirstName,
-                            LastName = createAdminViewModel.LastName,
-                            ClassOrRoleId = createAdminViewModel.RoleId
-                        };
-                        _adminRepository.Create(adminUser);
-                        await _adminRepository.Save();
-
-                        var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedinuser.UniqueUsername} added {adminUser.Email}", ServiceNames.HealthBanc.ToString());
-                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
-
-                        return Ok(new ResponseMessage { Message = "Admin has been created successfully", Status = true });
-                    }
-                    return BadRequest(new ResponseMessage { Message = result.Errors.FirstOrDefault().Description.ToString() });
+                    return BadRequest(response);
                 }
                 else
                 {
                     return BadRequest(new ResponseMessage { Message = "You do not have the authority to add a new admin,contact the Super Admin" });
-                }
-                
+                }                
             }
             //return validation errors
             var errors = new List<string>();
@@ -209,7 +158,7 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> GetBackendAdminUsers()
         {
-            var users = await _adminRepository.GetBackendAdmins();
+            var users = await _repoWrapper.BackendAdmin.GetBackendAdmins();
             return Ok(new ResponseMessage<List<BackendAdminUser>>{ Data = users, Status = true, Message = "Admin users was fetched successfully" });            
         }
 
@@ -227,39 +176,16 @@ namespace HealthBanc.Controllers
             //Get logged in admin userid
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            var loggedInUser = await _userRepository.FindByIdAsync(Id);
 
             var checkRole = User.IsInRole("Super-Administrator");
             if (checkRole)
             {
-                //get logged in admin mail
-                string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
-                // remove the .admin from the userMail
-                var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
-                var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
-
-                var adminUserMail = email + ".admin";
-                var user = await _userManager.FindByEmailAsync(adminUserMail);
-                var admin = await _adminRepository.GetAdminByEmail(email);
-                if (user != null)
+                var response = await _backendAdminService.ChangeAdminRole(Id, email, roleId);
+                if (response.Status)
                 {
-                    var userRole = await _userManager.GetRolesAsync(user);
-                    var removeRoleResult = _userManager.RemoveFromRoleAsync(user, userRole.FirstOrDefault()).Result;
-                    var role = await _roleRepository.GetRole(roleId);
-                    var result = _userManager.AddToRoleAsync(user, role.Name).Result;
-                    if (result.Succeeded)
-                    {
-                        admin.ClassOrRoleId = roleId;
-                        _adminRepository.Update(admin);
-                        await _adminRepository.Save();
-
-                        var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} changed {email} role", ServiceNames.HealthBanc.ToString());
-                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
-
-                        return Ok(new ResponseMessage { Message = "Role was changed successfully", Status = true });
-                    }
+                    return Ok(response);
                 }
-                return NotFound(new ResponseMessage { Message = "User does not exist" });
+                return NotFound(response);
             }
             return BadRequest(new ResponseMessage { Message = "You do not have the authority to change admin role,contact the Super Admin" });
         }
@@ -274,7 +200,7 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAdminRoles()
         {
-            var roles = await _roleRepository.GetAdminRoles();
+            var roles = await _repoWrapper.ClassOrRole.GetAdminRoles();
             var newRoles = roles.Take(4);
             return Ok(new ResponseMessage {Data= newRoles, Message="Admin roles was fetched susseffully"});                    
         }
@@ -292,36 +218,16 @@ namespace HealthBanc.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            var loggedInUser = await _userRepository.FindByIdAsync(Id);
 
             var checkRole = User.IsInRole("Super-Administrator");
             if (checkRole)
             {
-                //get logged in admin mail
-                string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
-                // remove the .admin from the userMail
-                var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
-                var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
-
-                var adminUserMail = email + ".admin";
-                var user = await _userManager.FindByEmailAsync(adminUserMail);
-                if (user != null)
+                var response = await _backendAdminService.RemoveAdmin(Id, email);
+                if (response.Status)
                 {
-                    var result = _userManager.DeleteAsync(user).Result;
-                    if (result.Succeeded)
-                    {
-                        var admin = await _adminRepository.GetAdminByEmail(email);
-                        _adminRepository.Delete(admin);
-                        await _adminRepository.Save();
-
-                        var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} removed {email}", ServiceNames.HealthBanc.ToString());
-                        BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
-
-                        return Ok(new ResponseMessage { Message = "Admin was deleted successfully", Status = true });
-                    }
-                    return BadRequest("An error occurred while trying to change to delete admin");
+                    return Ok(response);
                 }
-                return NotFound(new ResponseMessage { Message = "User does not exist" });
+                return BadRequest(response);
             }
             return BadRequest(new ResponseMessage { Message = "You do not have the authority to remove an admin,contact the Super Admin" });
         }
@@ -340,35 +246,16 @@ namespace HealthBanc.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            var loggedInUser = await _userRepository.FindByIdAsync(Id);
 
             var checkRole = User.IsInRole("Super-Administrator");
             if (checkRole)
             {
-                //get logged in admin mail
-                string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
-                // remove the .admin from the userMail
-                var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
-                var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
-
-                var adminUserMail = email + ".admin";
-                var user = await _userManager.FindByEmailAsync(adminUserMail);
-                if (user != null)
+                var response = await _backendAdminService.DisableAdmin(Id, email);
+                if (response.Status)
                 {
-                    user.LockoutEnd = DateTime.Now.AddYears(100);
-                    _userRepository.Update(user);
-
-                    var adminToDisable = await _adminRepository.GetAdminByEmail(email);
-                    adminToDisable.Disabled = true;
-                    _adminRepository.Update(adminToDisable);
-                    await _adminRepository.Save();
-
-                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} disabled {email}", ServiceNames.HealthBanc.ToString());
-                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
-
-                    return Ok(new ResponseMessage { Message = "Admin was disabled successfully", Status = true });
+                    return Ok(response);
                 }
-                return NotFound(new ResponseMessage { Message = "User does not exist" });
+                return NotFound(response);                
             }
             return BadRequest(new ResponseMessage { Message = "You do not have the authority to disable an admin,contact the Super Admin" });
         }
@@ -387,35 +274,16 @@ namespace HealthBanc.Controllers
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
-            var loggedInUser = await _userRepository.FindByIdAsync(Id);
 
             var checkRole = User.IsInRole("Super-Administrator");
             if (checkRole)
             {
-                //get logged in admin mail
-                string loggedInAdminMail = User.FindFirst(ClaimTypes.Email)?.Value;
-                // remove the .admin from the userMail
-                var newLoggedInAdminMail = loggedInAdminMail.Remove(loggedInAdminMail.Length - 6);
-                var backedAdmin = await _adminRepository.GetAdminByEmail(newLoggedInAdminMail);
-
-                var adminUserMail = email + ".admin";
-                var user = await _userManager.FindByEmailAsync(adminUserMail);
-                if (user != null)
+                var response = await _backendAdminService.EnableAdmin(Id, email);
+                if (response.Status)
                 {
-                    user.LockoutEnd = null;
-                    _userRepository.Update(user);
-
-                    var adminToEnable = await _adminRepository.GetAdminByEmail(email);
-                    adminToEnable.Disabled = false;
-                    _adminRepository.Update(adminToEnable);
-                    await _adminRepository.Save();
-
-                    var auditViewModel = new AdminAuditLogViewModel(Id, backedAdmin.Id, $"{loggedInUser.UniqueUsername} enabled {email}", ServiceNames.HealthBanc.ToString());
-                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
-
-                    return Ok(new ResponseMessage { Message = "Admin was enabled successfully", Status = true });
+                    return Ok(response);
                 }
-                return NotFound(new ResponseMessage { Message = "User does not exist" });
+                return NotFound(response);
             }
             return BadRequest(new ResponseMessage { Message = "You do not have the authority to enable an admin,contact the Super Admin" });
         }
@@ -424,7 +292,7 @@ namespace HealthBanc.Controllers
         [Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> GetAllAdminBackendRoles()
         {
-            var roles = await _roleRepository.GetAdminRoles();
+            var roles = await _repoWrapper.ClassOrRole.GetAdminRoles();
             return Ok(new ResponseMessage { Data = roles, Message = "Admin roles was fetched susseffully" });                
         }
     }
