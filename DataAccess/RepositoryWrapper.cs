@@ -35,6 +35,12 @@ namespace DataAccess
         private IActivityLogRepository _activityLogRepository;
         private IAdminAuditLogRepository _adminAuditLogRepository;
         private IEncryptedAcessTokenRepository _encryptedAcessTokenRepository;
+        private IBackendAdminRepository _backendAdminRepository;
+        private IClassOrRoleRepository _classOrRoleRepository;
+        private INotificationRepository _notificationRepository;
+        private IServiceRepository _serviceRepository;
+        private IUserAuditLogRepository _userAuditLogRepository;
+        private IPasswordChangeRepository _passwordChangeRepository;
 
         public IEncryptedAcessTokenRepository EncryptedAcessToken
         {
@@ -45,6 +51,78 @@ namespace DataAccess
                     _encryptedAcessTokenRepository = new EncryptedAcessTokenRepository(_context);
                 }
                 return _encryptedAcessTokenRepository;
+            }
+        }
+
+        public IPasswordChangeRepository PasswordChange
+        {
+            get
+            {
+                if (_passwordChangeRepository == null)
+                {
+                    _passwordChangeRepository = new PasswordChangeRepository(_context);
+                }
+                return _passwordChangeRepository;
+            }
+        }
+
+        public IUserAuditLogRepository UserAuditLog
+        {
+            get
+            {
+                if (_userAuditLogRepository == null)
+                {
+                    _userAuditLogRepository = new UserAuditLogRepository(_context);
+                }
+                return _userAuditLogRepository;
+            }
+        }
+
+        public IServiceRepository Service
+        {
+            get
+            {
+                if (_serviceRepository == null)
+                {
+                    _serviceRepository = new ServiceRepository(_context);
+                }
+                return _serviceRepository;
+            }
+        }
+
+        public IClassOrRoleRepository ClassOrRole
+        {
+            get
+            {
+                if (_classOrRoleRepository == null)
+                {
+                    _classOrRoleRepository = new ClassOrRoleRepository(_context);
+                }
+                return _classOrRoleRepository;
+            }
+        }
+
+        public INotificationRepository Notification
+        {
+            get
+            {
+                if (_notificationRepository == null)
+                {
+                    _notificationRepository = new NotificationRepository(_context);
+                }
+                return _notificationRepository;
+            }
+        }
+
+        public IBackendAdminRepository BackendAdmin
+        {
+            get
+            {
+                if (_backendAdminRepository == null)
+                {
+                    _backendAdminRepository = new BackendAdminRepository(_context);
+                }
+                return _backendAdminRepository;
             }
         }
 

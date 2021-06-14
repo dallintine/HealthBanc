@@ -19,13 +19,13 @@ namespace HealthBanc.Controllers.BackendAdmin
     [ApiController]
     public class ApplicationUserController : ControllerBase
     {
-        private readonly IApplicationUserRepository _applicationUserRepository;
+        private readonly IRepositoryWrapper _repoWrapper;
         private readonly IMapper _mapper;
         private readonly ILogger<ApplicationUserController> _logger;
 
-        public ApplicationUserController(IApplicationUserRepository applicationUserRepository,IMapper mapper,ILogger<ApplicationUserController> logger)
+        public ApplicationUserController(IRepositoryWrapper repoWrapper,IMapper mapper,ILogger<ApplicationUserController> logger)
         {
-            _applicationUserRepository = applicationUserRepository;
+            _repoWrapper = repoWrapper;
             _mapper = mapper;
             _logger = logger;
         }
@@ -40,7 +40,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [HttpGet("[action]")]
         public async Task<IActionResult> GetAllUsers([FromQuery]PaginationQuery paginationQuery)
         {
-            var users = await _applicationUserRepository.GetAllUsers(paginationQuery);
+            var users = await _repoWrapper.ApplicationUser.GetAllUsers(paginationQuery);
             var userDT0 = _mapper.Map<IEnumerable<ApplicationUser>, List<ApplicationUserDTO>>(users.Data);
 
             var paginatedResponse = new PagedResponse<ApplicationUserDTO>
@@ -66,7 +66,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             if(email != null)
             {
-                var user = await _applicationUserRepository.GetByEmailAsync(email);
+                var user = await _repoWrapper.ApplicationUser.GetByEmailAsync(email);
                 var userDTO = _mapper.Map<ApplicationUserDTO>(user);
                 return Ok(new ResponseMessage<ApplicationUserDTO> { Data = userDTO, Status = true, Message = "User detail was fetched successfully" });
             }

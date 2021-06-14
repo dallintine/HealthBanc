@@ -29,6 +29,12 @@ namespace DataAccess
         IActivityLogRepository ActivityLog { get; }
         IAdminAuditLogRepository AdminAuditLog { get; }
         IEncryptedAcessTokenRepository EncryptedAcessToken { get; }
+        IBackendAdminRepository BackendAdmin { get; }
+        IClassOrRoleRepository ClassOrRole { get; }
+        INotificationRepository Notification { get; }
+        IServiceRepository Service { get; }
+        IUserAuditLogRepository UserAuditLog { get; }
+        IPasswordChangeRepository PasswordChange { get; }
 
         Task<int> Save();
     }

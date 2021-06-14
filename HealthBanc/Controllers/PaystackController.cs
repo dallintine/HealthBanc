@@ -23,6 +23,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using System.Threading;
+using Application.Services.HealthInsured;
 
 namespace HealthBanc.Controllers
 {
@@ -30,14 +31,14 @@ namespace HealthBanc.Controllers
     [ApiController]
     public class PaystackController : ControllerBase
     {
-        private readonly TokenizationService _tokenizationService;
+        private readonly InsurancePSWebHookService _insurancePSWebHookService;
         private readonly ILogger<PaystackController> _logger;
         public string ipAddress;
         public StringValues agent;
 
-        public PaystackController(TokenizationService tokenizationService, IHttpContextAccessor accessor,ILogger<PaystackController> logger)
+        public PaystackController(InsurancePSWebHookService insurancePSWebHookService, IHttpContextAccessor accessor,ILogger<PaystackController> logger)
         {
-            _tokenizationService = tokenizationService;
+            _insurancePSWebHookService = insurancePSWebHookService;
             _logger = logger;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
@@ -58,7 +59,7 @@ namespace HealthBanc.Controllers
             if (paystackIpaddress.Contains(ipAddress))
             {               
                 var amount = webHookResponse.data.amount / 100;
-                BackgroundJob.Enqueue(() => _tokenizationService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
+                BackgroundJob.Enqueue(() => _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
                     webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
                 return Ok();
             }

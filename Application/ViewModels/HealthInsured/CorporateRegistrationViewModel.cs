@@ -11,5 +11,7 @@ namespace Application.ViewModels.HealthInsured
         public string Name { get; set; }
         [Required]
         public string Email { get; set; }
+        [Required]
+        public string InsuranceProvider { get; set; }
     }
 }

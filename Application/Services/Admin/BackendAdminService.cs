@@ -1,5 +1,6 @@
 ﻿using Application.API_RequestModel;
 using Application.API_ResponseModel;
+using Application.AuditAndReport.AuditLog;
 using Application.DTO;
 using Application.Helpers;
 using Application.Helpers.Jwt_Authorization;
@@ -8,6 +9,7 @@ using Application.ViewModels;
 using Application.ViewModels.UserReg_Login;
 using DataAccess;
 using Domain.Models;
+using Hangfire;
 using HealthBanc.DTO.AuthenticationDTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -34,13 +36,15 @@ namespace Application.Services.Admin
         private readonly ILogger<BackendAdminService> _logger;
         private readonly OTPService _otpService;
         private readonly TokenValidationParameters _tokenValidationParameters;
+        private readonly AuditLogService _auditLogServices;
 
         private AdminAuthSettings AdminAuthSettings { get; }
         private AppEndpoint AppEndpoint { get; }
         private JwtSettings JwtSettings { get; }
 
         public BackendAdminService(IRepositoryWrapper repoWrapper, IHttpClientFactory httpClientFactory, IOptions<AppEndpoint> appEndpoint, UserManager<ApplicationUser> userManager,
-             IOptions<JwtSettings> jwtSettings, ILogger<BackendAdminService> logger, OTPService otpService, IOptions<AdminAuthSettings> adminAuthSettings, TokenValidationParameters tokenValidationParameters)
+             IOptions<JwtSettings> jwtSettings, ILogger<BackendAdminService> logger, OTPService otpService, IOptions<AdminAuthSettings> adminAuthSettings,
+             TokenValidationParameters tokenValidationParameters,AuditLogService auditLogServices)
         {
             _repoWrapper = repoWrapper;
             _httpClientFactory = httpClientFactory;
@@ -48,6 +52,7 @@ namespace Application.Services.Admin
             _logger = logger;
             _otpService = otpService;
             _tokenValidationParameters = tokenValidationParameters;
+            _auditLogServices = auditLogServices;
             AdminAuthSettings = adminAuthSettings.Value;
             AppEndpoint = appEndpoint.Value;
             JwtSettings = jwtSettings.Value;
@@ -215,6 +220,172 @@ namespace Application.Services.Admin
             if (!(securityToken is JwtSecurityToken jwtSecurityToken) || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
                 throw new SecurityTokenException("Invalid token");
             return principal;
+        }
+
+        public async Task<ResponseMessage> CreateBackendAdmin(CreateAdminViewModel createAdminViewModel,string loggedInUserEmail,int loggedInUserId)
+        {
+            // get logged in user
+            var loggedinuser = await _repoWrapper.ApplicationUser.GetByEmailAsync(loggedInUserEmail);
+            //get logged in admin mail
+            var newLoggedInAdminMail = loggedInUserEmail.Remove(loggedInUserEmail.Length - 6);
+
+            if (!createAdminViewModel.Email.EndsWith("@sterling.ng"))
+            {
+                return new ResponseMessage { Message = "Email is not a valid sterling email" };
+            }
+
+            var checkEmail = await _userManager.FindByEmailAsync($"{createAdminViewModel.Email}.admin");
+            if (checkEmail != null) return new ResponseMessage { Message = "Email Already Exist" };
+            var checkIfUserExist = await _repoWrapper.ApplicationUser.FindByUniqueUsername(createAdminViewModel.UserName);
+            if (checkIfUserExist != null) return new ResponseMessage { Message = "Username Already Exist" };
+
+            var backedAdmin = await _repoWrapper.BackendAdmin.GetAdminByEmail(newLoggedInAdminMail);
+
+            var appUser = new ApplicationUser()
+            {
+                FirstName = createAdminViewModel.FirstName,
+                LastName = createAdminViewModel.LastName,
+                Email = createAdminViewModel.Email + ".admin",
+                UserName = createAdminViewModel.Email + ".admin",
+                UniqueUsername = createAdminViewModel.UserName,
+                EmailConfirmed = true
+            };
+            var result = _userManager.CreateAsync(appUser).Result;
+            if (result.Succeeded)
+            {
+                var role = await _repoWrapper.ClassOrRole.GetRole(createAdminViewModel.RoleId);
+                await _userManager.AddToRoleAsync(appUser, role.Name);
+                BackendAdminUser adminUser = new BackendAdminUser()
+                {
+                    Email = createAdminViewModel.Email,
+                    FirstName = createAdminViewModel.FirstName,
+                    LastName = createAdminViewModel.LastName,
+                    ClassOrRoleId = createAdminViewModel.RoleId
+                };
+                _repoWrapper.BackendAdmin.Create(adminUser);
+                await _repoWrapper.Save();
+
+                var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, backedAdmin.Id, $"{loggedinuser.UniqueUsername} added {adminUser.Email}", ServiceNames.HealthBanc.ToString());
+                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
+                new ResponseMessage { Message = "Admin has been created successfully", Status = true };
+            }
+            return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description.ToString() } ;
+        }
+
+        public async Task<ResponseMessage> ChangeAdminRole(int loggedInUserId,string email, int roleId)
+        {
+            var loggedInUser = await _repoWrapper.ApplicationUser.FindByIdAsync(loggedInUserId);
+            var loggedInUserMail = loggedInUser.Email;
+            var loggedInAdminMail = loggedInUserMail.Remove(loggedInUserMail.Length - 6);
+            var loggediInAdmin = await _repoWrapper.BackendAdmin.GetAdminByEmail(loggedInAdminMail);
+
+            var userToChangeMail = email + ".admin";
+            var userToChange = await _userManager.FindByEmailAsync(userToChangeMail);
+            var adminToChane = await _repoWrapper.BackendAdmin.GetAdminByEmail(email);
+            if (userToChange != null)
+            {
+                var userRole = await _userManager.GetRolesAsync(userToChange);
+                var removeRoleResult = _userManager.RemoveFromRoleAsync(userToChange, userRole.FirstOrDefault()).Result;
+                var role = await _repoWrapper.ClassOrRole.GetRole(roleId);
+                if (role is null) return new ResponseMessage { Message = "Role was not found" };
+                var result = _userManager.AddToRoleAsync(userToChange, role.Name).Result;
+                if (result.Succeeded)
+                {
+                    adminToChane.ClassOrRoleId = roleId;
+                    _repoWrapper.BackendAdmin.Update(adminToChane);
+                    await _repoWrapper.Save();
+
+                    var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, loggediInAdmin.Id, $"{loggedInUser.UniqueUsername} changed {email} role", ServiceNames.HealthBanc.ToString());
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
+                    return new ResponseMessage { Message = "Role was changed successfully", Status = true };
+                }
+            }
+            return new ResponseMessage { Message = "User does not exist" };
+
+        }
+
+        public async Task<ResponseMessage> RemoveAdmin(int loggedInUserId,string email)
+        {
+            var loggedInUser = await _repoWrapper.ApplicationUser.FindByIdAsync(loggedInUserId);
+            string loggedInUserMail = loggedInUser.Email;
+            var LoggedInAdminMail = loggedInUserMail.Remove(loggedInUserMail.Length - 6);
+            var loggedInAdmin = await _repoWrapper.BackendAdmin.GetAdminByEmail(LoggedInAdminMail);
+
+            var adminToRemoveUserMail = email + ".admin";
+            var user = await _userManager.FindByEmailAsync(adminToRemoveUserMail);
+            if (user != null)
+            {
+                var result = _userManager.DeleteAsync(user).Result;
+                if (result.Succeeded)
+                {
+                    var admin = await _repoWrapper.BackendAdmin.GetAdminByEmail(email);
+                    _repoWrapper.BackendAdmin.Delete(admin);
+                    await _repoWrapper.Save();
+
+                    var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, loggedInAdmin.Id, $"{loggedInUser.UniqueUsername} removed {email}", ServiceNames.HealthBanc.ToString());
+                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
+                    return new ResponseMessage { Message = "Admin was deleted successfully", Status = true };
+                }
+                return new ResponseMessage { Message = "An error occurred while trying to change to delete admin" };
+            }
+            return new ResponseMessage { Message = "User does not exist" };
+        }
+
+        public async Task<ResponseMessage> DisableAdmin(int loggedInUserId,string email)
+        {
+            var loggedInUser = await _repoWrapper.ApplicationUser.FindByIdAsync(loggedInUserId);
+            string loggedInUserMail = loggedInUser.Email;
+            var loggedInAdminMail = loggedInUserMail.Remove(loggedInUserMail.Length - 6);
+            var LoggedInAdmin = await _repoWrapper.BackendAdmin.GetAdminByEmail(loggedInAdminMail);
+
+            var userToDisableMail = email + ".admin";
+            var userToDisable = await _userManager.FindByEmailAsync(userToDisableMail);
+            if (userToDisable != null)
+            {
+                userToDisable.LockoutEnd = DateTime.Now.AddYears(100);
+                _repoWrapper.ApplicationUser.Update(userToDisable);
+
+                var adminToDisable = await _repoWrapper.BackendAdmin.GetAdminByEmail(email);
+                adminToDisable.Disabled = true;
+                _repoWrapper.BackendAdmin.Update(adminToDisable);
+                await _repoWrapper.Save();
+
+                var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, LoggedInAdmin.Id, $"{loggedInUser.UniqueUsername} disabled {email}", ServiceNames.HealthBanc.ToString());
+                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
+                return new ResponseMessage { Message = "Admin was disabled successfully", Status = true };
+            }
+            return new ResponseMessage { Message = "User does not exist" };
+        }
+
+        public async Task<ResponseMessage> EnableAdmin(int loggedInUserId, string email)
+        {
+            var loggedInUser = await _repoWrapper.ApplicationUser.FindByIdAsync(loggedInUserId);
+            var loggedInUserMail = loggedInUser.Email;
+            var loggedInAdminMail = loggedInUserMail.Remove(loggedInUserMail.Length - 6);
+            var loggedInAdmin = await _repoWrapper.BackendAdmin.GetAdminByEmail(loggedInAdminMail);
+
+            var userToEnableMail = email + ".admin";
+            var userToEnable = await _userManager.FindByEmailAsync(userToEnableMail);
+            if (userToEnable != null)
+            {
+                userToEnable.LockoutEnd = null;
+                _repoWrapper.ApplicationUser.Update(userToEnable);
+
+                var adminToEnable = await _repoWrapper.BackendAdmin.GetAdminByEmail(email);
+                adminToEnable.Disabled = false;
+                _repoWrapper.BackendAdmin.Update(adminToEnable);
+                await _repoWrapper.Save();
+
+                var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, loggedInAdmin.Id, $"{loggedInUser.UniqueUsername} enabled {email}", ServiceNames.HealthBanc.ToString());
+                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+
+                return new ResponseMessage { Message = "Admin was enabled successfully", Status = true };
+            }
+            return new ResponseMessage { Message = "User does not exist" };
         }
     }
 }

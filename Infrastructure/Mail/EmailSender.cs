@@ -54,7 +54,7 @@ namespace Infrastructure.Mail
             EmailRequest(emailRequest);
         }
 
-        public void HealthInsuredSubscriptionMail(string email,string subject,string userName, string enroleeNumber, string healthCareProvider)
+        public void HealthInsuredSubscriptionMail(string email,string subject,string userName, string enroleeNumber, string healthCareProvider,string plan)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthinsured_subscription.html";
             string html = System.IO.File.ReadAllText(path);
@@ -67,7 +67,10 @@ namespace Infrastructure.Mail
             {
                 processedEnrolleNumber =  enroleeNumber;
             }
-            string newHtml = html.Replace("UserName", userName).Replace("HealthServiceProviderName", healthCareProvider).Replace("EnroleeNumber", processedEnrolleNumber); ;
+
+            string subType = plan == "1" ? "Ruby" : "Sapphire";
+            string newHtml = html.Replace("UserName", userName).Replace("HealthServiceProviderName", healthCareProvider).Replace("EnroleeNumber", processedEnrolleNumber)
+                .Replace("SubscriptionType", subType);
             
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);

@@ -12,7 +12,7 @@ namespace Application.Interfaces
         void HealthInsuredCompanyDeactivation(string email, string subject, string userName, string premium);
         void HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium, string stopDate);
         void HealthInsuredFailedDebit(string email, string subject, string userName, string premium);
-        void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider);
+        void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider,string plan);
         void SendHealthInsuredPaymentReminder(string email, string subject, string userName);
         void SendHeliumNotification(string subject, string healthProvider, string providerType, string phonenumber, string providerEmail);
         void SendUserResetPasswordMail(string email, string subject, string resetUrl);

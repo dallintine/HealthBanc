@@ -9,6 +9,7 @@ using Application.Helpers.ThirdPartyAPI;
 using Application.Interfaces;
 using Application.Services.Identity;
 using Application.ViewModels.UserReg_Login;
+using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
@@ -32,25 +33,22 @@ namespace HealthBanc.Controllers
         private readonly IdentityService _identityService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
-        private readonly IApplicationUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPasswordChangeRepository _passwordChangeRepository;
-        private readonly IUserLogin_LogoutLogRepository _logoutLogRepository;
+        private readonly IRepositoryWrapper _repoWrapper;
         private AppEndpoint Options { get; }
 
-        public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt,
-            IApplicationUserRepository userRepository,IPasswordHasher passwordHasher, IPasswordChangeRepository passwordChangeRepository,
-            IUserLogin_LogoutLogRepository logoutLogRepository, IOptions<AppEndpoint> optionAccessor)
+        public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt
+            ,IPasswordHasher passwordHasher, IPasswordChangeRepository passwordChangeRepository, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor)
         {
             Options = optionAccessor.Value;
             _logger = logger;
             _identityService = identityService;
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
-            _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _passwordChangeRepository = passwordChangeRepository;
-            _logoutLogRepository = logoutLogRepository;
+            _repoWrapper = repoWrapper;
         }
 
         ///<summary>
@@ -217,9 +215,6 @@ namespace HealthBanc.Controllers
                 }
                 //increase access failed count
                 await _userManager.AccessFailedAsync(user);
-                var loginLog = new UserLogin_LogoutLog(user.Id, user.Email, true, false, true);
-                _logoutLogRepository.Create(loginLog);
-                await _logoutLogRepository.Save();
                 return Unauthorized(new ResponseMessage { Message = "User detail is invalid, please try again with correct details.", Status = false });
             }
             //return validation errors
@@ -437,7 +432,7 @@ namespace HealthBanc.Controllers
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int Id = int.Parse(userId);
-                var user = await _userRepository.FindByIdAsync(Id);
+                var user = await _repoWrapper.ApplicationUser.FindByIdAsync(Id);
                 if (user != null)
                 {
                     return Ok(new ResponseMessage { Data = user.ServiceUsed, Status = true, Message = "Service used was fetched successfully" });
