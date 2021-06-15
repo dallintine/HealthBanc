@@ -241,12 +241,6 @@ namespace Application.Services.HealthInsured
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, string reference)
         {
-            var scheduledPaymentJob = await _repoWrapper.ScheduledPayment.GetScheduledPaymentByJobId(insuranceUserProfile.PendingJobId);
-            scheduledPaymentJob.Status = ScheduledPayment_StatusValue.Successful.ToString(); scheduledPaymentJob.Message = ScheduledPayment_StatusValue.Successful.ToString();
-            scheduledPaymentJob.PaymentReference = reference;
-
-            _repoWrapper.ScheduledPayment.Update(scheduledPaymentJob);
-
             if (insuranceUserProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceUserProfile.InsuranceService == null)
             {
                 await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
