@@ -169,7 +169,11 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var x = PaymentReference_StatusValue.Successful.ToString();
             foreach (var item in transactionLogDTO)
             {
-                if(item.Status != PaymentReference_StatusValue.Failed.ToString() || item.Status != PaymentReference_StatusValue.Successful.ToString())
+                if(item.Status == PaymentReference_StatusValue.Failed.ToString() || item.Status == PaymentReference_StatusValue.Successful.ToString())
+                {
+                    continue;
+                }
+                else
                 {
                     item.Status = "Abandoned";
                 }
