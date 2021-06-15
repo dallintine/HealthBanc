@@ -1,6 +1,7 @@
 ﻿using Application.DTO;
 using Application.DTO.DashboardAnalyticsDTOs;
 using Application.Services.Admin;
+using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
@@ -21,12 +22,12 @@ namespace HealthBanc.Controllers.BackendAdmin
     public class DashboardAnalyticsController : ControllerBase
     {
         private readonly Dashboard_Analytics _dashboardAnalytics;
-        private readonly IServiceRepository _serviceRepository;
+        private readonly IRepositoryWrapper _repoWrapper;
 
-        public DashboardAnalyticsController(Dashboard_Analytics dashboardAnalytics,IServiceRepository serviceRepository)
+        public DashboardAnalyticsController(Dashboard_Analytics dashboardAnalytics,IRepositoryWrapper repoWrapper)
         {
             _dashboardAnalytics = dashboardAnalytics;
-            _serviceRepository = serviceRepository;
+            _repoWrapper = repoWrapper;
         }
 
         /// <summary>
@@ -100,7 +101,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> GetServices()
         {            
-            var services = await _serviceRepository.GetServicesAsync();
+            var services = await _repoWrapper.Service.GetServicesAsync();
             return Ok(new ResponseMessage { Data = services, Status = true, Message = "Service was fetched successfully" });            
         }
 

@@ -34,12 +34,11 @@ namespace HealthBanc.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IPasswordHasher _passwordHasher;
-        private readonly IPasswordChangeRepository _passwordChangeRepository;
         private readonly IRepositoryWrapper _repoWrapper;
         private AppEndpoint Options { get; }
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt
-            ,IPasswordHasher passwordHasher, IPasswordChangeRepository passwordChangeRepository, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor)
+            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -47,7 +46,6 @@ namespace HealthBanc.Controllers
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
             _passwordHasher = passwordHasher;
-            _passwordChangeRepository = passwordChangeRepository;
             _repoWrapper = repoWrapper;
         }
 
@@ -390,8 +388,8 @@ namespace HealthBanc.Controllers
                                         user.HashedPasswordHistory =  $"{newPaswordHash},{passwordHashed},";
                                         await _userManager.UpdateAsync(user);
                                         var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, true, false);
-                                        _passwordChangeRepository.Create(passwordChangehistory2);
-                                        await _passwordChangeRepository.Save();
+                                        _repoWrapper.PasswordChange.Create(passwordChangehistory2);
+                                        await _repoWrapper.Save();
                                         return Ok(new ResponseMessage { Message = "Password changed successfully", Status = true });
                                     }
                                 }                                
@@ -399,8 +397,8 @@ namespace HealthBanc.Controllers
                             user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
                             await _userManager.UpdateAsync(user);
                             var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, true, false);
-                            _passwordChangeRepository.Create(passwordChangehistory);
-                            await _passwordChangeRepository.Save();
+                            _repoWrapper.PasswordChange.Create(passwordChangehistory);
+                            await _repoWrapper.Save();
                             return Ok(new ResponseMessage { Message = "Password changed succesfully", Status = true });
                         }
                         return BadRequest(new ResponseMessage { Message = "Current password is wrong,please input correct one or reset password" });
