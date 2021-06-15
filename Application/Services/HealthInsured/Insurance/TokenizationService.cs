@@ -123,7 +123,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
                 var paymentReference = new PaymentReference(channel,card.reference, insuranceProfile.Id, null, insuranceProfile.UserId
-                , insuranceProfile.Premium, PaymentReference_StatusValue.Pending.ToString());
+                , decimal.Parse("50"), PaymentReference_StatusValue.Pending.ToString());
                 _repoWrapper.PaymentReference.Create(paymentReference);
                 await _repoWrapper.Save();
 
