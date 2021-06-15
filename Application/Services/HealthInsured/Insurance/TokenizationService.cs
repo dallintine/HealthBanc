@@ -932,6 +932,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {            
             _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
         }
+
+        public async void FitPaymentError(string reference, string amount)
+        {
+            var payReference = await _repoWrapper.PaymentReference.GetByReference(reference);
+            if(payReference != null)
+            {
+                payReference.Amount = decimal.Parse(amount);
+                _repoWrapper.PaymentReference.Update(payReference);
+                await _repoWrapper.Save();
+            }
+        }
     } 
 }
 

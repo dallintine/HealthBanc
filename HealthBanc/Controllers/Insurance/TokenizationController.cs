@@ -269,5 +269,13 @@ namespace HealthBanc.Controllers.Insurance
             }
             return BadRequest(response);
         }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpGet("[action]")]
+        public IActionResult FitPaymentError(string reference, string amount)
+        {
+            _tokenizationService.FitPaymentError(reference, amount);
+            return Ok();
+        }
     }
 }

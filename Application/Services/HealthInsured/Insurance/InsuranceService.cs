@@ -166,6 +166,15 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             var transactionLogDTO = _mapper.Map<IEnumerable<PaymentReference>, IEnumerable<TransactionLogDTO>>(transactionLogs.Data);
 
+            var x = PaymentReference_StatusValue.Successful.ToString();
+            foreach (var item in transactionLogDTO)
+            {
+                if(item.Status != PaymentReference_StatusValue.Failed.ToString() || item.Status != PaymentReference_StatusValue.Successful.ToString())
+                {
+                    item.Status = "Abandoned";
+                }
+            }
+
             var paginatedResponse = new PagedResponse<TransactionLogDTO>
             {
                 Data = transactionLogDTO,

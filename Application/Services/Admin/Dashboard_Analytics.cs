@@ -162,7 +162,7 @@ namespace Application.Services.Admin
             {
                 totalUsers = await users.CountAsync();
                 totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString())
-                && x.Date.Date.Month == DateTime.Now.Date.Month).Select(x => x.Amount).Sum();
+                && x.Date.Date.Month == DateTime.Now.Date.Month).Where(x => x.Amount > decimal.Parse("50")).Select(x => x.Amount).Sum();
                 payoutDue = totalRevenue * decimal.Parse("0.9");
             }
             // for hygeia
@@ -171,7 +171,7 @@ namespace Application.Services.Admin
                 totalUsers = await users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Hygeia.ToString())).CountAsync();
                 totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Amount > decimal.Parse("50")
                 && x.Channel.Equals(PaymentReference_ChannelValue.healthinsured_hygeia.ToString()) && x.Date.Date.Month == DateTime.Now.Date.Month)
-                    .Select(x => x.Amount).Sum();
+                    .Where(x => x.Amount > decimal.Parse("50")).Select(x => x.Amount).Sum();
                 revenueDue = users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Hygeia.ToString()) && x.SubscriptionStatus == true)
                     .Select(x => x.Premium).Sum();
             }
@@ -180,8 +180,9 @@ namespace Application.Services.Admin
                 totalUsers = await users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Axamansard.ToString())).CountAsync();
                 totalRevenue = paymentReferences.Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Amount > decimal.Parse("50")
                 && x.Channel.Equals(PaymentReference_ChannelValue.healthinsured_axamansard.ToString()) && x.Date.Date.Month == DateTime.Now.Date.Month)
-                    .Select(x => x.Amount).Sum();
-                revenueDue = users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Axamansard.ToString()) && x.SubscriptionStatus == true).Select(x => x.Premium).Sum();
+                    .Where(x => x.Amount > decimal.Parse("50")).Select(x => x.Amount).Sum();
+                revenueDue = users.Where(x => x.InsuranceService.Equals(InsuranceProvider.Axamansard.ToString()) && x.SubscriptionStatus == true)
+                    .Select(x => x.Premium).Sum();
             }
             var healthInsuredDashboard = new HealthInsuredDashboardDTO()
             {
