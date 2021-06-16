@@ -19,6 +19,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Application.ViewModels.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
+using Application.Services;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -28,13 +29,15 @@ namespace HealthBanc.Controllers.Insurance
     {
         private readonly TokenizationService _tokenizationService;
         private readonly AuditLogService _auditLogServices;
+        private readonly IBSIntegrationService _iBSIntegrationService;
         public string ipAddress;
         public StringValues agent;
 
-        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices)
+        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices,IBSIntegrationService iBSIntegrationService)
         {
             _tokenizationService = tokenizationService;
             _auditLogServices = auditLogServices;
+            _iBSIntegrationService = iBSIntegrationService;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -276,6 +279,14 @@ namespace HealthBanc.Controllers.Insurance
         {
             _tokenizationService.FitPaymentError(reference, amount);
             return Ok();
+        }
+
+        //[Authorize(Roles = "SuperAdmin")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> AccoutEnquiry(string account)
+        {
+            var res = await _iBSIntegrationService.SterlingNameEnquiry(account);
+            return Ok(res);
         }
     }
 }

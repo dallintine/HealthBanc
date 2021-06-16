@@ -1,6 +1,7 @@
 ﻿using Application.AuditAndReport.AuditLog;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Interfaces;
+using Application.Services;
 using Application.Services.Admin;
 using Application.Services.AuditAndReport;
 using Application.Services.HealthInsured;
@@ -97,6 +98,7 @@ namespace HealthBanc
             services.AddScoped<BackendAdminService>();
             services.AddScoped<InsurancePSWebHookService>();
             services.AddScoped<CorporateInsuranceService>();
+            services.AddScoped<IBSIntegrationService>();
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<InsuranceService>();
             services.AddScoped<ExcelPackage>();
