@@ -288,5 +288,13 @@ namespace HealthBanc.Controllers.Insurance
             var res = await _iBSIntegrationService.SterlingNameEnquiry(account);
             return Ok(res);
         }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> sendMoney(string account)
+        {
+            var res = await _iBSIntegrationService.SterlingBankIntraBank(decimal.Parse("100"),"0076585585","0076525143","hassan", "NG0020032");
+            return Ok(res);
+        }
+
     }
 }
