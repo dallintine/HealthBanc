@@ -6,7 +6,7 @@
   },
   "ExtendedData": {
     "inputs": [
-      "http://10.0.41.189:833/IBSServices.asmx"
+      "http://10.0.41.102:818/IBSServices.asmx"
     ],
     "collectionTypes": [
       "System.Array",
