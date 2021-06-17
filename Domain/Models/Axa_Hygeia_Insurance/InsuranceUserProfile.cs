@@ -67,6 +67,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         public string CareProviderName { get; set; }
         public string CPAddress { get; set; }
         public string CPCity { get; set; }
+        public string Image { get; set; }
         /// <summary>
         /// Insurance PlanCode
         /// </summary>

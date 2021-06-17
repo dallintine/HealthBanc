@@ -53,5 +53,20 @@ namespace Infrastructure.ImageService
             //delete blob from container    
             var result = await _blockBlob.DeleteIfExistsAsync();
         }
+
+        public string ConvertImageToBase64(IFormFile file)
+        {
+            if (file.Length > 0)
+            {
+                using (var ms = new MemoryStream())
+                {
+                    file.CopyTo(ms);
+                    var fileBytes = ms.ToArray();
+                    string s = Convert.ToBase64String(fileBytes);
+                    return s;
+                }
+            }
+            return "false";
+        }
     }
 }

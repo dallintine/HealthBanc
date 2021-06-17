@@ -34,5 +34,7 @@ namespace Application.ViewModels.HealthInsured
         [Required]
         public string TownOfResidence { get; set; }
         public string InsuranceService { get; set; }
+        [Required]
+        public IFormFile UserImage { get; set; }
     }
 }

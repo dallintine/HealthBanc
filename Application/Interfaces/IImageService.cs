@@ -11,5 +11,6 @@ namespace Application.Interfaces
         Task<string> UploadPics(string containerName, IFormFile file);
 
         void DeleteImage(string containerName, string picturePath);
+        string ConvertImageToBase64(IFormFile file);
     }
 }

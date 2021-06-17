@@ -45,13 +45,14 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private readonly IFileProcessor _fileProcessor;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly HMOIntegrationService _hmoIntegrationService;
+        private readonly IImageService _imageService;
 
         private SubscriptionDuration SubscriptionAccessor { get; }
         public UserManager<ApplicationUser> UserManager { get; }
 
         public InsuranceService(IMapper mapper, AuditLogService auditLogServices,ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender,
             IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper, IOptions<SubscriptionDuration> subscriptionAccessor, UserManager<ApplicationUser> userManager,
-            HMOIntegrationService hmoIntegrationService)
+            HMOIntegrationService hmoIntegrationService,IImageService imageService)
         {
             _mapper = mapper;
             _auditLogServices = auditLogServices;
@@ -62,6 +63,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             _repoWrapper = repoWrapper;
             UserManager = userManager;
             _hmoIntegrationService = hmoIntegrationService;
+            _imageService = imageService;
             SubscriptionAccessor = subscriptionAccessor.Value ;
         }
 
@@ -71,7 +73,21 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled != null) return new ResponseMessage { Message = "User has a profile already" };
-            
+
+            var validImageExtension = new [] { ".JPG", ".JPE", ".BMP", ".GIF", ".PNG" };
+
+            var fileExtension = System.IO.Path.GetExtension(userProfile.UserImage.FileName.ToUpper());
+            if (!validImageExtension.Contains(fileExtension))
+            {
+                return new ResponseMessage { Message = "Image type is not supported - Only upload PNG/JPEG/JPG/JPE" };
+            }
+
+            var fileSize = userProfile.UserImage.Length;
+            if((fileSize/1048576) > 1)
+            {
+                return new ResponseMessage { Message = "Image Size is too large - Size should be less than 1MB" };
+            }
+
             var creatResponse = await CreateUserProfile(userProfile, user);
             if (creatResponse.Status)
             {
@@ -105,6 +121,12 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             profile.InsuranceService = userProfile.InsuranceService;
 
             var updatedProfile = _mapper.Map(user, profile);
+            updatedProfile.Image = _imageService.ConvertImageToBase64(userProfile.UserImage);
+
+            if(updatedProfile.Image == "false")
+            {
+                return new ResponseMessage { Message = "Image cannot be processed,please try again later" };
+            }
 
             _repoWrapper.InsuranceProfile.Create(updatedProfile);
 
