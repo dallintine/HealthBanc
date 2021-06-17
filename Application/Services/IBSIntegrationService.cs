@@ -49,7 +49,7 @@ namespace Application.Services
 
         public async Task<OBJ_IBS_Transfer_Response_Class> SterlingBankIntraBank(decimal amount, string toAccount,string fromAccount,string paymentReference,string branchCode)
         {
-            var referenceId = new Guid();
+            var referenceId = Guid.NewGuid().ToString();
             var requestType = IBSAccessor.TransferRequestType;
             var appId = IBSAccessor.AppId;
             var call = await GetInstanceAsync();
@@ -100,8 +100,8 @@ namespace Application.Services
         //Sterling Name Enquiry
         public async Task<OBJ_IBS_Reponse_Class> SterlingNameEnquiry(string accountNumber)
         {
-            var referenceId = new Guid();
-            var requestType = IBSAccessor.TransferRequestType;
+            var referenceId = Guid.NewGuid().ToString();
+            var requestType = IBSAccessor.EnquiryRequestType;
 
             OBJ_IBS_Reponse_Class finalAcctName = new OBJ_IBS_Reponse_Class();
             try
