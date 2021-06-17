@@ -305,11 +305,11 @@ namespace IBSService
         {
             if ((endpointConfiguration == EndpointConfiguration.IBSServicesSoap))
             {
-                return new System.ServiceModel.EndpointAddress("http://10.0.41.189:833/IBSServices.asmx");
+                return new System.ServiceModel.EndpointAddress("http://10.0.41.102:818/IBSServices.asmx");
             }
             if ((endpointConfiguration == EndpointConfiguration.IBSServicesSoap12))
             {
-                return new System.ServiceModel.EndpointAddress("http://10.0.41.189:833/IBSServices.asmx");
+                return new System.ServiceModel.EndpointAddress("http://10.0.41.102:818/IBSServices.asmx");
             }
             throw new System.InvalidOperationException(string.Format("Could not find endpoint with name \'{0}\'.", endpointConfiguration));
         }
