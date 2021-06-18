@@ -71,7 +71,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled != null) return new ResponseMessage { Message = "User has a profile already" };
 
-            var validImageExtension = new [] { ".JPG", ".JPE", ".BMP", ".GIF", ".PNG" };
+            var validImageExtension = new [] { ".JPG",".JPEG", ".JPE", ".BMP", ".GIF", ".PNG" };
 
             var fileExtension = System.IO.Path.GetExtension(userProfile.UserImage.FileName.ToUpper());
             if (!validImageExtension.Contains(fileExtension))
