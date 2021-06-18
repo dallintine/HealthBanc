@@ -256,7 +256,7 @@ namespace Application.Services.HealthInsured.Insurance
             // if at least one beneficiary was moved to insurace profile list
             if (checkIfProfileEmailExistCount != beneficiaryReviews.Count)
             {
-                var activityLog = new ActivityLog(null, companyprofile.Id, "New Beneficiairies Was Added", companyprofile.InsuranceService);
+                var activityLog = new ActivityLog(null, companyprofile.Id, "New Beneficiairies Was Added", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
             }
 
