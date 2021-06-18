@@ -46,12 +46,10 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly HMOIntegrationService _hmoIntegrationService;
         private readonly IImageService _imageService;
-
-        private SubscriptionDuration SubscriptionAccessor { get; }
         public UserManager<ApplicationUser> UserManager { get; }
 
         public InsuranceService(IMapper mapper, AuditLogService auditLogServices,ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender,
-            IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper, IOptions<SubscriptionDuration> subscriptionAccessor, UserManager<ApplicationUser> userManager,
+            IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper, UserManager<ApplicationUser> userManager,
             HMOIntegrationService hmoIntegrationService,IImageService imageService)
         {
             _mapper = mapper;
@@ -64,7 +62,6 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             UserManager = userManager;
             _hmoIntegrationService = hmoIntegrationService;
             _imageService = imageService;
-            SubscriptionAccessor = subscriptionAccessor.Value ;
         }
 
         public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId,string ipAddress,string device)
@@ -244,7 +241,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         public async Task<ResponseMessage> EnrollUserToHygeiaOnOnboarding(InsuranceUserProfile insuranceUserProfile)
         {
             // Send user details to hygeia
-            var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);
+            var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);           
             var registration = await _hmoIntegrationService.HygeiaRegisterUser(registrationModel);
             if (!registration.Status)
             {

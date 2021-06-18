@@ -98,21 +98,21 @@ namespace Application.Services.HealthInsured
                             return new ResponseMessage { Status = true, Message = authResponse.message };
                         }
                         _logger.LogError("Axamansard Unsuccessfully response : " + apiResponse, authResponse);
-                        BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddMinutes(60));
+                        BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                         return new ResponseMessage { Status = false, Message = authResponse.message };
                     }
                     _logger.LogCritical(" Bad request when trying to register user to axamansard  : " + apiResponse);
-                    BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddMinutes(60));
+                    BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                     return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }
-                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddMinutes(60));
+                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                 _logger.LogCritical("BadRequest Axamansard :" + bearerRequest.Message);
                 return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
             catch (Exception ex)
             {
                 _logger.LogCritical("An error occurred while enrolling user to axa-mansard", ex);
-                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddMinutes(60));
+                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
             }
         }
@@ -141,7 +141,6 @@ namespace Application.Services.HealthInsured
             }
             await Task.CompletedTask;
         }
-
 
         /// <summary>
         /// Get hygeia access token
@@ -213,7 +212,7 @@ namespace Application.Services.HealthInsured
                     var bearerRequest = await HygeiaGetAuthToken();
                     if (!bearerRequest.Status)
                     {
-                        BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddMinutes(60));
+                        BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddHours(6));
                         return new ResponseMessage { Status = false, Message = "" };
                     }
                     bearerToken = bearerRequest.Message;
@@ -225,6 +224,7 @@ namespace Application.Services.HealthInsured
 
                 model.PlanId = HygeiaAccessor.HygeiaPlanCode;
                 model.DataConsent = true;
+                model.ImagePath ??= "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARMAAAC3CAMAAAAGjUrGAAAAMFBMVEX////f39/d3d38/Pzh4eHs7Ozy8vL4+Pj19fXq6urk5OTv7+/m5ubr6+v29/bn6Of+ydA3AAAEWElEQVR4nO2d2XLDIAxFbcDGW5r//9vGbdM2xU4EKha+6Dx0pm/kjJBYDDSNoiiKoiiKoiiKoiiKoiiKoiiKoiiKohyOtbbv/e2vlW5JGdh5HifTrhjjxrnz0i2Sxi/OfAr54vafc3Nfrxi7tA9CfomZbn1JunkSeLcl5FvMch2kW3g4/WaMPITLMtcVLM+j5Jteup1HspCU3LpQPfl2eNVzfqzM0m09igvZSWuulWQVspFViqtAivfXGCdt6+CTymDoHecuBTxShlghFUiZUpxgS6FX4QegS3Jkev0Bd0jr08JkjRTY3pPupB2l254L4jxnE9RRSlrV+QQ1zXKcOOnG5yGxEn9iMFfeZpYTzHLM6TqonYcTJqgDfJYSTCdenQR0vL7TIhYeVtkBnRxznXTSPyADI0sJpBNL2/yrywkzxaoTdaJOEp0g1mLeFBBzzHbhKYEc2zPHbJBOmPMdSCc9S0nbSrc/C6yBLGIpbphrSqDrsaxJIKgT1l4G6kYgZ9Q2STc+D6zVAgfZd+zE6juQ8x3uGjXiNyjMsb06USc01EkQJoifb3FzLGCYcONkkW5/Dnh76KDfKWmYhLDC5E269XmION8VMCFm2Ia3VnCVbnwmOPNiVCeMagy6GnvDJocJ4lzni6SjbyuwYdKk74/ihkmTuPGFOji5Y8foRIt/bUHsdyj4Z66b2K0v0L2uP8Sto6gTdaJO7kSW4xpSbOQ6ShVlJ7LwgO6d/+XlTWQPcSLd2mOIWqyuIsU2UZ0HdLk+hHhn3Qd1pNgmIlCqCZOIu2Fgl2FDqHEC+W3SDguxGuMuTYeQnWichNQyOmnolwhBnsXYgZpja3LSqZMA8m66dEMPhLwfKN3QAyHPjKUbeiDqJITqpKYcS90LVCcb1LNUQHZS0xyQHCeI39jvQN72qmMXsFkPwVGVrKsFVaTZuE9CjevxrfjYE7XGXaCt2Jm8nPTbihlRrdjZbT/iRbACuZfuB+d4h5qmAertM+vH+LdDwmAx04BiZeiYEfLby4hQnIfkJLJj5exHvvzMvOVx04q7nDfh2vkfssi2lus5rdguQ4z8WFnOt47g+/9LrDtWxnNZseP/JtYdK9N5rLztPDqbxcopSnOfMqVJZ+qKtzLwbghKwExFrybYjnshapoVN5Vamm32UvOEIntQ3uHIa8orzf0sGCNfUsy1pBXtW6eRNvKBKeVmu7T1xEyYpYQXj+U7zV+k063l3hyVAel3oDn3vGREUgr7HrpMCEYK962UbAjuM8ffPXAUcgc6RGY3NKQ6D+Pt3dyYizoJkDpvyruIPC9STjhvNOdGqhqXWolXhKpxsaOTFXUSIuTkTfp3P0PISdRdDEejTkLUSYg62UDms/SyncgMZAtdY7sjMpAteWgvNbiX/tXPUScbSGyrFz20b2XOzZXuRGKAok7O50TkPpmynYjcsZN8MfsxiJzDLXD3/AGJowqlO5EYtHXGlQzjeZp3TSc+LoSs340AAAAASUVORK5CYII=";
                 var httpClient = _httpClientFactory.CreateClient("Hygeia");
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
 
@@ -241,17 +241,17 @@ namespace Application.Services.HealthInsured
                         return new ResponseMessage { Status = true, Message = authResponse.MemberId };
                     }
                     _logger.LogCritical("Hygeia Unsuccessfully response : " + apiResponse, authResponse);
-                    BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddMinutes(60));
+                    BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddHours(6));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
                 _logger.LogCritical(" Bad request when trying to register user to hygeia  : " + apiResponse);
-                BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddMinutes(60));
+                BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
             }
             catch (Exception ex)
             {
                 _logger.LogCritical("An error occurred while enrolling user to hygeia", ex);
-                BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddMinutes(60));
+                BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to hygeia.Please try again later" };
             }
         }
@@ -299,7 +299,6 @@ namespace Application.Services.HealthInsured
             return new ResponseMessage { Message = "Could not process Hygeia response", Status = false };
         }
        
-
         /// <summary>
         /// Method to carry out failed Hygeia registration
         /// </summary>
