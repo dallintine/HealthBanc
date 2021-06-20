@@ -69,6 +69,7 @@ namespace Application.Services.HealthInsured
                         {
                             status = PaymentReference_StatusValue.Send_Url.ToString();
                         }
+                        paymentReference.Amount = decimal.Parse(amount);
                         paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
                         _repoWrapper.PaymentReference.Update(paymentReference);
                     }
@@ -97,6 +98,7 @@ namespace Application.Services.HealthInsured
                             {
                                 status = PaymentReference_StatusValue.Send_Url.ToString();
                             }
+                            paymentReference.Amount = decimal.Parse(amount);
                             paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
                             _repoWrapper.PaymentReference.Update(paymentReference);
                         }
@@ -276,7 +278,7 @@ namespace Application.Services.HealthInsured
 
                     if (result.Status)
                     {
-                        //Background task to Enroll all users to hygeia.
+                        //Background task to Enroll all users to HMO.
                         BackgroundJob.Enqueue(() => _corporateInsurance.OnboardCompanyUsersToHMO(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value,companyProfile.InsuranceService));
                     }
 

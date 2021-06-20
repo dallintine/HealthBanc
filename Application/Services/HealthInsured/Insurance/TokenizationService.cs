@@ -186,10 +186,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                         // When user is adding card
                         card.amount = (100 * 50).ToString();
                     }
-
+                    var amount = decimal.Parse(card.amount) / 100;
                     // Create payment reference for the charge.
                     var channel = companyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
-                    var paymentReference = new PaymentReference(channel,card.reference, null, companyProfile.Id, id, decimal.Parse(card.amount), PaymentReference_StatusValue.Pending.ToString());
+                    var paymentReference = new PaymentReference(channel,card.reference, null, companyProfile.Id, id, amount, PaymentReference_StatusValue.Pending.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
                     await _repoWrapper.Save();
 
