@@ -330,7 +330,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="passcode"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> UploadAxamansardHospitalListToDb(IFormFile file,string passcode)
         {
             if(passcode == "docUpload1963.")
@@ -357,7 +357,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="passcode"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> UploadHygeiaHospitalListToDb(IFormFile file,string passcode)
         {
             if (passcode == "docUpload1963.")
