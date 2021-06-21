@@ -1,4 +1,5 @@
 ﻿using Application.DTO;
+using Application.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace Application.Interfaces
         void HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium, string stopDate);
         void HealthInsuredFailedDebit(string email, string subject, string userName, string premium);
         void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider,string plan);
+        void SendHealthFinanceNotification(string subject, HealthFinanceCollectionViewModel healthFinance, List<string> toEmails);
         void SendHealthInsuredPaymentReminder(string email, string subject, string userName);
         void SendHeliumNotification(string subject, string healthProvider, string providerType, string phonenumber, string providerEmail);
         void SendUserResetPasswordMail(string email, string subject, string resetUrl);

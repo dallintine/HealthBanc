@@ -330,28 +330,22 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="passcode"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        //[Authorize(Roles = "Super-Administrator")]
+        [Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> UploadAxamansardHospitalListToDb(IFormFile file,string passcode)
         {
             if(passcode == "docUpload1963.")
             {
-                var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
-                if (result.Status)
+                var checkRole = User.IsInRole("Super-Administrator");
+                if (checkRole)
                 {
-                    return Ok(result);
+                    var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
+                    if (result.Status)
+                    {
+                        return Ok(result);
+                    }
+                    return BadRequest();
                 }
-                return BadRequest();
-                //var checkRole = User.IsInRole("Super-Administrator");
-                //if (checkRole)
-                //{
-                //    var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
-                //    if (result.Status)
-                //    {
-                //        return Ok(result);
-                //    }
-                //    return BadRequest();
-                //}
-                //return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
+                return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
             }            
             return BadRequest(new ResponseMessage { Message="Wrong passcode"});
         }
@@ -363,28 +357,22 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="passcode"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        //[Authorize(Roles = "Super-Administrator")]
+        [Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> UploadHygeiaHospitalListToDb(IFormFile file,string passcode)
         {
             if (passcode == "docUpload1963.")
             {
-                var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
-                if (result.Status)
+                var checkRole = User.IsInRole("Super-Administrator");
+                if (checkRole)
                 {
-                    return Ok(result);
+                    var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
+                    if (result.Status)
+                    {
+                        return Ok(result);
+                    }
+                    return BadRequest();
                 }
-                return BadRequest();
-                //var checkRole = User.IsInRole("Super-Administrator");
-                //if (checkRole)
-                //{
-                //    var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
-                //    if (result.Status)
-                //    {
-                //        return Ok(result);
-                //    }
-                //    return BadRequest();
-                //}
-                //return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
+                return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
             }
             return BadRequest(new ResponseMessage { Message = "Wrong passcode" });
         }

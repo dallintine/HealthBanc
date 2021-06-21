@@ -2,6 +2,7 @@
 using Application.DTO;
 using Application.Helpers;
 using Application.Interfaces;
+using Application.ViewModels;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
@@ -93,6 +94,20 @@ namespace Infrastructure.Mail
                 .Replace("HealthServiveProviderType", providerType).Replace("EmailAddress", providerEmail);
             var emailRequest = new EmailRequest("healthbanc@sterling.ng", newHtml, subject, providerEmail);
             EmailRequest(emailRequest);
+        }
+
+        public void SendHealthFinanceNotification(string subject, HealthFinanceCollectionViewModel  healthFinance,List<string> toEmails)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthfinance.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("{Name}", healthFinance.Name).Replace("{BusinessAddress}", healthFinance.BusinessAddress)
+                .Replace("{BusinessName}", healthFinance.BusinessName).Replace("{BusinessType}", healthFinance.BusinessType).Replace("{Email}", healthFinance.Email)
+                .Replace("{Phonenumber}", healthFinance.Phonenumber).Replace("{Amount}", healthFinance.Amount).Replace("{Comment}", healthFinance.Comment);
+            foreach(var item in toEmails)
+            {
+                var emailRequest = new EmailRequest("healthbanc@sterling.ng", newHtml, subject, item);
+                EmailRequest(emailRequest);
+            }           
         }
 
         public void HealthInsuredFailedDebit(string email, string subject, string userName,string premium)

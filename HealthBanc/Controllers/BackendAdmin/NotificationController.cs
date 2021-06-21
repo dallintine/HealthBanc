@@ -46,7 +46,6 @@ namespace HealthBanc.Controllers.BackendAdmin
             _repositoryWrapper = repositoryWrapper;
         }
 
-        //WORKING1
         /// <summary>
         /// Send Helium Notification
         /// </summary>
@@ -57,8 +56,6 @@ namespace HealthBanc.Controllers.BackendAdmin
         {
             if (ModelState.IsValid)
             {
-                var @object = _mapper.Map<HelloEmail>(heliumHealth);
-
                 _emailSender.SendHeliumNotification("Helium Notification",heliumHealth.HealthServiceProviderName,heliumHealth.HealthServiveProviderType,heliumHealth.PhoneNumber,
                     heliumHealth.EmailAddress);
                 return Ok(new ResponseMessage{ Status = true, Message = "Notification was sent successfully" });                             
