@@ -113,6 +113,11 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        /// <summary>
+        /// Cancel Subscription
+        /// </summary>
+        /// <param name="reason"></param>
+        /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> CancelSubscription(string reason)
@@ -289,6 +294,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <summary>
         /// Make payment to hygeia at month end
         /// </summary>
+        /// <param name="passCode"></param>
         /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
@@ -311,6 +317,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <summary>
         /// Make payment to axamansard at month end
         /// </summary>
+        /// <param name="passCode"></param>
         /// <returns></returns>
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]

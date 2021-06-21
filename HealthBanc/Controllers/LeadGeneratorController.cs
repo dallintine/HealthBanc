@@ -5,6 +5,7 @@ using Application.ViewModels;
 using AutoMapper;
 using DataAccess;
 using Domain.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -81,6 +82,8 @@ namespace HealthBanc.Controllers
         /// <param name="paginationQuery"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HealthFinance>>))]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [HttpPost("[action]")]
         public async Task<IActionResult> GetPAginatedFinanceData([FromQuery] PaginationQuery paginationQuery)
         {
             var response = await _leadGenerator.GetPaginatedHealthFinaceData(paginationQuery);

@@ -46,31 +46,6 @@ namespace HealthBanc.Controllers.BackendAdmin
             _repositoryWrapper = repositoryWrapper;
         }
 
-        /// <summary>
-        /// Send Helium Notification
-        /// </summary>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [HttpPost("[action]")]
-        public IActionResult SendHeliumNotification(HeliumHealthCollectionViewModel heliumHealth)
-        {
-            if (ModelState.IsValid)
-            {
-                _emailSender.SendHeliumNotification("Helium Notification",heliumHealth.HealthServiceProviderName,heliumHealth.HealthServiveProviderType,heliumHealth.PhoneNumber,
-                    heliumHealth.EmailAddress);
-                return Ok(new ResponseMessage{ Status = true, Message = "Notification was sent successfully" });                             
-            }
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage(){ Data = errors, Message=errors.FirstOrDefault()});
-        }
-
         //WORKING1
         /// <summary>
         /// Create Notification
