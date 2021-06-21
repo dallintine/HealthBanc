@@ -45,12 +45,16 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         private readonly CorporateInsuranceService _corporateInsuranceService;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<TokenizationService> _logger;
+        private readonly IBSIntegrationService _iBSIntegrationService;
         private readonly IRepositoryWrapper _repoWrapper;
 
         private SubscriptionDuration SubscriptionAccessor { get; }
+        private HMOAccountDetails HMOAccountDetails { get; }
+
 
         public TokenizationService(IMapper mapper, PaystackService paystackService,InsuranceService insuranceSerivce,HMOIntegrationService hmoIntegrationService,CorporateInsuranceService corporateInsuranceService
-            ,IOptions<SubscriptionDuration> subscriptionAccessor, IEmailSender emailSender,IRepositoryWrapper repoWrapper,ILogger<TokenizationService> logger)
+            ,IOptions<SubscriptionDuration> subscriptionAccessor, IEmailSender emailSender,IRepositoryWrapper repoWrapper,ILogger<TokenizationService> logger
+            , IOptions<HMOAccountDetails> hmoAccountAccessor, IBSIntegrationService iBSIntegrationService)
         {
             _mapper = mapper;
             _paystackService = paystackService;
@@ -59,7 +63,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _corporateInsuranceService = corporateInsuranceService;
             _emailSender = emailSender;
             _logger = logger;
+            _iBSIntegrationService = iBSIntegrationService;
             SubscriptionAccessor = subscriptionAccessor.Value;
+            HMOAccountDetails = hmoAccountAccessor.Value;
             _repoWrapper = repoWrapper;
         }
 
@@ -921,6 +927,102 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             return new ResponseMessage { Message = chargeAuthorization.Message, Status =false, ResponseCode = chargeAuthorization.ResponseCode };
         }        
+
+        public ResponseMessage GetHMOPaymentDetailsForMonthEnd()
+        {
+            var hygeiaPayment = _repoWrapper.PaymentReference.QueryAllPaymentReference()
+                .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_hygeia.ToString().ToLower() 
+                && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
+                .Select(x => x.Amount).Sum();
+
+            var axaPayment = _repoWrapper.PaymentReference.QueryAllPaymentReference()
+                .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_axamansard.ToString().ToLower()
+                && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
+                .Select(x => x.Amount).Sum();
+
+            var HMOPayment = new
+            {
+                Hygeia = hygeiaPayment,
+                AxaMansard = axaPayment
+            };
+            return new ResponseMessage { Data = HMOPayment, Status = true };
+        }
+
+        public async Task<ResponseMessage> MakeHygeiaHMOPayment()
+        {
+            var hygeiaPayment = _repoWrapper.PaymentReference.QueryAllPaymentReference()
+               .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_hygeia.ToString().ToLower()
+               && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
+               .Select(x => x.Amount).Sum();
+
+            var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
+            var hygeiaAcc = HMOAccountDetails.HygeiaAccountNumber;
+
+            var hygeiaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(hygeiaPayment, hygeiaAcc,
+                healthInsuredAcc, "Automated Sterling Bank monthly payment to Hygiea. HealthBanc- Hygeia partnership ", "NG0020032");
+
+            var hmoPayment = new HMOPayment()
+            {
+                PaymentDate = DateTime.Now,
+                Channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString(),
+                Amount = hygeiaPayment,
+                Reference = hygeiaPaymentResponse.Reference
+            };
+
+            if (hygeiaPaymentResponse.ResponseCode == "00")
+            {
+                hmoPayment.Status = PaymentReference_StatusValue.Successful.ToString();
+                _repoWrapper.HMOPayment.Create(hmoPayment);
+                await _repoWrapper.Save();
+                return new ResponseMessage { Status = true ,Message = hygeiaPaymentResponse .ResponseText};
+            }
+            else
+            {
+                hmoPayment.Status = PaymentReference_StatusValue.Failed.ToString();
+                _repoWrapper.HMOPayment.Create(hmoPayment);
+                await _repoWrapper.Save();
+                return new ResponseMessage { Message = hygeiaPaymentResponse.ResponseText };
+
+            }
+        }
+
+        public async Task<ResponseMessage> MakeAxamansardHMOPayment()
+        {
+            var axaPayment = _repoWrapper.PaymentReference.QueryAllPaymentReference()
+                .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_axamansard.ToString().ToLower()
+                && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
+                .Select(x => x.Amount).Sum();
+
+            var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
+            var axaAcc = HMOAccountDetails.AxamansardAccountNumber;
+
+            var axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, axaAcc,
+                healthInsuredAcc, "Automated Sterling Bank monthly payment to Axamansard. HealthBanc- Axamansard partnership ", "NG0020032");
+
+            var hmoPayment = new HMOPayment()
+            {
+                PaymentDate = DateTime.Now,
+                Channel = PaymentReference_ChannelValue.healthinsured_axamansard.ToString(),
+                Amount = axaPayment,
+                Reference = axaPaymentResponse.Reference
+            };
+
+            if (axaPaymentResponse.ResponseCode == "00")
+            {
+                hmoPayment.Status = PaymentReference_StatusValue.Successful.ToString();
+                _repoWrapper.HMOPayment.Create(hmoPayment);
+                await _repoWrapper.Save();
+                return new ResponseMessage { Status = true,Message= axaPaymentResponse.ResponseText };
+            }
+            else
+            {
+                hmoPayment.Status = PaymentReference_StatusValue.Failed.ToString();
+                _repoWrapper.HMOPayment.Create(hmoPayment);
+                await _repoWrapper.Save();
+                return new ResponseMessage { Message = axaPaymentResponse.ResponseText};
+
+            }
+        }
 
         /// <summary>
         /// Function to send email reminder three days before subscription cysle ends.

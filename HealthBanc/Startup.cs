@@ -69,7 +69,7 @@ namespace HealthBanc
             services.Configure<EmailAuth>(Configuration.GetSection("EmailAuth"));
             services.Configure<HygeiaConfiguration>(Configuration.GetSection("HygeiaConfiguration"));
             services.Configure<AdminAuthSettings>(Configuration.GetSection("AdminAuthSettings"));
-            services.Configure<AccountDetails>(Configuration.GetSection("AccountDetails"));
+            services.Configure<HMOAccountDetails>(Configuration.GetSection("HMOAccountDetails"));
             services.Configure<IBSConfig>(Configuration.GetSection("IBSConfig"));
             
             services.AddIdentity<ApplicationUser, AppRole>(options =>

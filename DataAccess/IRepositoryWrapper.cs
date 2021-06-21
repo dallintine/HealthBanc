@@ -35,6 +35,8 @@ namespace DataAccess
         IServiceRepository Service { get; }
         IUserAuditLogRepository UserAuditLog { get; }
         IPasswordChangeRepository PasswordChange { get; }
+        IHealthFinanceRepository HealthFinance { get; }
+        IHMOPaymentRepository HMOPayment { get; }
 
         Task<int> Save();
     }

@@ -43,6 +43,8 @@ namespace Persistence
         public DbSet<BeneficiaryReviewUser> BeneficiaryReviewUsers { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<EncryptedAcessToken> EncryptedAcessTokens { get; set; }
+        public DbSet<HealthFinance> HealthFinances { get; set; }
+        public DbSet<HMOPayment> HMOPayments { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

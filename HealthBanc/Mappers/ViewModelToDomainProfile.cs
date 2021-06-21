@@ -16,6 +16,9 @@ namespace HealthBanc.Mappers
             CreateMap<NotificationViewModel, Notification>();
             CreateMap<AuditLogViewModel, UserAuditLog>();
             CreateMap<AdminAuditLogViewModel, AdminAuditLog>();
+            CreateMap<HealthFinanceCollectionViewModel, HealthFinance>()
+                .ForMember( dest => dest.DateSubmitted, opt => opt.MapFrom(x => DateTime.Now))
+                .ForMember(dest => dest.Amount, opt => opt.MapFrom(x => decimal.Parse(x.Amount)));
         }
     }
 }

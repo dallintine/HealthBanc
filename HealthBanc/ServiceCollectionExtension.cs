@@ -115,6 +115,7 @@ namespace HealthBanc
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddScoped<Dashboard_Analytics>();
             services.AddScoped<IFileProcessor, FileProcessor>();
+            services.AddScoped<LeadGeneratorService>();
         }
     }
 }

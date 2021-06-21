@@ -9,5 +9,6 @@ namespace Application.API_ResponseModel.IBSResponse
         public string ResponseCode { get; set; }
         public string ResponseText { get; set; }
         public string FTReference { get; set; }
+        public string Reference { get; set; }
     }
 }

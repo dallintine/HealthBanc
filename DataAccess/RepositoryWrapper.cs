@@ -41,6 +41,20 @@ namespace DataAccess
         private IServiceRepository _serviceRepository;
         private IUserAuditLogRepository _userAuditLogRepository;
         private IPasswordChangeRepository _passwordChangeRepository;
+        public IHealthFinanceRepository _healthFinance;
+        public IHMOPaymentRepository _hmoPayment;
+
+        public IHMOPaymentRepository HMOPayment
+        {
+            get
+            {
+                if (_hmoPayment == null)
+                {
+                    _hmoPayment = new HMOPaymentRepository(_context);
+                }
+                return _hmoPayment;
+            }
+        }
 
         public IEncryptedAcessTokenRepository EncryptedAcessToken
         {
@@ -51,6 +65,18 @@ namespace DataAccess
                     _encryptedAcessTokenRepository = new EncryptedAcessTokenRepository(_context);
                 }
                 return _encryptedAcessTokenRepository;
+            }
+        }
+
+        public IHealthFinanceRepository HealthFinance
+        {
+            get
+            {
+                if (_healthFinance == null)
+                {
+                    _healthFinance = new HealthFinanceRepository(_context);
+                }
+                return _healthFinance;
             }
         }
 

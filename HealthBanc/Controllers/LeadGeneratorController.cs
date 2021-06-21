@@ -1,7 +1,10 @@
 ﻿using Application.DTO;
 using Application.Interfaces;
+using Application.Services;
 using Application.ViewModels;
 using AutoMapper;
+using DataAccess;
+using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -14,13 +17,11 @@ namespace HealthBanc.Controllers
     [ApiController]
     public class LeadGeneratorController : ControllerBase
     {
-        private readonly IMapper _mapper;
-        private readonly IEmailSender _emailSender;
+        private readonly LeadGeneratorService _leadGenerator;
 
-        public LeadGeneratorController(IMapper mapper, IEmailSender emailSender)
+        public LeadGeneratorController(LeadGeneratorService leadGenerator)
         {
-            _mapper = mapper;
-            _emailSender = emailSender;
+            _leadGenerator = leadGenerator;
         }
 
         /// <summary>
@@ -33,9 +34,9 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                _emailSender.SendHeliumNotification("Helium Notification", heliumHealth.HealthServiceProviderName, heliumHealth.HealthServiveProviderType, heliumHealth.PhoneNumber,
-                    heliumHealth.EmailAddress);
-                return Ok(new ResponseMessage { Status = true, Message = "Notification was sent successfully" });
+                var response = _leadGenerator.SendHeliumNotification(heliumHealth);
+                return Ok(response);
+               
             }
             var errors = new List<string>();
             var errorList = ModelState.Values.SelectMany(m => m.Errors)
@@ -56,16 +57,12 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public IActionResult SendHealthFinanceData(HealthFinanceCollectionViewModel healthFinance)
+        public async Task<IActionResult> SendHealthFinanceData(HealthFinanceCollectionViewModel healthFinance)
         {
             if (ModelState.IsValid)
             {
-                var emails = new List<string>
-                {
-                    "Effiong.Effiong@sterling.ng" , "Hassan.Hassan@sterling.ng"
-                };
-                _emailSender.SendHealthFinanceNotification("HealthFinance Notification",healthFinance ,emails);
-                return Ok(new ResponseMessage { Status = true, Message = "Notification was sent successfully" });
+                var response = await _leadGenerator.SendHealthFinanceData(healthFinance);
+                return Ok(response);
             }
             var errors = new List<string>();
             var errorList = ModelState.Values.SelectMany(m => m.Errors)
@@ -76,6 +73,18 @@ namespace HealthBanc.Controllers
                 errors.Add(error);
             }
             return BadRequest(new ResponseMessage() { Data = errors, Message = errors.FirstOrDefault() });
+        }
+
+        /// <summary>
+        /// Get paginated finance data
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HealthFinance>>))]
+        public async Task<IActionResult> GetPAginatedFinanceData([FromQuery] PaginationQuery paginationQuery)
+        {
+            var response = await _leadGenerator.GetPaginatedHealthFinaceData(paginationQuery);
+            return Ok(response);
         }
     }
 }

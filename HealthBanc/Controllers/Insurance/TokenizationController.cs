@@ -273,15 +273,71 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(response);
         }
 
+        /// <summary>
+        /// Get HMO invoice details
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public IActionResult GetHMOInvoiceDetails()
+        {
+            var response = _tokenizationService.GetHMOPaymentDetailsForMonthEnd();
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// Make payment to hygeia at month end
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> MakeHygeiaHMOPayment(string passCode)
+        {
+            if (passCode == "A@d8Z6}8j6?<12:OP")
+            {
+                var response = await _tokenizationService.MakeHygeiaHMOPayment();
+                if (response.Status)
+                {
+                    return Ok(response);
+                }
+                return BadRequest(response);
+            }
+            return BadRequest(new ResponseMessage { Message = "Wrong PassCode" });
+        }
+
+        /// <summary>
+        /// Make payment to axamansard at month end
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> MakeAxamansardHMOPayment(string passCode)
+        {
+            if(passCode == "A@d8Z6}8j6?<12:OP")
+            {
+                var response = await _tokenizationService.MakeAxamansardHMOPayment();
+                if (response.Status)
+                {
+                    return Ok(response);
+                }
+                return BadRequest(response);
+            }
+            return BadRequest(new ResponseMessage { Message = "Wrong PassCode" });            
+        }
+
         [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
-        public IActionResult FitPaymentError(string reference, string amount)
+        public IActionResult FixPaymentError(string reference, string amount)
         {
             _tokenizationService.FitPaymentError(reference, amount);
             return Ok();
         }
 
-        //[Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> AccoutEnquiry(string account)
         {
@@ -290,11 +346,10 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> sendMoney(string account)
+        public async Task<IActionResult> SendMoney(string account)
         {
             var res = await _iBSIntegrationService.SterlingBankIntraBank(decimal.Parse("50"),"0076585585","0076525143","hassan", "NG0020032");
             return Ok(res);
         }
-
     }
 }

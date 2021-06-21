@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Application.Helpers
 {
-    public class AccountDetails
+    public class HMOAccountDetails
     {
         public string HealthInsuredAccountNumber { get; set; }
         public string HygeiaAccountNumber { get; set; }

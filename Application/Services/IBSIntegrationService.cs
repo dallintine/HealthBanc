@@ -20,10 +20,10 @@ namespace Application.Services
         public readonly EndpointAddress endpointAddress;
         public readonly BasicHttpBinding basicHttpBinding;
         private readonly ILogger<IBSIntegrationService> _logger;
-        private AccountDetails AccountAccessor { get; }
+        private HMOAccountDetails AccountAccessor { get; }
         private IBSConfig IBSAccessor { get; }
 
-        public IBSIntegrationService(ILogger<IBSIntegrationService> logger,IOptions<AccountDetails> accountAccessor, IOptions<IBSConfig> ibsAccessor)
+        public IBSIntegrationService(ILogger<IBSIntegrationService> logger,IOptions<HMOAccountDetails> accountAccessor, IOptions<IBSConfig> ibsAccessor)
         {
             endpointAddress = new EndpointAddress(serviceUrl);
             basicHttpBinding =
@@ -84,6 +84,7 @@ namespace Application.Services
                 _logger.LogInformation(finalresponse.ToString());
                 finalAcctName.ResponseCode = Convert.ToString(xmlDoc.GetElementsByTagName("ResponseCode").Item(0).InnerText);
                 finalAcctName.ResponseText = Convert.ToString(xmlDoc.GetElementsByTagName("ResponseText").Item(0).InnerText);
+                finalAcctName.Reference = referenceId;
                 if (finalAcctName.ResponseCode == "00")
                 {
                     finalAcctName.FTReference = Convert.ToString(xmlDoc.GetElementsByTagName("FTReference").Item(0).InnerText);
