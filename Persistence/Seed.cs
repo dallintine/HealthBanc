@@ -151,8 +151,26 @@ namespace Persistence
                 }
             }
 
-            
-
+            var financeData = new List<HealthFinance>()
+            {
+                new HealthFinance() {Name ="Hassan Hassan", Email="hassan.olatade.hh@gmail.com", BusinessName="Hassan Pharm", BusinessType="Finance",BusinessAddress="Lagos",Phonenumber="07034770338",
+                Amount=decimal.Parse("200034"),Comment="Hassan",DateSubmitted=DateTime.Now},
+                new HealthFinance() {Name ="Femi Alayaki", Email="FemiAlayaki@gmail.com", BusinessName="Femi Pharm", BusinessType="Finance",BusinessAddress="Ibadan",Phonenumber="07034776738",
+                Amount=decimal.Parse("20000000"),Comment="Femi",DateSubmitted=DateTime.Now.AddDays(3)},
+                new HealthFinance() {Name ="Bassey Effiong", Email="bassey@gmail.com", BusinessName="Bassey Microfinance bank", BusinessType="Banking",BusinessAddress="Calabar",Phonenumber="07045776738",
+                Amount=decimal.Parse("300200000"),Comment="Bassey",DateSubmitted=DateTime.Now.AddDays(10)},
+                 new HealthFinance() {Name ="Constance Enon", Email="Enon@gmail.com", BusinessName="Constance Cosmetics", BusinessType="Body care",BusinessAddress="Lagos",Phonenumber="07045376738",
+                Amount=decimal.Parse("400000"),Comment="Constance",DateSubmitted=DateTime.Now.AddDays(5)}
+            };
+            foreach(var item in financeData)
+            {
+                var dataExist = await context.HealthFinances.Where(x => x.Email == item.Email).FirstOrDefaultAsync();
+                if(dataExist is null)
+                {
+                    await context.HealthFinances.AddAsync(item);
+                }
+            }
+            await context.SaveChangesAsync();
             await Task.CompletedTask;            
         }
     }

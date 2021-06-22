@@ -45,9 +45,9 @@ namespace Application.Services
 
         }
 
-        public async Task<ResponseMessage> GetPaginatedHealthFinaceData(PaginationQuery paginationQuery)
+        public async Task<ResponseMessage> GetPaginatedHealthFinaceData(PaginationQuery paginationQuery,DateTime? startDate, DateTime? endDate)
         {
-            var financeData = await _repoWrapper.HealthFinance.GetPaginatedFinanceData(paginationQuery);
+            var financeData = await _repoWrapper.HealthFinance.GetPaginatedFinanceData(paginationQuery,startDate,endDate);
             return new ResponseMessage { Data = financeData, Status = true, Message="Data was fetched successfully" };
 
         }

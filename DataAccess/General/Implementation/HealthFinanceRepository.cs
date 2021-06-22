@@ -16,7 +16,7 @@ namespace DataAccess.General.Implementation
         {
         }
 
-        public async Task<PagedResponse<HealthFinance>> GetPaginatedFinanceData(PaginationQuery paginationQuery)
+        public async Task<PagedResponse<HealthFinance>> GetPaginatedFinanceData(PaginationQuery paginationQuery,DateTime? startDate, DateTime? endDate)
         {
             var paginatedResponse = new PagedResponse<HealthFinance>();
             var queryable = _context.HealthFinances.AsQueryable();
@@ -30,6 +30,18 @@ namespace DataAccess.General.Implementation
             //Sort the users
             queryable = paginationQuery.SortBy == 1 ? queryable.OrderBy(s => s.Email) : paginationQuery.SortBy == 2 ? queryable.OrderBy(s => s.BusinessName) :
                 paginationQuery.SortBy == 3 ? queryable.OrderBy(s => s.Name) : paginationQuery.SortBy == 4 ? queryable.OrderByDescending(s => s.Amount) : queryable.OrderByDescending(s => s.DateSubmitted);
+
+            //Filter by date
+
+            if(startDate != null)
+            {
+                queryable = queryable.Where(x => x.DateSubmitted.Date >= startDate.Value.Date);
+            }
+
+            if (endDate != null)
+            {
+                queryable = queryable.Where(x => x.DateSubmitted.Date <= endDate.Value.Date.Date);
+            }
 
             var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
 

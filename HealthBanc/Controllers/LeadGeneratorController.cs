@@ -80,13 +80,15 @@ namespace HealthBanc.Controllers
         /// Get paginated finance data
         /// </summary>
         /// <param name="paginationQuery"></param>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HealthFinance>>))]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        //[Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpPost("[action]")]
-        public async Task<IActionResult> GetPaginatedFinanceData([FromQuery] PaginationQuery paginationQuery)
+        public async Task<IActionResult> GetPaginatedFinanceData([FromQuery] PaginationQuery paginationQuery,[FromQuery] DateTime? startDate,[FromQuery] DateTime? endDate)
         {
-            var response = await _leadGenerator.GetPaginatedHealthFinaceData(paginationQuery);
+            var response = await _leadGenerator.GetPaginatedHealthFinaceData(paginationQuery,startDate,endDate);
             return Ok(response);
         }
     }
