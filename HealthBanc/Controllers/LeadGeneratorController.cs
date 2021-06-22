@@ -88,8 +88,24 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> GetPaginatedFinanceData([FromQuery] PaginationQuery paginationQuery,[FromQuery] DateTime? startDate,[FromQuery] DateTime? endDate)
         {
-            var response = await _leadGenerator.GetPaginatedHealthFinaceData(paginationQuery,startDate,endDate);
+            var response = await _leadGenerator.GetPaginatedHealthFinanceData(paginationQuery,startDate,endDate);
             return Ok(response);
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult DowloadFinaceExcelData([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        {      
+            var response = _leadGenerator.DowloadFinaceExcelData(startDate, endDate);
+            if (response.Status)
+            {
+                string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                string fileName = "healthfinance.xlsx";
+
+                var content = response.Data as byte[];
+                return File(content, contentType, fileName);
+            }
+            return BadRequest("Could not process excel documnet");
+           
         }
     }
 }

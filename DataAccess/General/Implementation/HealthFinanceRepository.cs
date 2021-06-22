@@ -52,5 +52,11 @@ namespace DataAccess.General.Implementation
             paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
             return paginatedResponse;
         }
+
+        public IQueryable<HealthFinance> QueryFinanceData()
+        {
+            var data = _context.HealthFinances.AsQueryable();
+            return data;
+        }
     }
 }
