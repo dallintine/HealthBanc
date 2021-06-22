@@ -84,7 +84,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HealthFinance>>))]
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         [HttpPost("[action]")]
-        public async Task<IActionResult> GetPAginatedFinanceData([FromQuery] PaginationQuery paginationQuery)
+        public async Task<IActionResult> GetPaginatedFinanceData([FromQuery] PaginationQuery paginationQuery)
         {
             var response = await _leadGenerator.GetPaginatedHealthFinaceData(paginationQuery);
             return Ok(response);
