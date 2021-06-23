@@ -32,6 +32,7 @@ using Domain.Models;
 using Persistence;
 using Application.Helpers.Jwt_Authorization;
 using Hangfire.Dashboard;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
 
 namespace HealthBanc
 {
@@ -227,6 +228,7 @@ namespace HealthBanc
             });
 
             //------------------------------------JWT Authentication Settings--------------------------------------//
+
         }
 
         public static class TokenLifetimeValidator
@@ -243,8 +245,11 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,TokenizationService tokenizationService)
         {
+            tokenizationService.MakeHygeiaHMOPayment().Wait();
+            tokenizationService.MakeAxamansardHMOPayment().Wait();
+
             var options = new DashboardOptions
             {
                 Authorization = new IDashboardAuthorizationFilter[]

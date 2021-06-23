@@ -7,7 +7,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
     public class HMOPayment
     {
         public int Id { get; set; }
-        public DateTime PaymentDate { get; set; }
+        public DateTime? PaymentDate { get; set; }
 
         public string _status;
         /// <summary>
@@ -48,6 +48,8 @@ namespace Domain.Models.Axa_Hygeia_Insurance
                 }
             }
         }
+
+        public string JobId { get; set; }
         public decimal Amount { get; set; }
         public string Reference { get; set; }
     }

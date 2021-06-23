@@ -287,54 +287,8 @@ namespace HealthBanc.Controllers.Insurance
         [HttpGet("[action]")]
         public IActionResult GetHMOInvoiceDetails()
         {
-            var response = _tokenizationService.GetHMOPaymentDetailsForMonthEnd();
+            var response = _tokenizationService.GetHMOInvoiceDetailsForMonthEnd();
             return Ok(response);
-        }
-
-        /// <summary>
-        /// Make payment to hygeia at month end
-        /// </summary>
-        /// <param name="passCode"></param>
-        /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> MakeHygeiaHMOPayment(string passCode)
-        {
-            if (passCode == "A@d8Z6}8j6?<12:OP")
-            {
-                var response = await _tokenizationService.MakeHygeiaHMOPayment();
-                if (response.Status)
-                {
-                    return Ok(response);
-                }
-                return BadRequest(response);
-            }
-            return BadRequest(new ResponseMessage { Message = "Wrong PassCode" });
-        }
-
-        /// <summary>
-        /// Make payment to axamansard at month end
-        /// </summary>
-        /// <param name="passCode"></param>
-        /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> MakeAxamansardHMOPayment(string passCode)
-        {
-            if(passCode == "A@d8Z6}8j6?<12:OP")
-            {
-                var response = await _tokenizationService.MakeAxamansardHMOPayment();
-                if (response.Status)
-                {
-                    return Ok(response);
-                }
-                return BadRequest(response);
-            }
-            return BadRequest(new ResponseMessage { Message = "Wrong PassCode" });            
         }
 
         [Authorize(Roles = "SuperAdmin")]

@@ -928,7 +928,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             return new ResponseMessage { Message = chargeAuthorization.Message, Status =false, ResponseCode = chargeAuthorization.ResponseCode };
         }        
 
-        public ResponseMessage GetHMOPaymentDetailsForMonthEnd()
+        public ResponseMessage GetHMOInvoiceDetailsForMonthEnd()
         {
             var hygeiaPayment = _repoWrapper.PaymentReference.QueryAllPaymentReference()
                 .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_hygeia.ToString().ToLower() 
@@ -948,80 +948,146 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             return new ResponseMessage { Data = HMOPayment, Status = true };
         }
 
-        public async Task<ResponseMessage> MakeHygeiaHMOPayment()
+        public async Task MakeHygeiaHMOPayment()
+        {
+            var paymentCount = await _repoWrapper.HMOPayment.GetPaymentCount(PaymentReference_ChannelValue.healthinsured_hygeia.ToString());
+            if(paymentCount < 1)
+            {
+                var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
+                var hygeiaAcc = HMOAccountDetails.HygeiaAccountNumber;
+
+                //var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                //var executionDate = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                var executionDate = DateTime.Now.AddMinutes(6);
+                var hmoPayment = new HMOPayment()
+                {
+                    PaymentDate = executionDate,
+                    Channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString(),
+                    Status = PaymentReference_StatusValue.Pending.ToString(),
+                };
+                var jobId = BackgroundJob.Schedule(() => ProcessHygeiaHMOPayment(healthInsuredAcc, hygeiaAcc,null), executionDate);
+                hmoPayment.JobId = jobId;
+                _repoWrapper.HMOPayment.Create(hmoPayment);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
+        }
+
+        public async Task ProcessHygeiaHMOPayment(string fromAccount, string toAccount, PerformContext context)
         {
             var hygeiaPayment = _repoWrapper.PaymentReference.QueryAllPaymentReference()
                .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_hygeia.ToString().ToLower()
                && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
                .Select(x => x.Amount).Sum();
 
-            var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
-            var hygeiaAcc = HMOAccountDetails.HygeiaAccountNumber;
+            var jobId = context.BackgroundJob.Id;
 
-            var hygeiaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(hygeiaPayment, hygeiaAcc,
-                healthInsuredAcc, "Automated Sterling Bank monthly payment to Hygiea. HealthBanc- Hygeia partnership ", "NG0020032");
+            var pendingPayment = await _repoWrapper.HMOPayment.GetPaymentByJobId(jobId);
 
-            var hmoPayment = new HMOPayment()
-            {
-                PaymentDate = DateTime.Now,
-                Channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString(),
-                Amount = hygeiaPayment,
-                Reference = hygeiaPaymentResponse.Reference
-            };
+            var hygeiaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(hygeiaPayment, toAccount,
+                fromAccount, "Automated Sterling Bank monthly payment to Hygiea. HealthBanc- Hygeia partnership ", "NG0020032");
+
+            pendingPayment.Reference = hygeiaPaymentResponse.Reference;
+            pendingPayment.PaymentDate = DateTime.Now;
 
             if (hygeiaPaymentResponse.ResponseCode == "00")
             {
-                hmoPayment.Status = PaymentReference_StatusValue.Successful.ToString();
+                pendingPayment.Status = PaymentReference_StatusValue.Successful.ToString();
+                _repoWrapper.HMOPayment.Update(pendingPayment);
+                await _repoWrapper.Save();
+
+                //var firstDayOfNextMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month+1, 1);
+                //var executionDate = firstDayOfNextMonth.AddMonths(1).AddDays(-1);
+                var executionDate = DateTime.Now.AddMinutes(6);
+                var newJobId = BackgroundJob.Schedule(() => ProcessHygeiaHMOPayment(fromAccount, toAccount,null), executionDate);
+                var hmoPayment = new HMOPayment()
+                {
+                    PaymentDate = executionDate,
+                    Channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString(),
+                    Status = PaymentReference_StatusValue.Pending.ToString(),
+                };
+                hmoPayment.JobId = newJobId;
                 _repoWrapper.HMOPayment.Create(hmoPayment);
                 await _repoWrapper.Save();
-                return new ResponseMessage { Status = true ,Message = hygeiaPaymentResponse .ResponseText};
             }
             else
             {
-                hmoPayment.Status = PaymentReference_StatusValue.Failed.ToString();
-                _repoWrapper.HMOPayment.Create(hmoPayment);
+                pendingPayment.Status = PaymentReference_StatusValue.Failed.ToString();
+                _repoWrapper.HMOPayment.Update(pendingPayment);
                 await _repoWrapper.Save();
-                return new ResponseMessage { Message = hygeiaPaymentResponse.ResponseText };
-
             }
+            await Task.CompletedTask;
         }
 
-        public async Task<ResponseMessage> MakeAxamansardHMOPayment()
+        public async Task MakeAxamansardHMOPayment()
+        {
+            var paymentCount = await _repoWrapper.HMOPayment.GetPaymentCount(PaymentReference_ChannelValue.healthinsured_axamansard.ToString());
+            if (paymentCount < 1)
+            {
+                var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
+                var axaAcc = HMOAccountDetails.AxamansardAccountNumber;
+
+                //var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                //var executionDate = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                var executionDate = DateTime.Now.AddMinutes(6);
+                var hmoPayment = new HMOPayment()
+                {
+                    PaymentDate = executionDate,
+                    Channel = PaymentReference_ChannelValue.healthinsured_axamansard.ToString(),
+                    Status = PaymentReference_StatusValue.Pending.ToString(),
+                };
+                var jobId = BackgroundJob.Schedule(() => ProcessAxamansardHMOPayment(healthInsuredAcc, axaAcc, null), executionDate);
+                hmoPayment.JobId = jobId;
+                _repoWrapper.HMOPayment.Create(hmoPayment);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
+        }
+
+        public async Task ProcessAxamansardHMOPayment(string fromAccount, string toAccount, PerformContext context)
         {
             var axaPayment = _repoWrapper.PaymentReference.QueryAllPaymentReference()
-                .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_axamansard.ToString().ToLower()
-                && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
-                .Select(x => x.Amount).Sum();
+               .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_axamansard.ToString().ToLower()
+               && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
+               .Select(x => x.Amount).Sum();
 
-            var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
-            var axaAcc = HMOAccountDetails.AxamansardAccountNumber;
+            var jobId = context.BackgroundJob.Id;
 
-            var axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, axaAcc,
-                healthInsuredAcc, "Automated Sterling Bank monthly payment to Axamansard. HealthBanc- Axamansard partnership ", "NG0020032");
+            var pendingPayment = await _repoWrapper.HMOPayment.GetPaymentByJobId(jobId);
 
-            var hmoPayment = new HMOPayment()
-            {
-                PaymentDate = DateTime.Now,
-                Channel = PaymentReference_ChannelValue.healthinsured_axamansard.ToString(),
-                Amount = axaPayment,
-                Reference = axaPaymentResponse.Reference
-            };
+            var axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
+                fromAccount, "Automated Sterling Bank monthly payment to Axamansard. HealthBanc- Axamansard partnership ", "NG0020032");
+
+            pendingPayment.Reference = axaPaymentResponse.Reference;
+            pendingPayment.PaymentDate = DateTime.Now;
 
             if (axaPaymentResponse.ResponseCode == "00")
             {
-                hmoPayment.Status = PaymentReference_StatusValue.Successful.ToString();
+                pendingPayment.Status = PaymentReference_StatusValue.Successful.ToString();
+                _repoWrapper.HMOPayment.Update(pendingPayment);
+                await _repoWrapper.Save();
+
+                //var firstDayOfNextMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month + 1, 1);
+                //var executionDate = firstDayOfNextMonth.AddMonths(1).AddDays(-1);
+                var executionDate = DateTime.Now.AddMinutes(6);
+                var newJobId = BackgroundJob.Schedule(() => ProcessAxamansardHMOPayment(fromAccount, toAccount, null), executionDate);
+                var hmoPayment = new HMOPayment()
+                {
+                    PaymentDate = executionDate,
+                    Channel = PaymentReference_ChannelValue.healthinsured_axamansard.ToString(),
+                    Status = PaymentReference_StatusValue.Pending.ToString(),
+                };
+                hmoPayment.JobId = newJobId;
                 _repoWrapper.HMOPayment.Create(hmoPayment);
                 await _repoWrapper.Save();
-                return new ResponseMessage { Status = true,Message= axaPaymentResponse.ResponseText };
             }
             else
             {
-                hmoPayment.Status = PaymentReference_StatusValue.Failed.ToString();
-                _repoWrapper.HMOPayment.Create(hmoPayment);
+                pendingPayment.Status = PaymentReference_StatusValue.Failed.ToString();
+                _repoWrapper.HMOPayment.Update(pendingPayment);
                 await _repoWrapper.Save();
-                return new ResponseMessage { Message = axaPaymentResponse.ResponseText};
-
             }
+            await Task.CompletedTask;
         }
 
         /// <summary>
