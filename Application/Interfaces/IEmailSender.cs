@@ -10,6 +10,7 @@ namespace Application.Interfaces
     public interface IEmailSender
     {
         void CorporateInsuranceOnboarding(string email, string subject, string otp);
+        void CustomMail(string email, string subject, string content);
         void HealthInsuredCompanyDeactivation(string email, string subject, string userName, string premium);
         void HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium, string stopDate);
         void HealthInsuredFailedDebit(string email, string subject, string userName, string premium);

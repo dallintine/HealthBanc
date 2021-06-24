@@ -957,10 +957,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
                 var hygeiaAcc = HMOAccountDetails.HygeiaAccountNumber;
 
-                var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                //var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
 
-                var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
-                var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
+                //var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                //var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
+                var endOfMonth = DateTime.Now.AddMinutes(7);
+                var endOfNextMonth = DateTime.Now.AddMinutes(14);
                 var hmoPayment = new HMOPayment()
                 {
                     PaymentDate = endOfMonth,
@@ -1030,7 +1032,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     PaymentDate = pendingPayment.NextMonthPaymentDate,
                     Channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString(),
                     Status = PaymentReference_StatusValue.Pending.ToString(),
-                    NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddDays(1).AddMonths(1).AddDays(-1)
+                    //NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddDays(1).AddMonths(1).AddDays(-1)
+                    NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddMinutes(7)
                 };
                 hmoPayment.JobId = newJobId;
                 _repoWrapper.HMOPayment.Create(hmoPayment);
@@ -1041,6 +1044,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 pendingPayment.Status = PaymentReference_StatusValue.Failed.ToString();
                 _repoWrapper.HMOPayment.Update(pendingPayment);
                 await _repoWrapper.Save();
+                _emailSender.CustomMail("Hassan.Hassan@sterling.ng","Failed HMO Payment","HMO payment with Id : "+pendingPayment.Id+" to "+pendingPayment.Channel+" Failed. Kindly investigate and retry");
+                _emailSender.CustomMail("hassan.olatade.hh@gmail.com", "Failed HMO Payment", "HMO payment with Id : " + pendingPayment.Id + " to " + pendingPayment.Channel + " Failed. Kindly investigate" +
+                    " and retry");
             }
             await Task.CompletedTask;
         }       
@@ -1053,10 +1059,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
                 var axaAcc = HMOAccountDetails.AxamansardAccountNumber;
 
-                var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                //var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
 
-                var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
-                var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
+                //var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                //var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
+                var endOfMonth = DateTime.Now.AddMinutes(7);
+                var endOfNextMonth = DateTime.Now.AddMinutes(14);
 
                 var hmoPayment = new HMOPayment()
                 {
@@ -1099,17 +1107,19 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
 
             var pendingPayment = await _repoWrapper.HMOPayment.GetPaymentByJobId(jobId);
-            var axaPaymentResponse = new OBJ_IBS_Transfer_Response_Class();
-            if (axaPayment > 50)
-            {
-                axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
+            //var axaPaymentResponse = new OBJ_IBS_Transfer_Response_Class();
+            var axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
                 fromAccount, "Automated Sterling Bank monthly payment to Axamansard. HealthBanc- Axamansard partnership ", "NG0020032");
-            }
-            else
-            {
-                axaPaymentResponse.ResponseCode = "00";
-                axaPaymentResponse.Reference = Guid.NewGuid().ToString(); ;
-            }            
+            //if (axaPayment > 50)
+            //{
+            //    axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
+            //    fromAccount, "Automated Sterling Bank monthly payment to Axamansard. HealthBanc- Axamansard partnership ", "NG0020032");
+            //}
+            //else
+            //{
+            //    axaPaymentResponse.ResponseCode = "00";
+            //    axaPaymentResponse.Reference = Guid.NewGuid().ToString(); ;
+            //}            
 
             pendingPayment.Reference = axaPaymentResponse.Reference;
             pendingPayment.PaymentDate = DateTime.Now;
@@ -1127,7 +1137,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     PaymentDate = pendingPayment.NextMonthPaymentDate,
                     Channel = PaymentReference_ChannelValue.healthinsured_axamansard.ToString(),
                     Status = PaymentReference_StatusValue.Pending.ToString(),
-                    NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddDays(1).AddMonths(1).AddDays(-1)
+                    //NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddDays(1).AddMonths(1).AddDays(-1)
+                    NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddMinutes(7)
                 };
                 hmoPayment.JobId = newJobId;
                 _repoWrapper.HMOPayment.Create(hmoPayment);
@@ -1138,6 +1149,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 pendingPayment.Status = PaymentReference_StatusValue.Failed.ToString();
                 _repoWrapper.HMOPayment.Update(pendingPayment);
                 await _repoWrapper.Save();
+                _emailSender.CustomMail("Hassan.Hassan@sterling.ng", "Failed HMO Payment", "HMO payment with Id : "+pendingPayment.Id+" to "+pendingPayment.Channel+" Failed. Kindly investigate and retry");
+                _emailSender.CustomMail("hassan.olatade.hh@gmail.com", "Failed HMO Payment", "HMO payment with Id : " + pendingPayment.Id + " to " + pendingPayment.Channel + " Failed. Kindly investigate" +
+                    " and retry");
             }
             await Task.CompletedTask;
         }
