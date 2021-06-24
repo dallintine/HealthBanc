@@ -80,9 +80,9 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             }
 
             var fileSize = userProfile.UserImage.Length;
-            if((fileSize/1048576) > 1)
+            if((fileSize/1048576) > 2.1)
             {
-                return new ResponseMessage { Message = "Image Size is too large - Size should be less than 1MB" };
+                return new ResponseMessage { Message = "Image Size is too large - Size should be less than 2MB" };
             }
 
             var creatResponse = await CreateUserProfile(userProfile, user);
