@@ -312,5 +312,12 @@ namespace HealthBanc.Controllers.Insurance
             var res = await _iBSIntegrationService.SterlingBankIntraBank(decimal.Parse("50"),"0076585585","0076525143","hassan", "NG0020032");
             return Ok(res);
         }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> ProcessFailedHMOPayment(int Id)
+        {
+            await _tokenizationService.ProcessFailedHMOPayment(Id);
+            return Ok();
+        }
     }
 }
