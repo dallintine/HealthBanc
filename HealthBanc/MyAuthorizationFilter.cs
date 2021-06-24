@@ -23,7 +23,6 @@ namespace HealthBanc
             _role = role;
             _logger = logger;
         }
-
         public bool Authorize(DashboardContext context)
         {
             //var httpContext = context.GetHttpContext();
