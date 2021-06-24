@@ -960,7 +960,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                 var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
                 var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
-
                 var hmoPayment = new HMOPayment()
                 {
                     PaymentDate = endOfMonth,
