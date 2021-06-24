@@ -8,6 +8,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
     {
         public int Id { get; set; }
         public DateTime? PaymentDate { get; set; }
+        public DateTime NextMonthPaymentDate { get; set; }
 
         public string _status;
         /// <summary>

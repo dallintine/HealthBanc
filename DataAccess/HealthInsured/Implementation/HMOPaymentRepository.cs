@@ -29,5 +29,11 @@ namespace DataAccess.HealthInsured.Implementation
             var payment = await _context.HMOPayments.Where(x => x.JobId == jobId).FirstOrDefaultAsync();
             return payment;
         }
+
+        public async Task<HMOPayment> GetFailedPaymentById(int id)
+        {
+            var payment = await _context.HMOPayments.Where(x => x.Id == id && x.Status == PaymentReference_StatusValue.Failed.ToString()).FirstOrDefaultAsync();
+            return payment;
+        }
     }
 }

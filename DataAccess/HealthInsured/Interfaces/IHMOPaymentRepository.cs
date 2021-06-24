@@ -9,6 +9,7 @@ namespace DataAccess.HealthInsured.Interfaces
 {
     public interface IHMOPaymentRepository : IBaseRepository<HMOPayment>
     {
+        Task<HMOPayment> GetFailedPaymentById(int id);
         Task<HMOPayment> GetPaymentByJobId(string jobId);
         Task<int> GetPaymentCount(string channel);
     }
