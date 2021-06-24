@@ -33,6 +33,7 @@ using Microsoft.Extensions.Logging;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured.Insurance;
+using Application.API_ResponseModel.IBSResponse;
 
 namespace Application.Services.HealthInsured_AxaMansard.Insurance
 {
@@ -1001,9 +1002,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
 
             var pendingPayment = await _repoWrapper.HMOPayment.GetPaymentByJobId(jobId);
-
-            var hygeiaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(hygeiaPayment, toAccount,
-                fromAccount, "Automated Sterling Bank monthly payment to Hygiea. HealthBanc- Hygeia partnership ", "NG0020032");
+            var hygeiaPaymentResponse = new OBJ_IBS_Transfer_Response_Class();
+            if (hygeiaPayment > 50)
+            {
+                hygeiaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(hygeiaPayment, toAccount,
+               fromAccount, "Automated Sterling Bank monthly payment to Hygiea. HealthBanc- Hygeia partnership ", "NG0020032");
+            }
+            else
+            {
+                hygeiaPaymentResponse.ResponseCode = "00";
+                hygeiaPaymentResponse.Reference = Guid.NewGuid().ToString(); ;
+            }
 
             pendingPayment.Reference = hygeiaPaymentResponse.Reference;
             pendingPayment.PaymentDate = DateTime.Now;
@@ -1090,9 +1099,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
 
             var pendingPayment = await _repoWrapper.HMOPayment.GetPaymentByJobId(jobId);
-
-            var axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
+            var axaPaymentResponse = new OBJ_IBS_Transfer_Response_Class();
+            if (axaPayment > 50)
+            {
+                axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
                 fromAccount, "Automated Sterling Bank monthly payment to Axamansard. HealthBanc- Axamansard partnership ", "NG0020032");
+            }
+            else
+            {
+                axaPaymentResponse.ResponseCode = "00";
+                axaPaymentResponse.Reference = Guid.NewGuid().ToString(); ;
+            }            
 
             pendingPayment.Reference = axaPaymentResponse.Reference;
             pendingPayment.PaymentDate = DateTime.Now;
