@@ -1107,19 +1107,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
 
             var pendingPayment = await _repoWrapper.HMOPayment.GetPaymentByJobId(jobId);
-            //var axaPaymentResponse = new OBJ_IBS_Transfer_Response_Class();
-            var axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
+            var axaPaymentResponse = new OBJ_IBS_Transfer_Response_Class();
+            if (axaPayment > 50)
+            {
+                axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
                 fromAccount, "Automated Sterling Bank monthly payment to Axamansard. HealthBanc- Axamansard partnership ", "NG0020032");
-            //if (axaPayment > 50)
-            //{
-            //    axaPaymentResponse = await _iBSIntegrationService.SterlingBankIntraBank(axaPayment, toAccount,
-            //    fromAccount, "Automated Sterling Bank monthly payment to Axamansard. HealthBanc- Axamansard partnership ", "NG0020032");
-            //}
-            //else
-            //{
-            //    axaPaymentResponse.ResponseCode = "00";
-            //    axaPaymentResponse.Reference = Guid.NewGuid().ToString(); ;
-            //}            
+            }
+            else
+            {
+                axaPaymentResponse.ResponseCode = "00";
+                axaPaymentResponse.Reference = Guid.NewGuid().ToString(); ;
+            }
 
             pendingPayment.Reference = axaPaymentResponse.Reference;
             pendingPayment.PaymentDate = DateTime.Now;
