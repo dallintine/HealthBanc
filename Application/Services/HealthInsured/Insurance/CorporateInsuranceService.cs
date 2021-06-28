@@ -77,7 +77,7 @@ namespace Application.Services.HealthInsured.Insurance
             company.OTPJobId = otpJobId;
             _repoWrapper.CompanyProfile.Create(company);
             await _repoWrapper.Save();
-            _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporating Onboarding", otp);
+            _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporate Onboarding", otp);
             return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
         }
 
