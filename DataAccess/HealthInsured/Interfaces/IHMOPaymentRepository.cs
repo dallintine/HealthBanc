@@ -12,5 +12,6 @@ namespace DataAccess.HealthInsured.Interfaces
         Task<HMOPayment> GetFailedPaymentById(int id);
         Task<HMOPayment> GetPaymentByJobId(string jobId);
         Task<int> GetPaymentCount(string channel);
+        Task<List<HMOPayment>> GetPayments();
     }
 }

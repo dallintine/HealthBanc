@@ -307,9 +307,9 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> SendMoney(string account)
+        public async Task<IActionResult> SendMoney(string toAccount,string fromAccount,string amount,string des)
         {
-            var res = await _iBSIntegrationService.SterlingBankIntraBank(decimal.Parse("50"),"0076585585","0076525143","hassan", "NG0020032");
+            var res = await _iBSIntegrationService.SterlingBankIntraBank(decimal.Parse(amount), toAccount, fromAccount, des, "NG0020032");
             return Ok(res);
         }
 
@@ -317,6 +317,20 @@ namespace HealthBanc.Controllers.Insurance
         public async Task<IActionResult> ProcessFailedHMOPayment(int Id)
         {
             await _tokenizationService.ProcessFailedHMOPayment(Id);
+            return Ok();
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> DeleteHOMPayments()
+        {
+            await _tokenizationService.DeleteHOMPayments();
+            return Ok();
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> StartHMOPayments()
+        {
+            await _tokenizationService.StartHMOPayments();
             return Ok();
         }
     }

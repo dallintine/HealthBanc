@@ -1170,6 +1170,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await ProcessAxamansardHMOPayment(healthInsuredAcc, axaAcc, pendingPayment.Amount, pendingPayment.JobId, null);
             }
         }
+        public async Task DeleteHOMPayments()
+        {
+            var payments = await _repoWrapper.HMOPayment.GetPayments();
+            _repoWrapper.HMOPayment.DeleteRange(payments);
+            await _repoWrapper.Save();
+        }
+        public async Task StartHMOPayments()
+        {
+            await MakeHygeiaHMOPayment();
+            await MakeAxamansardHMOPayment();
+        }
 
         /// <summary>
         /// Function to send email reminder three days before subscription cysle ends.

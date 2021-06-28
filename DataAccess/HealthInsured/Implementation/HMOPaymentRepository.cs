@@ -30,6 +30,12 @@ namespace DataAccess.HealthInsured.Implementation
             return payment;
         }
 
+        public async Task<List<HMOPayment>> GetPayments()
+        {
+            var payments = await _context.HMOPayments.ToListAsync();
+            return payments;
+        }
+
         public async Task<HMOPayment> GetFailedPaymentById(int id)
         {
             var payment = await _context.HMOPayments.Where(x => x.Id == id && x.Status == PaymentReference_StatusValue.Failed.ToString()).FirstOrDefaultAsync();

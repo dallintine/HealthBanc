@@ -10,6 +10,7 @@ using Application.Services.Identity;
 using Application.ViewModels;
 using Application.ViewModels.HealthInsured;
 using AutoMapper;
+using ClosedXML.Excel;
 using DataAccess;
 using Domain.Models;
 using Domain.Models.Axa.Hygeia_Insurance;
@@ -26,6 +27,7 @@ using Newtonsoft.Json;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -347,7 +349,106 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             filterHealthCareProvider.PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null;
 
             return new ResponseMessage { Data = filterHealthCareProvider, Status = true, Message = "Care provider was fetched successfully" };
-        }               
+        }
+
+        public ResponseMessage DowloadInsuranceProfileExcelData(bool subStatus, bool activeStatus,string service)
+        {
+            var data = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles();
+            if(service == InsuranceProvider.Axamansard.ToString())
+            {
+                data = data.Where(x => x.InsuranceService == service);
+            }
+            if (service == InsuranceProvider.Hygeia.ToString())
+            {
+                data = data.Where(x => x.InsuranceService == service);
+            }
+            if(activeStatus == true)
+            {
+                data = data.Where(x => x.ActiveStatus == true);
+            }
+            if (activeStatus == false)
+            {
+                data = data.Where(x => x.ActiveStatus == false);
+            }
+            if (subStatus == true)
+            {
+                data = data.Where(x => x.SubscriptionStatus == true);
+            }
+            if (subStatus == false)
+            {
+                data = data.Where(x => x.SubscriptionStatus == false);
+            }
+
+            var dataCount = data.ToList().Count;
+            var count = 3;
+            if (dataCount < 1) return new ResponseMessage { Message = "Count has to be larger than zero" };
+            using (var workbook = new XLWorkbook())
+            {
+                IXLWorksheet worksheet =
+                workbook.Worksheets.Add("HealthInsurance");
+
+                worksheet.Cell(2, 1).Value = "FullName";
+                worksheet.Cell(2, 2).Value = "Email";
+                worksheet.Cell(2, 3).Value = "Phonenumber";
+                worksheet.Cell(2, 4).Value = "Enrollee Number";
+                worksheet.Cell(2, 5).Value = "Date Of Birth";
+                worksheet.Cell(2, 6).Value = "Gender";
+                worksheet.Cell(2, 7).Value = "Marital Status ";
+                worksheet.Cell(2, 8).Value = "Occupation";
+                worksheet.Cell(2, 9).Value = "Home Address";
+                worksheet.Cell(2, 10).Value = "State";
+                worksheet.Cell(2, 11).Value = "Care Provider";
+                worksheet.Cell(2, 12).Value = "Amount";
+
+                foreach (var item in data.ToList())
+                {
+                    worksheet.Cell(count, 1).Value = item.MaidenName+" "+item.Othernames;
+                    worksheet.Cell(count, 2).Value = item.Email;
+                    worksheet.Cell(count, 3).Value = item.PhoneNumber;
+                    worksheet.Cell(count, 4).Value = item.TransId;
+                    worksheet.Cell(count, 5).Value = item.DateOfBirth.ToString();
+                    worksheet.Cell(count, 6).Value = item.Gender;
+                    worksheet.Cell(count, 7).Value = item.MaritalStatus;
+                    worksheet.Cell(count, 8).Value = item.Occupation;
+                    worksheet.Cell(count, 9).Value = item.ContactAddress;
+                    worksheet.Cell(count, 10).Value = item.StateOfResidence;
+                    worksheet.Cell(count, 11).Value = item.CareProviderName;
+                    worksheet.Cell(count, 12).Value = item.Premium.ToString();
+
+                    count++;
+                }
+                worksheet.Rows().AdjustToContents();
+                worksheet.Columns().AdjustToContents();
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    return new ResponseMessage { Data = content, Status = true, Message = "Excel data was fetched successfully" };
+                }
+            }
+        }
+
+        public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
+        {
+            var presentHospitalList = _repoWrapper.AxaMansardHospitalList.GetAll().ToList();
+            _repoWrapper.AxaMansardHospitalList.DeleteRange(presentHospitalList);
+            await _repoWrapper.Save();
+            var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
+            _repoWrapper.AxaMansardHospitalList.CreateRange(hospitalList);
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true, Message = "Upload was successful" };
+        }
+
+        public async Task<ResponseMessage> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
+        {
+            var presentHospitalList = _repoWrapper.HygeiaHospitalList.GetAll().ToList();
+            _repoWrapper.HygeiaHospitalList.DeleteRange(presentHospitalList);
+            await _repoWrapper.Save();
+            var hospitalList = await _fileProcessor.UploadHygeiaHospitalListFromExcel(formFile);
+            _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true, Message = "Upload was successful" };
+        }
 
         public void SendEmailReminder(string email, string userName, PerformContext context)
         {
@@ -379,29 +480,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         public void SendCompanyDeactivationMail(string email, string userName, string premium)
         {
             _emailSender.HealthInsuredCompanyDeactivation(email, "Deactivate Beneficiaries", userName, premium);
-        }
-
-        public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
-        {
-            var presentHospitalList = _repoWrapper.AxaMansardHospitalList.GetAll().ToList();
-            _repoWrapper.AxaMansardHospitalList.DeleteRange(presentHospitalList);
-            await _repoWrapper.Save();
-            var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
-            _repoWrapper.AxaMansardHospitalList.CreateRange(hospitalList);
-            await _repoWrapper.Save();
-            return new ResponseMessage { Status = true, Message = "Upload was successful" };
-        }
-
-        public async Task<ResponseMessage> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
-        {
-            var presentHospitalList = _repoWrapper.HygeiaHospitalList.GetAll().ToList();
-            _repoWrapper.HygeiaHospitalList.DeleteRange(presentHospitalList);
-            await _repoWrapper.Save();
-            var hospitalList = await _fileProcessor.UploadHygeiaHospitalListFromExcel(formFile);
-            _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
-            await _repoWrapper.Save();
-            return new ResponseMessage { Status = true, Message = "Upload was successful" };
-        }
+        }        
         
         public string GetUniqueCode()
         {
