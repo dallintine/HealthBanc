@@ -441,7 +441,7 @@ namespace HealthBanc.Controllers.Insurance
                 var content = response.Data as byte[];
                 return File(content, contentType, fileName);
             }
-            return BadRequest("Could not process excel documnet");
+            return BadRequest(response);
         }
     }
 }
