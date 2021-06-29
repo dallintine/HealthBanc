@@ -53,5 +53,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         public string JobId { get; set; }
         public decimal Amount { get; set; }
         public string Reference { get; set; }
+
+        public string FTReference { get; set; }
     }
 }

@@ -1013,7 +1013,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             else
             {
                 hygeiaPaymentResponse.ResponseCode = "00";
-                hygeiaPaymentResponse.Reference = Guid.NewGuid().ToString(); ;
+                hygeiaPaymentResponse.Reference = Guid.NewGuid().ToString();
+                hygeiaPaymentResponse.FTReference = "00";
             }
 
             pendingPayment.Reference = hygeiaPaymentResponse.Reference;
@@ -1023,6 +1024,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if (hygeiaPaymentResponse.ResponseCode == "00")
             {
                 pendingPayment.Status = PaymentReference_StatusValue.Successful.ToString();
+                pendingPayment.FTReference = hygeiaPaymentResponse.FTReference;
                 _repoWrapper.HMOPayment.Update(pendingPayment);
                 await _repoWrapper.Save();
 
@@ -1116,7 +1118,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             else
             {
                 axaPaymentResponse.ResponseCode = "00";
-                axaPaymentResponse.Reference = Guid.NewGuid().ToString(); ;
+                axaPaymentResponse.Reference = Guid.NewGuid().ToString();
+                axaPaymentResponse.FTReference = "00";
             }
 
             pendingPayment.Reference = axaPaymentResponse.Reference;
@@ -1126,6 +1129,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if (axaPaymentResponse.ResponseCode == "00")
             {
                 pendingPayment.Status = PaymentReference_StatusValue.Successful.ToString();
+                pendingPayment.FTReference = axaPaymentResponse.FTReference;
                 _repoWrapper.HMOPayment.Update(pendingPayment);
                 await _repoWrapper.Save();
 
