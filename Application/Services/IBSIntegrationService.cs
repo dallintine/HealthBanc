@@ -14,9 +14,10 @@ using System.Xml;
 
 namespace Application.Services
 {
-    public class IBSIntegrationService
+    public class IBSIntegrationService  
     {
-        public readonly string serviceUrl = "http://10.0.41.189:833/IBSServices.asmx";
+        public readonly string serviceUrl = "http://10.0.41.102:818/IBSServices.asmx";
+        //public readonly string serviceUrl = "http://10.0.41.189:833/IBSServices.asmx";
         public readonly EndpointAddress endpointAddress;
         public readonly BasicHttpBinding basicHttpBinding;
         private readonly ILogger<IBSIntegrationService> _logger;
