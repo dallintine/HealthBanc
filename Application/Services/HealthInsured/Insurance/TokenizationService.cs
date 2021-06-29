@@ -987,6 +987,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_hygeia.ToString().ToLower()
                && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
                .Select(x => x.Amount).Sum();
+
+                hygeiaPayment *= decimal.Parse("0.9");
             }
             else
             {
@@ -1092,6 +1094,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                .Where(x => x.Status.Equals(PaymentReference_StatusValue.Successful.ToString()) && x.Channel.ToLower() == PaymentReference_ChannelValue.healthinsured_axamansard.ToString().ToLower()
                && x.Amount > decimal.Parse("50") && x.Date.Date.Month == DateTime.Now.Date.Month)
                .Select(x => x.Amount).Sum();
+                axaPayment *= decimal.Parse("0.9");
             }
             else
             {
