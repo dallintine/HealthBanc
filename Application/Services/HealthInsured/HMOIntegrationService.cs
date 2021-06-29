@@ -250,7 +250,7 @@ namespace Application.Services.HealthInsured
             }
             catch (Exception ex)
             {
-                _logger.LogCritical("An error occurred while enrolling user to hygeia", ex);
+                _logger.LogCritical("An error occurred while enrolling user to hygeia", ex.ToString());
                 BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to hygeia.Please try again later" };
             }
