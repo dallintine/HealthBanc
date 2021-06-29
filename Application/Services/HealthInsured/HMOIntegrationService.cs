@@ -65,7 +65,7 @@ namespace Application.Services.HealthInsured
             }
             catch (Exception ex)
             {
-                _logger.LogCritical("Error occured while trying to get axamansard auth token", ex);
+                _logger.LogCritical("Error occured while trying to get axamansard auth token" + " " + ex.ToString(), ex);
                 return new ResponseMessage<AuthenticationResponse> { Data = null, Status = false, Message = "Could not make connection" };
             }
 
@@ -111,7 +111,7 @@ namespace Application.Services.HealthInsured
             }
             catch (Exception ex)
             {
-                _logger.LogCritical("An error occurred while enrolling user to axa-mansard", ex);
+                _logger.LogCritical("An error occurred while enrolling user to axa-mansard" + " " + ex.ToString(), ex);
                 BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
             }
@@ -191,7 +191,7 @@ namespace Application.Services.HealthInsured
             }
             catch (Exception ex)
             {
-                _logger.LogCritical("An error occurred while getting hygeia auth token", ex);
+                _logger.LogCritical("An error occurred while getting hygeia auth token"+ " "+ex.ToString(), ex.ToString());
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to hygeia.Please try again later" };
             }
         }
@@ -250,7 +250,7 @@ namespace Application.Services.HealthInsured
             }
             catch (Exception ex)
             {
-                _logger.LogCritical("An error occurred while enrolling user to hygeia", ex.ToString());
+                _logger.LogCritical("An error occurred while enrolling user to hygeia" + " " + ex.ToString(), ex.ToString());
                 BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to hygeia.Please try again later" };
             }
