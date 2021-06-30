@@ -943,12 +943,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             var HMOPayment = new
             {
-                Hygeia = hygeiaPayment,
-                AxaMansard = axaPayment
+                Hygeia = hygeiaPayment * decimal.Parse("0.9"),
+                AxaMansard = axaPayment * decimal.Parse("0.9")
             };
             return new ResponseMessage { Data = HMOPayment, Status = true };
         }
 
+        [AutomaticRetry(Attempts = 0)]
         public async Task MakeHygeiaHMOPayment()
         {
             var paymentCount = await _repoWrapper.HMOPayment.GetPaymentCount(PaymentReference_ChannelValue.healthinsured_hygeia.ToString());
@@ -957,12 +958,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
                 var hygeiaAcc = HMOAccountDetails.HygeiaAccountNumber;
 
-                //var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
 
-                //var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
-                //var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
-                var endOfMonth = DateTime.Now.AddMinutes(7);
-                var endOfNextMonth = DateTime.Now.AddMinutes(14);
+                var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
                 var hmoPayment = new HMOPayment()
                 {
                     PaymentDate = endOfMonth,
@@ -978,6 +977,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await Task.CompletedTask;
         }
 
+        [AutomaticRetry(Attempts = 0)]
         public async Task ProcessHygeiaHMOPayment(string fromAccount, string toAccount,decimal? amount, string getJobId, PerformContext context)
         {
             decimal hygeiaPayment;
@@ -1036,8 +1036,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     PaymentDate = pendingPayment.NextMonthPaymentDate,
                     Channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString(),
                     Status = PaymentReference_StatusValue.Pending.ToString(),
-                    //NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddDays(1).AddMonths(1).AddDays(-1)
-                    NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddMinutes(7)
+                    NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddDays(1).AddMonths(1).AddDays(-1)
                 };
                 hmoPayment.JobId = newJobId;
                 _repoWrapper.HMOPayment.Create(hmoPayment);
@@ -1053,8 +1052,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     " and retry");
             }
             await Task.CompletedTask;
-        }       
+        }
 
+        [AutomaticRetry(Attempts = 0)]
         public async Task MakeAxamansardHMOPayment()
         {
             var paymentCount = await _repoWrapper.HMOPayment.GetPaymentCount(PaymentReference_ChannelValue.healthinsured_axamansard.ToString());
@@ -1063,12 +1063,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var healthInsuredAcc = HMOAccountDetails.HealthInsuredAccountNumber;
                 var axaAcc = HMOAccountDetails.AxamansardAccountNumber;
 
-                //var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
 
-                //var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
-                //var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
-                var endOfMonth = DateTime.Now.AddMinutes(7);
-                var endOfNextMonth = DateTime.Now.AddMinutes(14);
+                var endOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                var endOfNextMonth = firstDayOfMonth.AddMonths(2).AddDays(-1);
 
                 var hmoPayment = new HMOPayment()
                 {
@@ -1085,6 +1083,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await Task.CompletedTask;
         }
 
+        [AutomaticRetry(Attempts = 0)]
         public async Task ProcessAxamansardHMOPayment(string fromAccount, string toAccount, decimal? amount, string getJobId, PerformContext context)
         {
             decimal axaPayment;
@@ -1142,8 +1141,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     PaymentDate = pendingPayment.NextMonthPaymentDate,
                     Channel = PaymentReference_ChannelValue.healthinsured_axamansard.ToString(),
                     Status = PaymentReference_StatusValue.Pending.ToString(),
-                    //NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddDays(1).AddMonths(1).AddDays(-1)
-                    NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddMinutes(7)
+                    NextMonthPaymentDate = pendingPayment.NextMonthPaymentDate.AddDays(1).AddMonths(1).AddDays(-1)
                 };
                 hmoPayment.JobId = newJobId;
                 _repoWrapper.HMOPayment.Create(hmoPayment);
@@ -1176,17 +1174,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var axaAcc = HMOAccountDetails.AxamansardAccountNumber;
                 await ProcessAxamansardHMOPayment(healthInsuredAcc, axaAcc, pendingPayment.Amount, pendingPayment.JobId, null);
             }
-        }
-        public async Task DeleteHOMPayments()
-        {
-            var payments = await _repoWrapper.HMOPayment.GetPayments();
-            _repoWrapper.HMOPayment.DeleteRange(payments);
-            await _repoWrapper.Save();
-        }
-        public async Task StartHMOPayments()
-        {
-            await MakeHygeiaHMOPayment();
-            await MakeAxamansardHMOPayment();
         }
 
         /// <summary>

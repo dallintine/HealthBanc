@@ -299,13 +299,16 @@ namespace HealthBanc.Controllers.Insurance
             return Ok();
         }
 
-        [HttpGet("[action]")]
-        public async Task<IActionResult> AccoutEnquiry(string account)
-        {
-            var res = await _iBSIntegrationService.SterlingNameEnquiry(account);
-            return Ok(res);
-        }
-
+        /// <summary>
+        /// Perform sterling intra bank transfer
+        /// </summary>
+        /// <param name="toAccount"></param>
+        /// <param name="fromAccount"></param>
+        /// <param name="amount"></param>
+        /// <param name="des"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public async Task<IActionResult> SendMoney(string toAccount,string fromAccount,string amount,string des)
         {
@@ -313,24 +316,12 @@ namespace HealthBanc.Controllers.Insurance
             return Ok(res);
         }
 
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public async Task<IActionResult> ProcessFailedHMOPayment(int Id)
         {
             await _tokenizationService.ProcessFailedHMOPayment(Id);
-            return Ok();
-        }
-
-        [HttpGet("[action]")]
-        public async Task<IActionResult> DeleteHOMPayments()
-        {
-            await _tokenizationService.DeleteHOMPayments();
-            return Ok();
-        }
-
-        [HttpGet("[action]")]
-        public async Task<IActionResult> StartHMOPayments()
-        {
-            await _tokenizationService.StartHMOPayments();
             return Ok();
         }
     }

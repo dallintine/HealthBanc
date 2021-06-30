@@ -443,5 +443,19 @@ namespace HealthBanc.Controllers.Insurance
             }
             return BadRequest(response);
         }
+
+        /// <summary>
+        /// Fix card errors
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        public async Task<IActionResult> FixCardsError(string email)
+        {
+            await _insuranceService.FixCardsError(email);
+            return Ok();
+        }
     }
 }

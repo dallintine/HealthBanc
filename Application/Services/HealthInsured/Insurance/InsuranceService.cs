@@ -450,6 +450,42 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
 
+        public async Task FixCardsError(string email)
+        {
+            var user = await _repoWrapper.InsuranceProfile.GetByEmail(email);
+            if(user is null)
+            {
+                var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
+                var cards = company.Cards;
+                var primaryCard = company.Cards.Where(x => x.Status == (int)DebitCard_StatusValue.primary).FirstOrDefault();
+                var cardErrorList = new List<DebitCard>();
+                foreach (var item in cards)
+                {
+                    if (item.Id != primaryCard.Id && item.LastFourDigit == primaryCard.LastFourDigit)
+                    {
+                        cardErrorList.Add(item);
+                    }
+                }
+                _repoWrapper.Card.DeleteRange(cardErrorList);
+                await _repoWrapper.Save();
+            }
+            else{
+                var primaryCard = user.Cards.Where(x => x.Status == (int)DebitCard_StatusValue.primary).FirstOrDefault();
+                var cards = user.Cards;
+                var cardErrorList = new List<DebitCard>();
+                foreach (var item in cards)
+                {
+                    if (item.Id != primaryCard.Id && item.LastFourDigit == primaryCard.LastFourDigit)
+                    {
+                        cardErrorList.Add(item);                       
+                    }
+                }
+                _repoWrapper.Card.DeleteRange(cardErrorList);
+                await _repoWrapper.Save();
+            }           
+            await Task.CompletedTask;
+        }
+
         public void SendEmailReminder(string email, string userName, PerformContext context)
         {
             _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName);
