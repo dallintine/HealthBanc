@@ -6,6 +6,7 @@ namespace Application.Helpers
 {
     public class IBSConfig
     {
+        public string EndpointAddress { get; set; }
         public string AppId { get; set; }
         public string TransferRequestType { get; set; }
         public string EnquiryRequestType { get; set; }

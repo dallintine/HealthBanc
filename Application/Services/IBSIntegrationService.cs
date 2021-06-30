@@ -16,18 +16,23 @@ namespace Application.Services
 {
     public class IBSIntegrationService  
     {
-        public readonly string serviceUrl = "http://10.0.41.102:818/IBSServices.asmx";
+        //public readonly string serviceUrl = "http://10.0.41.102:818/IBSServices.asmx";
         //public readonly string serviceUrl = "http://10.0.41.189:833/IBSServices.asmx";
-        public readonly EndpointAddress endpointAddress;
-        public readonly BasicHttpBinding basicHttpBinding;
+        //public readonly EndpointAddress endpointAddress;
+        //public readonly BasicHttpBinding basicHttpBinding;
         private readonly ILogger<IBSIntegrationService> _logger;
-        private HMOAccountDetails AccountAccessor { get; }
         private IBSConfig IBSAccessor { get; }
 
-        public IBSIntegrationService(ILogger<IBSIntegrationService> logger,IOptions<HMOAccountDetails> accountAccessor, IOptions<IBSConfig> ibsAccessor)
+        public IBSIntegrationService(ILogger<IBSIntegrationService> logger,IOptions<IBSConfig> ibsAccessor)
+        { 
+            _logger = logger;
+            IBSAccessor = ibsAccessor.Value;
+        }
+
+        private async Task<BSServicesSoapClient> GetInstanceAsync()
         {
-            endpointAddress = new EndpointAddress(serviceUrl);
-            basicHttpBinding =
+            EndpointAddress endpointAddress = new EndpointAddress(IBSAccessor.EndpointAddress);
+            BasicHttpBinding basicHttpBinding =
                 new BasicHttpBinding(endpointAddress.Uri.Scheme.ToLower() == "http" ?
                             BasicHttpSecurityMode.None : BasicHttpSecurityMode.Transport);
 
@@ -37,14 +42,6 @@ namespace Application.Services
             basicHttpBinding.ReceiveTimeout = TimeSpan.MaxValue;
             basicHttpBinding.SendTimeout = TimeSpan.MaxValue;
             basicHttpBinding.UseDefaultWebProxy = true;
-
-            _logger = logger;
-            AccountAccessor = accountAccessor.Value;
-            IBSAccessor = ibsAccessor.Value;
-        }
-
-        private async Task<BSServicesSoapClient> GetInstanceAsync()
-        {
             return await Task.Run(() => new BSServicesSoapClient(basicHttpBinding, endpointAddress));
         }
 
