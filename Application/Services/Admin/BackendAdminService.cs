@@ -329,6 +329,12 @@ namespace Application.Services.Admin
 
                     return new ResponseMessage { Message = "Admin was deleted successfully", Status = true };
                 }
+                var admin2 = await _repoWrapper.BackendAdmin.GetAdminByEmail(email);
+                if (admin2 != null)
+                {
+                    _repoWrapper.BackendAdmin.Delete(admin2);
+                    await _repoWrapper.Save();
+                }
                 return new ResponseMessage { Message = "An error occurred while trying to change to delete admin" };
             }
             return new ResponseMessage { Message = "User does not exist" };
