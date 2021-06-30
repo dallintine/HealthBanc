@@ -296,16 +296,14 @@ namespace HealthBanc.Controllers
                 {
                     return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
                 }
-                var decryptedEmail = _encryptAndDecrypt.DecryptString(email, "hfahkbak78r32rg87griva..");
-                var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
 
-                var user = await _userManager.FindByEmailAsync(decryptedEmail);
+                var user = await _userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
                     return NotFound(new ResponseMessage { Message = "User with the email could not be found" });
                 }
 
-                var response = await _identityService.ResetPassword(decryptedEmail, decryptedEmailToken, viewModel);
+                var response = await _identityService.ResetPassword(email, emailToken, viewModel);
 
                 if (response.Status == true)
                 {

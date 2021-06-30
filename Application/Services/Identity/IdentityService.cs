@@ -157,11 +157,8 @@ namespace Application.Services.Identity
 
         public async Task<ResponseMessage> ConfirmEmail(string userId, string emailToken)
         {
-            var decryptedUserId = _encryptAndDecrypt.DecryptString(userId, "hfahkbak78r32rg87griva..");
-            var user = await _repoWrapper.ApplicationUser.FindByIdAsync(int.Parse(decryptedUserId));
-
-            var decryptedEmailToken = _encryptAndDecrypt.DecryptString(emailToken, "hfahkbak78r32rg87griva..");
-            var result = await _userManager.ConfirmEmailAsync(user, decryptedEmailToken);
+            var user = await _repoWrapper.ApplicationUser.FindByIdAsync(int.Parse(userId));
+            var result = await _userManager.ConfirmEmailAsync(user, emailToken);
             if (result.Succeeded)
             {
                 return new ResponseMessage { Status = true };
@@ -302,11 +299,9 @@ namespace Application.Services.Identity
                     return new ResponseMessage { Message = "Kindly confirm your email address.", Status = false };
                 }
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
+                var email = user.UserName;
 
-                var encryptedEmail = _encryptAndDecrypt.EncryptString(user.UserName, "hfahkbak78r32rg87griva..");
-
-                var passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(encryptedEmail)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}";
 
                 // Email the user the verification code
                 _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
@@ -315,9 +310,9 @@ namespace Application.Services.Identity
             return new ResponseMessage { Message = "Username Does Not Exist", Status = false };
         }
 
-        public async Task<ResponseMessage> ResetPassword(string decryptedEmail, string decryptedEmailToken, ResetPasswordViewModel viewModel)
+        public async Task<ResponseMessage> ResetPassword(string email, string emailToken, ResetPasswordViewModel viewModel)
         {
-            var user = await _userManager.FindByEmailAsync(decryptedEmail);
+            var user = await _userManager.FindByEmailAsync(email);
 
             PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, viewModel.ConfirmPassword);
             if (passResult.Equals(PasswordVerificationResult.Failed))
@@ -339,7 +334,7 @@ namespace Application.Services.Identity
                     }
                 }
 
-                var userPassword = await _userManager.ResetPasswordAsync(user, decryptedEmailToken, viewModel.Password);
+                var userPassword = await _userManager.ResetPasswordAsync(user, emailToken, viewModel.Password);
                 if (userPassword.Succeeded)
                 {
                     var passwordHashed = _passwordHasher.Hash(viewModel.ConfirmPassword);
@@ -384,27 +379,26 @@ namespace Application.Services.Identity
             {
                 return new ResponseMessage { Message = "New Password Cant Be similar with Old Password" };
             }
-        }       
+        }      
 
         public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user)
         {
             // Get the user details
             var userIdentity = await _userManager.FindByNameAsync(user.UserName);
-            var encryptedUserIdentity = _encryptAndDecrypt.EncryptString(userIdentity.Id.ToString(), "hfahkbak78r32rg87griva..");
+            var encryptedUserIdentity = userIdentity.Id.ToString();
 
             if (userIdentity != null)
             {
                 // Generate an email verification code
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var encryptedToken = _encryptAndDecrypt.EncryptString(token, "hfahkbak78r32rg87griva..");
 
-                var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(encryptedToken)}";
+                var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(token)}";
 
                 // Email the user the verification code
                 _emailSender.SendUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
                 return new ResponseMessage { Status = true };
             }
-            return new ResponseMessage { Status = true, Message = "User does not exist.coukd not fetch user" };
+            return new ResponseMessage { Status = true, Message = "User does not exist.could not fetch user" };
         }
     }
 }

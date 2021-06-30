@@ -33,7 +33,8 @@ namespace DataAccess.HealthInsured.Implementation
         public async Task<PagedResponse<PaymentReference>> GetPaginatedPaymentReference(PaginationQuery paginationQuery,string email)
         {
             var paginatedResponse = new PagedResponse<PaymentReference>();
-            var queryable = _context.PaymentReferences.Where(x => x.InsuranceUserProfileId != null).Include(x => x.InsuranceUserProfile).AsQueryable();
+            var queryable = _context.PaymentReferences.Include(x => x.InsuranceUserProfile).Include(x => x.CompanyProfile).AsQueryable();
+           
 
             if (email != null) queryable = queryable.Where(x => x.InsuranceUserProfile.Email == email);
 
@@ -57,7 +58,7 @@ namespace DataAccess.HealthInsured.Implementation
 
             //Sort the users
             queryable = paginationQuery.SortBy == 1 ? queryable.OrderBy(s => s.InsuranceUserProfile.Othernames) : paginationQuery.SortBy == 2 ? queryable.OrderBy(s => s.InsuranceUserProfile.Surname) :
-                paginationQuery.SortBy == 3 ? queryable.OrderBy(s => s.InsuranceUserProfile.Email) : queryable.OrderByDescending(s => s.Date);
+                paginationQuery.SortBy == 3 ? queryable.OrderBy(s => s.InsuranceUserProfile.Email) : queryable.OrderByDescending(s => s.Id);
 
             //If filter is 1 filter out for hygeia
             // If filer is not 1 filter out for axamansard
