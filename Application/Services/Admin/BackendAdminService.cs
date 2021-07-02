@@ -268,7 +268,7 @@ namespace Application.Services.Admin
                 var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, backedAdmin.Id, $"{loggedinuser.UniqueUsername} added {adminUser.Email}", ServiceNames.HealthBanc.ToString());
                 BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
 
-                new ResponseMessage { Message = "Admin has been created successfully", Status = true };
+                return new ResponseMessage { Message = "Admin has been created successfully", Status = true };
             }
             return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description.ToString() } ;
         }
