@@ -120,14 +120,17 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             profile.InsuranceService = userProfile.InsuranceService;
 
             var updatedProfile = _mapper.Map(user, profile);
-            updatedProfile.Image = _imageService.ConvertImageToBase64(userProfile.UserImage);
+            string base64Image = _imageService.ConvertImageToBase64(userProfile.UserImage);
+            _logger.LogError(base64Image);
+            updatedProfile.Image = base64Image;
 
-            if(updatedProfile.Image == "false")
+            if (updatedProfile.Image == "false")
             {
                 return new ResponseMessage { Message = "Image cannot be processed,please try again later" };
             }
 
             _repoWrapper.InsuranceProfile.Create(updatedProfile);
+            await _repoWrapper.Save();
 
             var completionProfile = new InsuranceCompletionProfile(user.Id, true, false,userProfile.InsuranceService);
             _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
