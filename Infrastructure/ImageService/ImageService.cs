@@ -60,34 +60,17 @@ namespace Infrastructure.ImageService
 
         public string ConvertImageToBase64(IFormFile file)
         {
-            string wwwPath = _environment.WebRootPath;
-
-            string path = Path.Combine(wwwPath, "InsuranceUploads");
-            if (!Directory.Exists(path))
+            if (file.Length > 0)
             {
-                Directory.CreateDirectory(path);
+                using (var ms = new MemoryStream())
+                {
+                    file.CopyTo(ms);
+                    var fileBytes = ms.ToArray();
+                    string s = Convert.ToBase64String(fileBytes);
+                    return s;
+                }
             }
-            string fileName = file.FileName;
-            var newPath = Path.Combine(path, fileName);
-            using (FileStream stream = new FileStream(newPath, FileMode.Create))
-            {
-                file.CopyTo(stream);
-                stream.Flush();
-            }
-            Byte[] bytes = File.ReadAllBytes(Path.Combine(path, fileName));
-            String r = Convert.ToBase64String(bytes);
-            return r;
-            //if (file.Length > 0)
-            //{
-            //    using (var ms = new MemoryStream())
-            //    {
-            //        file.CopyTo(ms);
-            //        var fileBytes = ms.ToArray();
-            //        string s = Convert.ToBase64String(fileBytes);
-            //        return s;
-            //    }
-            //}
-            //return "false";
+            return "false";
         }
     }
 }
