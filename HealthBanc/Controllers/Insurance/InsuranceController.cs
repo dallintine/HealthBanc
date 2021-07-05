@@ -428,6 +428,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="service"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(File))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public IActionResult DowloadInsuranceProfileExcelData(bool subStatus, bool activeStatus, string service)

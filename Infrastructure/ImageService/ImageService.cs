@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Infrastructure.Helpers;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.WindowsAzure.Storage;
@@ -15,11 +16,14 @@ namespace Infrastructure.ImageService
 {
     public class ImageService : IImageService
     {
+        private readonly IWebHostEnvironment _environment;
+
         public ImageStorage ImageAzureConnectionString { get; }
 
-        public ImageService(IOptions<ImageStorage> imageAccessor)
+        public ImageService(IOptions<ImageStorage> imageAccessor, IWebHostEnvironment environment)
         {            
             ImageAzureConnectionString = imageAccessor.Value;
+            _environment = environment;
         }
 
         public async Task<string> UploadPics(string containerName, IFormFile file)
@@ -56,17 +60,34 @@ namespace Infrastructure.ImageService
 
         public string ConvertImageToBase64(IFormFile file)
         {
-            if (file.Length > 0)
+            string wwwPath = _environment.WebRootPath;
+
+            string path = Path.Combine(wwwPath, "InsuranceUploads");
+            if (!Directory.Exists(path))
             {
-                using (var ms = new MemoryStream())
-                {
-                    file.CopyTo(ms);
-                    var fileBytes = ms.ToArray();
-                    string s = Convert.ToBase64String(fileBytes);
-                    return s;
-                }
+                Directory.CreateDirectory(path);
             }
-            return "false";
+            string fileName = file.FileName;
+            var newPath = Path.Combine(path, fileName);
+            using (FileStream stream = new FileStream(newPath, FileMode.Create))
+            {
+                file.CopyTo(stream);
+                stream.Flush();
+            }
+            Byte[] bytes = File.ReadAllBytes(Path.Combine(path, fileName));
+            String r = Convert.ToBase64String(bytes);
+            return r;
+            //if (file.Length > 0)
+            //{
+            //    using (var ms = new MemoryStream())
+            //    {
+            //        file.CopyTo(ms);
+            //        var fileBytes = ms.ToArray();
+            //        string s = Convert.ToBase64String(fileBytes);
+            //        return s;
+            //    }
+            //}
+            //return "false";
         }
     }
 }

@@ -282,7 +282,7 @@ namespace HealthBanc.Controllers.Insurance
         /// Get HMO invoice details
         /// </summary>
         /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public IActionResult GetHMOInvoiceDetails()
@@ -291,7 +291,7 @@ namespace HealthBanc.Controllers.Insurance
             return Ok(response);
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public IActionResult FixPaymentError(string reference, string amount)
         {
@@ -307,7 +307,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="amount"></param>
         /// <param name="des"></param>
         /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public async Task<IActionResult> SendMoney(string toAccount,string fromAccount,string amount,string des)
@@ -316,7 +316,7 @@ namespace HealthBanc.Controllers.Insurance
             return Ok(res);
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
         public async Task<IActionResult> ProcessFailedHMOPayment(int Id)

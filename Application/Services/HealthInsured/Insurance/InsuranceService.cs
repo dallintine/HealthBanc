@@ -121,7 +121,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             var updatedProfile = _mapper.Map(user, profile);
             string base64Image = _imageService.ConvertImageToBase64(userProfile.UserImage);
-            _logger.LogError(base64Image);
+            _logger.LogCritical(base64Image);
             updatedProfile.Image = base64Image;
 
             if (updatedProfile.Image == "false")
