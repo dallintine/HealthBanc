@@ -453,6 +453,34 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
 
+        /// <summary>
+        /// Method to carry out failed Hygeia registration
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public async Task ResendFailedHygeiaReg(RegistrationModel model)
+        {
+            var response = await _hmoIntegrationService.HygeiaRegisterUser(model);
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(model.Email);
+            var enrollmentModel = await _repoWrapper.EnrollmentOnOnboarding.GetLastEnrollmentByInsuranceProfileId(insuranceProfile.Id);
+            if (response.Status)
+            {
+                insuranceProfile.TransId = response.Message;
+                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+
+                enrollmentModel.Status = EnrollmentOnOnboarding_StatusValue.Successful.ToString();
+                _repoWrapper.EnrollmentOnOnboarding.Update(enrollmentModel);
+                await _repoWrapper.Save();
+            }
+            else
+            {
+                enrollmentModel.Message = response.Message;
+                _repoWrapper.EnrollmentOnOnboarding.Update(enrollmentModel);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
+        }
+
         public async Task FixCardsError(string email)
         {
             var user = await _repoWrapper.InsuranceProfile.GetByEmail(email);
@@ -525,7 +553,5 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         {
             return _uniqueIdentifier.GetUniqueCode(10);
         }
-    }
-
-    
+    }    
 }
