@@ -31,7 +31,7 @@ namespace Application.Services
         {
             var emails = new List<string>
             {
-                "Effiong.Effiong@sterling.ng" , "Hassan.Hassan@sterling.ng"
+                "oluwaseunayo.lojede@sterling.ng" , "Hassan.Hassan@sterling.ng"
             };
             _emailSender.SendHealthFinanceNotification("HealthFinance Notification", healthFinance, emails);
             var financeData = _mapper.Map<HealthFinance>(healthFinance);
