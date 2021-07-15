@@ -13,5 +13,8 @@ namespace Domain.Models
         public string Gender { get; set; }
         public string DateOfBirth { get; set; }
         public string PhoneNumber { get; set; }
+        public string StateOfResidence { get; set; }
+        public string TownOfResidence { get; set; }
+        public string CareProviderName { get; set; }
     }
 }

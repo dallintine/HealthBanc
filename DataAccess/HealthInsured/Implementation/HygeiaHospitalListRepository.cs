@@ -20,8 +20,18 @@ namespace DataAccess.HealthInsured.Implementation
 
         public async Task<List<HygeiaHospitalList>> GetHealthProviders(string state, string city)
         {
-            return await _context.HygeiaHospitalLists.Where(x => x.State.ToLower().Trim() == state.ToLower().Trim() && x.City.ToLower().Trim() == city.ToLower().Trim())
-                .ToListAsync();
+            var hospitalList = _context.HygeiaHospitalLists.AsQueryable();
+
+            if (state != null)
+            {
+                hospitalList = hospitalList.Where(x => x.State.ToLower().Trim() == state.ToLower().Trim());
+            }
+            if (city != null)
+            {
+                hospitalList = hospitalList.Where(x => x.City.ToLower().Trim() == city.ToLower().Trim());
+            }
+            var newHospitalList = await hospitalList.ToListAsync();
+            return newHospitalList;
         }
 
         public IQueryable<HygeiaHospitalList> GetTowns(string state)

@@ -232,6 +232,7 @@ namespace Application.Services.HealthInsured.Insurance
                         insuranceUserProfile.CompanyProfileId = companyId;
                         insuranceUserProfile.InsuranceService = companyprofile.InsuranceService;
                         insuranceUserProfile.Premium = Decimal.Parse("1000");
+                        insuranceUserProfile.PlanCode = companyprofile.InsuranceService.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower() ? "1" : null;
                         insuranceUserProfile.CompanySubscribedStatus = companySubscribedStatus;
                         insuranceUserProfile.CompanyName = companyprofile.CompanyName;
                         insuranceUserProfile.PhoneNumber = insuranceUserProfile.PhoneNumber.StartsWith("0") ? insuranceUserProfile.PhoneNumber : "0" + insuranceUserProfile.PhoneNumber;

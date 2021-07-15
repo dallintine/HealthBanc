@@ -67,6 +67,10 @@ namespace Infrastructure.UploadService
                         excelModel.DateOfBirth = ws.Cells[r, 5].Text.ToString();
                         excelModel.Email = ws.Cells[r, 6].Value?.ToString();
                         excelModel.PhoneNumber = ws.Cells[r, 7].Value?.ToString();
+                        excelModel.StateOfResidence = ws.Cells[r, 8].Value?.ToString();
+                        excelModel.TownOfResidence = ws.Cells[r, 9].Value?.ToString();
+                        excelModel.CareProviderName = ws.Cells[r, 10].Value?.ToString();
+
                         excelModels.Add(excelModel);
                     }
                 }

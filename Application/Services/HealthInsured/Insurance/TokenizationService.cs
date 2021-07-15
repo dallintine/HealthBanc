@@ -1187,7 +1187,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
         }
 
-        public async void FitPaymentError(string reference, string amount)
+        public async Task FitPaymentError(string reference, string amount)
         {
             var payReference = await _repoWrapper.PaymentReference.GetByReference(reference);
             if(payReference != null)
@@ -1196,6 +1196,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 _repoWrapper.PaymentReference.Update(payReference);
                 await _repoWrapper.Save();
             }
+            await Task.CompletedTask;
         }
     } 
 }
