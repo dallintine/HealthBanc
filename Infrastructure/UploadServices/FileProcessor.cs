@@ -101,7 +101,7 @@ namespace Infrastructure.UploadService
                     var hosiptal = new AxaMansardHospitalList();
                     hosiptal.State = ws.Cells[r, 1].Value?.ToString().Trim();
                     hosiptal.City = ws.Cells[r, 2].Value?.ToString().Trim();
-                    hosiptal.HospitalName = ws.Cells[r, 3].Value?.ToString();
+                    hosiptal.HospitalName = ws.Cells[r, 3].Value?.ToString() + " , "+ hosiptal.City;
                     hosiptal.Address = ws.Cells[r, 4].Value?.ToString();
                     hosiptal.Specialisation = ws.Cells[r, 5].Value?.ToString();
                     excelModels.Add(hosiptal);
@@ -128,7 +128,7 @@ namespace Infrastructure.UploadService
                     }
                     var hosiptal = new HygeiaHospitalList();
                     hosiptal.State = ws.Cells[r, 1].Value?.ToString().Trim();
-                    hosiptal.City = ws.Cells[r, 2].Value?.ToString().Trim();
+                    hosiptal.City = ws.Cells[r, 2].Value?.ToString().Trim() + " , " + hosiptal.City;
                     hosiptal.HospitalName = ws.Cells[r, 3].Value?.ToString();
                     hosiptal.Address = ws.Cells[r, 4].Value?.ToString();
                     hosiptal.Specialisation = ws.Cells[r, 5].Value?.ToString();
