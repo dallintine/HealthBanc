@@ -64,7 +64,7 @@ namespace Infrastructure.UploadService
                         excelModel.LastName = ws.Cells[r, 2].Value?.ToString();
                         excelModel.Address = ws.Cells[r, 3].Value?.ToString();
                         excelModel.Gender = ws.Cells[r, 4].Value?.ToString();
-                        excelModel.DateOfBirth = ws.Cells[r, 5].Text.ToString();
+                        excelModel.DateOfBirth = ws.Cells[r, 5].GetValue<DateTime>().ToString();
                         excelModel.Email = ws.Cells[r, 6].Value?.ToString();
                         excelModel.PhoneNumber = ws.Cells[r, 7].Value?.ToString();
                         excelModel.StateOfResidence = ws.Cells[r, 8].Value?.ToString();
