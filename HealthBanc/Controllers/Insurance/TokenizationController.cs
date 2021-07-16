@@ -293,9 +293,9 @@ namespace HealthBanc.Controllers.Insurance
 
         [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
-        public IActionResult FixPaymentError(string reference, string amount)
+        public async Task<IActionResult> FixPaymentError(string reference, string amount)
         {
-            _tokenizationService.FitPaymentError(reference, amount);
+            await _tokenizationService.FitPaymentError(reference, amount);
             return Ok();
         }
 
