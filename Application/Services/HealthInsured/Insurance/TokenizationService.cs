@@ -158,7 +158,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(id);
             if (companyProfile != null)
             {
-                if (companyProfile.ProfileCompleted && companyProfile.EmailConfirmed)
+                if (companyProfile.EmailConfirmed)
                 {
                     // remove empty space from the card.
                     var cardNumber = chargeCard.card.number.Replace(" ", "");
