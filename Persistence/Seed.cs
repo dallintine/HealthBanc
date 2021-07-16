@@ -58,6 +58,7 @@ namespace Persistence
             }
 
             var classRolesCount = await context.ClassOrRoles.ToListAsync();
+
             if (classRolesCount.Count > 9)
             {
                 var oustedRoles = await context.ClassOrRoles.Where(x => x.Id > 9).ToListAsync();
