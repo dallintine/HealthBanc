@@ -105,7 +105,7 @@ namespace Infrastructure.Mail
                 .Replace("{Phonenumber}", healthFinance.Phonenumber).Replace("{Amount}", healthFinance.Amount).Replace("{Comment}", healthFinance.Comment);
             foreach(var item in toEmails)
             {
-                var emailRequest = new EmailRequest("healthbanc@sterling.ng", newHtml, subject, item);
+                var emailRequest = new EmailRequest(item, newHtml, subject, healthFinance.Email);
                 EmailRequest(emailRequest);
             }           
         }

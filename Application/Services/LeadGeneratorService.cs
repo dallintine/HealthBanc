@@ -31,15 +31,17 @@ namespace Application.Services
         {
             var emails = new List<string>
             {
-                "oluwaseunayo.lojede@sterling.ng" , "Esther.kerry@sterling.ng","Opeyemi.adebola@sterling.ng"
+                /*"oluwaseunayo.lojede@sterling.ng" , "Esther.kerry@sterling.ng","Opeyemi.adebola@sterling.ng",*/"hassan.hassan@sterling.ng"
             };
             _emailSender.SendHealthFinanceNotification("HealthFinance Notification", healthFinance, emails);
+
+            healthFinance.Amount = healthFinance.Amount[1..];
             var financeData = _mapper.Map<HealthFinance>(healthFinance);
             _repoWrapper.HealthFinance.Create(financeData);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Notification was sent successfully" };
         }
-
+        
         public ResponseMessage SendHeliumNotification(HeliumHealthCollectionViewModel heliumHealth)
         {
             _emailSender.SendHeliumNotification("Helium Notification", heliumHealth.HealthServiceProviderName, heliumHealth.HealthServiveProviderType, heliumHealth.PhoneNumber,
