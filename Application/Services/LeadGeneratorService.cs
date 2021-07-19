@@ -34,7 +34,7 @@ namespace Application.Services
                 /*"oluwaseunayo.lojede@sterling.ng" , "Esther.kerry@sterling.ng","Opeyemi.adebola@sterling.ng",*/"hassan.hassan@sterling.ng","opeyemi.olugunojin@sterling.ng"
             };
 
-            var user = await _repoWrapper.HealthFinance.GetByEmail(healthFinance.Email);
+            var user = await _repoWrapper.HealthFinance.GetByEmailOrPhoneNumber(healthFinance.Email,healthFinance.Phonenumber);
             if(user is null)
             {
                 healthFinance.Amount = healthFinance.Amount[1..];
@@ -46,7 +46,7 @@ namespace Application.Services
 
                 return new ResponseMessage { Status = true, Message = "Notification was sent successfully" };
             }
-            return new ResponseMessage { Status = true, Message = "Details with your email was submitted previously. We would get back to your shortly" };
+            return new ResponseMessage { Status = false, Message = "Your details was submitted previously. We would contact you shortly" };
             
         }
         

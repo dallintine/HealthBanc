@@ -59,9 +59,9 @@ namespace DataAccess.General.Implementation
             return data;
         }
 
-        public async Task<HealthFinance> GetByEmail(string email)
+        public async Task<HealthFinance> GetByEmailOrPhoneNumber(string email, string phonenumber)
         {
-            return await _context.HealthFinances.FirstOrDefaultAsync(x => x.Email == email);
+            return await _context.HealthFinances.FirstOrDefaultAsync(x => x.Email == email || x.Phonenumber == phonenumber);
         }
     }
 }

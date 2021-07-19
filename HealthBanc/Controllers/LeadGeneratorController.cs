@@ -63,7 +63,11 @@ namespace HealthBanc.Controllers
             if (ModelState.IsValid)
             {
                 var response = await _leadGenerator.SendHealthFinanceData(healthFinance);
-                return Ok(response);
+                if (response.Status)
+                {
+                    return Ok(response);
+                }
+                return BadRequest(response);
             }
             var errors = new List<string>();
             var errorList = ModelState.Values.SelectMany(m => m.Errors)
