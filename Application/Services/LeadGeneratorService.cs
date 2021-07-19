@@ -43,10 +43,11 @@ namespace Application.Services
                 await _repoWrapper.Save();
 
                 _emailSender.SendHealthFinanceNotification("HealthFinance Notification", healthFinance, emails);
+                _emailSender.SendHealthFinanceSubmissionNotification("HealthFinance Notification", healthFinance, healthFinance.Email);
 
-                return new ResponseMessage { Status = true, Message = "Notification was sent successfully" };
+                return new ResponseMessage { Status = true, Message = "Thank you! We will reach out to you soon" };
             }
-            return new ResponseMessage { Status = false, Message = "Your details was submitted previously. We would contact you shortly" };
+            return new ResponseMessage { Status = false, Message = "Your details was submitted previously. We will contact you shortly" };
             
         }
         

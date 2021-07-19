@@ -110,6 +110,18 @@ namespace Infrastructure.Mail
             }           
         }
 
+        public void SendHealthFinanceSubmissionNotification(string subject, HealthFinanceCollectionViewModel healthFinance, string  toEmails)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthfinance_submission.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("{Name}", healthFinance.Name).Replace("{BusinessAddress}", healthFinance.BusinessAddress)
+                .Replace("{BusinessName}", healthFinance.BusinessName).Replace("{BusinessType}", healthFinance.BusinessType).Replace("{Email}", healthFinance.Email)
+                .Replace("{Phonenumber}", healthFinance.Phonenumber).Replace("{Amount}", healthFinance.Amount).Replace("{Comment}", healthFinance.Comment);
+            
+            var emailRequest = new EmailRequest(healthFinance.Email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
+        }
+
         public void HealthInsuredFailedDebit(string email, string subject, string userName,string premium)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\faileddebit.html";
