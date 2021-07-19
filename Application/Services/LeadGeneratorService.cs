@@ -31,15 +31,23 @@ namespace Application.Services
         {
             var emails = new List<string>
             {
-                /*"oluwaseunayo.lojede@sterling.ng" , "Esther.kerry@sterling.ng","Opeyemi.adebola@sterling.ng",*/"hassan.hassan@sterling.ng"
+                /*"oluwaseunayo.lojede@sterling.ng" , "Esther.kerry@sterling.ng","Opeyemi.adebola@sterling.ng",*/"hassan.hassan@sterling.ng","opeyemi.olugunojin@sterling.ng"
             };
-            _emailSender.SendHealthFinanceNotification("HealthFinance Notification", healthFinance, emails);
 
-            healthFinance.Amount = healthFinance.Amount[1..];
-            var financeData = _mapper.Map<HealthFinance>(healthFinance);
-            _repoWrapper.HealthFinance.Create(financeData);
-            await _repoWrapper.Save();
-            return new ResponseMessage { Status = true, Message = "Notification was sent successfully" };
+            var user = await _repoWrapper.HealthFinance.GetByEmail(healthFinance.Email);
+            if(user is null)
+            {
+                healthFinance.Amount = healthFinance.Amount[1..];
+                var financeData = _mapper.Map<HealthFinance>(healthFinance);
+                _repoWrapper.HealthFinance.Create(financeData);
+                await _repoWrapper.Save();
+
+                _emailSender.SendHealthFinanceNotification("HealthFinance Notification", healthFinance, emails);
+
+                return new ResponseMessage { Status = true, Message = "Notification was sent successfully" };
+            }
+            return new ResponseMessage { Status = true, Message = "Details with your email was submitted previously. We would get back to your shortly" };
+            
         }
         
         public ResponseMessage SendHeliumNotification(HeliumHealthCollectionViewModel heliumHealth)

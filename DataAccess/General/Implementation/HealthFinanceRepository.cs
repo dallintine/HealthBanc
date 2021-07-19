@@ -58,5 +58,10 @@ namespace DataAccess.General.Implementation
             var data = _context.HealthFinances.AsQueryable();
             return data;
         }
+
+        public async Task<HealthFinance> GetByEmail(string email)
+        {
+            return await _context.HealthFinances.FirstOrDefaultAsync(x => x.Email == email);
+        }
     }
 }
