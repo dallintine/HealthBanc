@@ -89,6 +89,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 return await ProcessCorporateCardTokenization(chargeCard, id);
             }
+            else if (profileCompletion.Data.CorporateUser is null)
+            {
+                return await ProcessFamilyCardTokenization(chargeCard, id);
+            }
             return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
         }
 
@@ -129,7 +133,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() 
                     : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                var paymentReference = new PaymentReference(channel,card.reference, insuranceProfile.Id, null, insuranceProfile.UserId
+                var paymentReference = new PaymentReference(channel,card.reference, insuranceProfile.Id, null,null, insuranceProfile.UserId.Value
                 , decimal.Parse("50"), PaymentReference_StatusValue.Pending.ToString());
                 _repoWrapper.PaymentReference.Create(paymentReference);
                 await _repoWrapper.Save();
@@ -196,7 +200,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var amount = decimal.Parse(card.amount) / 100;
                     // Create payment reference for the charge.
                     var channel = companyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
-                    var paymentReference = new PaymentReference(channel,card.reference, null, companyProfile.Id, id, amount, PaymentReference_StatusValue.Pending.ToString());
+                    var paymentReference = new PaymentReference(channel,card.reference, null, companyProfile.Id,null, id, amount, PaymentReference_StatusValue.Pending.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
                     await _repoWrapper.Save();
 
@@ -205,6 +209,50 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                     // function to process response from paystack
                     return await ProcessPaystackChargeCardResponse(chargeCardResponse, companyProfile, paymentReference,card.reference);
+                }
+                return new ResponseMessage { Message = "Kindly update your profile", Status = false };
+            }
+            return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
+        }
+
+        private async Task<ResponseMessage> ProcessFamilyCardTokenization(ChargeCardViewModel chargeCard, int id)
+        {
+            var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(id);
+            if (familyProfile != null)
+            {
+                if (familyProfile.EmailConfirmed)
+                {
+                    // remove empty space from the card.
+                    var cardNumber = chargeCard.card.number.Replace(" ", "");
+
+                    // Check if user has card dat matches last four card digit
+                    var checkIfCardWasPreviouslyTokenized = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(id, cardNumber.Substring(cardNumber.Length - 4));
+                    if (checkIfCardWasPreviouslyTokenized != null) return new ResponseMessage { Message = "This card was previously tokenized" };
+
+                    var chargeCardRequest = _mapper.Map<API_RequestModel.Paystack.Card>(chargeCard.card);
+
+                    var card = new ChargeCard
+                    {
+                        card = chargeCardRequest,
+                        email = familyProfile.Email,
+                        reference = Guid.NewGuid().ToString(),
+                        pin = chargeCard.pin
+                    };
+
+                    card.amount = (50 * 100).ToString();
+                    var amount = decimal.Parse(card.amount) / 100;
+
+                    // Create payment reference for the charge.
+                    var channel = familyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+                    var paymentReference = new PaymentReference(channel, card.reference, null,null, familyProfile.Id, id, amount, PaymentReference_StatusValue.Pending.ToString());
+                    _repoWrapper.PaymentReference.Create(paymentReference);
+                    await _repoWrapper.Save();
+
+                    // Paystack service to charge user card
+                    var chargeCardResponse = await _paystackService.ChargeCard(card, id);
+
+                    // function to process response from paystack
+                    return await ProcessPaystackChargeCardResponse(chargeCardResponse, familyProfile, paymentReference, card.reference);
                 }
                 return new ResponseMessage { Message = "Kindly update your profile", Status = false };
             }
@@ -236,12 +284,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 //else, card status is 0;
                 var cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int) DebitCard_StatusValue.primary : (int) DebitCard_StatusValue.secondary;
 
-                var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id,null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
+                var debitCard = new DebitCard(insuranceUserProfile.UserId.Value, insuranceUserProfile.Id,null,null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
                 _repoWrapper.Card.Create(debitCard);
 
 
-                var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                var activityLog = new ActivityLog(insuranceUserProfile.Id, null,null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
 
                 checkprofileComplete.TokenizationCompleted = true;
@@ -263,6 +311,45 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
         }
 
+        public async Task<ResponseMessage> ProcessPaystackChargeCardResponse(TokenizationResponse chargeCardResponse, FamilyProfile familyProfile, PaymentReference paymentReference, string cardReference)
+        {
+            // if charge card was successfully
+            if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
+            {
+                //If card count is 0. it means there is no card available, so the card tokenised will
+                //be the primary card so primary card status is set to 1 
+                //else, card status is 0;
+
+                var cardStatus = familyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+
+                var debitCard = new DebitCard(familyProfile.UserId, null,null, familyProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
+                    , cardReference, chargeCardResponse.AuthorizationCode);
+                _repoWrapper.Card.Create(debitCard);
+
+                if (!familyProfile.TokenizationCompleted)
+                {
+                    familyProfile.TokenizationCompleted = true;
+                    _repoWrapper.FamilyProfile.Update(familyProfile);
+
+                }
+                var activityLog = new ActivityLog(null,null, familyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                _repoWrapper.ActivityLog.Create(activityLog);
+                await _repoWrapper.Save();
+
+                /// We sleep the thread for 10 seconds so we can process the paystack webhook  <see cref="ProcessPaystackWebHook(string, string, string, string, string, string, string)"/>
+                Thread.Sleep(15000);
+
+                return new ResponseMessage
+                {
+                    Data = chargeCardResponse,
+                    Status = chargeCardResponse.Status,
+                    ResponseCode = chargeCardResponse.ResponseCode,
+                    Message = chargeCardResponse.Message
+                };
+            }
+            return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
+        }
+        
         /// <summary>
         /// This is an overloaded method, which handle paystack charge card response for corporate org.It is responsible for processing the logic and response
         /// if the charge was successful or not.
@@ -286,7 +373,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                 var cardStatus = companyProfile.Cards.Count == 0 ? (int) DebitCard_StatusValue.primary : (int) DebitCard_StatusValue.secondary;
 
-                var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
+                var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, null ,cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
                 _repoWrapper.Card.Create(debitCard);
 
@@ -296,7 +383,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     _repoWrapper.CompanyProfile.Update(companyProfile);
                    
                 }
-                var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                var activityLog = new ActivityLog(null, companyProfile.Id,null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
                 await _repoWrapper.Save();
 
@@ -378,6 +465,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                        , DateTime.Now, otpViewModel.pin);
                 return await ProcessPaystackChargeCardResponse(chargeCardResponse, companyProfile, paymentReference, otpViewModel.reference);
             }
+            else if (profileCompletion.Data.CorporateUser is null)
+            {
+                var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(id);
+                var chargeCardResponse = await _paystackService.SendOtp(otpViewModel.otp, otpViewModel.reference, familyProfile.PhoneNumber
+                       , DateTime.Now, otpViewModel.pin);
+                return await ProcessPaystackChargeCardResponse(chargeCardResponse, familyProfile, paymentReference, otpViewModel.reference);
+            }
             return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
         }
 
@@ -390,7 +484,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             var executionDate = insuranceProfile.EndActiveStatusDate;
 
-            var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(insuranceProfile.UserId,
+            var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(insuranceProfile.UserId.Value,
                  insuranceProfile.Id, null), executionDate);
 
             return jobId;
@@ -434,7 +528,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                     : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, insuranceProfile.UserId
+                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null,null, insuranceProfile.UserId.Value
                         , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
 
@@ -450,7 +544,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, insuranceProfile.UserId
+                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null,null, insuranceProfile.UserId.Value
                        , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
 
@@ -527,7 +621,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     var channel = PaymentReference_ChannelValue.healthinsured_hygeia.ToString();
 
-                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, null, companyProfile.Id, companyProfile.UserId
+                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, null, companyProfile.Id,null, companyProfile.UserId
                         , premiumFee, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
 
@@ -603,14 +697,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             var daysToCancelUserActivityStatus = insuranceProfile.EndActiveStatusDate;
             // Schedule task to render user status inactive when cycle ends
-            var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceProfile.UserId), daysToCancelUserActivityStatus);
+            var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceProfile.UserId.Value), daysToCancelUserActivityStatus);
 
             insuranceProfile.PendingJobId = jobId;
             insuranceProfile.PendingEmailJobId = null;
             insuranceProfile.SubscriptionStatus = false;
             _repoWrapper.InsuranceProfile.Update(insuranceProfile);
 
-            var activityLog = new ActivityLog(insuranceProfile.Id, null, "Subscription Was Cancelled Successfully", ServiceNames.HealthInsured.ToString());
+            var activityLog = new ActivityLog(insuranceProfile.Id, null,null, "Subscription Was Cancelled Successfully", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
 
             await _repoWrapper.Save();
@@ -642,7 +736,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     {
                         insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                         insuranceUserProfile.SubscriptionStatus = false;
-                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.UserId),companyProfile.NextPaymentDate.Value);
+                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.UserId.Value),companyProfile.NextPaymentDate.Value);
                     }                   
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 }
@@ -730,13 +824,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if(insuranceProfile != null)
             {
-                var activityLog = new ActivityLog(insuranceProfile.Id, null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
+                var activityLog = new ActivityLog(insuranceProfile.Id, null,null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
             }
             else
             {
                 var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-                var activityLog = new ActivityLog(null, companyProfile.Id, "Change Primary Card", ServiceNames.HealthInsured.ToString());
+                var activityLog = new ActivityLog(null, companyProfile.Id,null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
             }          
 
@@ -767,7 +861,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 };
                 _repoWrapper.Card.Delete(card);
 
-                var activityLog = new ActivityLog(insuranceProfile.Id, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
+                var activityLog = new ActivityLog(insuranceProfile.Id, null,null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
             }
             else
@@ -780,7 +874,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 };
                 _repoWrapper.Card.Delete(card);
 
-                var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
+                var activityLog = new ActivityLog(null, companyProfile.Id,null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
 
             }                     
@@ -921,7 +1015,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() 
                 : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-            var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null, insuranceProfile.UserId
+            var paymentReference = new PaymentReference(channel,chargeAuthorization.Reference, insuranceProfile.Id,null,null, insuranceProfile.UserId.Value
                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
             _repoWrapper.PaymentReference.Create(paymentReference);
             await _repoWrapper.Save();

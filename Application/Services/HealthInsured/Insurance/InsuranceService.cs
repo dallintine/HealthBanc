@@ -161,7 +161,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             }
             _repoWrapper.InsuranceProfile.Update(updatedProfile);
 
-            var activityLog = new ActivityLog(checkIfUserHasBeenProfiled.Id, null, "Updated HealthInsured Profile", ServiceNames.HealthInsured.ToString());
+            var activityLog = new ActivityLog(checkIfUserHasBeenProfiled.Id, null,null, "Updated HealthInsured Profile", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Profile was updated successfully" };
@@ -281,6 +281,20 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                         Message = "Profile completion state was fetched successfully"
                     };
                 }
+
+                var familyUser = await _repoWrapper.FamilyProfile.GetByUserId(userId);
+                if (familyUser != null)
+                {
+                    var familyProfileState = new HealthInsuredProfileStateDTO(null, familyUser.EmailConfirmed, familyUser.ProfileCompleted
+                        , familyUser.TokenizationCompleted, familyUser.InsuranceService);
+                    return new ResponseMessage<HealthInsuredProfileStateDTO>
+                    {
+                        Data = familyProfileState,
+                        Status = true,
+                        Message = "Profile completion state was fetched successfully"
+                    };
+                }
+
                 var notFoundProfileState = new HealthInsuredProfileStateDTO(null, null, false, false, null);
                 return new ResponseMessage<HealthInsuredProfileStateDTO>
                 {

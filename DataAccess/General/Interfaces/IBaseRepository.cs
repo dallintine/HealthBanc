@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Models.Axa_Hygeia_Insurance;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,6 +18,6 @@ namespace DataAccess.General.Interfaces
         void CreateRange(List<T> entity);
         Task InsertEntities(List<T> entities);
         void DeleteRange(List<T> entity);
-        void UpdateRange(List<T> entity);
+        void UpdateRange(List<T> entity);        
     }
 }

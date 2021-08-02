@@ -79,14 +79,14 @@ namespace Application.Services.HealthInsured
                         var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                             : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                        var paymentReference2 = new PaymentReference(channel, reference, insuranceProfile.Id, null, insuranceProfile.UserId
+                        var paymentReference2 = new PaymentReference(channel, reference, insuranceProfile.Id, null,null, insuranceProfile.UserId.Value
                         , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
                         _repoWrapper.PaymentReference.Create(paymentReference2);
                     }
                     await _repoWrapper.Save();
-                    await ValidateWebHookSuccesfulInsurancePayment(insuranceProfile, null, reference, authorization_code, last4, card_type, amount, status);
+                    await ValidateWebHookSuccesfulInsurancePayment(insuranceProfile, null,null, reference, authorization_code, last4, card_type, amount, status);
                 }
-                else
+                else if(insuranceProfile is null)
                 {
                     var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
                     if (companyProfile != null)
@@ -108,12 +108,42 @@ namespace Application.Services.HealthInsured
                             var channel = companyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                                 : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
 
-                            var paymentReference2 = new PaymentReference(channel, reference, null, companyProfile.Id, companyProfile.UserId
+                            var paymentReference2 = new PaymentReference(channel, reference, null, companyProfile.Id,null, companyProfile.UserId
                             , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
                             _repoWrapper.PaymentReference.Create(paymentReference2);
                         }
                         await _repoWrapper.Save();
-                        await ValidateWebHookSuccesfulInsurancePayment(null, companyProfile, reference, authorization_code, last4, card_type, amount, status);
+                        await ValidateWebHookSuccesfulInsurancePayment(null, companyProfile,null, reference, authorization_code, last4, card_type, amount, status);
+                    }
+                }
+                else
+                {
+                    var familyProfile = await _repoWrapper.FamilyProfile.GetByEmail(email);
+                    if(familyProfile != null)
+                    {
+                        var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
+                        if (paymentReference != null)
+                        {
+                            if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
+                            {
+                                status = PaymentReference_StatusValue.Send_Url.ToString();
+                            }
+                            paymentReference.Amount = decimal.Parse(amount);
+                            paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
+                            _repoWrapper.PaymentReference.Update(paymentReference);
+                        }
+                        else
+                        {
+                            // Create payment reference for the charge.
+                            var channel = familyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
+                                : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
+                            var paymentReference2 = new PaymentReference(channel, reference, null,null, familyProfile.Id, familyProfile.UserId
+                            , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
+                            _repoWrapper.PaymentReference.Create(paymentReference2);
+                        }
+                        await _repoWrapper.Save();
+                        await ValidateWebHookSuccesfulInsurancePayment(null,null, familyProfile, reference, authorization_code, last4, card_type, amount, status);
                     }
                 }
             }
@@ -124,19 +154,19 @@ namespace Application.Services.HealthInsured
         /// Method to make sure Users get value for their insurance payment
         /// </summary>
         /// <returns></returns>
-        private async Task ValidateWebHookSuccesfulInsurancePayment(InsuranceUserProfile insuranceUserProfile, CompanyProfile companyProfile, string reference, string authorization_code, string last4, string card_type, string amount, string status)
+        private async Task ValidateWebHookSuccesfulInsurancePayment(InsuranceUserProfile insuranceUserProfile, CompanyProfile companyProfile,FamilyProfile familyProfile, string reference, string authorization_code, string last4, string card_type, string amount, string status)
         {
             if (!(insuranceUserProfile is null))
             {
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
                     int cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
-                    var debitCard = new DebitCard(insuranceUserProfile.UserId, insuranceUserProfile.Id, null, cardStatus, last4, card_type
+                    var debitCard = new DebitCard(insuranceUserProfile.UserId.Value, insuranceUserProfile.Id, null,null, cardStatus, last4, card_type
                     , reference, authorization_code);
                     _repoWrapper.Card.Create(debitCard);
 
 
-                    var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                    var activityLog = new ActivityLog(insuranceUserProfile.Id, null,null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
                     _repoWrapper.ActivityLog.Create(activityLog);
                     await _repoWrapper.Save();
                 }
@@ -147,17 +177,33 @@ namespace Application.Services.HealthInsured
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
                     int cardStatus = companyProfile.NextPaymentDate == null ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
-                    var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
+                    var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id,null, cardStatus, last4, card_type
                     , reference, authorization_code);
                     _repoWrapper.Card.Create(debitCard);
 
 
-                    var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                    var activityLog = new ActivityLog(null, companyProfile.Id,null, "Debit Card Added", ServiceNames.HealthInsured.ToString());
                     _repoWrapper.ActivityLog.Create(activityLog);
                     await _repoWrapper.Save();
                 }
                 await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
             }
+            //if (!(familyProfile is null))
+            //{
+            //    if (status == PaymentReference_StatusValue.Send_Url.ToString())
+            //    {
+            //        int cardStatus = familyProfile.NextPaymentDate == null ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+            //        var debitCard = new DebitCard(familyProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
+            //        , reference, authorization_code);
+            //        _repoWrapper.Card.Create(debitCard);
+
+
+            //        var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+            //        _repoWrapper.ActivityLog.Create(activityLog);
+            //        await _repoWrapper.Save();
+            //    }
+            //    await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
+            //}
         }
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
@@ -200,7 +246,7 @@ namespace Application.Services.HealthInsured
             //Schedule job to debit user every 28 days
             insuranceUserProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceUserProfile);
 
-            var checkprofileComplete = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(insuranceUserProfile.UserId);
+            var checkprofileComplete = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(insuranceUserProfile.UserId.Value);
             checkprofileComplete.TokenizationCompleted = true;
             _repoWrapper.InsuranceCompletionProfile.Update(checkprofileComplete);
 
@@ -214,7 +260,7 @@ namespace Application.Services.HealthInsured
             _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
 
             //Create Audit thats user subscrption changed 
-            var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
+            var activityLog = new ActivityLog(insuranceUserProfile.Id, null,null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
         }
@@ -235,7 +281,7 @@ namespace Application.Services.HealthInsured
             _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
 
             //Create Audit thats user subscrption changed 
-            var activityLog = new ActivityLog(insuranceUserProfile.Id, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
+            var activityLog = new ActivityLog(insuranceUserProfile.Id, null,null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
 
             await _repoWrapper.Save();
@@ -264,6 +310,10 @@ namespace Application.Services.HealthInsured
             await _repoWrapper.Save();
         }
 
+        private async Task ProcessWebHook_SuccessfulFamilyPayment(FamilyProfile familyProfile, string reference, string amount)
+        {
+
+        }
         private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference, string amount)
         {
             if (decimal.Parse(amount) > 100)

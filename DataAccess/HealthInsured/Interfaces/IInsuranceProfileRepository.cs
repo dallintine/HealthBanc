@@ -18,5 +18,6 @@ namespace DataAccess.HealthInsured.Interfaces
         Task<PagedResponse<InsuranceUserProfile>> GetPaginatedInsuranceUserProfiles(PaginationQuery paginationQuery);
         Task<InsuranceUserProfile> GetExtendedProfileDetailsByEmail(string email);
         IQueryable<InsuranceUserProfile> QueryAllInsuranceProfiles();
+        Task<InsuranceUserProfile> GetByFamilyProfileId(int familyProfileId, int insuranceProfileId);
     }
 }

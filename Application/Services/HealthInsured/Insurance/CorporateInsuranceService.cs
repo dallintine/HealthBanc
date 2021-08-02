@@ -258,7 +258,7 @@ namespace Application.Services.HealthInsured.Insurance
             // if at least one beneficiary was moved to insurace profile list
             if (checkIfProfileEmailExistCount != beneficiaryReviews.Count)
             {
-                var activityLog = new ActivityLog(null, companyprofile.Id, "New Beneficiairies Was Added", ServiceNames.HealthInsured.ToString());
+                var activityLog = new ActivityLog(null, companyprofile.Id,null, "New Beneficiairies Was Added", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
             }
 
@@ -407,7 +407,7 @@ namespace Application.Services.HealthInsured.Insurance
             company.ProfileCompleted = true;
             _repoWrapper.CompanyProfile.Update(company);
 
-            var activityLog = new ActivityLog(null, company.Id, "Company Profile Was Updated", ServiceNames.HealthInsured.ToString());
+            var activityLog = new ActivityLog(null, company.Id,null, "Company Profile Was Updated", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
 
             await _repoWrapper.Save();

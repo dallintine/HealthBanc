@@ -340,7 +340,7 @@ namespace HealthBanc.Controllers.Insurance
             {
                 var insuranceProfile = await _repoWerapper.InsuranceProfile.GetByEmail(email);
 
-                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, insuranceProfile.UserId);
+                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, insuranceProfile.UserId.Value);
                 if (updateResponse.Status)
                 {
                     return Ok(updateResponse);

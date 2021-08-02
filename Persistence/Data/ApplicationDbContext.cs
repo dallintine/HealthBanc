@@ -40,6 +40,7 @@ namespace Persistence
         public DbSet<HygeiaHospitalList> HygeiaHospitalLists { get; set; }
         public DbSet<EnrollmentOnOnboarding> EnrollmentOnOnboardings { get; set; }
         public DbSet<CompanyProfile> CompanyProfiles { get; set; }
+        public DbSet<FamilyProfile> FamilyProfiles { get; set; }
         public DbSet<BeneficiaryReviewUser> BeneficiaryReviewUsers { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<EncryptedAcessToken> EncryptedAcessTokens { get; set; }

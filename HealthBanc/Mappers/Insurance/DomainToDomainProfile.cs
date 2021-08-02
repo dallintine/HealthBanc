@@ -32,6 +32,12 @@ namespace HealthBanc.Mappers.Insurance
                 .ForMember(dest => dest.DateCreated, opt => opt.MapFrom(x => DateTime.Now))
                 .ForMember(dest => dest.ContactAddress, opt => opt.MapFrom(x => x.Address))
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            CreateMap<ApplicationUser, FamilyProfile>()
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(x => x.Id))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.FirstName + " " + x.LastName))
+                .ForMember(dest => dest.DateCreated, opt => opt.MapFrom(x => DateTime.Now))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(x => x.Email));
         }
     }
 }

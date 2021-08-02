@@ -37,6 +37,11 @@ namespace DataAccess.HealthInsured.Implementation
             return await _context.InsuranceUserProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<InsuranceUserProfile> GetByFamilyProfileId(int familyProfileId, int insuranceProfileId)
+        {
+            return await _context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyProfileId == familyProfileId && x.Id == insuranceProfileId);
+        }
+
         public async Task<PagedResponse<InsuranceUserProfile>> GetPaginatedInsuranceUserProfiles(PaginationQuery paginationQuery)
         {
             var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
