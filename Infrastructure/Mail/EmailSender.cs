@@ -86,6 +86,15 @@ namespace Infrastructure.Mail
             EmailRequest(emailRequest);
         }
 
+        public void SendHealthInsuredFamilyPaymentReminder(string email, string subject, string familyHead,string familyMember)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\family_healthinsured_paymentreminder.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("FamilyHead", familyHead).Replace("FamilyMember",familyMember);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
+        }
+
         public void SendHeliumNotification(string subject,string healthProvider,string providerType,string phonenumber,string providerEmail)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\heliumNotification.html";

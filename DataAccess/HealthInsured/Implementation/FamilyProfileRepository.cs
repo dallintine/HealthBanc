@@ -22,15 +22,46 @@ namespace DataAccess.HealthInsured.Implementation
             return await _context.FamilyProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
-        public async Task<IQueryable<InsuranceUserProfile>> QueryFamilyMembers(int userId)
+        public async Task<FamilyProfile> GetExtendedFamilyDetails(int userId)
         {
-            var familyMembers = await _context.FamilyProfiles.Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.UserId == userId);
-            return familyMembers.InsuranceUserProfiles.AsQueryable();
+            return await _context.FamilyProfiles.Include(x => x.Cards).Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
         public async Task<FamilyProfile> GetByEmail(string email)
         {
-            return await _context.FamilyProfiles.FirstOrDefaultAsync(x => x.Email == email);
+            return await _context.FamilyProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Email == email);
+        }
+
+        public async Task<FamilyProfile> GetFamilyByFamilyId(int familyId)
+        {
+            var family = await _context.FamilyProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.Id == familyId);
+            return family;
+        }
+
+        public async Task<PagedResponse<InsuranceUserProfile>> PaginatedFamilyMembers(PaginationQuery paginationQuery,int userId)
+        {
+            var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
+            var familyProfile = _context.FamilyProfiles.FirstOrDefault(x => x.UserId == userId);
+            var queryable = familyProfile.InsuranceUserProfiles.AsQueryable();
+
+            if (!string.IsNullOrEmpty(paginationQuery.SearchText))
+            {
+                queryable = queryable.Where(x => x.Surname.Contains(paginationQuery.SearchText) || x.Othernames.Contains(paginationQuery.SearchText));
+            }
+
+            //Sort the users
+            queryable = paginationQuery.SortBy == 1 ? queryable.OrderBy(s => s.Surname) : queryable.OrderBy(s => s.Othernames) ;
+
+            var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
+
+            var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).AsQueryable();
+            paginatedResponse.Data = await newQueryable.ToListAsync();
+            var recordCount = await queryable.CountAsync();
+            paginatedResponse.RecordCount = recordCount;
+            paginatedResponse.PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null;
+            paginatedResponse.PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null;
+            paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize));
+            return paginatedResponse;
         }
     }
 }

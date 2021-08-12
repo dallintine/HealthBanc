@@ -116,6 +116,8 @@ namespace HealthBanc
             services.AddScoped<Dashboard_Analytics>();
             services.AddScoped<IFileProcessor, FileProcessor>();
             services.AddScoped<LeadGeneratorService>();
+            services.AddScoped<FamilyInsuranceService>();
+            services.AddScoped<UtilityService>();
         }
     }
 }

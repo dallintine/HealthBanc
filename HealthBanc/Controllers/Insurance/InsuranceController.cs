@@ -455,44 +455,5 @@ namespace HealthBanc.Controllers.Insurance
             }
             return BadRequest(new ResponseMessage { Message = "You do not have permission to access this resource" });
         }
-
-        /// <summary>
-        /// Download insurance profile data
-        /// </summary>
-        /// <param name="subStatus"></param>
-        /// <param name="activeStatus"></param>
-        /// <param name="service"></param>
-        /// <returns></returns>
-        [HttpGet("[action]")]
-        [Authorize(Roles = "Super-Administrator")]
-        [ProducesResponseType(200, Type = typeof(File))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        public IActionResult DowloadInsuranceProfileExcelData(bool subStatus, bool activeStatus, string service)
-        {
-            var response = _insuranceService.DowloadInsuranceProfileExcelData(subStatus, activeStatus, service);
-            if (response.Status)
-            {
-                string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                string fileName = "HealthInsurance.xlsx";
-
-                var content = response.Data as byte[];
-                return File(content, contentType, fileName);
-            }
-            return BadRequest(response);
-        }
-
-        /// <summary>
-        /// Fix card errors
-        /// </summary>
-        /// <param name="email"></param>
-        /// <returns></returns>
-        [HttpGet("[action]")]
-        [Authorize(Roles = "Super-Administrator")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        public async Task<IActionResult> FixCardsError(string email)
-        {
-            await _insuranceService.FixCardsError(email);
-            return Ok();
-        }
     }
 }

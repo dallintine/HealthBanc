@@ -30,15 +30,6 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         /// </summary>
         public bool TokenizationCompleted { get; set; }
         public bool ProfileCompleted { get; set; }
-        /// <summary>
-        /// Boolean value to indicate the company next insurance cycle payment date
-        /// </summary>
-        public DateTime? NextPaymentDate { get; set; }
-
-        /// <summary>
-        /// Number of times scheduled payment Fails
-        /// </summary>
-        public int? FailedScheduledPaymentRetry { get; set; }
 
         public string _insuranceService;
         /// <summary>
@@ -61,7 +52,6 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         }
         public DateTime DateCreated { get; set; }
         public List<InsuranceUserProfile> InsuranceUserProfiles { get; set; }
-        public List<BeneficiaryReviewUser> BeneficiaryReviewUsers { get; set; }
         public List<DebitCard> Cards { get; set; }
         public List<PaymentReference> PaymentReferences { get; set; }
         public List<ActivityLog> HealthInsuredActivityLogs { get; set; }

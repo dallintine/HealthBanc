@@ -17,6 +17,7 @@ namespace Application.Interfaces
         void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider,string plan);
         void SendHealthFinanceNotification(string subject, HealthFinanceCollectionViewModel healthFinance, List<string> toEmails);
         void SendHealthFinanceSubmissionNotification(string subject, HealthFinanceCollectionViewModel healthFinance, string toEmails);
+        void SendHealthInsuredFamilyPaymentReminder(string email, string subject, string familyHead, string familyMember);
         void SendHealthInsuredPaymentReminder(string email, string subject, string userName);
         void SendHeliumNotification(string subject, string healthProvider, string providerType, string phonenumber, string providerEmail);
         void SendUserResetPasswordMail(string email, string subject, string resetUrl);

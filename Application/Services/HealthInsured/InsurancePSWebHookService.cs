@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -170,13 +171,12 @@ namespace Application.Services.HealthInsured
                     _repoWrapper.ActivityLog.Create(activityLog);
                     await _repoWrapper.Save();
                 }
-                await ProcessWebHook_SuccessfulInsuranceIndividualPayment(insuranceUserProfile, reference, amount);
             }
             if (!(companyProfile is null))
             {
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
-                    int cardStatus = companyProfile.NextPaymentDate == null ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                    int cardStatus = companyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
                     var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id,null, cardStatus, last4, card_type
                     , reference, authorization_code);
                     _repoWrapper.Card.Create(debitCard);
@@ -188,132 +188,23 @@ namespace Application.Services.HealthInsured
                 }
                 await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
             }
-            //if (!(familyProfile is null))
-            //{
-            //    if (status == PaymentReference_StatusValue.Send_Url.ToString())
-            //    {
-            //        int cardStatus = familyProfile.NextPaymentDate == null ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
-            //        var debitCard = new DebitCard(familyProfile.UserId, null, companyProfile.Id, cardStatus, last4, card_type
-            //        , reference, authorization_code);
-            //        _repoWrapper.Card.Create(debitCard);
-
-
-            //        var activityLog = new ActivityLog(null, companyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-            //        _repoWrapper.ActivityLog.Create(activityLog);
-            //        await _repoWrapper.Save();
-            //    }
-            //    await ProcessWebHook_SuccessfulCorporatePayment(companyProfile, reference, amount);
-            //}
-        }
-
-        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
-        {
-            // If payment is scheduled
-            if (insuranceUserProfile.SubscriptionStatus is true && insuranceUserProfile.ActiveStatus is true && (decimal.Parse(amount) >= decimal.Parse("1000")))
+            if (!(familyProfile is null))
             {
-                await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceUserProfile, reference);
-            }
-            // If user is making payment for the first time,
-            else if (insuranceUserProfile.SubscriptionStatus == null)
-            {
-                await SendDetailsToInsuranceProvider(insuranceUserProfile);
-                await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
-            }
-            // if user is  making an immediate reactivation
-            else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
-            {
-                if (decimal.Parse(amount) >= decimal.Parse("1000"))
+                if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
-                    await SendDetailsToInsuranceProvider(insuranceUserProfile);
-                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
+                    int cardStatus = familyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                    var debitCard = new DebitCard(familyProfile.UserId, null, null ,familyProfile.Id, cardStatus, last4, card_type
+                    , reference, authorization_code);
+                    _repoWrapper.Card.Create(debitCard);
+
+
+                    var activityLog = new ActivityLog(null,null, familyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                    _repoWrapper.ActivityLog.Create(activityLog);
+                    await _repoWrapper.Save();
                 }
             }
-
-            if (decimal.Parse(amount) <= decimal.Parse("100"))
-            {
-                BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
-            }
         }
-
-        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
-        {
-            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
-
-            // Schedule debit email reminder for user 
-            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
-                   DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-
-            //Schedule job to debit user every 28 days
-            insuranceUserProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceUserProfile);
-
-            var checkprofileComplete = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(insuranceUserProfile.UserId.Value);
-            checkprofileComplete.TokenizationCompleted = true;
-            _repoWrapper.InsuranceCompletionProfile.Update(checkprofileComplete);
-
-            _insuranceSerivce.SendSuccesfulSubscriptionMail(insuranceUserProfile.Email, insuranceUserProfile.Surname, insuranceUserProfile.TransId, insuranceUserProfile.CareProviderName,
-                insuranceUserProfile.PlanCode);
-
-            insuranceUserProfile.SubscriptionStatus = true;
-            insuranceUserProfile.ActiveStatus = true;
-            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-
-            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-
-            //Create Audit thats user subscrption changed 
-            var activityLog = new ActivityLog(insuranceUserProfile.Id, null,null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
-            _repoWrapper.ActivityLog.Create(activityLog);
-            await _repoWrapper.Save();
-        }
-
-        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
-        {
-            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
-
-            //Schedule job to debit user every 28 days
-            insuranceUserProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceUserProfile);
-
-            // Schedule debit email reminder for user 
-            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _tokenizationService.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-
-            insuranceUserProfile.SubscriptionStatus = true;
-            insuranceUserProfile.ActiveStatus = true;
-            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-
-            //Create Audit thats user subscrption changed 
-            var activityLog = new ActivityLog(insuranceUserProfile.Id, null,null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
-            _repoWrapper.ActivityLog.Create(activityLog);
-
-            await _repoWrapper.Save();
-        }
-
-        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, string reference)
-        {
-            if (insuranceUserProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceUserProfile.InsuranceService == null)
-            {
-                await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
-            }
-
-            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
-
-            //Schedule job to debit user every 28 days
-            insuranceUserProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceUserProfile);
-
-            // Schedule debit email reminder for user 
-            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _tokenizationService.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-
-            insuranceUserProfile.SubscriptionStatus = true;
-            insuranceUserProfile.ActiveStatus = true;
-            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-
-            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-            await _repoWrapper.Save();
-        }
-
-        private async Task ProcessWebHook_SuccessfulFamilyPayment(FamilyProfile familyProfile, string reference, string amount)
-        {
-
-        }
+               
         private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference, string amount)
         {
             if (decimal.Parse(amount) > 100)
@@ -349,28 +240,6 @@ namespace Application.Services.HealthInsured
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
             }
             await Task.CompletedTask;
-        }
-
-        private async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)
-        {
-            if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
-            {
-                var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
-                if (response.Status)
-                {
-                    insuranceUserProfile.TransId = response.Message;
-                }
-                else
-                {
-                    insuranceUserProfile.TransId = "Pending";
-                }
-                _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-                await _repoWrapper.Save();
-            }
-            else
-            {
-                await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
-            }
         }
     }
 }
