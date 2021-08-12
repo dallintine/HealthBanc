@@ -41,7 +41,7 @@ namespace DataAccess.HealthInsured.Implementation
         public async Task<PagedResponse<InsuranceUserProfile>> PaginatedFamilyMembers(PaginationQuery paginationQuery,int userId)
         {
             var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
-            var familyProfile = _context.FamilyProfiles.Include(x => x.InsuranceUserProfiles).FirstOrDefault(x => x.UserId == userId);
+            var familyProfile = await _context.FamilyProfiles.Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.UserId == userId);
             var queryable = familyProfile.InsuranceUserProfiles.AsQueryable();
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))
@@ -55,8 +55,8 @@ namespace DataAccess.HealthInsured.Implementation
             var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
 
             var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).AsQueryable();
-            paginatedResponse.Data = await newQueryable.ToListAsync();
-            var recordCount = await queryable.CountAsync();
+            paginatedResponse.Data = newQueryable.ToList();
+            var recordCount = queryable.Count();
             paginatedResponse.RecordCount = recordCount;
             paginatedResponse.PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null;
             paginatedResponse.PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null;
