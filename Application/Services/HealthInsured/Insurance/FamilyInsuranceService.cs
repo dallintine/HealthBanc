@@ -45,8 +45,6 @@ namespace Application.Services.HealthInsured.Insurance
         public async Task<ResponseMessage> CreateInsuranceProfileForFamilyMemeber(FamilyMemberViewModel familyMemberViewModel, int userId)
         {
             var familyCreator = await _repoWrapper.FamilyProfile.GetByUserId(userId);
-            familyMemberViewModel.PlanCode = "1";
-            familyMemberViewModel.Premium = decimal.Parse("1000");
             var insuranceProfile = _mapper.Map<InsuranceUserProfile>(familyMemberViewModel);
             insuranceProfile.FamilyProfileId = familyCreator.Id;
             _repoWrapper.InsuranceProfile.Create(insuranceProfile);
