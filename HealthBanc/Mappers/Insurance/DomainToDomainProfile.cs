@@ -37,7 +37,9 @@ namespace HealthBanc.Mappers.Insurance
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(x => x.Id))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.FirstName + " " + x.LastName))
                 .ForMember(dest => dest.DateCreated, opt => opt.MapFrom(x => DateTime.Now))
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(x => x.Email));
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(x => x.Email))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+
         }
     }
 }

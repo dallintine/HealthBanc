@@ -31,14 +31,12 @@ namespace Application.Services.HealthInsured.Insurance
             _emailSender = emailSender;
         }
 
-        public async Task<ResponseMessage> CreateFamilyProfile(int id, string phoneNumber)
+        public async Task<ResponseMessage> CreateFamilyProfile(int id)
         {
             var user = await _repoWrapper.ApplicationUser.FindByIdAsync(id);
             var family = _mapper.Map<FamilyProfile>(user);
-            family.PhoneNumber = phoneNumber;
             family.ProfileCompleted = true;
             _repoWrapper.FamilyProfile.Create(family);
-            user.PhoneNumber = phoneNumber;
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Profile was created successfully" };

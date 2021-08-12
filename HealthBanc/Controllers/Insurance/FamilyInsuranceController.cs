@@ -3,6 +3,7 @@ using Application.DTO.HealthInsured_AxaMansard;
 using Application.Services.HealthInsured.Insurance;
 using Application.ViewModels.HealthInsured;
 using DataAccess;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -28,12 +29,13 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        public async Task<IActionResult> CreateFamilyProfile(string phoneNumber)
+        public async Task<IActionResult> CreateFamilyProfile()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var createFamilyProfileResponse = await _familyInsuranceService.CreateFamilyProfile(id, phoneNumber);
+            var createFamilyProfileResponse = await _familyInsuranceService.CreateFamilyProfile(id);
             return Ok(createFamilyProfileResponse);
         }
 
@@ -43,6 +45,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <param name="familyMemberViewModel"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public async Task<IActionResult> CreateInsuranceProfileForFamilyMember(FamilyMemberViewModel familyMemberViewModel)
@@ -78,6 +81,7 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<FamilyMembersDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetFamilyMembers([FromQuery] PaginationQuery paginationQuery)
         {
             if (ModelState.IsValid)
