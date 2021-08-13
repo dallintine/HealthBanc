@@ -2,7 +2,10 @@
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Services;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
+using Application.ViewModels.HealthInsured;
+using DataAccess;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -20,13 +23,16 @@ namespace HealthBanc.Controllers
         private readonly TokenizationService _tokenizationService;
         private readonly IBSIntegrationService _iBSIntegrationService;
         private readonly UtilityService _utilityService;
+        private readonly IRepositoryWrapper _repoWrapper;
 
-        public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService)
+        public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
+            IRepositoryWrapper repoWrapper)
         {
             _insuranceService = insuranceService;
             _tokenizationService = tokenizationService;
             _iBSIntegrationService = iBSIntegrationService;
             _utilityService = utilityService;
+            _repoWrapper = repoWrapper;
         }
 
         /// <summary>
@@ -52,6 +58,94 @@ namespace HealthBanc.Controllers
                 return File(content, contentType, fileName);
             }
             return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Upload Axamansard Hospital List
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="passcode"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
+        public async Task<IActionResult> UploadAxamansardHospitalListToDb(IFormFile file, string passcode)
+        {
+            if (passcode == "docUpload1963.")
+            {
+                var checkRole = User.IsInRole("Super-Administrator");
+                if (checkRole)
+                {
+                    var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
+                    if (result.Status)
+                    {
+                        return Ok(result);
+                    }
+                    return BadRequest();
+                }
+                return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
+            }
+            return BadRequest(new ResponseMessage { Message = "Wrong passcode" });
+        }
+
+        /// <summary>
+        /// Upload Hygeia hospital List
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="passcode"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
+        public async Task<IActionResult> UploadHygeiaHospitalListToDb(IFormFile file, string passcode)
+        {
+            if (passcode == "docUpload1963.")
+            {
+                var checkRole = User.IsInRole("Super-Administrator");
+                if (checkRole)
+                {
+                    var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
+                    if (result.Status)
+                    {
+                        return Ok(result);
+                    }
+                    return BadRequest();
+                }
+                return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
+            }
+            return BadRequest(new ResponseMessage { Message = "Wrong passcode" });
+        }
+
+        /// <summary>
+        /// Admin Update individual insurance profile
+        /// </summary>
+        /// <param name="updateProfileViewModel"></param>
+        /// <param name="email"></param> 
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "Super-Administrator")]
+        public async Task<IActionResult> AdminUpdateProfileAsync(string email, UpdateProfileViewModel updateProfileViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
+
+                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, insuranceProfile.UserId.Value);
+                if (updateResponse.Status)
+                {
+                    return Ok(updateResponse);
+                }
+                return BadRequest(updateResponse);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>

@@ -42,6 +42,10 @@ namespace DataAccess.HealthInsured.Implementation
         {
             var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
             var familyProfile = await _context.FamilyProfiles.Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.UserId == userId);
+            if(familyProfile is null)
+            {
+                return new PagedResponse<InsuranceUserProfile>();
+            }
             var queryable = familyProfile.InsuranceUserProfiles.AsQueryable();
 
             if (!string.IsNullOrEmpty(paginationQuery.SearchText))

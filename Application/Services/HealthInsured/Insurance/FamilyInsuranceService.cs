@@ -71,28 +71,37 @@ namespace Application.Services.HealthInsured.Insurance
         public async Task<ResponseMessage> UpdateFamilyMember(int userId,int famiyMemeberId, FamilyMemberViewModel familyMemberViewModel)
         {
             var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(userId);
-            var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == famiyMemeberId).FirstOrDefault();
-            if (insuranceProfile != null)
+            if (familyProfile != null)
             {
-                insuranceProfile = _mapper.Map(familyMemberViewModel, insuranceProfile);
-                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                await _repoWrapper.Save();
-                return new ResponseMessage { Message = "Family Member profile was updated successfully",Status=true };
+                var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == famiyMemeberId).FirstOrDefault();
+                if (insuranceProfile != null)
+                {
+                    insuranceProfile = _mapper.Map(familyMemberViewModel, insuranceProfile);
+                    _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                    await _repoWrapper.Save();
+                    return new ResponseMessage { Message = "Family Member profile was updated successfully", Status = true };
+                }
+                return new ResponseMessage { Message = "Family Member does not exist under your current profile" };
             }
-            return new ResponseMessage { Message = "Family Member does not exist under your current profile" };
+            return new ResponseMessage { Message = "Family Profile does not exist" };            
         }
 
         public async Task<ResponseMessage> RemoveFamilyMember(int userId, int famiyMemeberId)
         {
             var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(userId);
-            var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == famiyMemeberId).FirstOrDefault();
-            if (insuranceProfile != null)
+            if(familyProfile != null)
             {
-                _repoWrapper.InsuranceProfile.Delete(insuranceProfile);
-                await _repoWrapper.Save();
-                return new ResponseMessage { Message = "Family Member profile was removed successfully", Status = true };
+                var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == famiyMemeberId).FirstOrDefault();
+                if (insuranceProfile != null)
+                {
+                    _repoWrapper.InsuranceProfile.Delete(insuranceProfile);
+                    await _repoWrapper.Save();
+                    return new ResponseMessage { Message = "Family Member profile was removed successfully", Status = true };
+                }
+                return new ResponseMessage { Message = "Family Member does not exist under your current profile" };
             }
-            return new ResponseMessage { Message = "Family Member does not exist under your current profile" };
+            return new ResponseMessage { Message = "Family Profile does not exist" };
+           
         }
 
         public void SendPaymentReminder(string email, string familyHead,string familyMember, PerformContext context)
