@@ -48,7 +48,7 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        public async Task<IActionResult> CreateInsuranceProfileForFamilyMember(FamilyMemberViewModel familyMemberViewModel)
+        public async Task<IActionResult> CreateInsuranceProfileForFamilyMember([FromBody]FamilyMemberViewModel familyMemberViewModel)
         {
             if (ModelState.IsValid)
             {
