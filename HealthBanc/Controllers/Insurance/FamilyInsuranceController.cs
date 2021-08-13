@@ -139,7 +139,7 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
-        public async Task<IActionResult> UpdateFamilyMemberProfile(int famiyMemeberId,FamilyMemberViewModel familyMemberViewModel)
+        public async Task<IActionResult> UpdateFamilyMemberProfile(int famiyMemeberId,[FromBody]FamilyMemberViewModel familyMemberViewModel)
         {
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
