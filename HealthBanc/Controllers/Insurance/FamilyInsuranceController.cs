@@ -107,5 +107,50 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        /// <summary>
+        /// Remove family member that has not been activated
+        /// </summary>
+        /// <param name="famiyMemeberId"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        public async Task<IActionResult> RemoveFamilyMember(int famiyMemeberId)
+        {
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+
+            var response = await _familyInsuranceService.RemoveFamilyMember(userId, famiyMemeberId);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return NotFound(response);
+        }
+
+        /// <summary>
+        /// Update family member that has not been activated
+        /// </summary>
+        /// <param name="famiyMemeberId"></param>
+        /// <param name="familyMemberViewModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
+        public async Task<IActionResult> UpdateFamilyMemberProfile(int famiyMemeberId,FamilyMemberViewModel familyMemberViewModel)
+        {
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+
+            var response = await _familyInsuranceService.UpdateFamilyMember(userId, famiyMemeberId, familyMemberViewModel);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return NotFound(response);
+        }
+
     }
 }
