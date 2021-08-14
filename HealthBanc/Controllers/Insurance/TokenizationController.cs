@@ -261,6 +261,48 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
+        /// Deactivate referee
+        /// </summary>
+        /// <param name="insuranceProfileId"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> DeactivteReferee( int insuranceProfileId)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _tokenizationService.DeactivateReferee(id, insuranceProfileId);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Activate referee
+        /// </summary>
+        /// <param name="insuranceProfileId"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> ActivateRefereeWithPrimaryCard(int insuranceProfileId)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _tokenizationService.ActivateFamilyMemberWithPrimaryCard(id, insuranceProfileId);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
         /// Action to Deactivate beneficiairies  under a coporate organisation.
         /// </summary>
         /// <param name="beneficiaryListViewModel"></param>

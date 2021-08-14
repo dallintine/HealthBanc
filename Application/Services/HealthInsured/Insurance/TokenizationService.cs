@@ -86,7 +86,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <returns></returns>
         public async Task<ResponseMessage> TokenizeCard(ChargeCardViewModel chargeCard, int id)
         {
-            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id);
+            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id,null);
             if (profileCompletion.Data.CorporateUser is false)
             {
                 return await ProcessIndividualCardTokenization(chargeCard, id);
@@ -531,51 +531,51 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             /// <param name="insuranceProfileId"></param>
             /// <returns></returns>
             public async Task<ResponseMessage> ActivateFamilyMemberWithPrimaryCard(int familyUserId, int insuranceProfileId)
-        {
-            var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(familyUserId);
-            var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == insuranceProfileId).FirstOrDefault();
-            if (insuranceProfile != null)
             {
-                if (insuranceProfile.SubscriptionStatus == true)
+                var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(familyUserId);
+                var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == insuranceProfileId).FirstOrDefault();
+                if (insuranceProfile != null)
                 {
-                    return new ResponseMessage { Message = "Subscription is currently active", Status = false };
-                }
-                var primaryCard = familyProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
-                if (primaryCard == null)
-                {
-                    return new ResponseMessage { Message = "Kindly add a primary card, then start the activation process" };
-                }
-                // If  user is not in an active cycle
-                if (insuranceProfile.ActiveStatus == false)
-                {
-                    var response = await ProcessImmediateReactivationPayment(insuranceProfile, familyProfile.UserId, primaryCard.Authorization_Code);
-                    if (response.Status)
+                    if (insuranceProfile.SubscriptionStatus == true)
                     {
-                        // Schedule debit email reminder for user 
-                        insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
-                            , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-                        _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                        await _repoWrapper.Save();
+                        return new ResponseMessage { Message = "Subscription is currently active", Status = false };
                     }
-                    return response;
-                }
-                // If user is in an active cycle
-                else
-                {
-                    var response = await ProcessScheduledReactivationFlow(insuranceProfile, insuranceProfile.EndActiveStatusDate);
-                    if (response.Status)
+                    var primaryCard = familyProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                    if (primaryCard == null)
                     {
-                        // Schedule debit email reminder for user 
-                        insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
-                            , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-                        _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                        await _repoWrapper.Save();
+                        return new ResponseMessage { Message = "Kindly add a primary card, then start the activation process" };
                     }
-                    return response;
+                    // If  user is not in an active cycle
+                    if (insuranceProfile.ActiveStatus == false)
+                    {
+                        var response = await ProcessImmediateReactivationPayment(insuranceProfile, familyProfile.UserId, primaryCard.Authorization_Code);
+                        if (response.Status)
+                        {
+                            // Schedule debit email reminder for user 
+                            insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
+                                , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+                            _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                            await _repoWrapper.Save();
+                        }
+                        return response;
+                    }
+                    // If user is in an active cycle
+                    else
+                    {
+                        var response = await ProcessScheduledReactivationFlow(insuranceProfile, insuranceProfile.EndActiveStatusDate);
+                        if (response.Status)
+                        {
+                            // Schedule debit email reminder for user 
+                            insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
+                                , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+                            _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                            await _repoWrapper.Save();
+                        }
+                        return response;
+                    }
                 }
+                return new ResponseMessage { Message = "Insurance profile does not exist under your family profile!" };
             }
-            return new ResponseMessage { Message = "Insurance profile does not exist under your family profile!" };
-        }
 
             public async Task<ResponseMessage> DeactivateFamilyMember(InsuranceUserProfile insuranceProfile)
             {
@@ -1027,7 +1027,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             /// <returns></returns>
             public async Task<ResponseMessage> GetCards(int userId)
         {
-            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId);
+            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,null);
             List<DebitCard> debitCard = new List<DebitCard>();
             if (profileCompletion.Data.CorporateUser is false)
             {
@@ -1055,6 +1055,71 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         #endregion
 
+        #region
+
+        public async Task<ResponseMessage> DeactivateReferee(int userId, int refereeInsuranceId)
+        {
+            var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            var refereedInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(refereeInsuranceId);
+            if (refereedInsuranceProfile != null)
+            {
+                if (refereedInsuranceProfile.InsurancePayeeId == payeeInsuranceProfile.Id)
+                {
+                    var response = await ProcessCancelSubscription(refereedInsuranceProfile);
+                    return response;
+                }
+                return new ResponseMessage { Message = "You cannot deactivate current profile" };
+            }
+            return new ResponseMessage { Message = "Referee profile as not found" };
+        }
+
+        public async Task<ResponseMessage> ActivateRefereeWithPrimaryCard(int userId, int refereeInsuranceId)
+        {
+            var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            var refereedInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(refereeInsuranceId);
+            if (refereedInsuranceProfile != null)
+            {
+                if (refereedInsuranceProfile.SubscriptionStatus == true)
+                {
+                    return new ResponseMessage { Message = "Subscription is currently active", Status = false };
+                }
+                var primaryCard = payeeInsuranceProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                if (primaryCard == null)
+                {
+                    return new ResponseMessage { Message = "Kindly add a primary card, then start the activation process" };
+                }
+                // If  user is not in an active cycle
+                if (refereedInsuranceProfile.ActiveStatus == false)
+                {
+                    var response = await ProcessImmediateReactivationPayment(refereedInsuranceProfile, userId, primaryCard.Authorization_Code);
+                    if (response.Status)
+                    {
+                        // Schedule debit email reminder for user 
+                        //insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
+                        //    , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+                        _repoWrapper.InsuranceProfile.Update(refereedInsuranceProfile);
+                        await _repoWrapper.Save();
+                    }
+                    return response;
+                }
+                // If user is in an active cycle
+                else
+                {
+                    var response = await ProcessScheduledReactivationFlow(refereedInsuranceProfile, refereedInsuranceProfile.EndActiveStatusDate);
+                    if (response.Status)
+                    {
+                        // Schedule debit email reminder for user 
+                        //insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
+                        //    , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+                        _repoWrapper.InsuranceProfile.Update(refereedInsuranceProfile);
+                        await _repoWrapper.Save();
+                    }
+                    return response;
+                }
+            }
+            return new ResponseMessage { Message = "Insurance profile does not exist under your family profile!" };
+        }
+        #endregion
         public async Task<ResponseMessage> ProcessNotSuccessfulPaystackChargeCardResponse(PaymentReference paymentReference,TokenizationResponse chargeCardResponse)
         {
             // If charge card response request for OTP
@@ -1097,10 +1162,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 ResponseCode = chargeCardResponse.ResponseCode
             };
         }
-
         public async Task<ResponseMessage> SubmitOtp(SetOtpViewModel otpViewModel, int id)
         {
-            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id);
+            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id,null);
             var paymentReference = await _repoWrapper.PaymentReference.GetByReference(otpViewModel.reference);
             if (profileCompletion.Data.CorporateUser is false)
             {
@@ -1128,12 +1192,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
         }
-
         private async Task<ResponseMessage> ProcessCancelSubscription(InsuranceUserProfile insuranceProfile)
         {
             if (insuranceProfile.SubscriptionStatus == false)
             {
-                return new ResponseMessage { Message = "You have no subscription", Status = false };
+                return new ResponseMessage { Message = "Insurance Profile has no subscription", Status = false };
             }
             if (insuranceProfile.TransId == null || insuranceProfile.TransId == "" || insuranceProfile.TransId == "Pending")
             {

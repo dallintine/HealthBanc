@@ -75,7 +75,7 @@ namespace HealthBanc.Controllers
                 var checkRole = User.IsInRole("Super-Administrator");
                 if (checkRole)
                 {
-                    var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
+                    var result = await _utilityService.UploadAxaHospitalListFromExcel(file);
                     if (result.Status)
                     {
                         return Ok(result);
@@ -102,7 +102,7 @@ namespace HealthBanc.Controllers
                 var checkRole = User.IsInRole("Super-Administrator");
                 if (checkRole)
                 {
-                    var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
+                    var result = await _utilityService.UploadHygeiaHospitalListFromExcel(file);
                     if (result.Status)
                     {
                         return Ok(result);

@@ -7,6 +7,7 @@ using Domain.Models;
 using Domain.Models.Axa_Hygeia_Insurance;
 using Hangfire;
 using Hangfire.Server;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -21,15 +22,17 @@ namespace Application.Services
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly IBSIntegrationService _iBSIntegrationService;
         private readonly IEmailSender _emailSender;
+        private readonly IFileProcessor _fileProcessor;
 
         private HMOAccountDetails HMOAccountDetails { get; }
 
         public UtilityService(IRepositoryWrapper repoWrapper, IOptions<HMOAccountDetails> hmoAccountAccessor,IBSIntegrationService iBSIntegrationService,
-            IEmailSender emailSender)
+            IEmailSender emailSender, IFileProcessor fileProcessor)
         {
             _repoWrapper = repoWrapper;
             _iBSIntegrationService = iBSIntegrationService;
             _emailSender = emailSender;
+            _fileProcessor = fileProcessor;
             HMOAccountDetails = hmoAccountAccessor.Value;
         }
 
@@ -319,6 +322,29 @@ namespace Application.Services
                 await _repoWrapper.Save();
             }
             await Task.CompletedTask;
+        }
+
+
+        public async Task<ResponseMessage> UploadAxaHospitalListFromExcel(IFormFile formFile)
+        {
+            var presentHospitalList = _repoWrapper.AxaMansardHospitalList.GetAll().ToList();
+            _repoWrapper.AxaMansardHospitalList.DeleteRange(presentHospitalList);
+            await _repoWrapper.Save();
+            var hospitalList = await _fileProcessor.UploadAxaHospitalListFromExcel(formFile);
+            _repoWrapper.AxaMansardHospitalList.CreateRange(hospitalList);
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true, Message = "Upload was successful" };
+        }
+
+        public async Task<ResponseMessage> UploadHygeiaHospitalListFromExcel(IFormFile formFile)
+        {
+            var presentHospitalList = _repoWrapper.HygeiaHospitalList.GetAll().ToList();
+            _repoWrapper.HygeiaHospitalList.DeleteRange(presentHospitalList);
+            await _repoWrapper.Save();
+            var hospitalList = await _fileProcessor.UploadHygeiaHospitalListFromExcel(formFile);
+            _repoWrapper.HygeiaHospitalList.CreateRange(hospitalList);
+            await _repoWrapper.Save();
+            return new ResponseMessage { Status = true, Message = "Upload was successful" };
         }
 
     }
