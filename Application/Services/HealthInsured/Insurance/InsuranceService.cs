@@ -121,7 +121,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                         profile = await _repoWrapper.InsuranceProfile.GetByEmail(user.Email);
                     }
                 }
-                else
+                else if(checkIfProfileWithEmail.Data.HealthInsuredPlan != null)
                 {
                     return new ResponseMessage { Message = "Email was used for another Healthinsured profile" };
                 }
