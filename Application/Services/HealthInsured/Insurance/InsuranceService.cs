@@ -363,14 +363,14 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 return new ResponseMessage<HealthInsuredProfileStateDTO>
                 {
                     Data = notFoundProfileState,
-                    Status = true,
+                    Status = false,
                     Message = "Profile completion state was fetched successfully"
                 };
             }
             return new ResponseMessage<HealthInsuredProfileStateDTO>
             {
                 Data = notFoundProfileState,
-                Status = true,
+                Status = false,
                 Message = "Profile completion state was fetched successfully"
             };
 
