@@ -295,12 +295,28 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult>  PayforNewIndividualWithEmail(string email)
+        public async Task<IActionResult>  PayforRefereeWithEmail(string email)
         {
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
 
             var response = await _insuranceService.PayforNewIndividualWithEmail(userId, email);
+
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> PayForRefereeWithFullDetails([FromBody] PayForRefereeViewModel refereeViewModel)
+        {
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+
+            var response = await _insuranceService.PayforNewIndividualWithEmail(userId,refereeViewModel.Email);
 
             if (response.Status)
             {

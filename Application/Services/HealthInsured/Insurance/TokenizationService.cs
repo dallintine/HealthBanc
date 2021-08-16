@@ -34,6 +34,7 @@ using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured.Insurance;
 using Application.API_ResponseModel.IBSResponse;
+using Domain.Enums;
 
 namespace Application.Services.HealthInsured_AxaMansard.Insurance
 {
@@ -87,15 +88,15 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         public async Task<ResponseMessage> TokenizeCard(ChargeCardViewModel chargeCard, int id)
         {
             var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id,null);
-            if (profileCompletion.Data.CorporateUser is false)
+            if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
             {
                 return await ProcessIndividualCardTokenization(chargeCard, id);
             }
-            else if(profileCompletion.Data.CorporateUser is true)
+            else if(profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Corporate)
             {
                 return await ProcessCorporateCardTokenization(chargeCard, id);
             }
-            else if (profileCompletion.Data.CorporateUser is null)
+            else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Family)
             {
                 return await ProcessFamilyCardTokenization(chargeCard, id);
             }
@@ -1029,12 +1030,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,null);
             List<DebitCard> debitCard = new List<DebitCard>();
-            if (profileCompletion.Data.CorporateUser is false)
+            if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
             {
                 var individualInsuranceUser = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
                 debitCard = individualInsuranceUser.Cards;
             }
-            else if (profileCompletion.Data.CorporateUser is true)
+            else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Corporate)
             {
                 var coporateInsuranceUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
                 debitCard = coporateInsuranceUser.Cards;
@@ -1166,7 +1167,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id,null);
             var paymentReference = await _repoWrapper.PaymentReference.GetByReference(otpViewModel.reference);
-            if (profileCompletion.Data.CorporateUser is false)
+            if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
             {
                 var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(id);
                 var checkprofileComplete = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(id);
@@ -1176,14 +1177,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 return await ProcessPaystackChargeCardResponse(chargeCardResponse, insuranceProfile, checkprofileComplete,
                     paymentReference, otpViewModel.reference);
             }
-            else if (profileCompletion.Data.CorporateUser is true)
+            else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Corporate)
             {
                 var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(id);
                 var chargeCardResponse = await _paystackService.SendOtp(otpViewModel.otp, otpViewModel.reference, companyProfile.PhoneNumber
                        , DateTime.Now, otpViewModel.pin);
                 return await ProcessPaystackChargeCardResponse(chargeCardResponse, companyProfile, paymentReference, otpViewModel.reference);
             }
-            else if (profileCompletion.Data.CorporateUser is null)
+            else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Family)
             {
                 var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(id);
                 var chargeCardResponse = await _paystackService.SendOtp(otpViewModel.otp, otpViewModel.reference, familyProfile.PhoneNumber

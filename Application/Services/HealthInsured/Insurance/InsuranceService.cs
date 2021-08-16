@@ -12,6 +12,7 @@ using Application.ViewModels.HealthInsured;
 using AutoMapper;
 using ClosedXML.Excel;
 using DataAccess;
+using Domain.Enums;
 using Domain.Models;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.Axa_Hygeia_Insurance;
@@ -100,7 +101,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     Status = true
                 };
             }
-            return new ResponseMessage { Status = false, Message = "Could not create profile,please try again later" };
+            return creatResponse;
         }
 
         public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile,ApplicationUser user)
@@ -109,7 +110,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var checkIfProfileWithEmail = await GetProfileCompletion(null,user.Email);
             if (checkIfProfileWithEmail.Status)
             {
-                if(checkIfProfileWithEmail.Data.CorporateUser is false)
+                if(checkIfProfileWithEmail.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
                 {
                     if (checkIfProfileWithEmail.Data.ProfileCompleted)
                     {
@@ -338,7 +339,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 var familyUser = await _repoWrapper.FamilyProfile.GetByUserId(userId.Value);
                 if (familyUser != null)
                 {
-                    var familyProfileState = new HealthInsuredProfileStateDTO(null, familyUser.EmailConfirmed, familyUser.ProfileCompleted
+                    var familyProfileState = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Family, familyUser.EmailConfirmed, familyUser.ProfileCompleted
                         , familyUser.TokenizationCompleted, familyUser.InsuranceService);
                     return new ResponseMessage<HealthInsuredProfileStateDTO>
                     {
@@ -350,7 +351,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId.Value);
                 if (corporateUser != null)
                 {
-                    var corporateProfileState = new HealthInsuredProfileStateDTO(true, corporateUser.EmailConfirmed, corporateUser.ProfileCompleted
+                    var corporateProfileState = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Corporate, corporateUser.EmailConfirmed, corporateUser.ProfileCompleted
                         , corporateUser.TokenizationCompleted, corporateUser.InsuranceService);
                     return new ResponseMessage<HealthInsuredProfileStateDTO>
                     {
@@ -382,7 +383,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 var profile = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(userId.Value);
                 if (profile != null)
                 {
-                    var individualProfileState = new HealthInsuredProfileStateDTO(false, null, profile.ProfileCompleted, profile.TokenizationCompleted, profile.ServiceUsed);
+                    var individualProfileState = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, profile.ProfileCompleted, profile.TokenizationCompleted, profile.ServiceUsed);
                     return new ResponseMessage<HealthInsuredProfileStateDTO>
                     {
                         Data = individualProfileState,
@@ -402,14 +403,14 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                         {
                             return new ResponseMessage<HealthInsuredProfileStateDTO>
                             {
-                                Data = new HealthInsuredProfileStateDTO(false, null, true, true, insuranceProfile.InsuranceService),
+                                Data = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, true, true, insuranceProfile.InsuranceService),
                                 Status = true,
                                 Message = "Profile completion state was fetched successfully"
                             };
                         }
                         return new ResponseMessage<HealthInsuredProfileStateDTO>
                         {
-                            Data = new HealthInsuredProfileStateDTO(false, null, false, true, insuranceProfile.InsuranceService),
+                            Data = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, false, true, insuranceProfile.InsuranceService),
                             Status = true,
                             Message = "Profile completion state was fetched successfully"
                         };

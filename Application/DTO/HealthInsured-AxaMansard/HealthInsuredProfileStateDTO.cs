@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,16 +12,16 @@ namespace HealthBanc.DTO.HealthInsured_AxaMansard
         {
 
         }
-        public HealthInsuredProfileStateDTO(bool? corporateUser,bool? emailConfirmed, bool profileCompleted, bool tokenizationCompleted,string serviceUsed)
+        public HealthInsuredProfileStateDTO(HealthInsuredPlan? healthInsuredPlan, bool? emailConfirmed, bool profileCompleted, bool tokenizationCompleted,string serviceUsed)
         {
-            CorporateUser = corporateUser;
+            HealthInsuredPlan = healthInsuredPlan;
             EmailConfirmed = emailConfirmed;
             ProfileCompleted = profileCompleted;
             TokenizationCompleted = tokenizationCompleted;
             ServiceUsed = serviceUsed;
         }
 
-        public bool? CorporateUser { get; set; }
+        public HealthInsuredPlan? HealthInsuredPlan { get; set; }
         public bool? EmailConfirmed { get; set; }
         public bool ProfileCompleted { get; set; }
         public bool TokenizationCompleted { get; set; }
