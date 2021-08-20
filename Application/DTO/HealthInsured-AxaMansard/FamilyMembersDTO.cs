@@ -6,6 +6,7 @@ namespace Application.DTO.HealthInsured_AxaMansard
 {
     public class FamilyMembersDTO
     {
+        public int Id { get; set; }
         public string TransId { get; set; }
         public string EnrolleeNumber { get; set; }
         public string Gender { get; set; }
