@@ -547,7 +547,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                         return new ResponseMessage { Message = "Kindly add a primary card, then start the activation process" };
                     }
                     // If  user is not in an active cycle
-                    if (insuranceProfile.ActiveStatus == false)
+                    if (insuranceProfile.ActiveStatus == false ||insuranceProfile.ActiveStatus is null)
                     {
                         var response = await ProcessImmediateReactivationPayment(insuranceProfile, familyProfile.UserId, primaryCard.Authorization_Code);
                         if (response.Status)
@@ -1195,7 +1195,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         }
         private async Task<ResponseMessage> ProcessCancelSubscription(InsuranceUserProfile insuranceProfile)
         {
-            if (insuranceProfile.SubscriptionStatus == false)
+            if (insuranceProfile.SubscriptionStatus == false || insuranceProfile.SubscriptionStatus is null)
             {
                 return new ResponseMessage { Message = "Insurance Profile has no subscription", Status = false };
             }
