@@ -476,9 +476,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     {
                         familyProfile.TokenizationCompleted = true;
                         _repoWrapper.FamilyProfile.Update(familyProfile);
-
+                        await FamilyMembersActivation(familyProfile);   
                     }
-                    await FamilyMembersActivation(familyProfile);
                     var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
                     _repoWrapper.ActivityLog.Create(activityLog);
                     await _repoWrapper.Save();
@@ -851,7 +850,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     {
                         insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                         insuranceUserProfile.SubscriptionStatus = false;
-                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.UserId.Value), companyProfile.NextPaymentDate.Value);
+                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.Id,null), companyProfile.NextPaymentDate.Value);
                     }
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 }
@@ -1214,7 +1213,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             var daysToCancelUserActivityStatus = insuranceProfile.EndActiveStatusDate;
             // Schedule task to render user status inactive when cycle ends
-            var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceProfile.UserId.Value), daysToCancelUserActivityStatus);
+            var jobId = BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceProfile.Id,null), daysToCancelUserActivityStatus);
 
             insuranceProfile.PendingJobId = jobId;
             insuranceProfile.PendingEmailJobId = null;
@@ -1258,7 +1257,27 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _repoWrapper.Save();
             }
             await Task.CompletedTask;
-        }               
+        }
+
+        public async Task ProcessUserActiveStatusCancellation(int insuranceProfileId,PerformContext performContext)
+        {
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfileId);
+            if (insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+            {
+                await _hmoIntegrationService.HygeiaDeactivateUser(insuranceProfile.TransId);
+            }
+            insuranceProfile.ActiveStatus = false;
+            _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+            await _repoWrapper.Save();
+            var insuranceProfile2 = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfileId);
+            if (insuranceProfile2.ActiveStatus is true)
+            {
+                insuranceProfile.ActiveStatus = false;
+                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
+        }
 
         /// <summary>
         /// Func to process user activation flow.
