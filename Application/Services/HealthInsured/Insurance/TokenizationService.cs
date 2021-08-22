@@ -264,24 +264,24 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var activeCard = new DebitCard();
             var family = new FamilyProfile();
             var jobId = context.BackgroundJob.Id;
+            var chageAuthorizationModel = new ChargeAuthorization();
+
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(axamansardUserId);
             if (!(insuranceProfile.FamilyProfileId is null))
             {
                 family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
                 activeCard = family.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                chageAuthorizationModel.email = family.Email;
             }
             else
             {
                 activeCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                chageAuthorizationModel.email = insuranceProfile.Email;
             }
 
-            //Get a charge authorization model to use in scheduled payment background process.
-            var chageAuthorizationModel = new ChargeAuthorization()
-            {
-                email = insuranceProfile.Email,
-                amount = (insuranceProfile.Premium * 100).ToString(),
-                authorization_code = activeCard.Authorization_Code
-            };
+
+            chageAuthorizationModel.amount = (insuranceProfile.Premium * 100).ToString();
+            chageAuthorizationModel.authorization_code = activeCard.Authorization_Code;
 
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             if (chargeAuthorization.Status)
@@ -1308,6 +1308,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 amount = (insuranceProfile.Premium * 100).ToString(),
                 authorization_code = authorization_Code
             };
+
+            if(insuranceProfile.FamilyProfileId != null)
+            {
+                var family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
+                chageAuthorizationModel.email = family.Email;
+            }
 
             // Call Paystack service. Debit user using card authorization code
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
