@@ -50,13 +50,12 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly HMOIntegrationService _hmoIntegrationService;
         private readonly IImageService _imageService;
-        private readonly InsuranceTokenizationLinkService _insuranceTokenizationLink;
 
         public UserManager<ApplicationUser> UserManager { get; }
 
         public InsuranceService(IMapper mapper, AuditLogService auditLogServices,ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender,
             IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper, UserManager<ApplicationUser> userManager, HMOIntegrationService hmoIntegrationService,
-            IImageService imageService, InsuranceTokenizationLinkService insuranceTokenizationLink)
+            IImageService imageService)
         {
             _mapper = mapper;
             _auditLogServices = auditLogServices;
@@ -68,7 +67,6 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             UserManager = userManager;
             _hmoIntegrationService = hmoIntegrationService;
             _imageService = imageService;
-            _insuranceTokenizationLink = insuranceTokenizationLink;
         }
 
         public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId,string ipAddress,string device)
@@ -140,7 +138,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 _repoWrapper.InsuranceProfile.Update(updatedProfile);
                 var completionProfile = new InsuranceCompletionProfile(user.Id, true, true, userProfile.InsuranceService);
                 _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
-                await _insuranceTokenizationLink.Process_SuccessfulReferee_FirstTimePayment(updatedProfile);
+                //await _insuranceTokenizationLink.Process_SuccessfulReferee_FirstTimePayment(updatedProfile);
             }
             else
             {
