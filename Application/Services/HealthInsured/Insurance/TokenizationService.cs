@@ -407,180 +407,187 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         #region Family Payment Flow After Card Tokenization
 
-            /// <summary>
-            /// This is used to process card tokenization for family profiles.
-            /// </summary>
-            /// <param name="chargeCard"></param>
-            /// <param name="id"></param>
-            /// <returns></returns>
-            private async Task<ResponseMessage> ProcessFamilyCardTokenization(ChargeCardViewModel chargeCard, int id)
+        /// <summary>
+        /// This is used to process card tokenization for family profiles.
+        /// </summary>
+        /// <param name="chargeCard"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private async Task<ResponseMessage> ProcessFamilyCardTokenization(ChargeCardViewModel chargeCard, int id)
+        {
+            var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(id);
+            if (familyProfile != null)
             {
-                var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(id);
-                if (familyProfile != null)
+                if (familyProfile.EmailConfirmed)
                 {
-                    if (familyProfile.EmailConfirmed)
+                    // remove empty space from the card.
+                    var cardNumber = chargeCard.card.number.Replace(" ", "");
+
+                    // Check if user has card dat matches last four card digit
+                    var checkIfCardWasPreviouslyTokenized = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(id, cardNumber.Substring(cardNumber.Length - 4));
+                    if (checkIfCardWasPreviouslyTokenized != null) return new ResponseMessage { Message = "This card was previously tokenized" };
+
+                    var chargeCardRequest = _mapper.Map<API_RequestModel.Paystack.Card>(chargeCard.card);
+
+                    var card = new ChargeCard
                     {
-                        // remove empty space from the card.
-                        var cardNumber = chargeCard.card.number.Replace(" ", "");
-
-                        // Check if user has card dat matches last four card digit
-                        var checkIfCardWasPreviouslyTokenized = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(id, cardNumber.Substring(cardNumber.Length - 4));
-                        if (checkIfCardWasPreviouslyTokenized != null) return new ResponseMessage { Message = "This card was previously tokenized" };
-
-                        var chargeCardRequest = _mapper.Map<API_RequestModel.Paystack.Card>(chargeCard.card);
-
-                        var card = new ChargeCard
-                        {
-                            card = chargeCardRequest,
-                            email = familyProfile.Email,
-                            reference = Guid.NewGuid().ToString(),
-                            pin = chargeCard.pin
-                        };
-
-                        card.amount = (50 * 100).ToString();
-                        var amount = decimal.Parse(card.amount) / 100;
-
-                        // Create payment reference for the charge.
-                        var channel = familyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
-                        var paymentReference = new PaymentReference(channel, card.reference, null, null, familyProfile.Id, id, amount, PaymentReference_StatusValue.Pending.ToString());
-                        _repoWrapper.PaymentReference.Create(paymentReference);
-                        await _repoWrapper.Save();
-
-                        // Paystack service to charge user card
-                        var chargeCardResponse = await _paystackService.ChargeCard(card, id);
-
-                        // function to process response from paystack
-                        return await ProcessPaystackChargeCardResponse(chargeCardResponse, familyProfile, paymentReference, card.reference);
-                    }
-                    return new ResponseMessage { Message = "Kindly update your profile", Status = false };
-                }
-                return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
-            }
-
-            public async Task<ResponseMessage> ProcessPaystackChargeCardResponse(TokenizationResponse chargeCardResponse, FamilyProfile familyProfile, PaymentReference paymentReference, string cardReference)
-            {
-                // if charge card was successfully
-                if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
-                {
-                    //If card count is 0. it means there is no card available, so the card tokenised will
-                    //be the primary card so primary card status is set to 1 
-                    //else, card status is 0;
-
-                    var cardStatus = familyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
-
-                    var debitCard = new DebitCard(familyProfile.UserId, null, null, familyProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
-                        , cardReference, chargeCardResponse.AuthorizationCode);
-                    _repoWrapper.Card.Create(debitCard);
-
-                    if (!familyProfile.TokenizationCompleted)
-                    {
-                        familyProfile.TokenizationCompleted = true;
-                        _repoWrapper.FamilyProfile.Update(familyProfile);
-                        await FamilyMembersActivation(familyProfile);   
-                    }
-                    var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                    await _repoWrapper.Save();
-
-                    BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(cardReference, (50 * 100).ToString()));
-
-                    return new ResponseMessage
-                    {
-                        Data = chargeCardResponse,
-                        Status = chargeCardResponse.Status,
-                        ResponseCode = chargeCardResponse.ResponseCode,
-                        Message = chargeCardResponse.Message
+                        card = chargeCardRequest,
+                        email = familyProfile.Email,
+                        reference = Guid.NewGuid().ToString(),
+                        pin = chargeCard.pin
                     };
-                }
-                return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
-            }
-            
-            private async Task FamilyMembersActivation(FamilyProfile familyProfile)
-            {
-                var insuranceProfiles = familyProfile.InsuranceUserProfiles;
-                foreach(var insuranceUserProfile in insuranceProfiles)
-                {
-                    insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
-                    // Schedule debit email reminder for user 
-                    insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName,
-                        $"{insuranceUserProfile.Othernames} {insuranceUserProfile.Surname}", null),
-                           DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                    card.amount = (50 * 100).ToString();
+                    var amount = decimal.Parse(card.amount) / 100;
 
-                    //Schedule job to debit user every 28 days
-                    insuranceUserProfile.PendingJobId = ProcessScheduledPayment(insuranceUserProfile);
-
-                    insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString())
-                    ? _uniqueIdentifier.GetUniqueCode(10) : "";
-                    insuranceUserProfile.SubscriptionStatus = true;
-                    insuranceUserProfile.ActiveStatus = true;
-                    insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-
-                    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                    // Create payment reference for the charge.
+                    var channel = familyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString() : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+                    var paymentReference = new PaymentReference(channel, card.reference, null, null, familyProfile.Id, id, amount, PaymentReference_StatusValue.Pending.ToString());
+                    _repoWrapper.PaymentReference.Create(paymentReference);
                     await _repoWrapper.Save();
 
-                    await SendDetailsToInsuranceProvider(insuranceUserProfile);
-                } 
+                    // Paystack service to charge user card
+                    var chargeCardResponse = await _paystackService.ChargeCard(card, id);
 
-            }
-
-            /// <summary>
-            /// Activate a new family member with the family primary debit card
-            /// </summary>
-            /// <param name="familyUserId"></param>
-            /// <param name="insuranceProfileId"></param>
-            /// <returns></returns>
-            public async Task<ResponseMessage> ActivateFamilyMemberWithPrimaryCard(int familyUserId, int insuranceProfileId)
-            {
-                var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(familyUserId);
-                var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == insuranceProfileId).FirstOrDefault();
-                if (insuranceProfile != null)
-                {
-                    if (insuranceProfile.SubscriptionStatus == true)
-                    {
-                        return new ResponseMessage { Message = "Subscription is currently active", Status = false };
-                    }
-                    var primaryCard = familyProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
-                    if (primaryCard == null)
-                    {
-                        return new ResponseMessage { Message = "Kindly add a primary card, then start the activation process" };
-                    }
-                    // If  user is not in an active cycle
-                    if (insuranceProfile.ActiveStatus == false ||insuranceProfile.ActiveStatus is null)
-                    {
-                        var response = await ProcessImmediateReactivationPayment(insuranceProfile, familyProfile.UserId, primaryCard.Authorization_Code);
-                        if (response.Status)
-                        {
-                            // Schedule debit email reminder for user 
-                            insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
-                                , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-                            _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                            await _repoWrapper.Save();
-                        }
-                        return response;
-                    }
-                    // If user is in an active cycle
-                    else
-                    {
-                        var response = await ProcessScheduledReactivationFlow(insuranceProfile, insuranceProfile.EndActiveStatusDate);
-                        if (response.Status)
-                        {
-                            // Schedule debit email reminder for user 
-                            insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
-                                , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-                            _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                            await _repoWrapper.Save();
-                        }
-                        return response;
-                    }
+                    // function to process response from paystack
+                    return await ProcessPaystackChargeCardResponse(chargeCardResponse, familyProfile, paymentReference, card.reference);
                 }
-                return new ResponseMessage { Message = "Insurance profile does not exist under your family profile!" };
+                return new ResponseMessage { Message = "Kindly update your profile", Status = false };
             }
+            return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
+        }
 
-            public async Task<ResponseMessage> DeactivateFamilyMember(InsuranceUserProfile insuranceProfile)
+        public async Task<ResponseMessage> ProcessPaystackChargeCardResponse(TokenizationResponse chargeCardResponse, FamilyProfile familyProfile, PaymentReference paymentReference, string cardReference)
+        {
+            // if charge card was successfully
+            if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
-                return await ProcessCancelSubscription(insuranceProfile);
+                //If card count is 0. it means there is no card available, so the card tokenised will
+                //be the primary card so primary card status is set to 1 
+                //else, card status is 0;
+
+                var cardStatus = familyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+
+                var debitCard = new DebitCard(familyProfile.UserId, null, null, familyProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
+                    , cardReference, chargeCardResponse.AuthorizationCode);
+                _repoWrapper.Card.Create(debitCard);
+
+                if (!familyProfile.TokenizationCompleted)
+                {
+                    familyProfile.TokenizationCompleted = true;
+                    _repoWrapper.FamilyProfile.Update(familyProfile);
+                    await FamilyMembersActivation(familyProfile);   
+                }
+                var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
+                _repoWrapper.ActivityLog.Create(activityLog);
+                await _repoWrapper.Save();
+
+                BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(cardReference, (50 * 100).ToString()));
+
+                return new ResponseMessage
+                {
+                    Data = chargeCardResponse,
+                    Status = chargeCardResponse.Status,
+                    ResponseCode = chargeCardResponse.ResponseCode,
+                    Message = chargeCardResponse.Message
+                };
             }
+            return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
+        }
+            
+        private async Task FamilyMembersActivation(FamilyProfile familyProfile)
+        {
+            var insuranceProfiles = familyProfile.InsuranceUserProfiles;
+            foreach(var insuranceUserProfile in insuranceProfiles)
+            {
+                insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+
+                // Schedule debit email reminder for user 
+                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName,
+                    $"{insuranceUserProfile.Othernames} {insuranceUserProfile.Surname}", null),
+                        DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+                //Schedule job to debit user every 28 days
+                insuranceUserProfile.PendingJobId = ProcessScheduledPayment(insuranceUserProfile);
+
+                insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString())
+                ? _uniqueIdentifier.GetUniqueCode(10) : "";
+                insuranceUserProfile.SubscriptionStatus = true;
+                insuranceUserProfile.ActiveStatus = true;
+                insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
+
+                _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                await _repoWrapper.Save();
+
+                await SendDetailsToInsuranceProvider(insuranceUserProfile);
+            } 
+
+        }
+
+        /// <summary>
+        /// Activate a new family member with the family primary debit card
+        /// </summary>
+        /// <param name="familyUserId"></param>
+        /// <param name="insuranceProfileId"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> ActivateFamilyMemberWithPrimaryCard(int familyUserId, int insuranceProfileId)
+        {
+            var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(familyUserId);
+            var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == insuranceProfileId).FirstOrDefault();
+            if (insuranceProfile != null)
+            {
+                if (insuranceProfile.SubscriptionStatus == true)
+                {
+                    return new ResponseMessage { Message = "Subscription is currently active", Status = false };
+                }
+                var primaryCard = familyProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                if (primaryCard == null)
+                {
+                    return new ResponseMessage { Message = "Kindly add a primary card, then start the activation process" };
+                }
+                if(String.IsNullOrWhiteSpace(insuranceProfile.TransId) || String.IsNullOrEmpty(insuranceProfile.TransId))
+                {
+                    if(insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString())
+                    {
+                        insuranceProfile.TransId = _insuranceSerivce.GetUniqueCode();
+                    }                        
+                }
+                // If  user is not in an active cycle
+                if (insuranceProfile.ActiveStatus == false ||insuranceProfile.ActiveStatus is null)
+                {
+                    var response = await ProcessImmediateReactivationPayment(insuranceProfile, familyProfile.UserId, primaryCard.Authorization_Code);
+                    if (response.Status)
+                    {
+                        // Schedule debit email reminder for user 
+                        insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
+                            , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+                        _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                        await _repoWrapper.Save();
+                    }
+                    return response;
+                }
+                // If user is in an active cycle
+                else
+                {
+                    var response = await ProcessScheduledReactivationFlow(insuranceProfile, insuranceProfile.EndActiveStatusDate);
+                    if (response.Status)
+                    {
+                        // Schedule debit email reminder for user 
+                        insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
+                            , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+                        _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                        await _repoWrapper.Save();
+                    }
+                    return response;
+                }
+            }
+            return new ResponseMessage { Message = "Insurance profile does not exist under your family profile!" };
+        }
+
+        public async Task<ResponseMessage> DeactivateFamilyMember(InsuranceUserProfile insuranceProfile)
+        {
+            return await ProcessCancelSubscription(insuranceProfile);
+        }
 
         #endregion
 
