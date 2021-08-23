@@ -27,15 +27,16 @@ namespace HealthBanc.Controllers.Insurance
         /// <summary>
         /// Onboard user to the healthinsured family plan
         /// </summary>
+        /// <param name="insuranceService"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        public async Task<IActionResult> CreateFamilyProfile()
+        public async Task<IActionResult> CreateFamilyProfile(string insuranceService)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var createFamilyProfileResponse = await _familyInsuranceService.CreateFamilyProfile(id);
+            var createFamilyProfileResponse = await _familyInsuranceService.CreateFamilyProfile(id, insuranceService);
             return Ok(createFamilyProfileResponse);
         }
 

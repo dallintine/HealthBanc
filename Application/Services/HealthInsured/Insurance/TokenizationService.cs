@@ -51,6 +51,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         private readonly IBSIntegrationService _iBSIntegrationService;
         private readonly FamilyInsuranceService _familyInsurance;
         private readonly IUniqueIdentifier _uniqueIdentifier;
+        private readonly IImageService _imageService;
         private readonly IRepositoryWrapper _repoWrapper;
 
         private SubscriptionDuration SubscriptionAccessor { get; }
@@ -59,7 +60,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public TokenizationService(IMapper mapper, PaystackService paystackService,InsuranceService insuranceSerivce,HMOIntegrationService hmoIntegrationService,CorporateInsuranceService corporateInsuranceService
             ,IOptions<SubscriptionDuration> subscriptionAccessor, IEmailSender emailSender,IRepositoryWrapper repoWrapper,ILogger<TokenizationService> logger,UtilityService utilityService
-            , IOptions<HMOAccountDetails> hmoAccountAccessor, IBSIntegrationService iBSIntegrationService,FamilyInsuranceService familyInsurance, IUniqueIdentifier uniqueIdentifier)
+            , IOptions<HMOAccountDetails> hmoAccountAccessor, IBSIntegrationService iBSIntegrationService,FamilyInsuranceService familyInsurance, IUniqueIdentifier uniqueIdentifier,
+            IImageService imageService)
         {
             _mapper = mapper;
             _paystackService = paystackService;
@@ -72,6 +74,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _iBSIntegrationService = iBSIntegrationService;
             _familyInsurance = familyInsurance;
             _uniqueIdentifier = uniqueIdentifier;
+            _imageService = imageService;
             SubscriptionAccessor = subscriptionAccessor.Value;
             HMOAccountDetails = hmoAccountAccessor.Value;
             _repoWrapper = repoWrapper;
@@ -211,9 +214,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
         }
 
-        private async Task Process_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
+        public async Task Process_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
         {
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+            insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _uniqueIdentifier.GetUniqueCode(10) : "";
 
             // Schedule debit email reminder for user 
             insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
@@ -240,7 +244,69 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
         }
-           
+
+        public async Task Process_SuccessfulReferee_FirstTimePayment(InsuranceUserProfile insuranceProfile)
+        {
+            insuranceProfile.TransId = insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
+            await SendDetailsToInsuranceProvider(insuranceProfile);
+
+            insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+
+            // Schedule debit email reminder for user 
+            insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),
+                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+
+            //Schedule job to debit user every 28 days
+            insuranceProfile.PendingJobId = ProcessScheduledPayment(insuranceProfile);
+
+            _insuranceSerivce.SendSuccesfulSubscriptionMail(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.TransId, insuranceProfile.CareProviderName,
+                insuranceProfile.PlanCode);
+
+            insuranceProfile.SubscriptionStatus = true;
+            insuranceProfile.ActiveStatus = true;
+            insuranceProfile.StartActiveStatusDate = DateTime.Now;
+
+            _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+
+            //Create Audit thats user subscrption changed 
+            var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
+            _repoWrapper.ActivityLog.Create(activityLog);
+            await _repoWrapper.Save();
+        }
+
+        public async Task<ResponseMessage> PayForRefereeWithFullDetails(int userId, PayForRefereeViewModel refereeViewModel)
+        {
+            var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(refereeViewModel.Email);
+            var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (userToPayFor is null || !userToPayFor.ServiceUsed.Contains(ServiceNames.HealthInsured.ToString()))
+            {
+                var profile = await _repoWrapper.InsuranceProfile.GetByEmail(refereeViewModel.Email);
+                if (profile is null)
+                {
+                    var insuranceProfile = _mapper.Map<InsuranceUserProfile>(refereeViewModel);
+                    insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;
+                    var base64ImageResponse = _imageService.ConvertImageToBase64(refereeViewModel.UserImage);
+                    if (!base64ImageResponse.Status)
+                    {
+                        return base64ImageResponse;
+                    }
+                    insuranceProfile.Image = base64ImageResponse.Data.ToString();
+                    insuranceProfile.TransId = insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
+                    _repoWrapper.InsuranceProfile.Create(insuranceProfile);
+                    await _repoWrapper.Save();
+                    await Process_SuccessfulReferee_FirstTimePayment(insuranceProfile);
+                    return new ResponseMessage
+                    {
+                        Message = "User has been activated and you can view user details under your payee list." +
+                        "User is entitled to a one month free cycle. User insurance debit would occur on your debit card and" +
+                        "you can cancel anytime you want"
+                    };
+                }
+                return new ResponseMessage { Message = "HealthInsured profile with email exist already", Status = false };
+            }
+            return new ResponseMessage { Message = "HealthInsured profile with this email exist already", Status = false };
+        }
+
         /// <summary>
         /// Overloaded method to process individual scheduled payment.Create scheduled enrollment and scheduled payment data that is set to the processing stage.
         /// </summary>
@@ -328,7 +394,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             if (insuranceUserProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceUserProfile.InsuranceService == null)
             {
-                await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                await _hmoIntegrationService.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
             }
 
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
@@ -857,7 +923,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     {
                         insuranceUserProfile.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                         insuranceUserProfile.SubscriptionStatus = false;
-                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.Id,null), companyProfile.NextPaymentDate.Value);
+                        BackgroundJob.Schedule(() => ProcessUserActiveStatusCancellation(insuranceUserProfile.UserId.Value), companyProfile.NextPaymentDate.Value);
                     }
                     _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 }
@@ -1248,7 +1314,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <returns></returns>
         public async Task ProcessUserActiveStatusCancellation(int userId)
         {
-            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(userId);
             if (insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
                 await _hmoIntegrationService.HygeiaDeactivateUser(insuranceProfile.TransId);
@@ -1418,7 +1484,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
-                var response = await _insuranceSerivce.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
+                var response = await _hmoIntegrationService.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
                 if (response.Status)
                 {
                     insuranceUserProfile.TransId = response.Message;
@@ -1432,7 +1498,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             else
             {
-                await _insuranceSerivce.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                await _hmoIntegrationService.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
             }
         }
     } 

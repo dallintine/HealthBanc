@@ -19,5 +19,6 @@ namespace Application.ViewModels.HealthInsured
         public string StateOfResidence { get; set; }
         public string TownOfResidence { get; set; }
         public string ContactAddress { get; set; }
+        public string InsuranceService { get; set; }
     }
 }

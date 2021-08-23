@@ -6,6 +6,7 @@ using Application.DTO.HealthInsured_AxaMansard;
 using Application.Helpers;
 using Application.Interfaces;
 using Application.Services.HealthInsured;
+using Application.Services.HealthInsured.Insurance;
 using Application.Services.Identity;
 using Application.ViewModels;
 using Application.ViewModels.HealthInsured;
@@ -49,11 +50,13 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly HMOIntegrationService _hmoIntegrationService;
         private readonly IImageService _imageService;
+        private readonly InsuranceTokenizationLinkService _insuranceTokenizationLink;
+
         public UserManager<ApplicationUser> UserManager { get; }
 
         public InsuranceService(IMapper mapper, AuditLogService auditLogServices,ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender,
-            IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper, UserManager<ApplicationUser> userManager,
-            HMOIntegrationService hmoIntegrationService,IImageService imageService)
+            IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper, UserManager<ApplicationUser> userManager, HMOIntegrationService hmoIntegrationService,
+            IImageService imageService, InsuranceTokenizationLinkService insuranceTokenizationLink)
         {
             _mapper = mapper;
             _auditLogServices = auditLogServices;
@@ -65,6 +68,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             UserManager = userManager;
             _hmoIntegrationService = hmoIntegrationService;
             _imageService = imageService;
+            _insuranceTokenizationLink = insuranceTokenizationLink;
         }
 
         public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId,string ipAddress,string device)
@@ -73,20 +77,6 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled != null) return new ResponseMessage { Message = "User has a profile already" };
-
-            var validImageExtension = new [] { ".JPG",".JPEG", ".JPE", ".BMP", ".GIF", ".PNG" };
-
-            var fileExtension = System.IO.Path.GetExtension(userProfile.UserImage.FileName.ToUpper());
-            if (!validImageExtension.Contains(fileExtension))
-            {
-                return new ResponseMessage { Message = "Image type is not supported - Only upload PNG/JPEG/JPG/JPE" };
-            }
-
-            var fileSize = userProfile.UserImage.Length;
-            if((fileSize/1048576) > 2.1)
-            {
-                return new ResponseMessage { Message = "Image Size is too large - Size should be less than 2MB" };
-            }
 
             var creatResponse = await CreateUserProfile(userProfile, user);
             if (creatResponse.Status)
@@ -132,19 +122,16 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             profile = _mapper.Map(userProfile,profile);
             profile.UserId = user.Id;
 
-            profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
-
-            profile.TransId = (userProfile.InsuranceService == null | userProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _uniqueIdentifier.GetUniqueCode(10) : "";
+            profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];            
             profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
             profile.InsuranceService = userProfile.InsuranceService;
 
-            string base64Image = _imageService.ConvertImageToBase64(userProfile.UserImage);
-            profile.Image = base64Image;
-
-            if (profile.Image == "false")
+            var base64ImageResponse = _imageService.ConvertImageToBase64(userProfile.UserImage);
+            if (!base64ImageResponse.Status)
             {
-                return new ResponseMessage { Message = "Image cannot be processed,please try again later" };
+                return base64ImageResponse;
             }
+            profile.Image = base64ImageResponse.Data.ToString();            
 
             var updatedProfile = _mapper.Map(user, profile);
 
@@ -153,6 +140,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 _repoWrapper.InsuranceProfile.Update(updatedProfile);
                 var completionProfile = new InsuranceCompletionProfile(user.Id, true, true, userProfile.InsuranceService);
                 _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
+                await _insuranceTokenizationLink.Process_SuccessfulReferee_FirstTimePayment(updatedProfile);
             }
             else
             {
@@ -283,42 +271,6 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             var insuranceProfileDTO = _mapper.Map<IndividualProfileDTO>(insuranceProfile);
             return new ResponseMessage { Data = insuranceProfileDTO, Status = true };
-        }
-
-        public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
-        {
-            // Send user details to axamansard
-            var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
-            var enrollment = await _hmoIntegrationService.AxamansardRegisterUser(enrollmentModel);
-            if (!enrollment.Status)
-            {
-                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.Id, EnrollmentOnOnboarding_StatusValue.Failed.ToString()
-                    , enrollment.Message,InsuranceProvider.Axamansard.ToString() );
-                _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
-                await _repoWrapper.Save();
-            }
-            await Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Method to register user to hygeia and save all failed enrollments
-        /// </summary>
-        /// <param name="insuranceUserProfile"></param>
-        /// <returns></returns>
-        public async Task<ResponseMessage> EnrollUserToHygeiaOnOnboarding(InsuranceUserProfile insuranceUserProfile)
-        {
-            // Send user details to hygeia
-            var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);           
-            var registration = await _hmoIntegrationService.HygeiaRegisterUser(registrationModel);
-            if (!registration.Status)
-            {
-                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.Id,EnrollmentOnOnboarding_StatusValue.Failed.ToString(), registration.Message,
-                    InsuranceProvider.Hygeia.ToString());
-                _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
-                await _repoWrapper.Save();
-                return registration;
-            }
-            return registration;
         }
 
         /// <summary>
@@ -553,7 +505,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 }
             }
         }
-        public async Task<ResponseMessage> PayforNewIndividualWithEmail(int userId,string email)
+        public async Task<ResponseMessage> PayforNewIndividualWithEmail(int userId,string email, string insuranceService)
         {            
             var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(email);
             var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
@@ -564,8 +516,8 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 {
                     var insuranceProfile = new InsuranceUserProfile();
                     insuranceProfile.Email = email;
-                    insuranceProfile.InsuranceService = InsuranceProvider.Axamansard.ToString();
-                    insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;
+                    insuranceProfile.InsuranceService = insuranceService;
+                    insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;                  
                     _repoWrapper.InsuranceProfile.Create(insuranceProfile);
                     await _repoWrapper.Save();
                     return new ResponseMessage

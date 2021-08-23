@@ -31,11 +31,12 @@ namespace Application.Services.HealthInsured.Insurance
             _emailSender = emailSender;
         }
 
-        public async Task<ResponseMessage> CreateFamilyProfile(int id)
+        public async Task<ResponseMessage> CreateFamilyProfile(int id, string insuranceService)
         {
             var user = await _repoWrapper.ApplicationUser.FindByIdAsync(id);
             var family = _mapper.Map<FamilyProfile>(user);
             family.ProfileCompleted = true;
+            family.InsuranceService = InsuranceProvider.Axamansard.ToString();
             _repoWrapper.FamilyProfile.Create(family);
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
@@ -47,7 +48,7 @@ namespace Application.Services.HealthInsured.Insurance
             var familyCreator = await _repoWrapper.FamilyProfile.GetByUserId(userId);
             var insuranceProfile = _mapper.Map<InsuranceUserProfile>(familyMemberViewModel);
             insuranceProfile.FamilyProfileId = familyCreator.Id;
-            insuranceProfile.InsuranceService = InsuranceProvider.Axamansard.ToString();
+            //insuranceProfile.InsuranceService = InsuranceProvider.Axamansard.ToString();
             _repoWrapper.InsuranceProfile.Create(insuranceProfile);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Family member was added successfully" };

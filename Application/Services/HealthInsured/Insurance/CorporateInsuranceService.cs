@@ -32,12 +32,14 @@ namespace Application.Services.HealthInsured.Insurance
         private readonly IUniqueIdentifier _uniqueIdentifier;
         private readonly IEmailSender _emailSender;
         private readonly InsuranceService _insuranceService;
+        private readonly HMOIntegrationService _hMOIntegrationService;
 
         public UserManager<ApplicationUser> UserManager { get; }
         private SubscriptionDuration SubscriptionAccessor { get; }
 
         public CorporateInsuranceService(IMapper mapper, ILogger<CorporateInsuranceService> logger, IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper, IUniqueIdentifier uniqueIdentifier,
-            IOptions<SubscriptionDuration> subscriptionAccessor, UserManager<ApplicationUser> userManager, IEmailSender emailSender,InsuranceService insuranceService)
+            IOptions<SubscriptionDuration> subscriptionAccessor, UserManager<ApplicationUser> userManager, IEmailSender emailSender,InsuranceService insuranceService,
+            HMOIntegrationService hMOIntegrationService)
         {
             _mapper = mapper;
             _logger = logger;
@@ -47,6 +49,7 @@ namespace Application.Services.HealthInsured.Insurance
             UserManager = userManager;
             _emailSender = emailSender;
             _insuranceService = insuranceService;
+            _hMOIntegrationService = hMOIntegrationService;
             SubscriptionAccessor = subscriptionAccessor.Value;
         }
 
@@ -300,7 +303,7 @@ namespace Application.Services.HealthInsured.Insurance
             {
                 if (insuranceProvider.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
                 {
-                    var result = await _insuranceService.EnrollUserToHygeiaOnOnboarding(item);
+                    var result = await _hMOIntegrationService.EnrollUserToHygeiaOnOnboarding(item);
                     if (result.Status)
                     {
                         item.TransId = result.Message;
@@ -308,7 +311,7 @@ namespace Application.Services.HealthInsured.Insurance
                 }
                 else
                 {
-                    await _insuranceService.EnrollUserToAxamansardOnOnboarding(item);
+                    await _hMOIntegrationService.EnrollUserToAxamansardOnOnboarding(item);
                     item.TransId = _uniqueIdentifier.GetUniqueCode(10);
                 }
                 item.ActiveStatus = true;

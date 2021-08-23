@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Application.DTO;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,6 @@ namespace Application.Interfaces
         Task<string> UploadPics(string containerName, IFormFile file);
 
         void DeleteImage(string containerName, string picturePath);
-        string ConvertImageToBase64(IFormFile file);
+        ResponseMessage ConvertImageToBase64(IFormFile file);
     }
 }

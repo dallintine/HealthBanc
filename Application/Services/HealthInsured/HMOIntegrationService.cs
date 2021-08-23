@@ -2,6 +2,7 @@
 using Application.API_ResponseModel.HealthInsured;
 using Application.DTO;
 using Application.Helpers;
+using AutoMapper;
 using DataAccess;
 using Domain.Models.Axa_Hygeia_Insurance;
 using Hangfire;
@@ -23,16 +24,18 @@ namespace Application.Services.HealthInsured
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<HMOIntegrationService> _logger;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly IMapper _mapper;
 
         private AxaMansardConfiguration AxaAccessor { get; }
         private HygeiaConfiguration HygeiaAccessor { get; }
 
         public HMOIntegrationService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IOptions<HygeiaConfiguration> hygeiaAccessor,
-            ILogger<HMOIntegrationService> logger,IRepositoryWrapper repoWrapper)
+            ILogger<HMOIntegrationService> logger,IRepositoryWrapper repoWrapper, IMapper mapper)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _repoWrapper = repoWrapper;
+            _mapper = mapper;
             HygeiaAccessor = hygeiaAccessor.Value;
             AxaAccessor = axaAccessor.Value;
         }        
@@ -334,6 +337,42 @@ namespace Application.Services.HealthInsured
                 await _repoWrapper.Save();
             }
             await Task.CompletedTask;
+        }
+
+        public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
+        {
+            // Send user details to axamansard
+            var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
+            var enrollment = await AxamansardRegisterUser(enrollmentModel);
+            if (!enrollment.Status)
+            {
+                var axaEnrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.Id, EnrollmentOnOnboarding_StatusValue.Failed.ToString()
+                    , enrollment.Message, InsuranceProvider.Axamansard.ToString());
+                _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
+                await _repoWrapper.Save();
+            }
+            await Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Method to register user to hygeia and save all failed enrollments
+        /// </summary>
+        /// <param name="insuranceUserProfile"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> EnrollUserToHygeiaOnOnboarding(InsuranceUserProfile insuranceUserProfile)
+        {
+            // Send user details to hygeia
+            var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);
+            var registration = await HygeiaRegisterUser(registrationModel);
+            if (!registration.Status)
+            {
+                var enrollmentOnOnboarding = new EnrollmentOnOnboarding(insuranceUserProfile.Id, EnrollmentOnOnboarding_StatusValue.Failed.ToString(), registration.Message,
+                    InsuranceProvider.Hygeia.ToString());
+                _repoWrapper.EnrollmentOnOnboarding.Create(enrollmentOnOnboarding);
+                await _repoWrapper.Save();
+                return registration;
+            }
+            return registration;
         }
     }
 }

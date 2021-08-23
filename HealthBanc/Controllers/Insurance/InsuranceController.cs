@@ -48,16 +48,18 @@ namespace HealthBanc.Controllers.Insurance
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repoWerapper;
         private readonly AuditLogService _auditLogServices;
+        private readonly TokenizationService _tokenizationService;
         public string IpAddress;
         public StringValues agent;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IRepositoryWrapper repoWerapper,AuditLogService auditLogServices,IHttpContextAccessor accessor,
-            CorporateInsuranceService corporateInsuranceService)
+            CorporateInsuranceService corporateInsuranceService,TokenizationService tokenizationService)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
             _repoWerapper = repoWerapper;
             _auditLogServices = auditLogServices;
+            _tokenizationService = tokenizationService;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -295,12 +297,12 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult>  PayforRefereeWithEmail(string email)
+        public async Task<IActionResult>  PayforRefereeWithEmail(string email,string insuranceService)
         {
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
 
-            var response = await _insuranceService.PayforNewIndividualWithEmail(userId, email);
+            var response = await _insuranceService.PayforNewIndividualWithEmail(userId, email,insuranceService);
 
             if (response.Status)
             {
@@ -316,7 +318,7 @@ namespace HealthBanc.Controllers.Insurance
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
 
-            var response = await _insuranceService.PayforNewIndividualWithEmail(userId,refereeViewModel.Email);
+            var response = await _tokenizationService.PayForRefereeWithFullDetails(userId, refereeViewModel);
 
             if (response.Status)
             {
