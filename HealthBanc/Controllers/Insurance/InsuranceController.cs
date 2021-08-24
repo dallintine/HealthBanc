@@ -294,6 +294,7 @@ namespace HealthBanc.Controllers.Insurance
         /// Pay for individual with just email details
         /// </summary>
         /// <param name="email"></param>
+        /// <param name="insuranceService"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
