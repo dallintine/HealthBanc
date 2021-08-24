@@ -33,6 +33,7 @@ namespace HealthBanc.Mappers.Insurance
                 .ForMember(dest => dest.Othernames, opt => opt.MapFrom(x => x.FirstName))
                 .ForMember(dest => dest.DateCreated, opt => opt.MapFrom(x => DateTime.Now))
                 .ForMember(dest => dest.PlanCode, opt => opt.MapFrom(x => "1"))
+                .ForMember(dest => dest.InsuranceService, opt => opt.MapFrom(x => InsuranceProvider.Axamansard.ToString()))
                 .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => Decimal.Parse("1000")));
 
             CreateMap<PayForRefereeViewModel,InsuranceUserProfile>()

@@ -111,7 +111,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 }
                 else if(checkIfProfileWithEmail.Data.HealthInsuredPlan != null)
                 {
-                    return new ResponseMessage { Message = "Email was used for another Healthinsured profile" };
+                    return new ResponseMessage { Message = "Email was used for another Healthinsured Service" };
                 }
             }
 

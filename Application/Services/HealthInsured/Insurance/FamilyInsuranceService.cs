@@ -48,7 +48,7 @@ namespace Application.Services.HealthInsured.Insurance
             var familyCreator = await _repoWrapper.FamilyProfile.GetByUserId(userId);
             var insuranceProfile = _mapper.Map<InsuranceUserProfile>(familyMemberViewModel);
             insuranceProfile.FamilyProfileId = familyCreator.Id;
-            //insuranceProfile.InsuranceService = InsuranceProvider.Axamansard.ToString();
+            insuranceProfile.InsuranceService = InsuranceProvider.Axamansard.ToString();
             _repoWrapper.InsuranceProfile.Create(insuranceProfile);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true, Message = "Family member was added successfully" };
