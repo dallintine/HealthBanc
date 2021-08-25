@@ -109,5 +109,10 @@ namespace Application.Services.HealthInsured.Insurance
         {
             _emailSender.SendHealthInsuredFamilyPaymentReminder(email, "HealthInsured Payment Reminder", familyHead, familyMember);
         }
+
+        public void FamilySubscription(string email,string subject, string username)
+        {
+            _emailSender.FamilySubscription(email, subject, username);
+        }
     }
 }

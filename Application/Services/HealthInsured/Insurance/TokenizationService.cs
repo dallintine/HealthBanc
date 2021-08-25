@@ -245,6 +245,39 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await _repoWrapper.Save();
         }
 
+        public async Task<ResponseMessage> PayForRefereeWithFullDetails(int userId, PayForRefereeViewModel refereeViewModel)
+        {
+            var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(refereeViewModel.Email);
+            var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (userToPayFor is null || !userToPayFor.ServiceUsed.Contains(ServiceNames.HealthInsured.ToString()))
+            {
+                var profile = await _repoWrapper.InsuranceProfile.GetByEmail(refereeViewModel.Email);
+                if (profile is null)
+                {
+                    var insuranceProfile = _mapper.Map<InsuranceUserProfile>(refereeViewModel);
+                    insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;
+                    var base64ImageResponse = _imageService.ConvertImageToBase64(refereeViewModel.UserImage);
+                    if (!base64ImageResponse.Status)
+                    {
+                        return base64ImageResponse;
+                    }
+                    insuranceProfile.Image = base64ImageResponse.Data.ToString();
+                    //insuranceProfile.TransId = insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
+                    _repoWrapper.InsuranceProfile.Create(insuranceProfile);
+                    await _repoWrapper.Save();
+                    await Process_SuccessfulReferee_FirstTimePayment(insuranceProfile);
+                    return new ResponseMessage
+                    {
+                        Message = "User has been activated and you can view user details under your payee list." +
+                        "User is entitled to a one month free cycle. User insurance debit would occur on your debit card and" +
+                        "you can cancel anytime you want"
+                    };
+                }
+                return new ResponseMessage { Message = "HealthInsured profile with email exist already", Status = false };
+            }
+            return new ResponseMessage { Message = "HealthInsured profile with this email exist already", Status = false };
+        }
+
         public async Task Process_SuccessfulReferee_FirstTimePayment(InsuranceUserProfile insuranceProfile)
         {
             insuranceProfile.TransId = insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
@@ -274,39 +307,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await _repoWrapper.Save();
         }
 
-        public async Task<ResponseMessage> PayForRefereeWithFullDetails(int userId, PayForRefereeViewModel refereeViewModel)
-        {
-            var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(refereeViewModel.Email);
-            var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-            if (userToPayFor is null || !userToPayFor.ServiceUsed.Contains(ServiceNames.HealthInsured.ToString()))
-            {
-                var profile = await _repoWrapper.InsuranceProfile.GetByEmail(refereeViewModel.Email);
-                if (profile is null)
-                {
-                    var insuranceProfile = _mapper.Map<InsuranceUserProfile>(refereeViewModel);
-                    insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;
-                    var base64ImageResponse = _imageService.ConvertImageToBase64(refereeViewModel.UserImage);
-                    if (!base64ImageResponse.Status)
-                    {
-                        return base64ImageResponse;
-                    }
-                    insuranceProfile.Image = base64ImageResponse.Data.ToString();
-                    insuranceProfile.TransId = insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
-                    _repoWrapper.InsuranceProfile.Create(insuranceProfile);
-                    await _repoWrapper.Save();
-                    await Process_SuccessfulReferee_FirstTimePayment(insuranceProfile);
-                    return new ResponseMessage
-                    {
-                        Message = "User has been activated and you can view user details under your payee list." +
-                        "User is entitled to a one month free cycle. User insurance debit would occur on your debit card and" +
-                        "you can cancel anytime you want"
-                    };
-                }
-                return new ResponseMessage { Message = "HealthInsured profile with email exist already", Status = false };
-            }
-            return new ResponseMessage { Message = "HealthInsured profile with this email exist already", Status = false };
-        }
-
         /// <summary>
         /// Overloaded method to process individual scheduled payment.Create scheduled enrollment and scheduled payment data that is set to the processing stage.
         /// </summary>
@@ -329,6 +329,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             var activeCard = new DebitCard();
             var family = new FamilyProfile();
+            var payee = new InsuranceUserProfile();
             var jobId = context.BackgroundJob.Id;
             var chageAuthorizationModel = new ChargeAuthorization();
 
@@ -338,6 +339,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
                 activeCard = family.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
                 chageAuthorizationModel.email = family.Email;
+            }
+            else if(!(insuranceProfile.InsurancePayeeId is null))
+            {
+                payee = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfile.InsurancePayeeId.Value);
+                activeCard = payee.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                chageAuthorizationModel.email = payee.Email;
             }
             else
             {
@@ -370,6 +377,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     //_insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
                     var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, null, null, family.Id, family.UserId
+                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
+                    _repoWrapper.PaymentReference.Create(paymentReference);
+                }
+                else if(!(insuranceProfile.InsurancePayeeId is null))
+                {
+                    //_insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
+                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, payee.Id, null, null, payee.UserId.Value
                     , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
                 }
@@ -542,7 +556,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     familyProfile.TokenizationCompleted = true;
                     _repoWrapper.FamilyProfile.Update(familyProfile);
-                    await FamilyMembersActivation(familyProfile);   
+                    await FamilyMembersActivation(familyProfile);
+                    _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
                 }
                 var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
@@ -1436,7 +1451,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             return new ResponseMessage { Message = chargeAuthorization.Message, Status =false, ResponseCode = chargeAuthorization.ResponseCode };
         }
-
         private async Task Process_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
         {
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
