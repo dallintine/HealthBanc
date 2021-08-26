@@ -12,13 +12,15 @@ namespace HealthBanc.DTO.HealthInsured_AxaMansard
         {
 
         }
-        public HealthInsuredProfileStateDTO(HealthInsuredPlan? healthInsuredPlan, bool? emailConfirmed, bool profileCompleted, bool tokenizationCompleted,string serviceUsed)
+        public HealthInsuredProfileStateDTO(HealthInsuredPlan? healthInsuredPlan, bool? emailConfirmed, bool profileCompleted, bool tokenizationCompleted,string serviceUsed,
+            bool referee = false)
         {
             HealthInsuredPlan = healthInsuredPlan;
             EmailConfirmed = emailConfirmed;
             ProfileCompleted = profileCompleted;
             TokenizationCompleted = tokenizationCompleted;
             ServiceUsed = serviceUsed;
+            Referee = referee;
         }
 
         public HealthInsuredPlan? HealthInsuredPlan { get; set; }
@@ -26,5 +28,6 @@ namespace HealthBanc.DTO.HealthInsured_AxaMansard
         public bool ProfileCompleted { get; set; }
         public bool TokenizationCompleted { get; set; }
         public string ServiceUsed { get; set; }
+        public bool Referee { get; set; }
     }
 }

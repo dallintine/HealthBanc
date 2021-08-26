@@ -360,18 +360,18 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 {
                     if (insuranceProfile.InsurancePayeeId != null)
                     {
-                        if (insuranceProfile.DateOfBirth != null)
+                        if (insuranceProfile.ContactAddress != null)
                         {
                             return new ResponseMessage<HealthInsuredProfileStateDTO>
                             {
-                                Data = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, true, true, insuranceProfile.InsuranceService),
+                                Data = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, true, true, insuranceProfile.InsuranceService,true),
                                 Status = true,
                                 Message = "Profile completion state was fetched successfully"
                             };
                         }
                         return new ResponseMessage<HealthInsuredProfileStateDTO>
                         {
-                            Data = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, false, true, insuranceProfile.InsuranceService),
+                            Data = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, false, true, insuranceProfile.InsuranceService,true),
                             Status = true,
                             Message = "Profile completion state was fetched successfully"
                         };
