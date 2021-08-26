@@ -294,7 +294,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var response = await _tokenizationService.ActivateFamilyMemberWithPrimaryCard(id, insuranceProfileId);
+            var response = await _tokenizationService.ActivateRefereeWithPrimaryCard(id, insuranceProfileId);
             if (response.Status)
             {
                 return Ok(response);

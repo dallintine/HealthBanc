@@ -1387,7 +1387,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var jobId = ProcessScheduledPayment(insuranceProfile);
 
             // Schedule debit email reminder for user 
-            if(insuranceProfile.FamilyProfileId is null)
+            if(insuranceProfile.FamilyProfileId is null || insuranceProfile.InsurancePayeeId is null)
             {
                 insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
             }
@@ -1420,6 +1420,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 var family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
                 chageAuthorizationModel.email = family.Email;
+            }
+            else if(insuranceProfile.InsurancePayeeId != null)
+            {
+                var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+                chageAuthorizationModel.email = payeeInsuranceProfile.Email;
             }
 
             // Call Paystack service. Debit user using card authorization code
