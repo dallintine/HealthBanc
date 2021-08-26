@@ -222,8 +222,19 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             {
                 if(refereedInsuranceProfile.InsurancePayeeId == payeeInsuranceProfile.Id)
                 {
-                    refereedInsuranceProfile.InsurancePayeeId = null;
-                    _repoWrapper.InsuranceProfile.Update(refereedInsuranceProfile);
+                    if(refereedInsuranceProfile.SubscriptionStatus is true)
+                    {
+                        return new ResponseMessage { Message = "Referee has to be deactivated before removing!." };
+                    }
+                    //Mean refereedInsuranceProfile insurance profile is completed
+                    if (refereedInsuranceProfile.ContactAddress != null){
+                        refereedInsuranceProfile.InsurancePayeeId = null;
+                        _repoWrapper.InsuranceProfile.Update(refereedInsuranceProfile);
+                    }
+                    else
+                    {
+                        _repoWrapper.InsuranceProfile.Delete(refereedInsuranceProfile);
+                    }
                     await _repoWrapper.Save();
                     return new ResponseMessage { Message = "Referee was removed successfully", Status=true };
                 }
@@ -518,6 +529,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;                  
                     _repoWrapper.InsuranceProfile.Create(insuranceProfile);
                     await _repoWrapper.Save();
+                    _emailSender.RefreeInvitation(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}");
                     return new ResponseMessage
                     {
                         Message = "Invite was sent successfully. User would be activated immediately after sign up and profile creation." +

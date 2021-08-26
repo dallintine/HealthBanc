@@ -314,7 +314,7 @@ namespace HealthBanc.Controllers.Insurance
 
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> PayForRefereeWithFullDetails([FromBody] PayForRefereeViewModel refereeViewModel)
+        public async Task<IActionResult> PayForRefereeWithFullDetails([FromForm] PayForRefereeViewModel refereeViewModel)
         {
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);

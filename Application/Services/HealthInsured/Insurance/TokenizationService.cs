@@ -262,10 +262,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                         return base64ImageResponse;
                     }
                     insuranceProfile.Image = base64ImageResponse.Data.ToString();
-                    //insuranceProfile.TransId = insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
                     _repoWrapper.InsuranceProfile.Create(insuranceProfile);
                     await _repoWrapper.Save();
                     await Process_SuccessfulReferee_FirstTimePayment(insuranceProfile);
+                    _emailSender.RefreeInvitation(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}");
                     return new ResponseMessage
                     {
                         Message = "User has been activated and you can view user details under your payee list." +

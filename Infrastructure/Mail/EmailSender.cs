@@ -45,7 +45,6 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-
         public void SendUserResetPasswordMail(string email, string subject, string resetUrl)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\password_reset.html";
@@ -121,7 +120,6 @@ namespace Infrastructure.Mail
                 EmailRequest(emailRequest);
             }           
         }
-
         public void SendHealthFinanceSubmissionNotification(string subject, HealthFinanceCollectionViewModel healthFinance, string  toEmails)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthfinance_submission.html";
@@ -174,6 +172,9 @@ namespace Infrastructure.Mail
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance\\Payee") + "\\refereeinvitation.html";
             string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("UserName", beneficiary).Replace("Payee", payee);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
         }
 
         public void CustomMail(string email,string subject, string content)
