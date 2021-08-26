@@ -168,11 +168,11 @@ namespace Infrastructure.Mail
             EmailRequest(emailRequest);
         }
 
-        public void RefreeInvitation(string email,string subject,string payee,string beneficiary)
+        public void RefreeInvitation(string email,string subject,string payee)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance\\Payee") + "\\refereeinvitation.html";
             string html = System.IO.File.ReadAllText(path);
-            var newHtml = html.Replace("UserName", beneficiary).Replace("Payee", payee);
+            var newHtml = html.Replace("Payee", payee);
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
