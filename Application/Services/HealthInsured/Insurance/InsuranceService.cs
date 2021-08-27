@@ -534,7 +534,8 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     {
                         Message = "Invite was sent successfully. User would be activated immediately after sign up and profile creation." +
                         "User is entitled to a one month free cycle. User insurance debit would occur on your debit card and" +
-                        "you can cancel anytime you want"
+                        "you can cancel anytime you want",
+                        Status= true
                     };
                 }
                 return new ResponseMessage { Message = "HealthInsured profile with email exist already", Status = false };

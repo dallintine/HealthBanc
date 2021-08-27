@@ -312,7 +312,7 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(response);
         }
 
-        [HttpGet("[action]")]
+        [HttpPost("[action]")]
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> PayForRefereeWithFullDetails([FromForm] PayForRefereeViewModel refereeViewModel)
         {
