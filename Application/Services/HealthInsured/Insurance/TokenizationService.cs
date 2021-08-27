@@ -270,7 +270,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     {
                         Message = "User has been activated and you can view user details under your payee list." +
                         "User is entitled to a one month free cycle. User insurance debit would occur on your debit card and" +
-                        "you can cancel anytime you want"
+                        "you can cancel anytime you want",
+                        Status = true
                     };
                 }
                 return new ResponseMessage { Message = "HealthInsured profile with email exist already", Status = false };
