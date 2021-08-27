@@ -316,7 +316,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             var executionDate = insuranceProfile.EndActiveStatusDate;
 
-            var userId = insuranceProfile.FamilyProfileId == null ? insuranceProfile.UserId.Value : 0;
+            var userId = (insuranceProfile.FamilyProfileId == null && insuranceProfile.InsurancePayeeId == null) ? insuranceProfile.UserId.Value : 0;
  
             var jobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(userId,
                     insuranceProfile.Id, null), executionDate);
