@@ -27,7 +27,7 @@ namespace HealthBanc
             public ApplicationDbContext CreateDbContext(string[] args)
             {
                 var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-                optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBancHygeiaImplementation; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
+                optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBancBackground_HygeiaImplementation; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
                 //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBancV3.4;Trusted_Connection=True;MultipleActiveResultSets=true");
 
                 return new ApplicationDbContext(optionsBuilder.Options);
@@ -59,7 +59,7 @@ namespace HealthBanc
                         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
                         var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
 
-                        //context.Database.EnsureDeleted();
+                        context.Database.EnsureDeleted();
                         //context.Database.Migrate();
                         //Seed.SeedData(context, userManager, roleManager).Wait();
                     }
