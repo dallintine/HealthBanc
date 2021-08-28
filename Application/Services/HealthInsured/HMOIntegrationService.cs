@@ -101,21 +101,21 @@ namespace Application.Services.HealthInsured
                             return new ResponseMessage { Status = true, Message = authResponse.message };
                         }
                         _logger.LogError("Axamansard Unsuccessfully response : " + apiResponse, authResponse);
-                        BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                        //BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                         return new ResponseMessage { Status = false, Message = authResponse.message };
                     }
                     _logger.LogCritical(" Bad request when trying to register user to axamansard  : " + apiResponse);
-                    BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                    //BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                     return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }
-                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                //BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                 _logger.LogCritical("BadRequest Axamansard :" + bearerRequest.Message);
                 return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
             catch (Exception ex)
             {
                 _logger.LogCritical("An error occurred while enrolling user to axa-mansard" + " " + ex.ToString(), ex);
-                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                //BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
             }
         }
