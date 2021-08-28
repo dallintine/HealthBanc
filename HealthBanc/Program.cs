@@ -27,7 +27,7 @@ namespace HealthBanc
             public ApplicationDbContext CreateDbContext(string[] args)
             {
                 var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-                optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBancHygeiaImplementation; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
+                 optionsBuilder.UseSqlServer("Server=10.0.41.101; Database=HealthBancHygeiaImplementation; User ID=sa; Password=tylent; Trusted_Connection=False; MultipleActiveResultSets=true");
                 //optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=HealthBancV3.4;Trusted_Connection=True;MultipleActiveResultSets=true");
 
                 return new ApplicationDbContext(optionsBuilder.Options);
