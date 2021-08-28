@@ -249,8 +249,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(refereeViewModel.Email);
             var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-            if (userToPayFor is null || !userToPayFor.ServiceUsed.Equals(ServiceNames.HealthInsured.ToString()))
+            if (userToPayFor is null || userToPayFor.ServiceUsed is null || !userToPayFor.ServiceUsed.Equals(ServiceNames.HealthInsured.ToString()))
             {
+                if (!userToPayFor.ServiceUsed.Equals(ServiceNames.HealthInsured.ToString()))
+                {
+
+                }
                 var profile = await _repoWrapper.InsuranceProfile.GetByEmail(refereeViewModel.Email);
                 if (profile is null)
                 {
