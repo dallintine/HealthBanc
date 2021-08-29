@@ -82,6 +82,7 @@ namespace Application.Services.Identity
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
+                    await ProcessInsuranceUserId(user.Id, user.Email);
                     return new ResponseMessage
                     {
                         Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
@@ -399,6 +400,21 @@ namespace Application.Services.Identity
                 return new ResponseMessage { Status = true };
             }
             return new ResponseMessage { Status = true, Message = "User does not exist.could not fetch user" };
+        }
+
+        private async Task ProcessInsuranceUserId(int userId,string email)
+        {
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
+            if(insuranceProfile != null)
+            {
+                if(insuranceProfile.UserId is null)
+                {
+                    insuranceProfile.UserId = userId;
+                    _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                    await _repoWrapper.Save();
+                }                
+            }
+            await Task.CompletedTask;
         }
     }
 }
