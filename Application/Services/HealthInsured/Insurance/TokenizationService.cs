@@ -293,9 +293,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             //Schedule job to debit user every 28 days
             insuranceProfile.PendingJobId = ProcessScheduledPayment(insuranceProfile);
 
-            _insuranceSerivce.SendSuccesfulSubscriptionMail(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.TransId, insuranceProfile.CareProviderName,
-                insuranceProfile.PlanCode);
-
             insuranceProfile.SubscriptionStatus = true;
             insuranceProfile.ActiveStatus = true;
             insuranceProfile.StartActiveStatusDate = DateTime.Now;
