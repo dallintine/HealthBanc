@@ -17,6 +17,7 @@ namespace Application.Interfaces
         void HealthInsuredFailedDebit(string email, string subject, string userName, string premium);
         void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider,string plan);
         void RefreeInvitation(string email, string subject, string payee);
+        void RefreeInvitationFullDetail(string email, string subject, string payee, string userName, string enroleeNumber, string healthCareProvider, string plan);
         void SendHealthFinanceNotification(string subject, HealthFinanceCollectionViewModel healthFinance, List<string> toEmails);
         void SendHealthFinanceSubmissionNotification(string subject, HealthFinanceCollectionViewModel healthFinance, string toEmails);
         void SendHealthInsuredFamilyPaymentReminder(string email, string subject, string familyHead, string familyMember);

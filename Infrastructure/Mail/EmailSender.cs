@@ -131,7 +131,6 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(healthFinance.Email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-
         public void HealthInsuredFailedDebit(string email, string subject, string userName,string premium)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\faileddebit.html";
@@ -140,7 +139,6 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-
         public void HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium,string stopDate)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\CorporateInsurance") + "\\failedcompany_debit.html";
@@ -149,7 +147,6 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-
         public void HealthInsuredCompanyDeactivation(string email, string subject, string userName, string premium)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\CorporateInsurance") + "\\deactivate_companybeneficiaries.html";
@@ -158,7 +155,6 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-
         public void CorporateInsuranceOnboarding(string email, string subject, string otp)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\CorporateInsurance") + "\\corporate_onboarding.html";
@@ -167,12 +163,32 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-
         public void RefreeInvitation(string email,string subject,string payee)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance\\Payee") + "\\refereeinvitation.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("Payee", payee);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
+        }
+        public void RefreeInvitationFullDetail(string email, string subject, string payee,string userName, string enroleeNumber, string healthCareProvider, string plan)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance\\Payee") + "\\refereeInvitationFullDetails.html";
+            string html = System.IO.File.ReadAllText(path);
+
+            string processedEnrolleNumber;
+            if (enroleeNumber == "" || enroleeNumber == "Pending" || enroleeNumber == null)
+            {
+                processedEnrolleNumber = "pending and would be provided soon. This can be accessed via your dashbard";
+            }
+            else
+            {
+                processedEnrolleNumber = enroleeNumber;
+            }
+
+            string subType = plan == "1" ? "Ruby" : "Sapphire";
+            var newHtml = html.Replace("Payee", payee).Replace("UserName", userName).Replace("HealthServiceProviderName", healthCareProvider).Replace("EnroleeNumber", processedEnrolleNumber)
+                .Replace("SubscriptionType", subType);
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
