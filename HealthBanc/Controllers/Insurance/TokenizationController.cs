@@ -128,9 +128,11 @@ namespace HealthBanc.Controllers.Insurance
         public async Task<IActionResult> GetCards()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            string email = User.FindFirst(ClaimTypes.Email)?.Value;
+
             int Id = int.Parse(userId);
 
-            var cards = await _tokenizationService.GetCards(Id);
+            var cards = await _tokenizationService.GetCards(Id,email);
             if (cards.Status)
             {
                 return Ok(cards);

@@ -1113,7 +1113,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             /// </summary>
             /// <param name="userId"></param>
             /// <returns></returns>
-            public async Task<ResponseMessage> GetCards(int userId)
+            public async Task<ResponseMessage> GetCards(int userId,string email)
         {
             var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,null);
             List<DebitCard> debitCard = new List<DebitCard>();
@@ -1135,7 +1135,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if (debitCard.Count > 0)
             {
                 var cardDTO = _mapper.Map<List<DebitCard>, List<CardDTO>>(debitCard);
-                return new ResponseMessage { Data = cardDTO, Status = true, Message = "Card was fetchd successfully" };
+                return new ResponseMessage { Data = cardDTO, Status = true, Message = "Card was fetched successfully" };
             }
             var emptyCardDTO = new List<CardDTO>();
             return new ResponseMessage { Data = emptyCardDTO, Message = "User has no card, Kindly add a card", Status = true };
