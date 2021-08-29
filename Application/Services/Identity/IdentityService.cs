@@ -122,6 +122,7 @@ namespace Application.Services.Identity
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
+                    await ProcessInsuranceUserId(user.Id, user.Email);
                     var authResponse = await GetAuthenticationResultForUserAsync(user);
                     if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
                     return new ResponseMessage
