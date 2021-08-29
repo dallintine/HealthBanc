@@ -74,7 +74,13 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var user = await _repoWrapper.ApplicationUser.FindByIdAsync(userId);
 
             var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-            if (checkIfUserHasBeenProfiled != null) return new ResponseMessage { Message = "User has a profile already" };
+            if (checkIfUserHasBeenProfiled != null)
+            {
+                if(checkIfUserHasBeenProfiled.ContactAddress != null)
+                {
+                    return new ResponseMessage { Message = "User has a profile already" };
+                }
+            }
 
             var creatResponse = await CreateUserProfile(userProfile, user);
             if (creatResponse.Status)
@@ -138,6 +144,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 _repoWrapper.InsuranceProfile.Update(updatedProfile);
                 var completionProfile = new InsuranceCompletionProfile(user.Id, true, true, userProfile.InsuranceService);
                 _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
+                updatedProfile.TransId = updatedProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
                 //await _insuranceTokenizationLink.Process_SuccessfulReferee_FirstTimePayment(updatedProfile);
             }
             else
