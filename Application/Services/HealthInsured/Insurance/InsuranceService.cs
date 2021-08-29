@@ -526,6 +526,8 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     var insuranceProfile = new InsuranceUserProfile();
                     insuranceProfile.Email = email;
                     insuranceProfile.InsuranceService = insuranceService;
+                    insuranceProfile.PlanCode = "1";
+                    insuranceProfile.Premium = Decimal.Parse("1000");
                     insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;                  
                     _repoWrapper.InsuranceProfile.Create(insuranceProfile);
                     await _repoWrapper.Save();
