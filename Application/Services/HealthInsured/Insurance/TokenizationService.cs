@@ -1115,7 +1115,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             /// <returns></returns>
             public async Task<ResponseMessage> GetCards(int userId,string email)
         {
-            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,null);
+            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,email);
             List<DebitCard> debitCard = new List<DebitCard>();
             if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
             {
