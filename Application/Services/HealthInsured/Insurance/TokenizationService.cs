@@ -673,7 +673,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
         }
             
-        private async Task FamilyMembersActivation(FamilyProfile familyProfile)
+        public async Task FamilyMembersActivation(FamilyProfile familyProfile)
         {
             var insuranceProfiles = familyProfile.InsuranceUserProfiles;
             foreach(var insuranceUserProfile in insuranceProfiles)
@@ -1596,7 +1596,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
         }        
 
-        private async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)
+        public async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)
         {
             if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
