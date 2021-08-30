@@ -342,7 +342,14 @@ namespace Application.Services.HealthInsured
         public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
         {
             // Send user details to axamansard
+
             var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
+            if (insuranceUserProfile.InsurancePayeeId != null)
+            {
+                var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);
+                enrollmentModel.Email = payeeInsuranceProfile.Email;
+            }
+            
             var enrollment = await AxamansardRegisterUser(enrollmentModel);
             if (!enrollment.Status)
             {
@@ -363,6 +370,11 @@ namespace Application.Services.HealthInsured
         {
             // Send user details to hygeia
             var registrationModel = _mapper.Map<RegistrationModel>(insuranceUserProfile);
+            if (insuranceUserProfile.InsurancePayeeId != null)
+            {
+                var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);
+                registrationModel.Email = payeeInsuranceProfile.Email;
+            }
             var registration = await HygeiaRegisterUser(registrationModel);
             if (!registration.Status)
             {

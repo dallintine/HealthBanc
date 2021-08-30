@@ -82,7 +82,7 @@ namespace Application.Services.Identity
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
-                    await ProcessInsuranceUserId(user.Id, user.Email);
+                    await ProcessInsuranceUserId(user, user.Email);
                     return new ResponseMessage
                     {
                         Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
@@ -122,7 +122,7 @@ namespace Application.Services.Identity
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
-                    await ProcessInsuranceUserId(user.Id, user.Email);
+                    await ProcessInsuranceUserId(user, user.Email);
                     var authResponse = await GetAuthenticationResultForUserAsync(user);
                     if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
                     return new ResponseMessage
@@ -403,14 +403,20 @@ namespace Application.Services.Identity
             return new ResponseMessage { Status = true, Message = "User does not exist.could not fetch user" };
         }
 
-        private async Task ProcessInsuranceUserId(int userId,string email)
+        private async Task ProcessInsuranceUserId(ApplicationUser user, string email)
         {
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
             if(insuranceProfile != null)
             {
                 if(insuranceProfile.UserId is null)
                 {
-                    insuranceProfile.UserId = userId;
+                    insuranceProfile.UserId = user.Id;
+                    var newServiceString = user.ServiceUsed + ServiceNames.HealthInsured.ToString();
+                    user.ServiceUsed = newServiceString;
+
+                    var completionProfile = new InsuranceCompletionProfile(user.Id, true, true,insuranceProfile.InsuranceService);
+                    _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
+                    _repoWrapper.ApplicationUser.Update(user);
                     _repoWrapper.InsuranceProfile.Update(insuranceProfile);
                     await _repoWrapper.Save();
                 }                

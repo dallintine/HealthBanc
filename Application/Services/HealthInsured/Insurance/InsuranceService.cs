@@ -139,6 +139,10 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     {
                         return new ResponseMessage { Message = "Referee has to be deactivated before removing!." };
                     }
+                    if (refereedInsuranceProfile.ActiveStatus is true)
+                    {
+                        return new ResponseMessage { Message = "Referee has to be Inactive before removing!." };
+                    }
                     //Mean refereedInsuranceProfile insurance profile is completed
                     if (refereedInsuranceProfile.ContactAddress != null){
                         refereedInsuranceProfile.InsurancePayeeId = null;

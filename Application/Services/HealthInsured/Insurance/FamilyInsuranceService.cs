@@ -95,9 +95,13 @@ namespace Application.Services.HealthInsured.Insurance
                 var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == famiyMemeberId).FirstOrDefault();
                 if (insuranceProfile != null)
                 {
-                    _repoWrapper.InsuranceProfile.Delete(insuranceProfile);
-                    await _repoWrapper.Save();
-                    return new ResponseMessage { Message = "Family Member profile was removed successfully", Status = true };
+                    if(insuranceProfile.ActiveStatus  != true)
+                    {
+                        _repoWrapper.InsuranceProfile.Delete(insuranceProfile);
+                        await _repoWrapper.Save();
+                        return new ResponseMessage { Message = "Family Member profile was removed successfully", Status = true };
+                    }
+                    return new ResponseMessage { Message = "An active memeber cannot be removed,Deactivate user and wait till insurance cycle ends" };
                 }
                 return new ResponseMessage { Message = "Family Member does not exist under your current profile" };
             }
