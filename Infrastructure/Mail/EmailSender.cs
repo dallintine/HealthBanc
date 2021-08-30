@@ -55,7 +55,7 @@ namespace Infrastructure.Mail
         }
         public void FamilySubscription(string email, string subject, string userName)
         {
-            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\FamilyInsurance") + "\\healthinsured_subscription.html";
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\FamilyInsurance") + "\\familysubscription.html";
             string html = System.IO.File.ReadAllText(path);
             string newHtml = html.Replace("UserName", userName);
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
