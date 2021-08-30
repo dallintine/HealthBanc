@@ -182,7 +182,7 @@ namespace HealthBanc.Controllers.Insurance
                 int Id = int.Parse(userId);
                 var device = _auditLogServices.GetDevice(agent);
 
-                var creatProfileResponse = await _insuranceService.UserOnboarding(userProfile, Id, IpAddress, device);
+                var creatProfileResponse = await _tokenizationService.UserOnboarding(userProfile, Id, IpAddress, device);
 
                 if (creatProfileResponse.Status)
                 {
