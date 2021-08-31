@@ -346,6 +346,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(refereeViewModel.Email);
             var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (!(insuranceProfileOfUserPaying.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)))
+            {
+                return new ResponseMessage { Message = "Kindly set an active card before transaction can be initiated" };
+            }
             if (userToPayFor is null || userToPayFor.ServiceUsed is null || !userToPayFor.ServiceUsed.Equals(ServiceNames.HealthInsured.ToString()))
             {
                 var profile = await _repoWrapper.InsuranceProfile.GetByEmail(refereeViewModel.Email);
