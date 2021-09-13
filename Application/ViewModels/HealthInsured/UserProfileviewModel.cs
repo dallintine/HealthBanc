@@ -17,7 +17,6 @@ namespace Application.ViewModels.HealthInsured
         public DateTime DateOfBirth { get; set; }
         [Required]
         public string ContactAddress { get; set; }
-        [Required]
         public string Occupation { get; set; }
         [Required]
         public string MaritalStatus { get; set; }

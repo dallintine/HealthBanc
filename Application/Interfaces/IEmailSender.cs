@@ -14,7 +14,8 @@ namespace Application.Interfaces
         void FamilySubscription(string email, string subject, string userName);
         void HealthInsuredCompanyDeactivation(string email, string subject, string userName, string premium);
         void HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium, string stopDate);
-        void HealthInsuredFailedDebit(string email, string subject, string userName, string premium);
+        void HealthInsuredDeactivationNotification(string email, string subject, string userName, string premium,string info);
+        void HealthInsuredFailedDebitNotification(string email, string subject, string userName, string info, string premium);
         void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider,string plan);
         void RefreeInvitation(string email, string subject, string payee);
         void RefreeInvitationFullDetail(string email, string subject, string payee, string userName, string enroleeNumber, string healthCareProvider, string plan);

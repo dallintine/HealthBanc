@@ -56,6 +56,10 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         public Decimal Premium { get; set; }
         public string StateOfResidence { get; set; }
         public string TownOfResidence { get; set; }
+        /// <summary>
+        /// Number of times scheduled payment Fails
+        /// </summary>
+        public int? FailedScheduledPaymentRetry { get; set; }
         public bool? ActiveStatus { get; set; }
         public DateTime EndActiveStatusDate { get; set; }
         public DateTime StartActiveStatusDate { get; set; }

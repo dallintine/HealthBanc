@@ -169,9 +169,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             await _repoWrapper.Save();
 
-
-            var newServiceString = user.ServiceUsed + ServiceNames.HealthInsured.ToString();
-            user.ServiceUsed = newServiceString;
+            if(user.ServiceUsed == null || !(user.ServiceUsed.Contains(ServiceNames.HealthInsured.ToString())))
+            {
+                var newServiceString = user.ServiceUsed + ServiceNames.HealthInsured.ToString();
+                user.ServiceUsed = newServiceString;
+            }
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
             return new ResponseMessage { Status = true };
@@ -202,8 +204,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
         }
-
-        #region "Individual Payment Flow After Card Tokenization"
 
         /// <summary>
         /// This is used to process card tokenization for indidvidual users.This method process the charge amount and process api Request that would be sent to paystack.
@@ -370,9 +370,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                         insuranceProfile.Surname,insuranceProfile.TransId,insuranceProfile.CareProviderName,insuranceProfile.PlanCode);
                     return new ResponseMessage
                     {
-                        Message = "User has been activated and you can view user details under your payee list." +
-                        "User is entitled to a one month free cycle. User insurance debit would occur on your debit card and" +
-                        "you can cancel anytime you want",
+                        Message = $"{refereeViewModel.FirstName} has been activated is entitled to a one month free cycle. {refereeViewModel.FirstName} can sign up with {refereeViewModel.Email} to access his/her dashboard",
                         Status = true
                     };
                 }
@@ -480,6 +478,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, null, null, family.Id, family.UserId
                     , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
+                    await Process_FailedInsuranceIndividualPayment_ScheduledPaument(insuranceProfile, family,null);
                 }
                 else if(!(insuranceProfile.InsurancePayeeId is null))
                 {
@@ -487,17 +486,16 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, payee.Id, null, null, payee.UserId.Value
                     , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
+                    await Process_FailedInsuranceIndividualPayment_ScheduledPaument(insuranceProfile, null,payee);
                 }
                 else
                 {
-                    _insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
+                    //_insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
                     var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, null, insuranceProfile.UserId.Value
                     , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
+                    await Process_FailedInsuranceIndividualPayment_ScheduledPaument(insuranceProfile, null,null);
                 }
-
-                insuranceProfile.PendingJobId = null; insuranceProfile.SubscriptionStatus = false;
-                insuranceProfile.ActiveStatus = false;
                 _repoWrapper.InsuranceProfile.Update(insuranceProfile);
                 await _repoWrapper.InsuranceProfile.Save();
                 BackgroundJob.Delete(jobId);
@@ -537,6 +535,78 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await _repoWrapper.Save();
         }
 
+        private async Task Process_FailedInsuranceIndividualPayment_ScheduledPaument(InsuranceUserProfile insuranceUserProfile, FamilyProfile family,InsuranceUserProfile payee)
+        {
+            // If debit retries is less than 11 times Schedule debit for next four hours
+            if (insuranceUserProfile.FailedScheduledPaymentRetry is null || insuranceUserProfile.FailedScheduledPaymentRetry < 11)
+            {
+                insuranceUserProfile.PendingEmailJobId = null;
+                
+                if(insuranceUserProfile.FailedScheduledPaymentRetry is null || insuranceUserProfile.FailedScheduledPaymentRetry < 4)
+                {
+                    Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, false);
+                    insuranceUserProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(0,insuranceUserProfile.Id, null), DateTime.Now.AddMinutes(double.Parse("5")));
+                    insuranceUserProfile.FailedScheduledPaymentRetry = insuranceUserProfile.FailedScheduledPaymentRetry.HasValue ? insuranceUserProfile.FailedScheduledPaymentRetry += 1 : 1;
+                }
+                else if(insuranceUserProfile.FailedScheduledPaymentRetry > 3 && insuranceUserProfile.FailedScheduledPaymentRetry < 7)
+                {
+                    Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, false);
+                    insuranceUserProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(0, insuranceUserProfile.Id, null), DateTime.Now.AddMinutes(double.Parse("5")));
+                    insuranceUserProfile.FailedScheduledPaymentRetry = insuranceUserProfile.FailedScheduledPaymentRetry.HasValue ? insuranceUserProfile.FailedScheduledPaymentRetry += 1 : 1;
+                }
+                else
+                {
+                    insuranceUserProfile.PendingEmailJobId = null; insuranceUserProfile.ActiveStatus = false; insuranceUserProfile.SubscriptionStatus = false;
+                    insuranceUserProfile.PendingJobId = null;
+                    insuranceUserProfile.FailedScheduledPaymentRetry = null;
+                    Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, true);
+                }
+                _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+                await _repoWrapper.Save();               
+            }
+        }
+
+        private void  Process_FailedInsuranceIndividualPaument_Email(InsuranceUserProfile insuranceProfile, FamilyProfile family, InsuranceUserProfile payee, bool deactivate)
+        {
+            if (!(insuranceProfile.FamilyProfileId is null))
+            {
+                if (deactivate)
+                {
+                    _emailSender.HealthInsuredDeactivationNotification(family.Email, "Deactivation Notification", family.FullName, $"{insuranceProfile.Othernames} {insuranceProfile.Surname}",
+                        insuranceProfile.Premium.ToString());
+                }
+                else
+                {
+                    _emailSender.HealthInsuredFailedDebitNotification(family.Email, "Failed Debit Notificaion", family.FullName, $"{insuranceProfile.Othernames} {insuranceProfile.Surname}", 
+                        insuranceProfile.Premium.ToString());
+                }
+            }
+            else if (!(insuranceProfile.InsurancePayeeId is null))
+            {
+                if (deactivate)
+                {
+                    _emailSender.HealthInsuredDeactivationNotification(payee.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", $"{insuranceProfile.Othernames} {insuranceProfile.Surname}",
+                    insuranceProfile.Premium.ToString());
+                }
+                else
+                {
+                    _emailSender.HealthInsuredFailedDebitNotification(payee.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", $"{insuranceProfile.Othernames} {insuranceProfile.Surname}",
+                    insuranceProfile.Premium.ToString());
+                }
+            }
+            else
+            {
+                if (deactivate)
+                {
+                    _emailSender.HealthInsuredDeactivationNotification(insuranceProfile.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", "your", insuranceProfile.Premium.ToString());
+                }
+                else
+                {
+                    _emailSender.HealthInsuredFailedDebitNotification(insuranceProfile.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", "your", insuranceProfile.Premium.ToString());
+                }
+            }
+        }
+
         /// <summary>
         /// method to cancel individual users subcription
         /// </summary>
@@ -546,6 +616,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         public async Task<ResponseMessage> CancelSubscription(int userId, string reason)
         {
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (insuranceProfile.InsurancePayeeId != null)
+            {
+                return new ResponseMessage { Status = true, Message = "Please Contact Payee To Cancel Subscription!" };
+            }
             return await ProcessCancelSubscription(insuranceProfile);
         }
 
@@ -583,10 +657,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 return await ProcessScheduledReactivationFlow(insuranceProfile, insuranceProfile.EndActiveStatusDate);
             }
         }
-
-        #endregion
-
-        #region Family Payment Flow After Card Tokenization
 
         /// <summary>
         /// This is used to process card tokenization for family profiles.
@@ -770,10 +840,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         {
             return await ProcessCancelSubscription(insuranceProfile);
         }
-
-        #endregion
-
-        #region "Corporate Payment Flow After Card Tokenization"
 
         /// <summary>
         /// This is used to process card tokenization for corporate org.This method process the charge amount and process api Request that would be
@@ -1073,9 +1139,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await Task.CompletedTask;
         }
 
-        #endregion
-
-        #region Payment To HealthInsurance Providers Obsolute in A month time 10/12/2021
+        // Payment To HealthInsurance Providers Obsolute in A month time 10/12/2021
 
         [AutomaticRetry(Attempts = 0)]
         public async Task ProcessHygeiaHMOPayment(string fromAccount, string toAccount, decimal? amount, string getJobId, PerformContext context)
@@ -1091,160 +1155,152 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await Task.CompletedTask;
         }
 
-        #endregion
-
-        #region Card Management
-
-            /// <summary>
-            /// Service to change primary card
-            /// </summary>
-            /// <param name="newCardId"></param>
-            /// <param name="userId"></param>
-            /// <param name="ipAddress"></param>
-            /// <param name="device"></param>
-            /// <returns></returns>
-            public async Task<ResponseMessage> ChangePrimaryCard(int newCardId, int userId)
-            {
-                var presentPrimaryCard = await _repoWrapper.Card.GetPrimaryCard(userId);
-                if (presentPrimaryCard == null)
-                {
-                    return new ResponseMessage { Message = "You dont have a debit card, Kindly add one" };
-                }
-
-                var newPrimaryCard = await _repoWrapper.Card.GetCardByIdAsync(newCardId, userId);
-                if (newPrimaryCard == null)
-                {
-                    return new ResponseMessage { Message = "Card was not found", ResponseCode = 12 };
-                }
-                if (newPrimaryCard.Status == (int)DebitCard_StatusValue.primary)
-                {
-                    return new ResponseMessage { Message = "This card is presently the primary card" };
-                }
-                presentPrimaryCard.Status = (int)DebitCard_StatusValue.secondary;
-                _repoWrapper.Card.Update(presentPrimaryCard);
-                newPrimaryCard.Status = (int)DebitCard_StatusValue.primary;
-                _repoWrapper.Card.Update(newPrimaryCard);
-
-                if (newPrimaryCard.InsuranceUserProfileId != null)
-                {
-                    var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-                    var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                }
-                else if (newPrimaryCard.CompanyProfileId != null)
-                {
-                    var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-                    var activityLog = new ActivityLog(null, companyProfile.Id, null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                }
-                else
-                {
-                    var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
-                    var activityLog = new ActivityLog(null, null, familyProfile.Id, "Change Primary Card", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                }
-
-                await _repoWrapper.Save();
-                return new ResponseMessage { Message = "Primary card was changed successfully", Status = true };
-            }
-
-            /// <summary>
-            /// Service to delete debit card
-            /// </summary>
-            /// <param name="cardId"></param>
-            /// <param name="userId"></param>
-            /// <param name="ipAddress"></param>
-            /// <param name="device"></param>
-            /// <returns></returns>
-            public async Task<ResponseMessage> DeleteCard(int cardId, int userId)
-            {
-                var card = await _repoWrapper.Card.GetCardByIdAsync(cardId, userId);
-                bool isCardDeletable = false;
-                if (card == null) return new ResponseMessage { Message = "Card  was not found", ResponseCode = 12 };
-
-                if (card.InsuranceUserProfileId != null)
-                {
-                    var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-                    if (card.Status == (int)DebitCard_StatusValue.primary && insuranceProfile.SubscriptionStatus == true)
-                    {
-                        isCardDeletable = true;
-                        var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
-                        _repoWrapper.ActivityLog.Create(activityLog);
-                    }
-                }
-                else if (card.CompanyProfileId != null)
-                {
-                    var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-                    if (card.Status == (int)DebitCard_StatusValue.primary)
-                    {
-                        isCardDeletable = true;
-                        var activityLog = new ActivityLog(null, companyProfile.Id, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
-                        _repoWrapper.ActivityLog.Create(activityLog);
-                    }
-                }
-                else
-                {
-                    var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
-                    if (card.Status == (int)DebitCard_StatusValue.primary)
-                    {
-                        isCardDeletable = true;
-                        var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
-                        _repoWrapper.ActivityLog.Create(activityLog);
-                    }
-                }
-
-                if (isCardDeletable)
-                {
-                    _repoWrapper.Card.Delete(card);
-                    await _repoWrapper.Save();
-                    return new ResponseMessage { Message = "Card was deleted successfully", Status = true };
-                }
-                else
-                {
-                    return new ResponseMessage
-                    {
-                        Message = "Kindly set a new card as" +
-                      "primary card to delete present primary card"
-                    };
-                }
-            }
-
-            /// <summary>
-            /// Fetch debit card
-            /// </summary>
-            /// <param name="userId"></param>
-            /// <returns></returns>
-            public async Task<ResponseMessage> GetCards(int userId,string email)
+        /// <summary>
+        /// Service to change primary card
+        /// </summary>
+        /// <param name="newCardId"></param>
+        /// <param name="userId"></param>
+        /// <param name="ipAddress"></param>
+        /// <param name="device"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> ChangePrimaryCard(int newCardId, int userId)
         {
-            var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,email);
-            List<DebitCard> debitCard = new List<DebitCard>();
-            if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
+            var presentPrimaryCard = await _repoWrapper.Card.GetPrimaryCard(userId);
+            if (presentPrimaryCard == null)
             {
-                var individualInsuranceUser = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-                debitCard = individualInsuranceUser.Cards;
+                return new ResponseMessage { Message = "You dont have a debit card, Kindly add one" };
             }
-            else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Corporate)
+
+            var newPrimaryCard = await _repoWrapper.Card.GetCardByIdAsync(newCardId, userId);
+            if (newPrimaryCard == null)
             {
-                var coporateInsuranceUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-                debitCard = coporateInsuranceUser.Cards;
+                return new ResponseMessage { Message = "Card was not found", ResponseCode = 12 };
+            }
+            if (newPrimaryCard.Status == (int)DebitCard_StatusValue.primary)
+            {
+                return new ResponseMessage { Message = "This card is presently the primary card" };
+            }
+            presentPrimaryCard.Status = (int)DebitCard_StatusValue.secondary;
+            _repoWrapper.Card.Update(presentPrimaryCard);
+            newPrimaryCard.Status = (int)DebitCard_StatusValue.primary;
+            _repoWrapper.Card.Update(newPrimaryCard);
+
+            if (newPrimaryCard.InsuranceUserProfileId != null)
+            {
+                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+                var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
+                _repoWrapper.ActivityLog.Create(activityLog);
+            }
+            else if (newPrimaryCard.CompanyProfileId != null)
+            {
+                var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
+                var activityLog = new ActivityLog(null, companyProfile.Id, null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
+                _repoWrapper.ActivityLog.Create(activityLog);
             }
             else
             {
                 var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
-                debitCard = familyProfile.Cards;
+                var activityLog = new ActivityLog(null, null, familyProfile.Id, "Change Primary Card", ServiceNames.HealthInsured.ToString());
+                _repoWrapper.ActivityLog.Create(activityLog);
             }
-            if (debitCard.Count > 0)
-            {
-                var cardDTO = _mapper.Map<List<DebitCard>, List<CardDTO>>(debitCard);
-                return new ResponseMessage { Data = cardDTO, Status = true, Message = "Card was fetched successfully" };
-            }
-            var emptyCardDTO = new List<CardDTO>();
-            return new ResponseMessage { Data = emptyCardDTO, Message = "User has no card, Kindly add a card", Status = true };
+
+            await _repoWrapper.Save();
+            return new ResponseMessage { Message = "Primary card was changed successfully", Status = true };
         }
 
-        #endregion
+        /// <summary>
+        /// Service to delete debit card
+        /// </summary>
+        /// <param name="cardId"></param>
+        /// <param name="userId"></param>
+        /// <param name="ipAddress"></param>
+        /// <param name="device"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> DeleteCard(int cardId, int userId)
+        {
+            var card = await _repoWrapper.Card.GetCardByIdAsync(cardId, userId);
+            bool isCardDeletable = false;
+            if (card == null) return new ResponseMessage { Message = "Card  was not found", ResponseCode = 12 };
 
-        #region
+            if (card.InsuranceUserProfileId != null)
+            {
+                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+                if (card.Status == (int)DebitCard_StatusValue.primary && insuranceProfile.SubscriptionStatus == true)
+                {
+                    isCardDeletable = true;
+                    var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
+                    _repoWrapper.ActivityLog.Create(activityLog);
+                }
+            }
+            else if (card.CompanyProfileId != null)
+            {
+                var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
+                if (card.Status == (int)DebitCard_StatusValue.primary)
+                {
+                    isCardDeletable = true;
+                    var activityLog = new ActivityLog(null, companyProfile.Id, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
+                    _repoWrapper.ActivityLog.Create(activityLog);
+                }
+            }
+            else
+            {
+                var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
+                if (card.Status == (int)DebitCard_StatusValue.primary)
+                {
+                    isCardDeletable = true;
+                    var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
+                    _repoWrapper.ActivityLog.Create(activityLog);
+                }
+            }
+
+            if (isCardDeletable)
+            {
+                _repoWrapper.Card.Delete(card);
+                await _repoWrapper.Save();
+                return new ResponseMessage { Message = "Card was deleted successfully", Status = true };
+            }
+            else
+            {
+                return new ResponseMessage
+                {
+                    Message = "Kindly set a new card as" +
+                    "primary card to delete present primary card"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Fetch debit card
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> GetCards(int userId,string email)
+    {
+        var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,email);
+        List<DebitCard> debitCard = new List<DebitCard>();
+        if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
+        {
+            var individualInsuranceUser = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            debitCard = individualInsuranceUser.Cards;
+        }
+        else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Corporate)
+        {
+            var coporateInsuranceUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
+            debitCard = coporateInsuranceUser.Cards;
+        }
+        else
+        {
+            var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
+            debitCard = familyProfile.Cards;
+        }
+        if (debitCard.Count > 0)
+        {
+            var cardDTO = _mapper.Map<List<DebitCard>, List<CardDTO>>(debitCard);
+            return new ResponseMessage { Data = cardDTO, Status = true, Message = "Card was fetched successfully" };
+        }
+        var emptyCardDTO = new List<CardDTO>();
+        return new ResponseMessage { Data = emptyCardDTO, Message = "User has no card, Kindly add a card", Status = true };
+    }
 
         public async Task<ResponseMessage> DeactivateReferee(int userId, int refereeInsuranceId)
         {
@@ -1308,7 +1364,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             return new ResponseMessage { Message = "Insurance profile does not exist under your family profile!" };
         }
-        #endregion
+
         public async Task<ResponseMessage> ProcessNotSuccessfulPaystackChargeCardResponse(PaymentReference paymentReference,TokenizationResponse chargeCardResponse)
         {
             // If charge card response request for OTP
@@ -1351,6 +1407,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 ResponseCode = chargeCardResponse.ResponseCode
             };
         }
+
         public async Task<ResponseMessage> SubmitOtp(SetOtpViewModel otpViewModel, int id)
         {
             var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id,null);
@@ -1381,6 +1438,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
         }
+
         private async Task<ResponseMessage> ProcessCancelSubscription(InsuranceUserProfile insuranceProfile)
         {
             if (insuranceProfile.SubscriptionStatus == false || insuranceProfile.SubscriptionStatus is null)
@@ -1557,6 +1615,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             return new ResponseMessage { Message = chargeAuthorization.Message, Status =false, ResponseCode = chargeAuthorization.ResponseCode };
         }
+
         private async Task Process_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
         {
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);

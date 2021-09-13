@@ -134,11 +134,19 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(healthFinance.Email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-        public void HealthInsuredFailedDebit(string email, string subject, string userName,string premium)
+        public void HealthInsuredFailedDebitNotification(string email, string subject, string userName,string info, string premium)
         {
-            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\faileddebit.html";
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\faileddebit_notification.html";
             string html = System.IO.File.ReadAllText(path);
-            var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium).Replace("BaseUrl", BaseUrl);
+            var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium).Replace("Info", info).Replace("BaseUrl", BaseUrl);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            EmailRequest(emailRequest);
+        }
+        public void HealthInsuredDeactivationNotification(string email, string subject, string userName,string premium,string info)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\deactivation_notification.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium).Replace("Info",info).Replace("BaseUrl", BaseUrl);
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }

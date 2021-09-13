@@ -455,9 +455,8 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     _emailSender.RefreeInvitation(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}");
                     return new ResponseMessage
                     {
-                        Message = "Invite was sent successfully. User would be activated immediately after sign up and profile creation." +
-                        "User is entitled to a one month free cycle. User insurance debit would occur on your debit card and" +
-                        "you can cancel anytime you want",
+                        Message = "Invite was sent successfully. User would be activated immediately after sign up/profile creation" +
+                        "with a one month free cycle.",
                         Status= true
                     };
                 }
@@ -492,9 +491,9 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             _emailSender.HealthInsuredSubscriptionMail(email, "Active Free Trial", userName, enroleeNumber, healthCareProvider,plan);
         }
 
-        public void SendEmailOnFailedDebit(string email, string userName, string premium)
+        public void SendEmailOnFailedDebit(string email, string userName, string premium,string info)
         {
-            _emailSender.HealthInsuredFailedDebit(email, "Failed Transaction", userName, premium);
+            _emailSender.HealthInsuredDeactivationNotification(email, "Failed Transaction", userName, premium,info);
         }
 
         public void SendCompanyEmailOnFailedDebit(string email, string userName, string premium, string stopDate)
