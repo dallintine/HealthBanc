@@ -277,10 +277,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
+                int cardStatus;
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
                 //else, card status is 0;
-                var cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                if (!(insuranceUserProfile.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary))) cardStatus = (int)DebitCard_StatusValue.primary;
+
+                cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
 
                 var debitCard = new DebitCard(insuranceUserProfile.UserId.Value, insuranceUserProfile.Id, null, null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
@@ -775,7 +778,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await Task.CompletedTask;
         }
 
-        private async Task SendInsuranceListToInsuranceProvider(List<InsuranceUserProfile> insuranceUserProfiles)
+        public async Task SendInsuranceListToInsuranceProvider(List<InsuranceUserProfile> insuranceUserProfiles)
         {
             foreach (var insuranceUserProfile in insuranceUserProfiles)
             {
@@ -1233,7 +1236,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if (card.InsuranceUserProfileId != null)
             {
                 var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-                if (card.Status == (int)DebitCard_StatusValue.primary && insuranceProfile.SubscriptionStatus == true)
+                if ((card.Status == (int)DebitCard_StatusValue.primary && insuranceProfile.SubscriptionStatus == true) || card.Status == (int)DebitCard_StatusValue.secondary)
                 {
                     isCardDeletable = true;
                     var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
@@ -1243,7 +1246,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             else if (card.CompanyProfileId != null)
             {
                 var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-                if (card.Status == (int)DebitCard_StatusValue.primary)
+                if (card.Status == (int)DebitCard_StatusValue.secondary)
                 {
                     isCardDeletable = true;
                     var activityLog = new ActivityLog(null, companyProfile.Id, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
@@ -1253,7 +1256,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             else
             {
                 var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
-                if (card.Status == (int)DebitCard_StatusValue.primary)
+                if (card.Status == (int)DebitCard_StatusValue.secondary)
                 {
                     isCardDeletable = true;
                     var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
