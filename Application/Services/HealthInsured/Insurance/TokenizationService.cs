@@ -781,6 +781,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 await SendDetailsToInsuranceProvider(insuranceUserProfile);
             }
+            await Task.CompletedTask;
         }
 
         /// <summary>
