@@ -378,8 +378,8 @@ namespace Application.Services.Paystack
                         return processStatusResponse;
                     }
                 }
-                var message = phoneResponse.data.message ?? "";
-                return new TokenizationResponse { Message = phoneResponse.message + ", " + message, Status = false };
+                _logger.LogWarning(apiResponse, phoneResponse.ToString());
+                return new TokenizationResponse { Message = phoneResponse.message, Status = false };
             }
             var errorMessage = phoneResponse.data.message ?? "";
             return new TokenizationResponse { Message = phoneResponse.message + ", " + errorMessage, Status = false };
