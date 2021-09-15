@@ -61,6 +61,7 @@ namespace Application.Services.HealthInsured
 
             if (@event == "charge.success")
             {
+                _logger.LogCritical("Successful paystack webhook Charge");
                 var status = "";
 
                 var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
@@ -91,38 +92,7 @@ namespace Application.Services.HealthInsured
                     await _repoWrapper.Save();
                     await ValidateWebHookSuccesfulInsurancePayment(insuranceProfile, null, null, reference, authorization_code, last4, card_type, amount, status);
                 }
-                else if (insuranceProfile is null)
-                {
-                    var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
-                    if (companyProfile != null)
-                    {
-                        _logger.LogCritical("Process for company");
-                        var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
-                        if (paymentReference != null)
-                        {
-                            if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
-                            {
-                                status = PaymentReference_StatusValue.Send_Url.ToString();
-                            }
-                            paymentReference.Amount = decimal.Parse(amount);
-                            paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
-                            _repoWrapper.PaymentReference.Update(paymentReference);
-                        }
-                        else
-                        {
-                            // Create payment reference for the charge.
-                            var channel = companyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
-                                : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
-
-                            var paymentReference2 = new PaymentReference(channel, reference, null, companyProfile.Id, null, companyProfile.UserId
-                            , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
-                            _repoWrapper.PaymentReference.Create(paymentReference2);
-                        }
-                        await _repoWrapper.Save();
-                        await ValidateWebHookSuccesfulInsurancePayment(null, companyProfile, null, reference, authorization_code, last4, card_type, amount, status);
-                    }
-                }
-                else
+                else 
                 {
                     var familyProfile = await _repoWrapper.FamilyProfile.GetByEmail(email);
                     if (familyProfile != null)
@@ -152,6 +122,37 @@ namespace Application.Services.HealthInsured
                         await _repoWrapper.Save();
                         await ValidateWebHookSuccesfulInsurancePayment(null, null, familyProfile, reference, authorization_code, last4, card_type, amount, status);
                     }
+                    else
+                    {
+                        var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
+                        if (companyProfile != null)
+                        {
+                            _logger.LogCritical("Process for company");
+                            var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
+                            if (paymentReference != null)
+                            {
+                                if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
+                                {
+                                    status = PaymentReference_StatusValue.Send_Url.ToString();
+                                }
+                                paymentReference.Amount = decimal.Parse(amount);
+                                paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
+                                _repoWrapper.PaymentReference.Update(paymentReference);
+                            }
+                            else
+                            {
+                                // Create payment reference for the charge.
+                                var channel = companyProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
+                                    : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
+                                var paymentReference2 = new PaymentReference(channel, reference, null, companyProfile.Id, null, companyProfile.UserId
+                                , decimal.Parse(amount), PaymentReference_StatusValue.Successful.ToString());
+                                _repoWrapper.PaymentReference.Create(paymentReference2);
+                            }
+                            await _repoWrapper.Save();
+                            await ValidateWebHookSuccesfulInsurancePayment(null, companyProfile, null, reference, authorization_code, last4, card_type, amount, status);
+                        }
+                    }                    
                 }
             }
             await Task.CompletedTask;
