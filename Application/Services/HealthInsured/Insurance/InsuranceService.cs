@@ -269,21 +269,21 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                         Message = "Profile completion state was fetched successfully"
                     };
                 }
-                // if user is a referee dat was paid with full details
-                var usedProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId.Value);
-                if (usedProfile != null)
-                {
-                    if (usedProfile.ContactAddress != null)
-                    {
-                        var individualProfileState = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, true, true, true, usedProfile.InsuranceService);
-                        return new ResponseMessage<HealthInsuredProfileStateDTO>
-                        {
-                            Data = individualProfileState,
-                            Status = true,
-                            Message = "Profile completion state was fetched successfully"
-                        };
-                    }                   
-                }
+                //// if user is a referee dat was paid with full details
+                //var usedProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId.Value);
+                //if (usedProfile != null)
+                //{
+                //    if (usedProfile.ContactAddress != null)
+                //    {
+                //        var individualProfileState = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, true, true, true, usedProfile.InsuranceService);
+                //        return new ResponseMessage<HealthInsuredProfileStateDTO>
+                //        {
+                //            Data = individualProfileState,
+                //            Status = true,
+                //            Message = "Profile completion state was fetched successfully"
+                //        };
+                //    }                   
+                //}
             }
             if(email != null)
             {

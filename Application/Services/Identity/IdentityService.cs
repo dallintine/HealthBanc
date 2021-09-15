@@ -422,6 +422,7 @@ namespace Application.Services.Identity
                     {
                         var completionProfile = new InsuranceCompletionProfile(user.Id, true, true, insuranceProfile.InsuranceService);
                         _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
+                        await _repoWrapper.Save();
                     }
                 }                
             }
