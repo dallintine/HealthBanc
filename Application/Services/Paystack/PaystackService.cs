@@ -41,7 +41,7 @@ namespace Application.Services.Paystack
             Options = paystackAccessor.Value;
         }
         
-        public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard, int id)
+        public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard, int id,string phoneNumber,DateTime dateofBirth)
         {
             // Call Paystack client
             var httpClient = _httpClientFactory.CreateClient("Paystack");
@@ -73,19 +73,9 @@ namespace Application.Services.Paystack
                     // check if sucess is neither failes, success or timeout means response code is 13
                     else
                     {
-                        var user = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(id);
-
-                        if(user is null)
-                        {
-                            user = new InsuranceUserProfile
-                            {
-                                PhoneNumber = "",
-                                DateOfBirth = DateTime.Now
-                            };
-                        }
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
-                        var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber
-                            , user.DateOfBirth,chargeCard.pin);
+                        var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, phoneNumber
+                            , dateofBirth,chargeCard.pin);
                         //Check if reposne is open_url
                         if(processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
                         {

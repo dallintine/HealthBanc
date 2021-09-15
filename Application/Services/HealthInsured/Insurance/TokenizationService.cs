@@ -248,7 +248,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _repoWrapper.Save();
 
                 // Call Paystack service to charge user card
-                var chargeCardResponse = await _paystackService.ChargeCard(card, id);
+                var chargeCardResponse = await _paystackService.ChargeCard(card, id,insuranceProfile.PhoneNumber,insuranceProfile.DateOfBirth);
 
                 // function to process response from paystack
                 return await ProcessPaystackChargeCardResponse(chargeCardResponse, insuranceProfile, checkprofileComplete
@@ -698,7 +698,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     await _repoWrapper.Save();
 
                     // Paystack service to charge user card
-                    var chargeCardResponse = await _paystackService.ChargeCard(card, id);
+                    var chargeCardResponse = await _paystackService.ChargeCard(card, id,familyProfile.PhoneNumber,familyProfile.DateCreated);
 
                     // function to process response from paystack
                     return await ProcessPaystackChargeCardResponse(chargeCardResponse, familyProfile, paymentReference, card.reference);
@@ -898,7 +898,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     await _repoWrapper.Save();
 
                     // Paystack service to charge user card
-                    var chargeCardResponse = await _paystackService.ChargeCard(card, id);
+                    var chargeCardResponse = await _paystackService.ChargeCard(card, id,companyProfile.PhoneNumber,DateTime.Now);
 
                     // function to process response from paystack
                     return await ProcessPaystackChargeCardResponse(chargeCardResponse, companyProfile, paymentReference, card.reference);
