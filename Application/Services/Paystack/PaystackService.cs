@@ -381,8 +381,8 @@ namespace Application.Services.Paystack
                 _logger.LogWarning(apiResponse, phoneResponse.ToString());
                 return new TokenizationResponse { Message = phoneResponse.message, Status = false };
             }
-            var errorMessage = phoneResponse.data.message ?? "";
-            return new TokenizationResponse { Message = phoneResponse.message + ", " + errorMessage, Status = false };
+            //var errorMessage = phoneResponse.data.message ?? "";
+            return new TokenizationResponse { Message = phoneResponse.message, Status = false };
         }
         public async Task<TokenizationResponse> VerifyTransaction(string reference)
         {
