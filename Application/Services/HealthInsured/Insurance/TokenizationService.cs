@@ -763,17 +763,24 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 insuranceUserProfile.PendingJobId = ProcessScheduledPayment(insuranceUserProfile);
 
                 insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString())
-                ? _uniqueIdentifier.GetUniqueCode(10) : "";
+                ? _uniqueIdentifier.GetUniqueCode(10) : "Pending";
                 insuranceUserProfile.SubscriptionStatus = true;
                 insuranceUserProfile.ActiveStatus = true;
                 insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
 
                 _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 await _repoWrapper.Save();
+            }
+            BackgroundJob.Enqueue(() => SendInsuranceListToInsuranceProvider(insuranceProfiles));
+            await Task.CompletedTask;
+        }
 
+        private async Task SendInsuranceListToInsuranceProvider(List<InsuranceUserProfile> insuranceUserProfiles)
+        {
+            foreach (var insuranceUserProfile in insuranceUserProfiles)
+            {
                 await SendDetailsToInsuranceProvider(insuranceUserProfile);
-            } 
-
+            }
         }
 
         /// <summary>
