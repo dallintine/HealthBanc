@@ -277,13 +277,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
-                int cardStatus;
+                int cardStatus = 0;
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
                 //else, card status is 0;
-                if (!(insuranceUserProfile.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary))) cardStatus = (int)DebitCard_StatusValue.primary;
-
-                cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                if (!(insuranceUserProfile.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)) || insuranceUserProfile.Cards.Count == 0)
+                {
+                    cardStatus = (int)DebitCard_StatusValue.primary;
+                }
 
                 var debitCard = new DebitCard(insuranceUserProfile.UserId.Value, insuranceUserProfile.Id, null, null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
@@ -716,11 +717,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
+                int cardStatus = 0;
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
                 //else, card status is 0;
-
-                var cardStatus = familyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                if (!(familyProfile.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)) || familyProfile.Cards.Count == 0)
+                {
+                    cardStatus = (int)DebitCard_StatusValue.primary;
+                }
 
                 var debitCard = new DebitCard(familyProfile.UserId, null, null, familyProfile.Id, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);
@@ -939,11 +943,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
+                int cardStatus = 0;
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
                 //else, card status is 0;
-
-                var cardStatus = companyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                if (!(companyProfile.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)) || companyProfile.Cards.Count == 0)
+                {
+                    cardStatus = (int)DebitCard_StatusValue.primary;
+                }
 
                 var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, null, cardStatus, chargeCardResponse.LastDigit, chargeCardResponse.Type
                     , cardReference, chargeCardResponse.AuthorizationCode);

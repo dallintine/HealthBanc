@@ -170,7 +170,12 @@ namespace Application.Services.HealthInsured
             {
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
-                    int cardStatus = insuranceUserProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                    int cardStatus = 0;
+                    if (!(insuranceUserProfile.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)) || insuranceUserProfile.Cards.Count == 0)
+                    {
+                        cardStatus = (int)DebitCard_StatusValue.primary;
+                    }
+
                     var debitCard = new DebitCard(insuranceUserProfile.UserId.Value, insuranceUserProfile.Id, null, null, cardStatus, last4, card_type
                     , reference, authorization_code);
                     _repoWrapper.Card.Create(debitCard);
@@ -186,7 +191,12 @@ namespace Application.Services.HealthInsured
             {
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
-                    int cardStatus = companyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                    int cardStatus = 0;
+                    if (!(companyProfile.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)) || companyProfile.Cards.Count == 0)
+                    {
+                        cardStatus = (int)DebitCard_StatusValue.primary;
+                    }
+
                     var debitCard = new DebitCard(companyProfile.UserId, null, companyProfile.Id, null, cardStatus, last4, card_type
                     , reference, authorization_code);
                     _repoWrapper.Card.Create(debitCard);
@@ -203,7 +213,12 @@ namespace Application.Services.HealthInsured
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
                     _logger.LogCritical("Hit Card Processor");
-                    int cardStatus = familyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
+                    int cardStatus = 0;
+                    if (!(familyProfile.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)) || familyProfile.Cards.Count == 0)
+                    {
+                        cardStatus = (int)DebitCard_StatusValue.primary;
+                    }
+
                     var debitCard = new DebitCard(familyProfile.UserId, null, null, familyProfile.Id, cardStatus, last4, card_type
                     , reference, authorization_code);
                     _repoWrapper.Card.Create(debitCard);
