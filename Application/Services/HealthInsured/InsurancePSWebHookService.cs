@@ -161,6 +161,7 @@ namespace Application.Services.HealthInsured
         private async Task ValidateWebHookSuccesfulInsurancePayment(InsuranceUserProfile insuranceUserProfile, CompanyProfile companyProfile, FamilyProfile familyProfile,
             string reference, string authorization_code, string last4, string card_type, string amount, string status)
         {
+            _logger.LogCritical($"Hit Card Status Processor {status}");
             if (!(insuranceUserProfile is null))
             {
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
@@ -197,6 +198,7 @@ namespace Application.Services.HealthInsured
             {
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
                 {
+                    _logger.LogCritical("Hit Card Processor");
                     int cardStatus = familyProfile.Cards.Count == 0 ? (int)DebitCard_StatusValue.primary : (int)DebitCard_StatusValue.secondary;
                     var debitCard = new DebitCard(familyProfile.UserId, null, null, familyProfile.Id, cardStatus, last4, card_type
                     , reference, authorization_code);
