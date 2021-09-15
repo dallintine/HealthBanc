@@ -413,10 +413,16 @@ namespace Application.Services.Identity
                     insuranceProfile.UserId = user.Id;
                     var newServiceString = user.ServiceUsed + ServiceNames.HealthInsured.ToString();
                     user.ServiceUsed = newServiceString;
-                  
+
                     _repoWrapper.ApplicationUser.Update(user);
                     _repoWrapper.InsuranceProfile.Update(insuranceProfile);
                     await _repoWrapper.Save();
+
+                    if(insuranceProfile.ContactAddress != null)
+                    {
+                        var completionProfile = new InsuranceCompletionProfile(user.Id, true, true, insuranceProfile.InsuranceService);
+                        _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
+                    }
                 }                
             }
             await Task.CompletedTask;

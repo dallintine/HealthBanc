@@ -370,7 +370,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                         insuranceProfile.Surname,insuranceProfile.TransId,insuranceProfile.CareProviderName,insuranceProfile.PlanCode);
                     return new ResponseMessage
                     {
-                        Message = $"{refereeViewModel.FirstName} has been activated is entitled to a one month free cycle. {refereeViewModel.FirstName} can sign up with {refereeViewModel.Email} to access his/her dashboard",
+                        Message = $"{refereeViewModel.FirstName} has been activated  and is entitled to a one month free cycle. {refereeViewModel.FirstName} can sign up with {refereeViewModel.Email} to access his/her dashboard",
                         Status = true
                     };
                 }

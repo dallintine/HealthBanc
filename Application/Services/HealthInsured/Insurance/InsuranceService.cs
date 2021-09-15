@@ -455,7 +455,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     _emailSender.RefreeInvitation(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}");
                     return new ResponseMessage
                     {
-                        Message = "Invite was sent successfully. User would be activated immediately after sign up/profile creation" +
+                        Message = "Invite was sent successfully. User would be activated immediately after sign up/profile creation " +
                         "with a one month free cycle.",
                         Status= true
                     };
