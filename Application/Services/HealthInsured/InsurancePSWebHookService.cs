@@ -66,6 +66,7 @@ namespace Application.Services.HealthInsured
                 var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
                 if (insuranceProfile != null)
                 {
+                    _logger.LogCritical("Process for insurance");
                     var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                     if (paymentReference != null)
                     {
@@ -95,6 +96,7 @@ namespace Application.Services.HealthInsured
                     var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
                     if (companyProfile != null)
                     {
+                        _logger.LogCritical("Process for company");
                         var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                         if (paymentReference != null)
                         {
@@ -125,6 +127,7 @@ namespace Application.Services.HealthInsured
                     var familyProfile = await _repoWrapper.FamilyProfile.GetByEmail(email);
                     if (familyProfile != null)
                     {
+                        _logger.LogCritical("Process for company");
                         var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                         if (paymentReference != null)
                         {
