@@ -730,8 +730,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     familyProfile.TokenizationCompleted = true;
                     _repoWrapper.FamilyProfile.Update(familyProfile);
-                    await FamilyMembersActivation(familyProfile);
-                    _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
+                    if (familyProfile.InsuranceUserProfiles.Any())
+                    {
+                        await FamilyMembersActivation(familyProfile);
+                        _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
+                    }
                 }
                 var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());
                 _repoWrapper.ActivityLog.Create(activityLog);
