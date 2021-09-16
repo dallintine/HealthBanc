@@ -64,11 +64,13 @@ namespace Application.Services.HealthInsured.Insurance
             {
                 return new ResponseMessage { Message = "Company profile with this email already exist" };
             }
+            var user = await _repoWrapper.ApplicationUser.FindByIdAsync(userId);
             var otp = _uniqueIdentifier.GetUniqueCode(6);
             company = new CompanyProfile
             {
                 OTPCode = otp,
                 UserId = userId,
+                PhoneNumber = user.PhoneNumber,
                 CompanyEmail = corporateRegViewModel.Email,
                 CompanyName = corporateRegViewModel.Name,
                 InsuranceService = corporateRegViewModel.InsuranceProvider.ToLower() == "hygeia" ? InsuranceProvider.Hygeia.ToString() : InsuranceProvider.Axamansard.ToString()

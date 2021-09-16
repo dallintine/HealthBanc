@@ -914,7 +914,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var paymentReference = new PaymentReference(channel, card.reference, null, companyProfile.Id, null, id, amount, PaymentReference_StatusValue.Pending.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
                     await _repoWrapper.Save();
-
+                    
+                    if(companyProfile.PhoneNumber is null)
+                    {
+                        var user = await _repoWrapper.ApplicationUser.FindByIdAsync(id);
+                        companyProfile.PhoneNumber = user.PhoneNumber;
+                    }
                     // Paystack service to charge user card
                     var chargeCardResponse = await _paystackService.ChargeCard(card, id,companyProfile.PhoneNumber,DateTime.Now);
 
@@ -967,7 +972,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _repoWrapper.Save();
 
                 /// We sleep the thread for 10 seconds so we can process the paystack webhook  <see cref="ProcessPaystackWebHook(string, string, string, string, string, string, string)"/>
-                Thread.Sleep(15000);
+                Thread.Sleep(20000);
 
                 return new ResponseMessage
                 {
@@ -1284,7 +1289,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 return new ResponseMessage
                 {
-                    Message = "Kindly set a new card as" +
+                    Message = "Kindly set a new card as " +
                     "primary card to delete present primary card"
                 };
             }
