@@ -23,7 +23,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
             get { return _companySubscribedStatus; }
             set
             {
-                if (Enum.IsDefined(typeof(InsuranceProfile_CompanySubStatusValue), value))
+                if (Enum.IsDefined(typeof(InsuranceProfile_CompanySubStatusValue), value) || value is null)
                 {
                     _companySubscribedStatus = value;
                 }
