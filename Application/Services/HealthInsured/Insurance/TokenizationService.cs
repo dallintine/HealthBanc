@@ -738,7 +738,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     if (familyProfile.InsuranceUserProfiles != null && familyProfile.InsuranceUserProfiles.Count > 0)
                     {
                         _logger.LogCritical("process insurance for family payment");
-                        FamilyMembersActivation(familyProfile).Wait();
+                        await FamilyMembersActivation(familyProfile);
                         _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
                     }
                 }
@@ -1457,7 +1457,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Family)
             {
-                var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(id);
+                var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(id);
                 var chargeCardResponse = await _paystackService.SendOtp(otpViewModel.otp, otpViewModel.reference, familyProfile.PhoneNumber
                        , DateTime.Now, otpViewModel.pin);
                 return await ProcessPaystackChargeCardResponse(chargeCardResponse, familyProfile, paymentReference, otpViewModel.reference);

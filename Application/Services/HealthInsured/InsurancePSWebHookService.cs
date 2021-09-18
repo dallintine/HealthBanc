@@ -97,7 +97,7 @@ namespace Application.Services.HealthInsured
                     var familyProfile = await _repoWrapper.FamilyProfile.GetByEmail(email);
                     if (familyProfile != null)
                     {
-                        _logger.LogCritical("Process for company");
+                        _logger.LogCritical("Process for family");
                         var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                         if (paymentReference != null)
                         {
