@@ -55,21 +55,25 @@ namespace Infrastructure.UploadService
 
                     for (int r = 2; r <= lastUsedColumn; r++)
                     {
-                        if (String.IsNullOrWhiteSpace(ws.Cells[r, 6].Value?.ToString()))
+                        if (String.IsNullOrWhiteSpace(ws.Cells[r, 6].Value?.ToString()) || String.IsNullOrWhiteSpace(ws.Cells[r, 7].Value?.ToString()) || String.IsNullOrWhiteSpace(ws.Cells[r, 8].Value?.ToString()))
                         {
                             continue;
                         }
                         var excelModel = new FileModel();
                         excelModel.FirstName = ws.Cells[r, 1].Value?.ToString();
-                        excelModel.LastName = ws.Cells[r, 2].Value?.ToString();
+                        excelModel.LastName = ws.Cells[r, 2].Value.ToString();
                         excelModel.Address = ws.Cells[r, 3].Value?.ToString();
                         excelModel.Gender = ws.Cells[r, 4].Value?.ToString();
-                        excelModel.DateOfBirth = ws.Cells[r, 5].GetValue<DateTime>().ToString();
-                        excelModel.Email = ws.Cells[r, 6].Value?.ToString();
-                        excelModel.PhoneNumber = ws.Cells[r, 7].Value?.ToString();
-                        excelModel.StateOfResidence = ws.Cells[r, 8].Value?.ToString();
-                        excelModel.TownOfResidence = ws.Cells[r, 9].Value?.ToString();
-                        excelModel.CareProviderName = ws.Cells[r, 10].Value?.ToString();
+                        int month = int.Parse(ws.Cells[r, 5].Value?.ToString());
+                        int day = int.Parse(ws.Cells[r, 6].Value?.ToString());
+                        int year = int.Parse(ws.Cells[r, 7].Value?.ToString());
+                        //excelModel.DateOfBirth = ws.Cells[r, 5].GetValue<DateTime>().ToString();
+                        excelModel.DateOfBirth = new DateTime(year, month, day).ToString();
+                        excelModel.Email = ws.Cells[r, 8].Value?.ToString();
+                        excelModel.PhoneNumber = ws.Cells[r, 9].Value?.ToString();
+                        excelModel.StateOfResidence = ws.Cells[r, 10].Value?.ToString();
+                        excelModel.TownOfResidence = ws.Cells[r, 11].Value?.ToString();
+                        excelModel.CareProviderName = ws.Cells[r, 12].Value?.ToString();
 
                         excelModels.Add(excelModel);
                     }
