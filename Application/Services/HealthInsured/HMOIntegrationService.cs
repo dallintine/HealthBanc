@@ -98,26 +98,59 @@ namespace Application.Services.HealthInsured
                         var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
                         if (authResponse.success)
                         {
-                            return new ResponseMessage { Status = true, Message = authResponse.message };
+                            return new ResponseMessage { Status = true, Message = authResponse.message , Data= authResponse.code};
                         }
                         _logger.LogError("Axamansard Unsuccessfully response : " + apiResponse, authResponse);
-                        //BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                        BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                         return new ResponseMessage { Status = false, Message = authResponse.message };
                     }
                     _logger.LogCritical(" Bad request when trying to register user to axamansard  : " + apiResponse);
-                    //BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                    BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                     return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }
-                //BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                 _logger.LogCritical("BadRequest Axamansard :" + bearerRequest.Message);
                 return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
             catch (Exception ex)
             {
                 _logger.LogCritical("An error occurred while enrolling user to axa-mansard" + " " + ex.ToString(), ex);
-                //BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
             }
+        }
+
+        public async Task<ResponseMessage> AxamansardDeactivateUser(string axamansardReference)
+        {
+            string entityCode = AxaAccessor.EntityCode;
+            var axaDeactivation = new AxaDeactivation(axamansardReference, entityCode);
+            var bearerRequest = await AxaMansardAuthentication();
+            if (bearerRequest.Status)
+            {
+                var httpClient = _httpClientFactory.CreateClient("AxaMansard");
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerRequest.Data.Auth_token);
+                HttpContent content = new StringContent(JsonConvert.SerializeObject(axaDeactivation), Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync($"{AxaAccessor.AxaMansardDeactivation}", content);
+                string apiResponse = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
+                    if (authResponse.success)
+                    {
+                        return new ResponseMessage { Status = true, Message = authResponse.message };
+                    }
+                    _logger.LogWarning("Axamansard Unsuccessfully Deactivation response : " + apiResponse, authResponse);
+                    BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
+                    return new ResponseMessage { Status = false, Message = authResponse.message };
+                }
+                _logger.LogWarning(" Bad request when trying to deactivate user to axamansard  : " + apiResponse);
+                BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
+                return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
+            }
+            BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
+            _logger.LogWarning("BadRequest Axamansard Deactivation :" + bearerRequest.Message);
+            return new ResponseMessage { Status = false, Message = bearerRequest.Message };
         }
 
         /// <summary>
@@ -307,7 +340,7 @@ namespace Application.Services.HealthInsured
                 return new ResponseMessage { Message = "User was previously deactivated", Status = false };
             }
             _logger.LogCritical(" Bad request when trying to deactivate user from hygeia  : " + apiResponse);
-            BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddMinutes(60));
+            BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddHours(6));
             return new ResponseMessage { Message = "Could not process Hygeia response", Status = false };
         }
        
@@ -339,11 +372,12 @@ namespace Application.Services.HealthInsured
             await Task.CompletedTask;
         }
 
-        public async Task EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
+        public async Task<ResponseMessage> EnrollUserToAxamansardOnOnboarding(InsuranceUserProfile insuranceUserProfile)
         {
             // Send user details to axamansard
 
             var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
+            enrollmentModel.EnrollmentNo = insuranceUserProfile.AxamasardReferenceCode ?? null;
             if (insuranceUserProfile.InsurancePayeeId != null)
             {
                 var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);
@@ -357,8 +391,9 @@ namespace Application.Services.HealthInsured
                     , enrollment.Message, InsuranceProvider.Axamansard.ToString());
                 _repoWrapper.EnrollmentOnOnboarding.Create(axaEnrollmentOnOnboarding);
                 await _repoWrapper.Save();
+                return new ResponseMessage { Status = false};
             }
-            await Task.CompletedTask;
+            return new ResponseMessage { Status = true,Data=enrollment.Data };
         }
 
         /// <summary>

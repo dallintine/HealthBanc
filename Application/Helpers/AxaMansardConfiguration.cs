@@ -14,5 +14,6 @@ namespace Application.Helpers
         public string AxaMansardBaseAddress { get; set; }
         public string AxaMansardEnrollement { get; set; }
         public string AxaMansardToken { get; set; }
+        public string AxaMansardDeactivation { get; set; }
     }
 }

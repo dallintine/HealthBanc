@@ -35,6 +35,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         }
         public int? FamilyProfileId { get; set; }
         public int? InsurancePayeeId { get; set; }
+        public string AxamasardReferenceCode { get; set; }
         public string TransId { get; set; }
         public string Gender { get; set; }
         public string PendingJobId { get; set; }

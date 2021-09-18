@@ -290,15 +290,16 @@ namespace Application.Services.HealthInsured.Insurance
             // Onboard users with a pending company subscription status
             else
             {
-                if(insuranceProvider.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
-                {
-                    insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == status).ToList();
-                }
-                else
-                {
-                    insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
-                    x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
-                }
+                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == status).ToList();
+                //if (insuranceProvider.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+                //{
+                    
+                //}
+                //else
+                //{
+                //    insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
+                //    x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
+                //}
             }
 
             foreach (var item in insuranceUserProfiles)

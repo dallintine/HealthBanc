@@ -509,10 +509,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public async Task Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, FamilyProfile family, string reference)
         {
-            if (insuranceUserProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceUserProfile.InsuranceService == null)
-            {
-                await _hmoIntegrationService.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
-            }
+            //if (insuranceUserProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceUserProfile.InsuranceService == null)
+            //{
+            //    await _hmoIntegrationService.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+            //}
 
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
@@ -1539,6 +1539,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 await _hmoIntegrationService.HygeiaDeactivateUser(insuranceProfile.TransId);
             }
+            else
+            {
+                if(insuranceProfile.AxamasardReferenceCode != null)
+                {
+                    await _hmoIntegrationService.AxamansardDeactivateUser(insuranceProfile.AxamasardReferenceCode);
+                }
+            }
             insuranceProfile.ActiveStatus = false;
             _repoWrapper.InsuranceProfile.Update(insuranceProfile);
             await _repoWrapper.Save();
@@ -1698,13 +1705,15 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     insuranceUserProfile.TransId = "Pending";
                 }
-                _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-                await _repoWrapper.Save();
             }
             else
             {
-                await _hmoIntegrationService.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                var axaRegResponse = await _hmoIntegrationService.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                var codeReference = axaRegResponse.Data as string;
+                insuranceUserProfile.AxamasardReferenceCode = codeReference;
             }
+            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+            await _repoWrapper.Save();
         }
     } 
 }
