@@ -549,13 +549,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 if(insuranceUserProfile.FailedScheduledPaymentRetry is null || insuranceUserProfile.FailedScheduledPaymentRetry < 4)
                 {
                     Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, false);
-                    insuranceUserProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(0,insuranceUserProfile.Id, null), DateTime.Now.AddMinutes(double.Parse("5")));
+                    insuranceUserProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(0,insuranceUserProfile.Id, null), DateTime.Now.AddDays(SubscriptionAccessor.FailedIndividualPaymentRetryA));
                     insuranceUserProfile.FailedScheduledPaymentRetry = insuranceUserProfile.FailedScheduledPaymentRetry.HasValue ? insuranceUserProfile.FailedScheduledPaymentRetry += 1 : 1;
                 }
                 else if(insuranceUserProfile.FailedScheduledPaymentRetry > 3 && insuranceUserProfile.FailedScheduledPaymentRetry < 7)
                 {
                     Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, false);
-                    insuranceUserProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(0, insuranceUserProfile.Id, null), DateTime.Now.AddMinutes(double.Parse("5")));
+                    insuranceUserProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(0, insuranceUserProfile.Id, null), DateTime.Now.AddDays(SubscriptionAccessor.FailedIndividualPaymentRetryB));
                     insuranceUserProfile.FailedScheduledPaymentRetry = insuranceUserProfile.FailedScheduledPaymentRetry.HasValue ? insuranceUserProfile.FailedScheduledPaymentRetry += 1 : 1;
                 }
                 else

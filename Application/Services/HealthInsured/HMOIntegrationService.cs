@@ -170,7 +170,6 @@ namespace Application.Services.HealthInsured
             model.State ??= "Lagos";
             model.Lga ??= "Alimosho";
             model.Hospital ??= "Hamkad";
-            model.EnrollmentNo ??= "9703341904";
             var response = await AxamansardRegisterUser(model);
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(model.Email);
             var enrollmentModel = await _repoWrapper.EnrollmentOnOnboarding.GetLastEnrollmentByInsuranceProfileId(insuranceProfile.Id);
