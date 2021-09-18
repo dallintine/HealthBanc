@@ -314,8 +314,8 @@ namespace Application.Services.HealthInsured.Insurance
                 }
                 else
                 {
-                    await _hMOIntegrationService.EnrollUserToAxamansardOnOnboarding(item);
                     item.TransId = _uniqueIdentifier.GetUniqueCode(10);
+                    await _hMOIntegrationService.EnrollUserToAxamansardOnOnboarding(item);
                 }
                 item.ActiveStatus = true;
                 item.SubscriptionStatus = true;

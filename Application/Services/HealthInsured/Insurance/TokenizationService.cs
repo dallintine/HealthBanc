@@ -299,8 +299,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                 if (insuranceUserProfile.SubscriptionStatus is null)
                 {
-                    await SendDetailsToInsuranceProvider(insuranceUserProfile);
                     await Process_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
+                    await SendDetailsToInsuranceProvider(insuranceUserProfile);
                 }
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(cardReference, (50 * 100).ToString()));
                 return new ResponseMessage

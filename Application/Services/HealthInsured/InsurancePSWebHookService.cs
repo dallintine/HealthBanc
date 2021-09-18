@@ -242,16 +242,16 @@ namespace Application.Services.HealthInsured
             // If user is making payment for the first time,
             if (insuranceUserProfile.SubscriptionStatus == null)
             {
-                await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
                 await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
+                await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
             }
             // if user is  making an immediate reactivation
             else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
             {
                 if (decimal.Parse(amount) >= decimal.Parse("1000"))
                 {
-                    await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
                     await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
+                    await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
                 }
             }
 
