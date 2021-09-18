@@ -782,7 +782,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 await _repoWrapper.Save();
             }
             BackgroundJob.Enqueue(() => SendInsuranceListToInsuranceProvider(insuranceProfiles));
-            await Task.CompletedTask;
         }
 
         public async Task SendInsuranceListToInsuranceProvider(List<InsuranceUserProfile> insuranceUserProfiles)
@@ -791,7 +790,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 await SendDetailsToInsuranceProvider(insuranceUserProfile);
             }
-            await Task.CompletedTask;
         }
 
         /// <summary>
