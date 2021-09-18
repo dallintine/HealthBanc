@@ -734,7 +734,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     familyProfile.TokenizationCompleted = true;
                     _repoWrapper.FamilyProfile.Update(familyProfile);
-                    if (familyProfile.InsuranceUserProfiles.Any())
+                    if (familyProfile.InsuranceUserProfiles != null && familyProfile.InsuranceUserProfiles.Count > 0)
                     {
                         await FamilyMembersActivation(familyProfile);
                         _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
