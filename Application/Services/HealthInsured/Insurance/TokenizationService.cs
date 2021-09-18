@@ -1519,16 +1519,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 await _hmoIntegrationService.HygeiaDeactivateUser(insuranceProfile.TransId);
             }
-            //else
-            //{
-            //    if (insuranceProfile.AxamasardReferenceCode != null)
-            //    {
-            //        await _hmoIntegrationService.AxamansardDeactivateUser(insuranceProfile.AxamasardReferenceCode);
-            //    }
-            //}
             else
             {
-                 await _hmoIntegrationService.AxamansardDeactivateUser(insuranceProfile.TransId);
+                if (insuranceProfile.AxamasardReferenceCode != null)
+                {
+                    await _hmoIntegrationService.AxamansardDeactivateUser(insuranceProfile.AxamasardReferenceCode);
+                }
             }
             insuranceProfile.ActiveStatus = false;
             _repoWrapper.InsuranceProfile.Update(insuranceProfile);
@@ -1550,16 +1546,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 await _hmoIntegrationService.HygeiaDeactivateUser(insuranceProfile.TransId);
             }
-            //else
-            //{
-            //    if(insuranceProfile.AxamasardReferenceCode != null)
-            //    {
-            //        await _hmoIntegrationService.AxamansardDeactivateUser(insuranceProfile.AxamasardReferenceCode);
-            //    }
-            //}
             else
             {
-                await _hmoIntegrationService.AxamansardDeactivateUser(insuranceProfile.TransId);
+                if (insuranceProfile.AxamasardReferenceCode != null)
+                {
+                    await _hmoIntegrationService.AxamansardDeactivateUser(insuranceProfile.AxamasardReferenceCode);
+                }
             }
             insuranceProfile.ActiveStatus = false;
             _repoWrapper.InsuranceProfile.Update(insuranceProfile);
