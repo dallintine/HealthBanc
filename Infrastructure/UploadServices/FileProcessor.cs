@@ -38,6 +38,7 @@ namespace Infrastructure.UploadService
             var excelModels = new List<FileModel>();
             using (var fileStream = new MemoryStream())
             {
+                int emptyRow = 0;
                 await formFile.CopyToAsync(fileStream);
                 fileStream.Position = 0;
                 _excelPackage.Load(fileStream);
@@ -51,13 +52,18 @@ namespace Infrastructure.UploadService
                     //int lastUsedColumn = ws.Dimension.End.Column;
 
                     //Let it take only 200 users per upload
-                    int lastUsedColumn = 101;
+                    int lastUsedColumn = 103;
 
-                    for (int r = 2; r <= lastUsedColumn; r++)
+                    for (int r = 3; r <= lastUsedColumn; r++)
                     {
                         if (String.IsNullOrWhiteSpace(ws.Cells[r, 6].Value?.ToString()) || String.IsNullOrWhiteSpace(ws.Cells[r, 7].Value?.ToString()) || String.IsNullOrWhiteSpace(ws.Cells[r, 8].Value?.ToString()))
                         {
+                            emptyRow += 1;
                             continue;
+                        }
+                        if(emptyRow == 5)
+                        {
+                            break;
                         }
                         var excelModel = new FileModel();
                         excelModel.FirstName = ws.Cells[r, 1].Value?.ToString();
