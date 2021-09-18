@@ -170,6 +170,7 @@ namespace Application.Services.HealthInsured
             model.State ??= "Lagos";
             model.Lga ??= "Alimosho";
             model.Hospital ??= "Hamkad";
+            model.EnrollmentNo ??= "9703341904";
             var response = await AxamansardRegisterUser(model);
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(model.Email);
             var enrollmentModel = await _repoWrapper.EnrollmentOnOnboarding.GetLastEnrollmentByInsuranceProfileId(insuranceProfile.Id);
@@ -383,7 +384,7 @@ namespace Application.Services.HealthInsured
             // Send user details to axamansard
 
             var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
-            enrollmentModel.EnrollmentNo = insuranceUserProfile.AxamasardReferenceCode ?? null;
+            //enrollmentModel.EnrollmentNo = insuranceUserProfile.AxamasardReferenceCode ?? null;
             if (insuranceUserProfile.InsurancePayeeId != null)
             {
                 var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);
