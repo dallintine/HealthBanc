@@ -390,8 +390,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             // Schedule debit email reminder for user 
-            insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),
-                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+            if(insuranceProfile.InsurancePayeeId != null)
+            {
+                var payee = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfile.InsurancePayeeId.Value);
+                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(payee.Email, payee.Surname, null),
+                   DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+            }
+            else
+            {
+                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),
+                   DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+            }           
 
             //Schedule job to debit user every 28 days
             insuranceProfile.PendingJobId = ProcessScheduledPayment(insuranceProfile);
@@ -465,6 +474,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 if (insuranceProfile.FamilyProfileId != null)
                 {
                     await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, family, chargeAuthorization.Reference);
+                }
+                else if(insuranceProfile.InsurancePayeeId != null)
+                {
+                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(payee, null, chargeAuthorization.Reference);
                 }
                 else
                 {
