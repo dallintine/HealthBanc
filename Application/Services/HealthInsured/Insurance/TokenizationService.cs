@@ -533,6 +533,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // Schedule debit email reminder for user 
             insuranceUserProfile.SubscriptionStatus = true;
             insuranceUserProfile.ActiveStatus = true;
+            insuranceUserProfile.FailedScheduledPaymentRetry = null;
             insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
 
             _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
