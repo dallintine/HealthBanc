@@ -734,9 +734,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     familyProfile.TokenizationCompleted = true;
                     _repoWrapper.FamilyProfile.Update(familyProfile);
+                    _logger.LogCritical(" About to hit process insurance for family payment");
                     if (familyProfile.InsuranceUserProfiles != null && familyProfile.InsuranceUserProfiles.Count > 0)
                     {
-                        await FamilyMembersActivation(familyProfile);
+                        _logger.LogCritical("process insurance for family payment");
+                        FamilyMembersActivation(familyProfile).Wait();
                         _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
                     }
                 }
