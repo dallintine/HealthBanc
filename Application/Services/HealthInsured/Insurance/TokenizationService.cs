@@ -1533,7 +1533,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <returns></returns>
         public async Task ProcessUserActiveStatusCancellation(int userId)
         {
-            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(userId);
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (insuranceProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
                 await _hmoIntegrationService.HygeiaDeactivateUser(insuranceProfile.TransId);
