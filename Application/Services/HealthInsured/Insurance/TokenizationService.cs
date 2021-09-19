@@ -473,15 +473,15 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 if (insuranceProfile.FamilyProfileId != null)
                 {
-                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, family, chargeAuthorization.Reference);
+                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, family,null, chargeAuthorization.Reference);
                 }
                 else if(insuranceProfile.InsurancePayeeId != null)
                 {
-                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(payee, null, chargeAuthorization.Reference);
+                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, null,payee, chargeAuthorization.Reference);
                 }
                 else
                 {
-                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, null, chargeAuthorization.Reference);
+                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, null,null, chargeAuthorization.Reference);
                 }
             }
             else
@@ -520,7 +520,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await Task.CompletedTask;
         }
 
-        public async Task Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, FamilyProfile family, string reference)
+        public async Task Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, FamilyProfile family, InsuranceUserProfile payee, string reference)
         {
             //if (insuranceUserProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceUserProfile.InsuranceService == null)
             //{
@@ -536,6 +536,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(family.Email, family.FullName
                         , insuranceUserProfile.Surname + " " + insuranceUserProfile.Othernames, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+            }
+            if(insuranceUserProfile.InsurancePayeeId != null)
+            {
+                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(payee.Email, payee.Surname, null)
+                 , insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
             }
             else
             {
@@ -590,8 +595,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 if (deactivate)
                 {
-                    _emailSender.HealthInsuredDeactivationNotification(family.Email, "Deactivation Notification", family.FullName, $"{insuranceProfile.Othernames} {insuranceProfile.Surname}",
-                        insuranceProfile.Premium.ToString());
+                    _emailSender.HealthInsuredDeactivationNotification(family.Email, "Deactivation Notification", family.FullName,
+                        insuranceProfile.Premium.ToString(), $"{insuranceProfile.Othernames} {insuranceProfile.Surname}");
                 }
                 else
                 {
@@ -603,8 +608,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 if (deactivate)
                 {
-                    _emailSender.HealthInsuredDeactivationNotification(payee.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", $"{insuranceProfile.Othernames} {insuranceProfile.Surname}",
-                    insuranceProfile.Premium.ToString());
+                    _emailSender.HealthInsuredDeactivationNotification(payee.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}",
+                    insuranceProfile.Premium.ToString(), $"{insuranceProfile.Othernames} {insuranceProfile.Surname}");
                 }
                 else
                 {
@@ -616,7 +621,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 if (deactivate)
                 {
-                    _emailSender.HealthInsuredDeactivationNotification(insuranceProfile.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", "your", insuranceProfile.Premium.ToString());
+                    _emailSender.HealthInsuredDeactivationNotification(insuranceProfile.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", insuranceProfile.Premium.ToString(), "your");
                 }
                 else
                 {
