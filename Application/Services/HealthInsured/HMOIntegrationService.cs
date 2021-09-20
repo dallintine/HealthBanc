@@ -84,13 +84,11 @@ namespace Application.Services.HealthInsured
             try
             {
                 model.EntityCode = AxaAccessor.EntityCode;
-                var bearerRequest = true;
-                //var bearerRequest = await AxaMansardAuthentication();
-                if (bearerRequest)
-                //if (bearerRequest.Status)
+                var bearerRequest = await AxaMansardAuthentication();
+                if (bearerRequest.Status)
                 {
                     var httpClient = _httpClientFactory.CreateClient("AxaMansard");
-                    //httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerRequest.Data.Auth_token);
+                    httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerRequest.Data.Auth_token);
                     HttpContent content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
                     var response = await httpClient.PostAsync($"{AxaAccessor.AxaMansardEnrollement}", content);
                     string apiResponse = await response.Content.ReadAsStringAsync();
@@ -111,9 +109,8 @@ namespace Application.Services.HealthInsured
                     return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }
                 BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
-                //_logger.LogCritical("BadRequest Axamansard :" + bearerRequest.Message);
-                //return new ResponseMessage { Status = false, Message = bearerRequest.Message };
-                return new ResponseMessage { };
+                _logger.LogCritical("BadRequest Axamansard :" + bearerRequest.Message);
+                return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
             catch (Exception ex)
             {
@@ -127,13 +124,11 @@ namespace Application.Services.HealthInsured
         {
             string entityCode = AxaAccessor.EntityCode;
             var axaDeactivation = new AxaDeactivation(axamansardReference, entityCode);
-            var bearerRequest = true;
-            //var bearerRequest = await AxaMansardAuthentication();
-            if(bearerRequest)
-            //if (bearerRequest.Status)
+            var bearerRequest = await AxaMansardAuthentication();
+            if (bearerRequest.Status)
             {
                 var httpClient = _httpClientFactory.CreateClient("AxaMansard");
-                //httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerRequest.Data.Auth_token);
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerRequest.Data.Auth_token);
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(axaDeactivation), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync($"{AxaAccessor.AxaMansardDeactivation}", content);
                 string apiResponse = await response.Content.ReadAsStringAsync();
@@ -153,10 +148,9 @@ namespace Application.Services.HealthInsured
                 BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
             }
-            //BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
-            //_logger.LogWarning("BadRequest Axamansard Deactivation :" + bearerRequest.Message);
-            //return new ResponseMessage { Status = false, Message = bearerRequest.Message };
-            return new ResponseMessage { };
+            BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
+            _logger.LogWarning("BadRequest Axamansard Deactivation :" + bearerRequest.Message);
+            return new ResponseMessage { Status = false, Message = bearerRequest.Message };
         }
 
         /// <summary>
@@ -383,7 +377,6 @@ namespace Application.Services.HealthInsured
             // Send user details to axamansard
 
             var enrollmentModel = _mapper.Map<EnrollmentModel>(insuranceUserProfile);
-            //enrollmentModel.EnrollmentNo = insuranceUserProfile.AxamasardReferenceCode ?? null;
             if (insuranceUserProfile.InsurancePayeeId != null)
             {
                 var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);

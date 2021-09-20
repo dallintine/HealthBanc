@@ -412,7 +412,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             _repoWrapper.InsuranceProfile.Update(insuranceProfile);
 
             //Create Audit thats user subscrption changed 
-            var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
+            var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Subscription Activated", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
             await SendDetailsToInsuranceProvider(insuranceProfile);
 
