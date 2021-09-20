@@ -93,11 +93,11 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-        public void SendHealthInsuredPaymentReminder(string email, string subject, string userName)
+        public void SendHealthInsuredPaymentReminder(string email, string subject, string userName,string info)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\healthinsured_paymentreminder.html";
             string html = System.IO.File.ReadAllText(path);
-            var newHtml = html.Replace("UserName", userName).Replace("BaseUrl", BaseUrl);
+            var newHtml = html.Replace("UserName", userName).Replace("BaseUrl", BaseUrl).Replace("Info",info);
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }        

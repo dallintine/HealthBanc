@@ -321,7 +321,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _uniqueIdentifier.GetUniqueCode(10) : "";
 
             // Schedule debit email reminder for user 
-            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname,"", null),
                     DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
             //Schedule job to debit user every 28 days
@@ -393,12 +393,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if(insuranceProfile.InsurancePayeeId != null)
             {
                 var payee = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfile.InsurancePayeeId.Value);
-                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(payee.Email, payee.Surname, null),
+                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(payee.Email, payee.Surname,"for your friend "+ insuranceProfile.Surname, null),
                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
             }
             else
             {
-                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null),
+                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname,"", null),
                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
             }           
 
@@ -539,12 +539,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             if(insuranceUserProfile.InsurancePayeeId != null)
             {
-                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(payee.Email, payee.Surname, null)
+                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(payee.Email, payee.Surname, "for your friend " + insuranceUserProfile.Surname, null)
                  , insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
             }
             else
             {
-                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null)
+                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname,  "", null)
                 , insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
 
             }
@@ -1057,7 +1057,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     //Background task to schedule debit at the end of next cycle
                     companyProfile.PendingJobId = ProcessScheduledPayment(companyProfile);
 
-                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
+                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, "", null),
                           DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
                     companyProfile.FailedScheduledPaymentRetry = null;
@@ -1174,7 +1174,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByUserId(companyUserId);
             foreach (var item in companyProfile.InsuranceUserProfiles)
             {
-                await _hmoIntegrationService.HygeiaDeactivateUser(item.TransId);
+                if(item.InsuranceService == InsuranceProvider.Hygeia.ToString())
+                {
+                    await _hmoIntegrationService.HygeiaDeactivateUser(item.TransId);
+                }
+                else
+                {
+                    if(item.AxamasardReferenceCode != null)
+                    {
+                        await _hmoIntegrationService.AxamansardDeactivateUser(item.AxamasardReferenceCode);
+                    }
+                }
                 item.ActiveStatus = false;
                 item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Inactive.ToString();
                 item.SubscriptionStatus = false;
@@ -1605,9 +1615,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var jobId = ProcessScheduledPayment(insuranceProfile);
 
             // Schedule debit email reminder for user 
-            if(insuranceProfile.FamilyProfileId is null || insuranceProfile.InsurancePayeeId is null)
+            if(insuranceProfile.FamilyProfileId is null && insuranceProfile.InsurancePayeeId is null)
             {
-                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname,"", null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
             }
 
             insuranceProfile.SubscriptionStatus = true;
@@ -1627,6 +1637,8 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <returns></returns>
         public async Task<ResponseMessage> ProcessImmediateReactivationPayment(InsuranceUserProfile insuranceProfile,int userId, string authorization_Code)
         {
+            FamilyProfile family = null;
+            InsuranceUserProfile payee = null;
             var chageAuthorizationModel = new ChargeAuthorization()
             {
                 email = insuranceProfile.Email,
@@ -1636,21 +1648,21 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             if(insuranceProfile.FamilyProfileId != null)
             {
-                var family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
+                family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
                 chageAuthorizationModel.email = family.Email;
             }
             else if(insuranceProfile.InsurancePayeeId != null)
             {
-                var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-                chageAuthorizationModel.email = payeeInsuranceProfile.Email;
+                payee = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+                chageAuthorizationModel.email = payee.Email;
             }
 
             // Call Paystack service. Debit user using card authorization code
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             if (chargeAuthorization.Status)
             {
+                await Process_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceProfile,family,payee);
                 await SendDetailsToInsuranceProvider(insuranceProfile);
-                await Process_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceProfile);
                 return new ResponseMessage { Message = "Reactivation was successful." , Status = true, ResponseCode = chargeAuthorization.ResponseCode };
             }
             // Setfailed payment reference for transacation;
@@ -1675,7 +1687,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             return new ResponseMessage { Message = chargeAuthorization.Message, Status =false, ResponseCode = chargeAuthorization.ResponseCode };
         }
 
-        private async Task Process_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
+        private async Task Process_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile,FamilyProfile family, InsuranceUserProfile payee)
         {
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
@@ -1685,13 +1697,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // Schedule debit email reminder for user 
             if(insuranceUserProfile.FamilyProfileId != null)
             {
-                var family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceUserProfile.FamilyProfileId.Value);
                 insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(family.Email, family.FullName
                        , insuranceUserProfile.Surname + " " + insuranceUserProfile.Othernames, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
             }
+            else if (insuranceUserProfile.InsurancePayeeId != null)
+            {
+                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(payee.Email, payee.Surname, "for your friend " + insuranceUserProfile.Surname, null)
+                , insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+            }
             else
             {
-                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null)
+                insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname,"", null)
                 , insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
             }
 
@@ -1713,9 +1729,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <param name="email"></param>
         /// <param name="userName"></param>
         /// <param name="context"></param>
-        public void SendEmailReminder(string email,string userName, PerformContext context)
+        public void SendEmailReminder(string email,string userName,string info, PerformContext context)
         {            
-            _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName);
+            _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName,info);
         }        
 
         public async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)

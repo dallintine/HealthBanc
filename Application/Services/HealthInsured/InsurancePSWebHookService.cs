@@ -246,14 +246,14 @@ namespace Application.Services.HealthInsured
                 await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
             }
             // if user is  making an immediate reactivation
-            else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
-            {
-                if (decimal.Parse(amount) >= decimal.Parse("1000"))
-                {
-                    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
-                    await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
-                }
-            }
+            //else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
+            //{
+            //    if (decimal.Parse(amount) >= decimal.Parse("1000"))
+            //    {
+            //        await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
+            //        await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
+            //    }
+            //}
 
             if (decimal.Parse(amount) <= decimal.Parse("100"))
             {
@@ -267,7 +267,7 @@ namespace Application.Services.HealthInsured
             insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _insuranceSerivce.GetUniqueCode() : "";
 
             // Schedule debit email reminder for user 
-            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null),
+            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname,"", null),
                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
             //Schedule job to debit user every 28 days
@@ -292,27 +292,27 @@ namespace Application.Services.HealthInsured
             await _repoWrapper.Save();
         }
 
-        private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
-        {
-            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+        //private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
+        //{
+        //    insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
-            //Schedule job to debit user every 28 days
-            insuranceUserProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceUserProfile);
+        //    //Schedule job to debit user every 28 days
+        //    insuranceUserProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceUserProfile);
 
-            // Schedule debit email reminder for user 
-            insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _tokenizationService.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
+        //    // Schedule debit email reminder for user 
+        //    insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _tokenizationService.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
 
-            insuranceUserProfile.SubscriptionStatus = true;
-            insuranceUserProfile.ActiveStatus = true;
-            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+        //    insuranceUserProfile.SubscriptionStatus = true;
+        //    insuranceUserProfile.ActiveStatus = true;
+        //    insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
+        //    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
 
-            //Create Audit thats user subscrption changed 
-            var activityLog = new ActivityLog(insuranceUserProfile.Id, null, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
-            _repoWrapper.ActivityLog.Create(activityLog);
+        //    //Create Audit thats user subscrption changed 
+        //    var activityLog = new ActivityLog(insuranceUserProfile.Id, null, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
+        //    _repoWrapper.ActivityLog.Create(activityLog);
 
-            await _repoWrapper.Save();
-        }
+        //    await _repoWrapper.Save();
+        //}
 
         private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference, string amount)
         {
@@ -335,7 +335,7 @@ namespace Application.Services.HealthInsured
                     //Background task to schedule debit at the end of next cycle
                     companyProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(companyProfile);
 
-                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, null),
+                    companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName,"", null),
                           DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
 
                     companyProfile.TokenizationCompleted = true;

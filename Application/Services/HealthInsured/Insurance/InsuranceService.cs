@@ -489,9 +489,9 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         {
             await _hmoIntegrationService.HygeiaGetAuthToken();            
         }
-        public void SendEmailReminder(string email, string userName, PerformContext context)
+        public void SendEmailReminder(string email, string userName,string info, PerformContext context)
         {
-            _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName);
+            _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName,info);
         }
 
         /// <summary>

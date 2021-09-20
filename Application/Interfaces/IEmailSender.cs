@@ -22,7 +22,7 @@ namespace Application.Interfaces
         void SendHealthFinanceNotification(string subject, HealthFinanceCollectionViewModel healthFinance, List<string> toEmails);
         void SendHealthFinanceSubmissionNotification(string subject, HealthFinanceCollectionViewModel healthFinance, string toEmails);
         void SendHealthInsuredFamilyPaymentReminder(string email, string subject, string familyHead, string familyMember);
-        void SendHealthInsuredPaymentReminder(string email, string subject, string userName);
+        void SendHealthInsuredPaymentReminder(string email, string subject, string userName,string info);
         void SendHeliumNotification(string subject, string healthProvider, string providerType, string phonenumber, string providerEmail);
         void SendUserResetPasswordMail(string email, string subject, string resetUrl);
         void SendUserVerificationMail(string email, string subject, string verificationUrl);
