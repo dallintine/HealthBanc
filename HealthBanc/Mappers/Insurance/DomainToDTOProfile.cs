@@ -31,7 +31,8 @@ namespace HealthBanc.Mappers.Insurance
             CreateMap<BeneficiaryReviewUser, BeneficiaryReviewDTO>();
 
             CreateMap<PaymentReference, TransactionLogDTO>()
-               .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.InsuranceUserProfileId == null ? x.CompanyProfile.CompanyName : x.InsuranceUserProfile.Othernames));
+               .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.InsuranceUserProfileId != null ? x.InsuranceUserProfile.Othernames :
+               x.CompanyProfileId != null ? x.CompanyProfile.CompanyName : x.FamilyProfile.FullName)) ;
 
             CreateMap<InsuranceUserProfile, TransactionLogDTO>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(x => x.Surname + " " + x.Othernames));

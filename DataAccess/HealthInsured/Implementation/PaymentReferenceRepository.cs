@@ -33,7 +33,7 @@ namespace DataAccess.HealthInsured.Implementation
         public async Task<PagedResponse<PaymentReference>> GetPaginatedPaymentReference(PaginationQuery paginationQuery,string email)
         {
             var paginatedResponse = new PagedResponse<PaymentReference>();
-            var queryable = _context.PaymentReferences.Include(x => x.InsuranceUserProfile).Include(x => x.CompanyProfile).AsQueryable();
+            var queryable = _context.PaymentReferences.Include(x => x.InsuranceUserProfile).Include(x => x.CompanyProfile).Include(x => x.FamilyProfile).AsQueryable();
            
 
             if (email != null) queryable = queryable.Where(x => x.InsuranceUserProfile.Email == email);

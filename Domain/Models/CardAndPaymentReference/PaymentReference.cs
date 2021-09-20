@@ -81,6 +81,7 @@ namespace Domain.Models
         }
         public InsuranceUserProfile InsuranceUserProfile { get; set; }
         public CompanyProfile CompanyProfile { get; set; }
+        public FamilyProfile FamilyProfile { get; set; }
     }
 
     // <summary>
