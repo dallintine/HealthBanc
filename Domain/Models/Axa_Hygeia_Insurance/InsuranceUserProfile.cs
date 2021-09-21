@@ -16,23 +16,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         public int? UserId { get; set; }
         public int? CompanyProfileId { get; set; }
         public string CompanyName { get; set; }
-        
-        public string _companySubscribedStatus;
-        public string CompanySubscribedStatus
-        {
-            get { return _companySubscribedStatus; }
-            set
-            {
-                if (Enum.IsDefined(typeof(InsuranceProfile_CompanySubStatusValue), value) || value is null)
-                {
-                    _companySubscribedStatus = value;
-                }
-                else
-                {
-                    throw new ArgumentException("Value of InsuranceUserProfile.CompanySubscribedStatus is not valid. Please check defined enumerated values for channel in the InsuranceProfile_CompanySubStatusValue class");
-                }
-            }
-        }
+        public string CompanySubscribedStatus { get; set; }
         public int? FamilyProfileId { get; set; }
         public int? InsurancePayeeId { get; set; }
         public string AxamasardReferenceCode { get; set; }

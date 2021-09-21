@@ -25,6 +25,8 @@
     <Compile Remove="Migrations\20210812084429_create-family-tables2.Designer.cs" />
     <Compile Remove="Migrations\20210823150114_added_family.cs" />
     <Compile Remove="Migrations\20210823150114_added_family.Designer.cs" />
+    <Compile Remove="Migrations\20210920151928_modified_payment_refeence.cs" />
+    <Compile Remove="Migrations\20210920151928_modified_payment_refeence.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
