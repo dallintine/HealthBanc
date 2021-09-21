@@ -210,7 +210,7 @@ namespace Application.Services.Paystack
                     LastDigit = authorization.last4,
                     AuthorizationCode = authorization.authorization_code,
                     Signature = authorization.signature,
-                    Message = "Card was tokenize successfully",
+                    Message = "Card was tokenized successfully",
                     Status = true,
                     Reference = reference,
                     ResponseCode = 0
@@ -393,7 +393,7 @@ namespace Application.Services.Paystack
                             LastDigit = verifyResponse.data.authorization.last4,
                             AuthorizationCode = verifyResponse.data.authorization.authorization_code,
                             Signature = verifyResponse.data.authorization.signature,
-                            Message = "Card was tokenize successfully",
+                            Message = "Card was tokenized successfully",
                             Status = true,
                             Reference = reference,
                             ResponseCode = 0
