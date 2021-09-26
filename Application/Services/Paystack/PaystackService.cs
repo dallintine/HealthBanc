@@ -204,20 +204,20 @@ namespace Application.Services.Paystack
             // check if the status is successfully
             if (status == "success")
             {
-                if (authorization.reusable == false)
-                {
-                    return new TokenizationResponse
-                    {
-                        Type = authorization.card_type,
-                        LastDigit = authorization.last4,
-                        AuthorizationCode = authorization.authorization_code,
-                        Signature = authorization.signature,
-                        Message = "Card is not reusable, Please try with another debit card",
-                        Status = false,
-                        Reference = reference,
-                        ResponseCode = 0
-                    };
-                }
+                //if (authorization.reusable == false)
+                //{
+                //    return new TokenizationResponse
+                //    {
+                //        Type = authorization.card_type,
+                //        LastDigit = authorization.last4,
+                //        AuthorizationCode = authorization.authorization_code,
+                //        Signature = authorization.signature,
+                //        Message = "Card is not reusable, Please try with another debit card",
+                //        Status = false,
+                //        Reference = reference,
+                //        ResponseCode = 0
+                //    };
+                //}
                 return new TokenizationResponse
                 {
                     Type = authorization.card_type,
