@@ -66,7 +66,7 @@ namespace Application.Services.Paystack
                         return processSuccessOrFailedResult;
                     }
                     // check if status is failed or timeout
-                    else if(!processSuccessOrFailedResult.Status && processSuccessOrFailedResult.ResponseCode!= 13)
+                    else if(!processSuccessOrFailedResult.Status && processSuccessOrFailedResult.ResponseCode != 13)
                     {
                         return processSuccessOrFailedResult;
                     }
@@ -204,10 +204,8 @@ namespace Application.Services.Paystack
             // check if the status is successfully
             if (status == "success")
             {
-                if (!authorization.reusable)
+                if (authorization.reusable == false)
                 {
-                    string amount = (50 * 100).ToString();
-                    RefundTestCardFunds(reference, amount).Wait();
                     return new TokenizationResponse
                     {
                         Type = authorization.card_type,
@@ -217,7 +215,7 @@ namespace Application.Services.Paystack
                         Message = "Card is not reusable, Please try with another debit card",
                         Status = false,
                         Reference = reference,
-                        ResponseCode = 54
+                        ResponseCode = 0
                     };
                 }
                 return new TokenizationResponse
