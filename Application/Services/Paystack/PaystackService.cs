@@ -204,6 +204,22 @@ namespace Application.Services.Paystack
             // check if the status is successfully
             if (status == "success")
             {
+                if (!authorization.reusable)
+                {
+                    string amount = (50 * 100).ToString();
+                    RefundTestCardFunds(reference, amount).Wait();
+                    return new TokenizationResponse
+                    {
+                        Type = authorization.card_type,
+                        LastDigit = authorization.last4,
+                        AuthorizationCode = authorization.authorization_code,
+                        Signature = authorization.signature,
+                        Message = "Card is not reusable, Please try with another debit card",
+                        Status = false,
+                        Reference = reference,
+                        ResponseCode = 54
+                    };
+                }
                 return new TokenizationResponse
                 {
                     Type = authorization.card_type,

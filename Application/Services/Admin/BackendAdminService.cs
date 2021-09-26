@@ -116,42 +116,52 @@ namespace Application.Services.Admin
 
         public async Task<ResponseMessage> ValidateAdminPasswordAuth(ADCredentialsViewModel aDCredentials)
         {
-            var httpClient = _httpClientFactory.CreateClient("Fiorano");
-            var loginCredentials = new ADCredentialsRoot
+            if (AdminAuthSettings.Enable_ADCredentials)
             {
-                AD_Credentials = new ADCredentials()
-            };
-            loginCredentials.AD_Credentials.AD_Username = aDCredentials.AD_Username;
-            loginCredentials.AD_Credentials.AD_Password = aDCredentials.AD_Password;
-            HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
-
-            var authentication = await httpClient.PostAsync(AppEndpoint.APIUri.FiorianoADAuthentication, content);
-            if (authentication.IsSuccessStatusCode)
-            {
-                string apiResponse = await authentication.Content.ReadAsStringAsync();
-                var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
-                if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
+                var httpClient = _httpClientFactory.CreateClient("Fiorano");
+                var loginCredentials = new ADCredentialsRoot
                 {
-                    return new ResponseMessage {Status = true, Message = "Login was successfully" };
+                    AD_Credentials = new ADCredentials()
+                };
+                loginCredentials.AD_Credentials.AD_Username = aDCredentials.AD_Username;
+                loginCredentials.AD_Credentials.AD_Password = aDCredentials.AD_Password;
+                HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
+
+                var authentication = await httpClient.PostAsync(AppEndpoint.APIUri.FiorianoADAuthentication, content);
+                if (authentication.IsSuccessStatusCode)
+                {
+                    string apiResponse = await authentication.Content.ReadAsStringAsync();
+                    var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
+                    if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
+                    {
+                        return new ResponseMessage { Status = true, Message = "Login was successfully" };
+                    }
+                    return new ResponseMessage { Message = "Login detail is invalid, please try again with correct credentials", ResponseCode = 12 };
                 }
-                return new ResponseMessage { Message = "Login detail is invalid, please try again with correct credentials", ResponseCode = 12 };
+                _logger.LogCritical("Could not connnect with ADCredentials password sevice", await authentication.Content.ReadAsStringAsync());
+                return new ResponseMessage { Message = "Could not connect to Password ADService" };
             }
-            _logger.LogCritical("Could not connnect with ADCredentials password sevice", await authentication.Content.ReadAsStringAsync());
-            return new ResponseMessage { Message = "Could not connect to Password ADService" };
+            else
+            {
+                return new ResponseMessage { Status = true, Message = "Login was successfully" };
+            }            
         }
 
         private ResponseMessage ValidateAdminOTPAuth(ADCredentialsViewModel aDCredentials)
         {
-            var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
-            if (checkOTP == "")
+            if (AdminAuthSettings.Enable_OTP)
             {
-                return new ResponseMessage { Message = "Login detail is invalid, please try again with correct credentials", ResponseCode = 12 };
+                var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
+                if (checkOTP == "")
+                {
+                    return new ResponseMessage { Message = "Login detail is invalid, please try again with correct credentials", ResponseCode = 12 };
+                }
+                if (checkOTP == "false")
+                {
+                    return new ResponseMessage { Message = "Could not connect with OTP Service" };
+                }               
             }
-            if (checkOTP == "false")
-            {
-                return new ResponseMessage { Message = "Could not connect with OTP Service" };
-            }
-            return new ResponseMessage { Message = "OTP was succesfully validated" ,Status= true};
+            return new ResponseMessage { Message = "OTP was succesfully validated", Status = true };
         }
 
         private async Task<LoggedInAdminResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)

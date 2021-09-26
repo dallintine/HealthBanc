@@ -27,6 +27,8 @@
     <Compile Remove="Migrations\20210823150114_added_family.Designer.cs" />
     <Compile Remove="Migrations\20210920151928_modified_payment_refeence.cs" />
     <Compile Remove="Migrations\20210920151928_modified_payment_refeence.Designer.cs" />
+    <Compile Remove="Migrations\20210921101053_modified_payment_refeence.cs" />
+    <Compile Remove="Migrations\20210921101053_modified_payment_refeence.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
