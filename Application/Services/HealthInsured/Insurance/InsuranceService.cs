@@ -370,7 +370,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             return new ResponseMessage { Data = filterHealthCareProvider, Status = true, Message = "Care provider was fetched successfully" };
         }
-        public ResponseMessage DowloadInsuranceProfileExcelData(bool subStatus, bool activeStatus,string service)
+        public ResponseMessage DowloadInsuranceProfileExcelData(bool? subStatus, bool? activeStatus,string service)
         {
             var data = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles();
             if(service == InsuranceProvider.Axamansard.ToString())
