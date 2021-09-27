@@ -494,6 +494,11 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName,info);
         }
 
+        public void SendEmailReminder(string email, string userName, PerformContext context)
+        {
+            _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName, "");
+        }
+
         /// <summary>
         /// Function to send successful subscription email.Send this only to user when subscription status is null
         /// </summary>

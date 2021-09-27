@@ -471,6 +471,14 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
             if (chargeAuthorization.Status)
             {
+                if (insuranceProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceProfile.InsuranceService == null)
+                {
+                    if(insuranceProfile.AxamasardReferenceCode is null)
+                    {
+                        await SendDetailsToInsuranceProvider(insuranceProfile);
+                    }
+                }
+
                 if (insuranceProfile.FamilyProfileId != null)
                 {
                     await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, family,null, chargeAuthorization.Reference);
@@ -1732,7 +1740,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         public void SendEmailReminder(string email,string userName,string info, PerformContext context)
         {            
             _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName,info);
-        }        
+        }
+
+        public void SendEmailReminder(string email, string userName,  PerformContext context)
+        {
+            _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName, "");
+        }
 
         public async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)
         {
