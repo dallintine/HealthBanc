@@ -46,7 +46,7 @@ namespace HealthBanc.Controllers
         [Authorize(Roles = "Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(File))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        public IActionResult DowloadInsuranceProfileExcelData(bool subStatus, bool activeStatus, string service)
+        public IActionResult DowloadInsuranceProfileExcelData(bool? subStatus, bool? activeStatus, string service)
         {
             var response = _insuranceService.DowloadInsuranceProfileExcelData(subStatus, activeStatus, service);
             if (response.Status)
