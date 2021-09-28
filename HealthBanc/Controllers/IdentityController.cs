@@ -79,8 +79,10 @@ namespace HealthBanc.Controllers
             var session = await _repoWrapper.UserSession.GetByUserId_Device(id, IpAddress);
             if (session != null)
             {
+                _logger.LogCritical("Session Found");
                 _repoWrapper.UserSession.Delete(session);
                 await _repoWrapper.Save();
+                _logger.LogCritical("Session Deleted");
             }
             return Ok();
             //return Ok($"{browser}, {device}, {deviceIp}");
