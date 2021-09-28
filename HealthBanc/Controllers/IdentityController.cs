@@ -76,7 +76,7 @@ namespace HealthBanc.Controllers
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var session = await _repoWrapper.UserSession.GetById_Device(id, IpAddress);
+            var session = await _repoWrapper.UserSession.GetByUserId_Device(id, IpAddress);
             if (session != null)
             {
                 _repoWrapper.UserSession.Delete(session);

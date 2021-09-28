@@ -492,7 +492,7 @@ namespace Application.Services.Identity
             {
                 if(DateTime.Now < session.SessionExpireDate && session.DeviceIp == deviceIp && session.Browser.ToLower() != browser.ToLower() )
                 {
-                    _logger.LogCritical($"{deviceIp} userin session active session, {DateTime.Now} , {session.SessionExpireDate}");
+                    _logger.LogCritical($"{deviceIp} userin session active session, {DateTime.Now.ToUniversalTime()} , {session.SessionExpireDate}");
 
                     return new ResponseMessage { Status = false, Message = "You have an active session in one of your browser!. Sign out of it to Signin here."};
                 }
