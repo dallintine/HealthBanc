@@ -190,7 +190,7 @@ namespace Application.Services.Identity
 
             var checkSession = await UserInSession(user.Id, ip, browser);
 
-            if (!checkSession.Status)
+            if (checkSession.Status is false)
             {
                 return checkSession;
             }
@@ -458,6 +458,8 @@ namespace Application.Services.Identity
             var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if (session is null)
             {
+                _logger.LogCritical($"{deviceIp} session storage null");
+
                 var newSession = new UserSession();
                 newSession.Browser = browser;
                 newSession.DeviceIp = deviceIp;
@@ -467,6 +469,8 @@ namespace Application.Services.Identity
             }
             else
             {
+                _logger.LogCritical($"{deviceIp} session storage not null");
+
                 session.Browser = browser;
                 session.DeviceIp = deviceIp;
                 session.SessionExpireDate = expiryTime;
@@ -481,14 +485,19 @@ namespace Application.Services.Identity
             var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if(session is null)
             {
+                _logger.LogCritical($"{deviceIp} userin session null");
                 return new ResponseMessage { Status = true };
             }
             else
             {
                 if(DateTime.Now < session.SessionExpireDate && session.DeviceIp == deviceIp && session.Browser.ToLower() != browser.ToLower() )
                 {
+                    _logger.LogCritical($"{deviceIp} userin session active session, {DateTime.Now} , {session.SessionExpireDate}");
+
                     return new ResponseMessage { Status = false, Message = "You have an active session in one of your browser!. Sign out of it to Signin here."};
                 }
+                _logger.LogCritical($"{deviceIp} userin session inactive session");
+
                 return new ResponseMessage { Status = true };
             }
         }
