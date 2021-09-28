@@ -36,26 +36,33 @@ namespace Application.Services.Identity
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IEmailSender _emailSender;
+        private readonly IOptions<JwtSettings> jwtsettings;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly ILogger<IdentityService> _logger;
         private readonly JwtSettings _jwtsettings;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IOptions<AppEndpoint> optionAccessor;
+
         private AppEndpoint Options { get; }
 
 
 
-        public IdentityService( UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
-             IOptions<JwtSettings> jwtsettings, IRepositoryWrapper repoWrapper,
+        public IdentityService(UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
+             IOptions<JwtSettings> jwtsettings, IRepositoryWrapper repoWrapper, ILogger<IdentityService> logger,
               TokenValidationParameters tokenValidationParameters,IPasswordHasher passwordHasher, IOptions<AppEndpoint> optionAccessor)
         {
             Options = optionAccessor.Value;
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
             _emailSender = emailSender;
+            this.jwtsettings = jwtsettings;
             _repoWrapper = repoWrapper;
+            _logger = logger;
             _jwtsettings = jwtsettings.Value;
             _tokenValidationParameters = tokenValidationParameters;
-            _passwordHasher = passwordHasher;     
+            _passwordHasher = passwordHasher;
+            this.optionAccessor = optionAccessor;
         }
 
         public ResponseMessage LogOut()
@@ -447,6 +454,7 @@ namespace Application.Services.Identity
 
         private async Task SessionStorage(string browser, string deviceIp, int userId, DateTime expiryTime)
         {
+            _logger.LogCritical(browser, deviceIp,"sesionstorage");
             var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if (session is null)
             {
@@ -469,6 +477,7 @@ namespace Application.Services.Identity
 
         private async Task<ResponseMessage> UserInSession(int userId, string deviceIp, string browser)
         {
+            _logger.LogCritical(browser, deviceIp,"userinsession");
             var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if(session is null)
             {
