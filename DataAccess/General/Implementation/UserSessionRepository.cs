@@ -22,12 +22,17 @@ namespace DataAccess.General.Implementation
 
         public async Task<UserSession> GetById_Device(long id, string ip)
         {
-            return await _context.UserSessions.SingleOrDefaultAsync(x => x.Id == id && x.DeviceIp == ip);
+            return await _context.UserSessions.LastOrDefaultAsync(x => x.Id == id && x.DeviceIp == ip);
         }
 
         public async Task<UserSession> GetByUserId(int userId)
         {
-            return await _context.UserSessions.SingleOrDefaultAsync(x => x.UserId == userId);
+            return await _context.UserSessions.LastOrDefaultAsync(x => x.UserId == userId);
+        }
+
+        public async Task<UserSession> GetByUserId_Device(int userId, string ip)
+        {
+            return await _context.UserSessions.LastOrDefaultAsync(x => x.UserId == userId && x.DeviceIp == ip);
         }
     }
 }

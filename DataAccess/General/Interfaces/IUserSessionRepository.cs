@@ -11,5 +11,6 @@ namespace DataAccess.General.Interfaces
         Task<UserSession> GetById(long id);
         Task<UserSession> GetById_Device(long id, string ip);
         Task<UserSession> GetByUserId(int userId);
+        Task<UserSession> GetByUserId_Device(int userId, string ip);
     }
 }

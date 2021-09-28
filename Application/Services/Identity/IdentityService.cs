@@ -445,20 +445,31 @@ namespace Application.Services.Identity
             await Task.CompletedTask;
         }
 
-        private async  Task SessionStorage(string browser, string deviceIp, int userId, DateTime expiryTime)
+        private async Task SessionStorage(string browser, string deviceIp, int userId, DateTime expiryTime)
         {
-            var session = new UserSession();
-            session.Browser = browser;
-            session.DeviceIp = deviceIp;
-            session.UserId = userId;
-            session.SessionExpireDate = expiryTime;
-            _repoWrapper.UserSession.Create(session);
+            var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
+            if (session is null)
+            {
+                var newSession = new UserSession();
+                newSession.Browser = browser;
+                newSession.DeviceIp = deviceIp;
+                newSession.UserId = userId;
+                newSession.SessionExpireDate = expiryTime;
+                _repoWrapper.UserSession.Create(newSession);
+            }
+            else
+            {
+                session.Browser = browser;
+                session.DeviceIp = deviceIp;
+                session.SessionExpireDate = expiryTime;
+                _repoWrapper.UserSession.Update(session);
+            }           
             await _repoWrapper.Save();
         }
 
         private async Task<ResponseMessage> UserInSession(int userId, string deviceIp, string browser)
         {
-            var session = await _repoWrapper.UserSession.GetByUserId(userId);
+            var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if(session is null)
             {
                 return new ResponseMessage { Status = true };
