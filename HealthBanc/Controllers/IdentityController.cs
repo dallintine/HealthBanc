@@ -13,8 +13,6 @@ using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
-using DeviceDetectorNET;
-using DeviceDetectorNET.Parser;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
@@ -27,7 +25,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using UAParser;
-using Wangkanai.Detection.Services;
 
 namespace HealthBanc.Controllers
 {
@@ -41,14 +38,13 @@ namespace HealthBanc.Controllers
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRepositoryWrapper _repoWrapper;
-        private readonly IDetectionService _detectionService;
 
         private AppEndpoint Options { get; }
         public StringValues agent;
         public string IpAddress;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt
-            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor, IDetectionService detectionService)
+            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -57,7 +53,6 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
             _passwordHasher = passwordHasher;
             _repoWrapper = repoWrapper;
-            _detectionService = detectionService;
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
         }
@@ -74,8 +69,6 @@ namespace HealthBanc.Controllers
             //var response = _identityService.LogOut();
             var userAgent = agent;         
             string uaString = Convert.ToString(userAgent[0]);
-            var dd = new DeviceDetector(agent);
-            dd.DiscardBotInformation();
 
             //var clientInfo = dd.GetClient();
             //var osInfo = dd.GetOs();
