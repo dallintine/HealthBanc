@@ -46,6 +46,8 @@ namespace Persistence
         public DbSet<EncryptedAcessToken> EncryptedAcessTokens { get; set; }
         public DbSet<HealthFinance> HealthFinances { get; set; }
         public DbSet<HMOPayment> HMOPayments { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

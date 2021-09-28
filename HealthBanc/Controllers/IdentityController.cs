@@ -63,30 +63,19 @@ namespace HealthBanc.Controllers
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        //[Authorize]
-        public IActionResult LogOut()
+        [Authorize]
+        public async Task<IActionResult> LogOut()
         {
-            //var response = _identityService.LogOut();
-            var userAgent = agent;         
-            string uaString = Convert.ToString(userAgent[0]);
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
 
-            //var clientInfo = dd.GetClient();
-            //var osInfo = dd.GetOs();
-            //var device = dd.GetDeviceName();
-            //var brand = dd.GetBrandName();
-            //var model = dd.GetModel();
-            //var clientInfo = _detectionService.Device.Type;
-            //var osInfo = _detectionService.Browser.Name;
-            //var device = _detectionService.Engine.Name;
-            //var brand = _detectionService.Platform.Name;
-            //var model = _detectionService.Crawler.Name;
-            var uaParser = Parser.GetDefault();
-            ClientInfo c = uaParser.Parse(uaString);
-            var has = c.OS.ToString() + "," + c.UA.ToString() + "," + c.Device + "," + c.Device.Brand + "," + c.Device.Family + "," + c.UA.ToString();
-
-            //return Ok(has + "         " + device + " " + clientInfo + "  " + osInfo + "  " + brand + "  " + model );
-            return Ok(has + "   "+ IpAddress);
-
+            var session = await _repoWrapper.UserSession.GetById_Device(id,IpAddress);
+            if(session != null)
+            {
+                _repoWrapper.UserSession.Delete(session);
+                await _repoWrapper.Save();
+            }
+            return Ok();
         }
 
         ///<summary>
@@ -135,7 +124,13 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel);
+                var userAgent = agent;
+                string uaString = Convert.ToString(userAgent[0]);
+                var uaParser = Parser.GetDefault();
+                ClientInfo c = uaParser.Parse(uaString);
+                var browser = c.UA.ToString();
+                var deviceIp = IpAddress;
+                var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel,browser, deviceIp);
                 if (response.Status == true)
                 {
                     return Ok(response);
@@ -228,6 +223,13 @@ namespace HealthBanc.Controllers
             if (ModelState.IsValid)
             {
                 //get the user
+                var userAgent = agent;
+                string uaString = Convert.ToString(userAgent[0]);
+                var uaParser = Parser.GetDefault();
+                ClientInfo c = uaParser.Parse(uaString);
+                var browser = c.UA.ToString();
+                var deviceIp = IpAddress;
+
                 var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
 
                 if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "User detail is invalid, please try again with correct details" +
@@ -244,7 +246,7 @@ namespace HealthBanc.Controllers
                 //check that the user password is correct
                 if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
                 {
-                    var response = await _identityService.Login2(user);
+                    var response = await _identityService.Login2(user,browser, deviceIp);
                     if (response.Status != true)
                     {
                         return BadRequest(response);
@@ -272,7 +274,13 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> RefreshToken(RefreshTokenViewModel refreshModel)
         {
-            var authResponse = await _identityService.Refresh2(refreshModel);
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            var browser = c.UA.ToString();
+            var deviceIp = IpAddress;
+            var authResponse = await _identityService.Refresh2(refreshModel,browser,deviceIp);
             if (!authResponse.Status)
             {
                 return BadRequest(authResponse);

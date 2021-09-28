@@ -102,7 +102,7 @@ namespace Application.Services.Identity
             return new ResponseMessage { Message = "Email Already Exist",Status = false };
         }
 
-        public async Task<ResponseMessage> SocialMediaRegistrationLink(RegistrationViewModel registrationViewModel)
+        public async Task<ResponseMessage> SocialMediaRegistrationLink(RegistrationViewModel registrationViewModel, string browser, string ip)
         {
             var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
             if (checkUserEmail == null)
@@ -128,7 +128,7 @@ namespace Application.Services.Identity
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
                     await ProcessInsuranceUserId(user, user.Email);
-                    var authResponse = await GetAuthenticationResultForUserAsync(user);
+                    var authResponse = await GetAuthenticationResultForUserAsync(user,browser,ip);
                     if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
                     return new ResponseMessage
                     {
@@ -177,17 +177,23 @@ namespace Application.Services.Identity
             return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
         }
 
-        public async Task<ResponseMessage> Login2(ApplicationUser user)
+        public async Task<ResponseMessage> Login2(ApplicationUser user,string browser, string ip)
         {
             await _userManager.ResetAccessFailedCountAsync(user);
 
-            var authResponse = await GetAuthenticationResultForUserAsync(user);
+            var checkSession = await UserInSession(user.Id, ip, browser);
+
+            if (!checkSession.Status)
+            {
+                return checkSession;
+            }
+            var authResponse = await GetAuthenticationResultForUserAsync(user,browser,ip);
             if (authResponse.Success) return new ResponseMessage { Data = authResponse, Status = true, Message = "User was logged in successfully" };
 
             return new ResponseMessage { Data = authResponse, Message = "Error occured please try again later"};
         }
 
-        public async Task<ResponseMessage<LoggedInResponseDTO>> Refresh2(RefreshTokenViewModel refreshToken)
+        public async Task<ResponseMessage<LoggedInResponseDTO>> Refresh2(RefreshTokenViewModel refreshToken,string browser, string ip)
         {
             var principal = GetPrincipalFromExpiredToken(refreshToken.Token);
             var username = principal.Identity.Name; //this is mapped to the Name claim by default
@@ -209,13 +215,16 @@ namespace Application.Services.Identity
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
 
-            var authResponse = await GetAuthenticationResultForUserAsync(user);
-            if (authResponse.Success) return new ResponseMessage<LoggedInResponseDTO> { Data = authResponse, Status = true, Message = "User was logged in successfully" };
+            var authResponse = await GetAuthenticationResultForUserAsync(user,browser,ip);
+            if (authResponse.Success)
+            {
+                return new ResponseMessage<LoggedInResponseDTO> { Data = authResponse, Status = true, Message = "User was logged in successfully" };
+            }
 
             return new ResponseMessage<LoggedInResponseDTO> { Data = authResponse, Message = "Error occured, please try again later" };
         }
 
-        private async Task<LoggedInResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user)
+        private async Task<LoggedInResponseDTO> GetAuthenticationResultForUserAsync(ApplicationUser user, string browser, string ip)
         {
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -255,6 +264,7 @@ namespace Application.Services.Identity
             user.LastLoginDate = DateTime.Now;
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
+            var expiryTime = DateTime.Now.AddMinutes(expirationTime);
 
             var loggedInResponse = new LoggedInResponseDTO
             {
@@ -262,7 +272,7 @@ namespace Application.Services.Identity
                 Username = user.Email,
                 Name = $"{user.FirstName} {user.LastName}",
                 Roles = roles,
-                ExpiryTime = DateTime.Now.AddMinutes(expirationTime),
+                ExpiryTime = expiryTime,
                 Success = true,
                 RefreshToken = refreshToken
             };
@@ -275,7 +285,8 @@ namespace Application.Services.Identity
                     serviceList.RemoveAt(serviceList.Count - 1);
                 }
                 loggedInResponse.Services = serviceList;
-            }                
+            }
+            await SessionStorage(browser, ip, user.Id, expiryTime);
             return loggedInResponse;
         }
 
@@ -432,6 +443,34 @@ namespace Application.Services.Identity
                 }                
             }
             await Task.CompletedTask;
+        }
+
+        private async  Task SessionStorage(string browser, string deviceIp, int userId, DateTime expiryTime)
+        {
+            var session = new UserSession();
+            session.Browser = browser;
+            session.DeviceIp = deviceIp;
+            session.UserId = userId;
+            session.SessionExpireDate = expiryTime;
+            _repoWrapper.UserSession.Create(session);
+            await _repoWrapper.Save();
+        }
+
+        private async Task<ResponseMessage> UserInSession(int userId, string deviceIp, string browser)
+        {
+            var session = await _repoWrapper.UserSession.GetByUserId(userId);
+            if(session is null)
+            {
+                return new ResponseMessage { Status = true };
+            }
+            else
+            {
+                if(session.SessionExpireDate < DateTime.Now && session.DeviceIp == deviceIp && session.Browser.ToLower() == browser.ToLower() )
+                {
+                    return new ResponseMessage { Status = false, Message = "You have an active session in one of your browser!. Sign out of it to Signin here."};
+                }
+                return new ResponseMessage { Status = true };
+            }
         }
     }
 }
