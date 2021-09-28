@@ -75,7 +75,7 @@ namespace HealthBanc.Controllers
             //var deviceIp = IpAddress;
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-
+            _logger.LogCritical("Session sign out" + id);
             var session = await _repoWrapper.UserSession.GetByUserId_Device(id, IpAddress);
             if (session != null)
             {
