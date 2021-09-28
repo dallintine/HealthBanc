@@ -13,6 +13,8 @@ using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
+using DeviceDetectorNET;
+using DeviceDetectorNET.Parser;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
@@ -25,6 +27,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using UAParser;
+using Wangkanai.Detection.Services;
 
 namespace HealthBanc.Controllers
 {
@@ -38,11 +41,14 @@ namespace HealthBanc.Controllers
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly IDetectionService _detectionService;
+
         private AppEndpoint Options { get; }
         public StringValues agent;
+        public string IpAddress;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt
-            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor)
+            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor, IDetectionService detectionService)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -51,7 +57,9 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
             _passwordHasher = passwordHasher;
             _repoWrapper = repoWrapper;
+            _detectionService = detectionService;
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
+            IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
         }
 
         /// <summary>
@@ -60,16 +68,32 @@ namespace HealthBanc.Controllers
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        [Authorize]
+        //[Authorize]
         public IActionResult LogOut()
         {
             //var response = _identityService.LogOut();
-            //var userAgent = agent;
-            //string uaString = Convert.ToString(userAgent[0]);
-            //var uaParser = Parser.GetDefault();
-            //ClientInfo c = uaParser.Parse(uaString);
-            //var has =  c.OS.ToString() + "," + c.UA.ToString() + "," + c.Device.Model + "," + c.Device.Brand + "," + c.Device.Family + ","+ c.UA.ToString() ;
-            return Ok();
+            var userAgent = agent;         
+            string uaString = Convert.ToString(userAgent[0]);
+            var dd = new DeviceDetector(agent);
+            dd.DiscardBotInformation();
+
+            //var clientInfo = dd.GetClient();
+            //var osInfo = dd.GetOs();
+            //var device = dd.GetDeviceName();
+            //var brand = dd.GetBrandName();
+            //var model = dd.GetModel();
+            //var clientInfo = _detectionService.Device.Type;
+            //var osInfo = _detectionService.Browser.Name;
+            //var device = _detectionService.Engine.Name;
+            //var brand = _detectionService.Platform.Name;
+            //var model = _detectionService.Crawler.Name;
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            var has = c.OS.ToString() + "," + c.UA.ToString() + "," + c.Device + "," + c.Device.Brand + "," + c.Device.Family + "," + c.UA.ToString();
+
+            //return Ok(has + "         " + device + " " + clientInfo + "  " + osInfo + "  " + brand + "  " + model );
+            return Ok(has + "   "+ IpAddress);
+
         }
 
         ///<summary>
