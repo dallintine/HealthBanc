@@ -23,7 +23,7 @@ namespace DataAccess.General.Implementation
 
         public async Task<UserSession> GetById_Device(long id, string ip)
         {
-            return await _context.UserSessions.Where(x => x.Id == id && x.DeviceIp == ip).LastOrDefaultAsync();
+            return await _context.UserSessions.Where(x => x.Id == id && x.DeviceIp == ip).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
         }
 
         public async Task<UserSession> GetByUserId(int userId)
@@ -33,7 +33,7 @@ namespace DataAccess.General.Implementation
 
         public async Task<UserSession> GetByUserId_Device(int userId, string ip)
         {
-            return await _context.UserSessions.Where(x => x.UserId == userId && x.DeviceIp == ip).LastOrDefaultAsync();
+            return await _context.UserSessions.Where(x => x.UserId == userId && x.DeviceIp == ip).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
         }
     }
 }
