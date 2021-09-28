@@ -18,7 +18,7 @@ namespace HealthBanc.Logging
                 var applicationInsightsOptions = context.Configuration.GetOptions<ApplicationInsightsOptions>("applicationinsightsoptions");
                 if (!Enum.TryParse<LogEventLevel>(serilogOptions.Level, true, out var level))
                 {
-                    level = LogEventLevel.Information;
+                    level = LogEventLevel.Warning;
                 }
 
                 applicationName = string.IsNullOrWhiteSpace(applicationName) ? appOptions.Name : applicationName;
@@ -26,7 +26,7 @@ namespace HealthBanc.Logging
                     .MinimumLevel.Is(level)
                     .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
                     .Enrich.WithProperty("ApplicationName", applicationName);
-                Configure(loggerConfiguration, Serilog.Events.LogEventLevel.Information, seqOptions, serilogOptions,azureBlobOptions, applicationInsightsOptions);
+                Configure(loggerConfiguration, Serilog.Events.LogEventLevel.Warning, seqOptions, serilogOptions,azureBlobOptions, applicationInsightsOptions);
             });
 
         private static void Configure(LoggerConfiguration loggerConfiguration, LogEventLevel level,SeqOptions seqOptions, SerilogOptions serilogOptions,AzureBlobOptions azureBlobOptions,
