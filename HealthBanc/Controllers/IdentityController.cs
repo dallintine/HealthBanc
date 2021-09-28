@@ -49,6 +49,12 @@ namespace HealthBanc.Controllers
             _repoWrapper = repoWrapper;
         }
 
+        public IActionResult LogOut()
+        {
+            var response = _identityService.LogOut();
+            return Ok(response);
+        }
+
         ///<summary>
         ///This Creates The User
         ///</summary>        
