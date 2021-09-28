@@ -476,7 +476,7 @@ namespace Application.Services.Identity
             }
             else
             {
-                if(DateTime.Now >= session.SessionExpireDate && session.DeviceIp == deviceIp && session.Browser.ToLower() == browser.ToLower() )
+                if(DateTime.Now < session.SessionExpireDate && session.DeviceIp == deviceIp && session.Browser.ToLower() != browser.ToLower() )
                 {
                     return new ResponseMessage { Status = false, Message = "You have an active session in one of your browser!. Sign out of it to Signin here."};
                 }
