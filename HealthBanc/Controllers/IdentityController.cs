@@ -18,10 +18,13 @@ using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using UAParser;
 
 namespace HealthBanc.Controllers
 {
@@ -36,9 +39,10 @@ namespace HealthBanc.Controllers
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRepositoryWrapper _repoWrapper;
         private AppEndpoint Options { get; }
+        public StringValues agent;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt
-            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor)
+            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -47,6 +51,7 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
             _passwordHasher = passwordHasher;
             _repoWrapper = repoWrapper;
+            agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
 
         /// <summary>
@@ -58,8 +63,13 @@ namespace HealthBanc.Controllers
         [Authorize]
         public IActionResult LogOut()
         {
-            var response = _identityService.LogOut();
-            return Ok(response);
+            //var response = _identityService.LogOut();
+            //var userAgent = agent;
+            //string uaString = Convert.ToString(userAgent[0]);
+            //var uaParser = Parser.GetDefault();
+            //ClientInfo c = uaParser.Parse(uaString);
+            //var has =  c.OS.ToString() + "," + c.UA.ToString() + "," + c.Device.Model + "," + c.Device.Brand + "," + c.Device.Family + ","+ c.UA.ToString() ;
+            return Ok();
         }
 
         ///<summary>

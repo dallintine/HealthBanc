@@ -60,8 +60,9 @@ namespace Application.Services.Identity
 
         public ResponseMessage LogOut()
         {
-            return new ResponseMessage { Status = true, ResponseCode = 0, Message = "SignOut Successful" });
+            return (new ResponseMessage { Status = true, ResponseCode = 0, Message = "SignOut Successful" });
         }
+
         public async Task<ResponseMessage> RegisterUser(RegistrationViewModel registrationViewModel)
         {
             var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
