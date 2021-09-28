@@ -454,7 +454,7 @@ namespace Application.Services.Identity
 
         private async Task SessionStorage(string browser, string deviceIp, int userId, DateTime expiryTime)
         {
-            _logger.LogCritical(browser, deviceIp,"sesionstorage");
+            _logger.LogCritical($"{browser}, {deviceIp}, sesionstorage");
             var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if (session is null)
             {
@@ -477,7 +477,7 @@ namespace Application.Services.Identity
 
         private async Task<ResponseMessage> UserInSession(int userId, string deviceIp, string browser)
         {
-            _logger.LogCritical(browser, deviceIp,"userinsession");
+            _logger.LogCritical($"{browser}, {deviceIp}, userinsession");
             var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if(session is null)
             {
