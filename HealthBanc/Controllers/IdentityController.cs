@@ -66,26 +66,15 @@ namespace HealthBanc.Controllers
         [Authorize]
         public async Task<IActionResult> LogOut()
         {
-            //var userAgent = agent;
-            //string uaString = Convert.ToString(userAgent[0]);
-            //var uaParser = Parser.GetDefault();
-            //ClientInfo c = uaParser.Parse(uaString);
-            //var browser = c.UserAgent.ToString();
-            //var device = c.Device.ToString();
-            //var deviceIp = IpAddress;
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            _logger.LogCritical("Session sign out" + id);
             var session = await _repoWrapper.UserSession.GetByUserId_Device(id, IpAddress);
             if (session != null)
             {
-                _logger.LogCritical("Session Found");
                 _repoWrapper.UserSession.Delete(session);
                 await _repoWrapper.Save();
-                _logger.LogCritical("Session Deleted");
             }
             return Ok(new ResponseMessage {Status=true, Message= "Log out successful" });
-            //return Ok($"{browser}, {device}, {deviceIp}");
         }
 
         ///<summary>

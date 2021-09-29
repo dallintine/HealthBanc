@@ -454,11 +454,9 @@ namespace Application.Services.Identity
 
         private async Task SessionStorage(string browser, string deviceIp, int userId, DateTime expiryTime)
         {
-            _logger.LogCritical($"{browser}, {deviceIp}, sesionstorage");
             var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if (session is null)
             {
-                _logger.LogCritical($"{deviceIp} session storage null");
 
                 var newSession = new UserSession();
                 newSession.Browser = browser;
@@ -469,8 +467,6 @@ namespace Application.Services.Identity
             }
             else
             {
-                _logger.LogCritical($"{deviceIp} session storage not null");
-
                 session.Browser = browser;
                 session.DeviceIp = deviceIp;
                 session.SessionExpireDate = expiryTime;
@@ -481,18 +477,16 @@ namespace Application.Services.Identity
 
         private async Task<ResponseMessage> UserInSession(int userId, string deviceIp, string browser)
         {
-            _logger.LogCritical($"{browser}, {deviceIp}, userinsession");
             var session = await _repoWrapper.UserSession.GetByUserId_Device(userId,deviceIp);
             if(session is null)
             {
-                _logger.LogCritical($"{deviceIp} userin session null");
                 return new ResponseMessage { Status = true };
             }
             else
             {
                 if(DateTime.Now < session.SessionExpireDate && session.DeviceIp == deviceIp && session.Browser.ToLower() != browser.ToLower() )
                 {
-                    _logger.LogCritical($"{deviceIp} userin session active session, {DateTime.Now.ToUniversalTime()} , {session.SessionExpireDate}");
+                    _logger.LogCritical($"{deviceIp} user in session active session, {DateTime.Now} , {session.SessionExpireDate}");
 
                     return new ResponseMessage { Status = false, Message = "You have an active session in one of your browser!. Sign out of it to Signin here."};
                 }
