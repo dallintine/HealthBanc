@@ -84,7 +84,7 @@ namespace HealthBanc.Controllers
                 await _repoWrapper.Save();
                 _logger.LogCritical("Session Deleted");
             }
-            return Ok("hit logout");
+            return Ok(new ResponseMessage {Status=true, Message= "Log out successful" });
             //return Ok($"{browser}, {device}, {deviceIp}");
         }
 
