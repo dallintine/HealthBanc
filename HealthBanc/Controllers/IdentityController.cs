@@ -63,17 +63,19 @@ namespace HealthBanc.Controllers
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        [Authorize]
         public async Task<IActionResult> LogOut()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-            var session = await _repoWrapper.UserSession.GetByUserId_Device(id, IpAddress);
-            if (session != null)
+            if (!string.IsNullOrEmpty(userId))
             {
-                _repoWrapper.UserSession.Delete(session);
-                await _repoWrapper.Save();
-            }
+                int id = int.Parse(userId);
+                var session = await _repoWrapper.UserSession.GetByUserId_Device(id, IpAddress);
+                if (session != null)
+                {
+                    _repoWrapper.UserSession.Delete(session);
+                    await _repoWrapper.Save();
+                }
+            }           
             return Ok(new ResponseMessage {Status=true, Message= "Log out successful" });
         }
 
