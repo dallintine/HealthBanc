@@ -116,6 +116,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile, ApplicationUser user)
         {
             var profile = new InsuranceUserProfile();
+            string initialContactAddress = null;
             var checkIfProfileWithEmail = await _insuranceSerivce.GetProfileCompletion(null, user.Email);
             if (checkIfProfileWithEmail.Status)
             {
@@ -128,6 +129,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     else
                     {
                         profile = await _repoWrapper.InsuranceProfile.GetByEmail(user.Email);
+                        initialContactAddress = profile.ContactAddress;
                     }
                 }
                 else if (checkIfProfileWithEmail.Data.HealthInsuredPlan != null)
@@ -140,6 +142,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             profile = _mapper.Map(userProfile, profile);
             profile.UserId = user.Id;
+
+            if(profile.InsurancePayeeId != null && (initialContactAddress is null))
+            {
+                profile.PlanCode = "1";
+                profile.Premium = Decimal.Parse("1000");
+            }
+            
 
             profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
             profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
