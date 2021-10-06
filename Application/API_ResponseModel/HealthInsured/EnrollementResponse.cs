@@ -15,6 +15,7 @@ namespace Application.API_ResponseModel.HealthInsured
         public object instance { get; set; }
         public object validationErrors { get; set; }
         public string message { get; set; }
-        public object code { get; set; }
+        public string code { get; set; }
+        public object path { get; set; }
     }
 }

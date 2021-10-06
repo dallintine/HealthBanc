@@ -10,7 +10,6 @@ namespace Application.ViewModels.HealthInsured
     {
         [Required]
         public string MaritalStatus { get; set; }
-        [Required]
         public string Occupation { get; set; }
         [Required]
         public string ContactAddress { get; set; }

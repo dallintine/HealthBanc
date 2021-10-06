@@ -40,11 +40,14 @@ namespace Persistence
         public DbSet<HygeiaHospitalList> HygeiaHospitalLists { get; set; }
         public DbSet<EnrollmentOnOnboarding> EnrollmentOnOnboardings { get; set; }
         public DbSet<CompanyProfile> CompanyProfiles { get; set; }
+        public DbSet<FamilyProfile> FamilyProfiles { get; set; }
         public DbSet<BeneficiaryReviewUser> BeneficiaryReviewUsers { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<EncryptedAcessToken> EncryptedAcessTokens { get; set; }
         public DbSet<HealthFinance> HealthFinances { get; set; }
         public DbSet<HMOPayment> HMOPayments { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

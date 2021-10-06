@@ -43,6 +43,32 @@ namespace DataAccess
         private IPasswordChangeRepository _passwordChangeRepository;
         public IHealthFinanceRepository _healthFinance;
         public IHMOPaymentRepository _hmoPayment;
+        public IFamilyProfileRepository _familyProfile;
+        public IUserSessionRepository _userSession;
+
+        public IFamilyProfileRepository FamilyProfile
+        {
+            get
+            {
+                if (_familyProfile == null)
+                {
+                    _familyProfile = new FamilyProfileRepository(_context);
+                }
+                return _familyProfile;
+            }
+        }
+
+        public IUserSessionRepository UserSession
+        {
+            get
+            {
+                if (_userSession == null)
+                {
+                    _userSession = new UserSessionRepository(_context);
+                }
+                return _userSession;
+            }
+        }
 
         public IHMOPaymentRepository HMOPayment
         {

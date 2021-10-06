@@ -28,6 +28,23 @@ namespace HealthBanc.Mappers.Insurance
 
             CreateMap<FileModel, BeneficiaryReviewUser>();
 
+            CreateMap<FamilyMemberViewModel, InsuranceUserProfile>()
+                .ForMember(dest => dest.Surname, opt => opt.MapFrom(x => x.LastName))
+                .ForMember(dest => dest.Othernames, opt => opt.MapFrom(x => x.FirstName))
+                .ForMember(dest => dest.DateCreated, opt => opt.MapFrom(x => DateTime.Now))
+                .ForMember(dest => dest.PlanCode, opt => opt.MapFrom(x => "1"))
+                .ForMember(dest => dest.InsuranceService, opt => opt.MapFrom(x => InsuranceProvider.Axamansard.ToString()))
+                .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => Decimal.Parse("1000")));
+
+            CreateMap<PayForRefereeViewModel,InsuranceUserProfile>()
+                .ForMember(dest => dest.Surname, opt => opt.MapFrom(x => x.LastName))
+                .ForMember(dest => dest.Othernames, opt => opt.MapFrom(x => x.FirstName))
+                .ForMember(dest => dest.PlanCode, opt => opt.MapFrom(x => x.PlanCode == "7" ? "1" : "2"))
+                .ForMember(dest => dest.Premium, opt => opt.MapFrom(x => x.PlanCode == "7" ? Decimal.Parse("1000") : Decimal.Parse("2000")))
+                .ForMember(dest => dest.DateCreated, opt => opt.MapFrom(x => DateTime.Now));
+
+
+
         }
     }
 }

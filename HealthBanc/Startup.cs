@@ -33,6 +33,7 @@ using Persistence;
 using Application.Helpers.Jwt_Authorization;
 using Hangfire.Dashboard;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
+using Application.Services;
 
 namespace HealthBanc
 {
@@ -245,10 +246,10 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,TokenizationService tokenizationService)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,UtilityService utilityService)
         {
-            tokenizationService.MakeHygeiaHMOPayment().Wait();
-            tokenizationService.MakeAxamansardHMOPayment().Wait();
+            utilityService.MakeHygeiaHMOPayment().Wait();
+            utilityService.MakeAxamansardHMOPayment().Wait();
 
             var options = new DashboardOptions
             {
@@ -257,10 +258,7 @@ namespace HealthBanc
                     new MyAuthorizationFilter(tokenValidationParameters, logger,"Super-Administrator")
                 }
             };
-            //app.UseHangfireDashboard($"/apiResponse1963.", new DashboardOptions
-            //{
-            //    Authorization = new[] { new MyAuthorizationFilter() }
-            //});
+
             app.UseHangfireDashboard("/apiResponse1963.", options);
 
             ServicePointManager.ServerCertificateValidationCallback +=

@@ -70,16 +70,21 @@ namespace Application.Services
                 sbk.Append("</IBSRequest>");
 
                 var enq = Encrypt(sbk.ToString());
-                _logger.LogInformation("Logging Intrabank transfer Request");
-                _logger.LogInformation(sbk.ToString());
+                _logger.LogWarning("Logging Intrabank transfer Request");
+
+                _logger.LogWarning(sbk.ToString());
+
+
 
                 int AppID = Convert.ToInt16(appId);
                 var responcode = await call.IBSBridgeAsync(enq, AppID);
                 var finalresponse = Decrypt(responcode.Body.IBSBridgeResult);
                 XmlDocument xmlDoc = new XmlDocument();
-                _logger.LogInformation("Logging Intrabank transfer Response");
+                _logger.LogWarning("Logging Intrabank transfer Response");
+
                 xmlDoc.LoadXml(finalresponse);
-                _logger.LogInformation(finalresponse.ToString());
+                _logger.LogWarning(finalresponse.ToString());
+
                 finalAcctName.ResponseCode = Convert.ToString(xmlDoc.GetElementsByTagName("ResponseCode").Item(0).InnerText);
                 finalAcctName.ResponseText = Convert.ToString(xmlDoc.GetElementsByTagName("ResponseText").Item(0).InnerText);
                 finalAcctName.Reference = referenceId;

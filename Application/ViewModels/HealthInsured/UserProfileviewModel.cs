@@ -17,7 +17,6 @@ namespace Application.ViewModels.HealthInsured
         public DateTime DateOfBirth { get; set; }
         [Required]
         public string ContactAddress { get; set; }
-        [Required]
         public string Occupation { get; set; }
         [Required]
         public string MaritalStatus { get; set; }
@@ -27,14 +26,13 @@ namespace Application.ViewModels.HealthInsured
         public string CPAddress { get; set; }
         public string CPCity { get; set; }
         public string AlternateHospital { get; set; }
-        [Required]
+        //[Required]
         public string PlanCode { get; set; }
         [Required]
         public string StateOfResidence { get; set; }
         [Required]
         public string TownOfResidence { get; set; }
         public string InsuranceService { get; set; }
-        [Required]
         public IFormFile UserImage { get; set; }
     }
 }

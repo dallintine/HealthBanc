@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Application.ViewModels.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services;
+using DataAccess;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -30,14 +31,17 @@ namespace HealthBanc.Controllers.Insurance
         private readonly TokenizationService _tokenizationService;
         private readonly AuditLogService _auditLogServices;
         private readonly IBSIntegrationService _iBSIntegrationService;
+        private readonly IRepositoryWrapper _repoWrapper;
         public string ipAddress;
         public StringValues agent;
 
-        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices,IBSIntegrationService iBSIntegrationService)
+        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices,IBSIntegrationService iBSIntegrationService
+            ,IRepositoryWrapper repoWrapper )
         {
             _tokenizationService = tokenizationService;
             _auditLogServices = auditLogServices;
             _iBSIntegrationService = iBSIntegrationService;
+            _repoWrapper = repoWrapper;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -114,26 +118,6 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Cancel Subscription
-        /// </summary>
-        /// <param name="reason"></param>
-        /// <returns></returns>
-        [Authorize(Roles = "SuperAdmin")]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> CancelSubscription(string reason)
-        {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-
-            var cancelSubscriptionResult = await _tokenizationService.CancelSubscription(id, reason);
-            if (cancelSubscriptionResult.Status)
-            {
-                return Ok(cancelSubscriptionResult);
-            }
-            return BadRequest(cancelSubscriptionResult);
-        }
-
-        /// <summary>
         /// Get debit card for both coporate and individual health insured users
         /// </summary>
         /// <returns></returns>
@@ -144,9 +128,11 @@ namespace HealthBanc.Controllers.Insurance
         public async Task<IActionResult> GetCards()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            string email = User.FindFirst(ClaimTypes.Email)?.Value;
+
             int Id = int.Parse(userId);
 
-            var cards = await _tokenizationService.GetCards(Id);
+            var cards = await _tokenizationService.GetCards(Id,email);
             if (cards.Status)
             {
                 return Ok(cards);
@@ -235,6 +221,26 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
+        /// Cancel Subscription
+        /// </summary>
+        /// <param name="reason"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> CancelSubscription(string reason)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+
+            var cancelSubscriptionResult = await _tokenizationService.CancelSubscription(id, reason);
+            if (cancelSubscriptionResult.Status)
+            {
+                return Ok(cancelSubscriptionResult);
+            }
+            return BadRequest(cancelSubscriptionResult);
+        }
+
+        /// <summary>
         /// Reactivate Healthinsured insurance service for individual users
         /// </summary>
         /// <returns></returns>
@@ -254,6 +260,48 @@ namespace HealthBanc.Controllers.Insurance
                 return Ok(reactivatewithPrimaryCardResponse);
             }
             return BadRequest(reactivatewithPrimaryCardResponse);            
+        }
+
+        /// <summary>
+        /// Deactivate referee
+        /// </summary>
+        /// <param name="insuranceProfileId"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> DeactivteReferee( int insuranceProfileId)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _tokenizationService.DeactivateReferee(id, insuranceProfileId);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Activate referee
+        /// </summary>
+        /// <param name="insuranceProfileId"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> ActivateRefereeWithPrimaryCard(int insuranceProfileId)
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _tokenizationService.ActivateRefereeWithPrimaryCard(id, insuranceProfileId);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
         }
 
         /// <summary>
@@ -279,50 +327,56 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Get HMO invoice details
+        /// Deactivate family member insurance profile
         /// </summary>
+        /// <param name="insuranceProfileId"></param>
         /// <returns></returns>
-        [Authorize(Roles = "Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        public IActionResult GetHMOInvoiceDetails()
+        public async Task<IActionResult> DeactivateFamilyMember(int insuranceProfileId)
         {
-            var response = _tokenizationService.GetHMOInvoiceDetailsForMonthEnd();
-            return Ok(response);
-        }
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
 
-        [Authorize(Roles = "Super-Administrator")]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> FixPaymentError(string reference, string amount)
-        {
-            await _tokenizationService.FitPaymentError(reference, amount);
-            return Ok();
+            var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetails(id);
+            var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == insuranceProfileId).FirstOrDefault();
+            if(insuranceProfile != null)
+            {
+                var response =  await _tokenizationService.DeactivateFamilyMember(insuranceProfile);
+                if (response.Status)
+                {
+                    return Ok(response);
+                }
+                return BadRequest(response);
+            }
+            return NotFound(new ResponseMessage { Message = "You cannot delete current profile" });
+            
         }
 
         /// <summary>
-        /// Perform sterling intra bank transfer
+        /// Activayte family member insurance profile
         /// </summary>
-        /// <param name="toAccount"></param>
-        /// <param name="fromAccount"></param>
-        /// <param name="amount"></param>
-        /// <param name="des"></param>
+        /// <param name="insuranceProfileId"></param>
         /// <returns></returns>
-        [Authorize(Roles = "Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        public async Task<IActionResult> SendMoney(string toAccount,string fromAccount,string amount,string des)
+        public async Task<IActionResult> ActivateFamilyMember(int insuranceProfileId)
         {
-            var res = await _iBSIntegrationService.SterlingBankIntraBank(decimal.Parse(amount), toAccount, fromAccount, des, "NG0020032");
-            return Ok(res);
-        }
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
 
-        [Authorize(Roles = "Super-Administrator")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> ProcessFailedHMOPayment(int Id)
-        {
-            await _tokenizationService.ProcessFailedHMOPayment(Id);
-            return Ok();
+            var response = await _tokenizationService.ActivateFamilyMemberWithPrimaryCard(id, insuranceProfileId);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            else
+            {
+                return BadRequest(response);
+            }
         }
     }
 }

@@ -37,6 +37,8 @@ namespace DataAccess
         IPasswordChangeRepository PasswordChange { get; }
         IHealthFinanceRepository HealthFinance { get; }
         IHMOPaymentRepository HMOPayment { get; }
+        IFamilyProfileRepository FamilyProfile { get; }
+        IUserSessionRepository UserSession { get; }
 
         Task<int> Save();
     }

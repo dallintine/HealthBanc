@@ -48,20 +48,18 @@ namespace HealthBanc.Controllers.Insurance
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repoWerapper;
         private readonly AuditLogService _auditLogServices;
-        private readonly IHttpContextAccessor _accessor;
-        private readonly CorporateInsuranceService _corporateInsuranceService;
+        private readonly TokenizationService _tokenizationService;
         public string IpAddress;
         public StringValues agent;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IRepositoryWrapper repoWerapper,AuditLogService auditLogServices,IHttpContextAccessor accessor,
-            CorporateInsuranceService corporateInsuranceService)
+            CorporateInsuranceService corporateInsuranceService,TokenizationService tokenizationService)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
             _repoWerapper = repoWerapper;
             _auditLogServices = auditLogServices;
-            _accessor = accessor;
-            _corporateInsuranceService = corporateInsuranceService;
+            _tokenizationService = tokenizationService;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -85,44 +83,6 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Create Insurance profile for indivivuals. hygeia or axamansard is passed as insurance provider in the model
-        /// </summary>
-        /// <param name="userProfile"></param>
-        /// <returns></returns>
-        [EnableCors("Cors")]
-        [HttpPost("[action]")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
-        public async Task<IActionResult> CreateUserInsuranceProfile([FromForm] UserProfileviewModel userProfile)
-        {
-            if (ModelState.IsValid)
-            {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-                var device = _auditLogServices.GetDevice(agent);
-
-                var creatProfileResponse = await _insuranceService.UserOnboarding(userProfile, Id, IpAddress, device);
-
-                if (creatProfileResponse.Status)
-                {
-                    return Ok(creatProfileResponse);
-                }
-                return BadRequest(creatProfileResponse);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
-
-        /// <summary>
         /// Get Towns with HMO coverge with state and insurance provider.insurance provider is either hygeia or axamansard 
         /// </summary>
         /// <param name="state"></param>
@@ -132,11 +92,11 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CityListDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        public IActionResult GetTowns(string state,string insurancePovider)
+        public IActionResult GetTowns(string state, string insurancePovider)
         {
-            if(string.IsNullOrEmpty(state) || String.IsNullOrEmpty(insurancePovider))
+            if (string.IsNullOrEmpty(state) || String.IsNullOrEmpty(insurancePovider))
             {
-                return BadRequest(new ResponseMessage { Status = false, Message="State or insurance provider cannot be null"});
+                return BadRequest(new ResponseMessage { Status = false, Message = "State or insurance provider cannot be null" });
             }
             var townList = _insuranceService.GetTowns(state, insurancePovider);
             return Ok(townList);
@@ -173,7 +133,7 @@ namespace HealthBanc.Controllers.Insurance
         [HttpPost("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HygeiaHospitalList>>))]
         [Authorize(Roles = "SuperAdmin,Super-Administrator")]
-        public async Task<IActionResult> FilterHygeiaHealthCareProvider([FromQuery]PaginationQuery paginationQuery,string state, string city)
+        public async Task<IActionResult> FilterHygeiaHealthCareProvider([FromQuery] PaginationQuery paginationQuery, string state, string city)
         {
             var FilterHealthCareProvider = await _insuranceService.FilterHealthCareProvider(paginationQuery, state, city);
             return Ok(FilterHealthCareProvider);
@@ -188,7 +148,7 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
         public IActionResult AxaMansardGetHealthPlans()
         {
-            var axaListResponse = new List<AxaListResponse>();           
+            var axaListResponse = new List<AxaListResponse>();
             var axaResponse = new AxaListResponse()
             {
                 Text = "Rugby",
@@ -201,56 +161,45 @@ namespace HealthBanc.Controllers.Insurance
                 Code = "8"
             };
             axaListResponse.Add(axaResponse2);
-            return Ok(new ResponseMessage<List<AxaListResponse>> { Data = axaListResponse, Message = "HealthPan was fetched successfully", Status = true });            
+            return Ok(new ResponseMessage<List<AxaListResponse>> { Data = axaListResponse, Message = "HealthPan was fetched successfully", Status = true });
         }
 
         /// <summary>
-        /// Get paginated list of all users insurance profile. Can only be accessed by the application admins
+        /// Create Insurance profile for indivivuals. hygeia or axamansard is passed as insurance provider in the model
         /// </summary>
-        /// <param name="paginationQuery"></param>
+        /// <param name="userProfile"></param>
         /// <returns></returns>
+        [EnableCors("Cors")]
         [HttpPost("[action]")]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<IndividualProfileDTO>>))]
-        public async Task<IActionResult> GetPaginatedInsuranceProfiles([FromQuery]PaginationQuery paginationQuery)
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
+        public async Task<IActionResult> CreateUserInsuranceProfile([FromForm] UserProfileviewModel userProfile)
         {
-            var insuranceProfiles = await _insuranceService.GetPaginatedInsuranceProfiles(paginationQuery);
-            return Ok(insuranceProfiles);
-        }
-
-        /// <summary>
-        /// Get paginated transaction log of all users or specific user by specifying email. Can only be accessed by the application admins
-        /// </summary>
-        /// <param name="paginationQuery"></param>
-        /// <param name="email"></param> 
-        /// <returns></returns>
-        [HttpPost("[action]")]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<TransactionLogDTO>>))]
-        public async Task<IActionResult> GetPaginatedTransactionLogs([FromQuery] PaginationQuery paginationQuery,string email)
-        {
-            var transLogs = await _insuranceService.GetPaginatedTransactionLogs(paginationQuery,email);
-
-            return Ok(transLogs);
-        }
-
-        /// <summary>
-        /// Get extended information on users insurance profile
-        /// </summary>
-        /// <param name="email"></param>
-        /// <returns></returns>
-        [HttpGet("[action]")]
-        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualProfileDTO>))]
-        public async Task<IActionResult> GetExtendedInsuranceProfileByEmail(string email)
-        {
-            if(email != null)
+            if (ModelState.IsValid)
             {
-                var profileDetails =  await _insuranceService.GetExtendedInsuranceProfileDetailByEmail(email);
-                if (!profileDetails.Status) return NotFound(profileDetails);
-                return Ok(profileDetails);
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var device = _auditLogServices.GetDevice(agent);
+
+                var creatProfileResponse = await _tokenizationService.UserOnboarding(userProfile, Id, IpAddress, device);
+
+                if (creatProfileResponse.Status)
+                {
+                    return Ok(creatProfileResponse);
+                }
+                return BadRequest(creatProfileResponse);
             }
-            return BadRequest(new ResponseMessage { Message = "Email Cannot be null", Status = false });
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
@@ -266,28 +215,31 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int Id = int.Parse(userId);
             var profile = await _repoWerapper.InsuranceProfile.GetByUserIdAsync(Id);
-            if(profile != null)
+            if (profile != null)
             {
                 var profileDTO = _mapper.Map<IndividualProfileDTO>(profile);
-                return Ok(new ResponseMessage {Data= profileDTO, Message="User profile was fetched successfully",Status=true });
+                return Ok(new ResponseMessage { Data = profileDTO, Message = "User profile was fetched successfully", Status = true });
             }
             return BadRequest(new ResponseMessage { Message = "Profile was not found" });
         }
 
         /// <summary>
-        /// Get healthinsured completion profile details
+        /// Get extended information on users insurance profile
         /// </summary>
+        /// <param name="email"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
-        [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> GetProfileCompletion()
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualProfileDTO>))]
+        public async Task<IActionResult> GetExtendedInsuranceProfileByEmail(string email)
         {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int Id = int.Parse(userId);
-
-            var profileCompletion = await _insuranceService.GetProfileCompletion(Id);
-            return Ok(profileCompletion);
+            if (email != null)
+            {
+                var profileDetails = await _insuranceService.GetExtendedInsuranceProfileDetailByEmail(email);
+                if (!profileDetails.Status) return NotFound(profileDetails);
+                return Ok(profileDetails);
+            }
+            return BadRequest(new ResponseMessage { Message = "Email Cannot be null", Status = false });
         }
 
         /// <summary>
@@ -324,95 +276,126 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
+        /// <summary>
+        /// Get paginated list of all users insurance profile. Can only be accessed by the application admins
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<IndividualProfileDTO>>))]
+        public async Task<IActionResult> GetPaginatedInsuranceProfiles([FromQuery]PaginationQuery paginationQuery)
+        {
+            var insuranceProfiles = await _insuranceService.GetPaginatedInsuranceProfiles(paginationQuery);
+            return Ok(insuranceProfiles);
+        }
 
         /// <summary>
-        /// Admin Update individual insurance profile
+        /// Pay for individual with just email details
         /// </summary>
-        /// <param name="updateProfileViewModel"></param>
+        /// <param name="email"></param>
+        /// <param name="insuranceService"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult>  PayforRefereeWithEmail(string email,string insuranceService)
+        {
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+
+            var response = await _insuranceService.PayforNewIndividualWithEmail(userId, email,insuranceService);
+
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> PayForRefereeWithFullDetails([FromForm] PayForRefereeViewModel refereeViewModel)
+        {
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+
+            var response = await _tokenizationService.PayForRefereeWithFullDetails(userId, refereeViewModel);
+
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Get insuranceProfiles of paid referees
+        /// </summary>
+        /// <param name="paginationQuery"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetPaginatedRefereeInsuranceProfiles([FromQuery] PaginationQuery paginationQuery)
+        {
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+            var insuranceProfiles = await _insuranceService.GetReferedInsuranceProfiles(paginationQuery, userId);
+            return Ok(insuranceProfiles);            
+        }
+
+        /// <summary>
+        /// Removed paid referee from list
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> RemovePaidReferee(string email)
+        {
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+
+            var response = await _insuranceService.RemovePaidReferee(userId, email);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Get healthinsured completion profile details
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetProfileCompletion()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var user = await _repoWerapper.ApplicationUser.FindByIdAsync(Id);
+            var profileCompletion = await _insuranceService.GetProfileCompletion(Id,user.Email);
+            return Ok(profileCompletion);
+        }
+      
+        /// <summary>
+        /// Get paginated transaction log of all users or specific user by specifying email. Can only be accessed by the application admins
+        /// </summary>
+        /// <param name="paginationQuery"></param>
         /// <param name="email"></param> 
         /// <returns></returns>
         [HttpPost("[action]")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [Authorize(Roles = "Super-Administrator")]
-        public async Task<IActionResult> AdminUpdateProfileAsync(string email, UpdateProfileViewModel updateProfileViewModel)
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<TransactionLogDTO>>))]
+        public async Task<IActionResult> GetPaginatedTransactionLogs([FromQuery] PaginationQuery paginationQuery, string email)
         {
-            if (ModelState.IsValid)
-            {
-                var insuranceProfile = await _repoWerapper.InsuranceProfile.GetByEmail(email);
+            var transLogs = await _insuranceService.GetPaginatedTransactionLogs(paginationQuery, email);
 
-                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, insuranceProfile.UserId);
-                if (updateResponse.Status)
-                {
-                    return Ok(updateResponse);
-                }
-                return BadRequest(updateResponse);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+            return Ok(transLogs);
         }
 
-        /// <summary>
-        /// Upload Axamansard Hospital List
-        /// </summary>
-        /// <param name="file"></param>
-        /// <param name="passcode"></param>
-        /// <returns></returns>
-        [HttpPost("[action]")]
-        [Authorize(Roles = "Super-Administrator")]
-        public async Task<IActionResult> UploadAxamansardHospitalListToDb(IFormFile file,string passcode)
-        {
-            if(passcode == "docUpload1963.")
-            {
-                var checkRole = User.IsInRole("Super-Administrator");
-                if (checkRole)
-                {
-                    var result = await _insuranceService.UploadAxaHospitalListFromExcel(file);
-                    if (result.Status)
-                    {
-                        return Ok(result);
-                    }
-                    return BadRequest();
-                }
-                return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
-            }            
-            return BadRequest(new ResponseMessage { Message="Wrong passcode"});
-        }
-
-        /// <summary>
-        /// Upload Hygeia hospital List
-        /// </summary>
-        /// <param name="file"></param>
-        /// <param name="passcode"></param>
-        /// <returns></returns>
-        [HttpPost("[action]")]
-        [Authorize(Roles = "Super-Administrator")]
-        public async Task<IActionResult> UploadHygeiaHospitalListToDb(IFormFile file,string passcode)
-        {
-            if (passcode == "docUpload1963.")
-            {
-                var checkRole = User.IsInRole("Super-Administrator");
-                if (checkRole)
-                {
-                    var result = await _insuranceService.UploadHygeiaHospitalListFromExcel(file);
-                    if (result.Status)
-                    {
-                        return Ok(result);
-                    }
-                    return BadRequest();
-                }
-                return BadRequest(new ResponseMessage { Message = "You dont have permission to access this resource. Request for permission." });
-            }
-            return BadRequest(new ResponseMessage { Message = "Wrong passcode" });
-        }
-        
         /// <summary>
         /// Generate Unique identifier
         /// </summary>
@@ -467,7 +450,7 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(File))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
-        public IActionResult DowloadInsuranceProfileExcelData(bool subStatus, bool activeStatus, string service)
+        public IActionResult DowloadInsuranceProfileExcelData(bool? subStatus, bool? activeStatus, string service)
         {
             var response = _insuranceService.DowloadInsuranceProfileExcelData(subStatus, activeStatus, service);
             if (response.Status)
@@ -479,20 +462,6 @@ namespace HealthBanc.Controllers.Insurance
                 return File(content, contentType, fileName);
             }
             return BadRequest(response);
-        }
-
-        /// <summary>
-        /// Fix card errors
-        /// </summary>
-        /// <param name="email"></param>
-        /// <returns></returns>
-        [HttpGet("[action]")]
-        [Authorize(Roles = "Super-Administrator")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        public async Task<IActionResult> FixCardsError(string email)
-        {
-            await _insuranceService.FixCardsError(email);
-            return Ok();
         }
     }
 }

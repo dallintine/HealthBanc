@@ -396,6 +396,51 @@ namespace Persistence.Migrations
                     b.ToTable("EnrollmentOnReactivations");
                 });
 
+            modelBuilder.Entity("Domain.Models.Axa_Hygeia_Insurance.FamilyProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("FullName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InsuranceService")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PendingEmailJobId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PendingJobId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ProfileCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("TokenizationCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FamilyProfiles");
+                });
+
             modelBuilder.Entity("Domain.Models.Axa_Hygeia_Insurance.HMOPayment", b =>
                 {
                     b.Property<int>("Id")
@@ -469,6 +514,9 @@ namespace Persistence.Migrations
                     b.Property<bool?>("ActiveStatus")
                         .HasColumnType("bit");
 
+                    b.Property<string>("AxamasardReferenceCode")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CPAddress")
                         .HasColumnType("nvarchar(max)");
 
@@ -502,11 +550,23 @@ namespace Persistence.Migrations
                     b.Property<DateTime>("EndActiveStatusDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("FailedScheduledPaymentRetry")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FamilyEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("FamilyProfileId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Gender")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Image")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("InsurancePayeeId")
+                        .HasColumnType("int");
 
                     b.Property<string>("InsuranceService")
                         .HasColumnType("nvarchar(max)");
@@ -556,12 +616,14 @@ namespace Persistence.Migrations
                     b.Property<string>("TransId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyProfileId");
+
+                    b.HasIndex("FamilyProfileId");
 
                     b.ToTable("InsuranceUserProfiles");
                 });
@@ -781,6 +843,9 @@ namespace Persistence.Migrations
                     b.Property<int?>("CompanyProfileId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("FamilyProfileId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("InsuranceUserProfileId")
                         .HasColumnType("int");
 
@@ -799,6 +864,8 @@ namespace Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyProfileId");
+
+                    b.HasIndex("FamilyProfileId");
 
                     b.HasIndex("InsuranceUserProfileId");
 
@@ -957,6 +1024,9 @@ namespace Persistence.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("FamilyProfileId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("InsuranceUserProfileId")
                         .HasColumnType("int");
 
@@ -972,6 +1042,8 @@ namespace Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyProfileId");
+
+                    b.HasIndex("FamilyProfileId");
 
                     b.HasIndex("InsuranceUserProfileId");
 
@@ -994,6 +1066,9 @@ namespace Persistence.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("FamilyProfileId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("InsuranceUserProfileId")
                         .HasColumnType("int");
 
@@ -1003,6 +1078,8 @@ namespace Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyProfileId");
+
+                    b.HasIndex("FamilyProfileId");
 
                     b.HasIndex("InsuranceUserProfileId");
 
@@ -1197,6 +1274,30 @@ namespace Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Domain.Models.UserSession", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Browser")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeviceIp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SessionExpireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserSessions");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
@@ -1330,6 +1431,10 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Models.Axa.Hygeia_Insurance.CompanyProfile", null)
                         .WithMany("InsuranceUserProfiles")
                         .HasForeignKey("CompanyProfileId");
+
+                    b.HasOne("Domain.Models.Axa_Hygeia_Insurance.FamilyProfile", null)
+                        .WithMany("InsuranceUserProfiles")
+                        .HasForeignKey("FamilyProfileId");
                 });
 
             modelBuilder.Entity("Domain.Models.Axa_Hygeia_Insurance.PaymentOnReactivation", b =>
@@ -1372,6 +1477,10 @@ namespace Persistence.Migrations
                         .WithMany("Cards")
                         .HasForeignKey("CompanyProfileId");
 
+                    b.HasOne("Domain.Models.Axa_Hygeia_Insurance.FamilyProfile", null)
+                        .WithMany("Cards")
+                        .HasForeignKey("FamilyProfileId");
+
                     b.HasOne("Domain.Models.Axa_Hygeia_Insurance.InsuranceUserProfile", null)
                         .WithMany("Cards")
                         .HasForeignKey("InsuranceUserProfileId");
@@ -1392,6 +1501,10 @@ namespace Persistence.Migrations
                         .WithMany("PaymentReferences")
                         .HasForeignKey("CompanyProfileId");
 
+                    b.HasOne("Domain.Models.Axa_Hygeia_Insurance.FamilyProfile", "FamilyProfile")
+                        .WithMany("PaymentReferences")
+                        .HasForeignKey("FamilyProfileId");
+
                     b.HasOne("Domain.Models.Axa_Hygeia_Insurance.InsuranceUserProfile", "InsuranceUserProfile")
                         .WithMany("PaymentReferences")
                         .HasForeignKey("InsuranceUserProfileId");
@@ -1402,6 +1515,10 @@ namespace Persistence.Migrations
                     b.HasOne("Domain.Models.Axa.Hygeia_Insurance.CompanyProfile", null)
                         .WithMany("HealthInsuredActivityLogs")
                         .HasForeignKey("CompanyProfileId");
+
+                    b.HasOne("Domain.Models.Axa_Hygeia_Insurance.FamilyProfile", null)
+                        .WithMany("HealthInsuredActivityLogs")
+                        .HasForeignKey("FamilyProfileId");
 
                     b.HasOne("Domain.Models.Axa_Hygeia_Insurance.InsuranceUserProfile", null)
                         .WithMany("HealthInsuredActivityLogs")

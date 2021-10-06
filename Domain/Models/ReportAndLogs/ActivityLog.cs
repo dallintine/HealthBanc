@@ -10,10 +10,11 @@ namespace Domain.Models.ReportAndLogs
         {
                 
         }
-        public ActivityLog(int? insuranceUserProfileId, int? companyProfileId, string actionApplied,string service)
+        public ActivityLog(int? insuranceUserProfileId, int? companyProfileId,int? familyProfileId, string actionApplied,string service)
         {
             InsuranceUserProfileId = insuranceUserProfileId;
             CompanyProfileId = companyProfileId;
+            FamilyProfileId = familyProfileId;
             ActionApplied = actionApplied;
             Date = DateTime.Now;
             Service = service;
@@ -22,6 +23,7 @@ namespace Domain.Models.ReportAndLogs
         public int Id { get; set; }
         public int? InsuranceUserProfileId { get; set; }
         public int? CompanyProfileId { get; set; }
+        public int? FamilyProfileId { get; set; }
         public string ActionApplied { get; set; }
         public DateTime Date { get; set; }
 

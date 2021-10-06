@@ -18,10 +18,13 @@ using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
 using Microsoft.AspNet.OData;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using UAParser;
 
 namespace HealthBanc.Controllers
 {
@@ -35,10 +38,13 @@ namespace HealthBanc.Controllers
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRepositoryWrapper _repoWrapper;
+
         private AppEndpoint Options { get; }
+        public StringValues agent;
+        public string IpAddress;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt
-            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor)
+            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -47,6 +53,30 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
             _passwordHasher = passwordHasher;
             _repoWrapper = repoWrapper;
+            agent = accessor.HttpContext.Request.Headers["User-Agent"];
+            IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
+        }
+
+        /// <summary>
+        /// Log user out
+        /// </summary>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> LogOut()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                int id = int.Parse(userId);
+                var session = await _repoWrapper.UserSession.GetByUserId_Device(id, IpAddress);
+                if (session != null)
+                {
+                    _repoWrapper.UserSession.Delete(session);
+                    await _repoWrapper.Save();
+                }
+            }           
+            return Ok(new ResponseMessage {Status=true, Message= "Log out successful" });
         }
 
         ///<summary>
@@ -95,7 +125,13 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel);
+                var userAgent = agent;
+                string uaString = Convert.ToString(userAgent[0]);
+                var uaParser = Parser.GetDefault();
+                ClientInfo c = uaParser.Parse(uaString);
+                var browser = c.UA.ToString();
+                var deviceIp = IpAddress;
+                var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel,browser, deviceIp);
                 if (response.Status == true)
                 {
                     return Ok(response);
@@ -188,6 +224,13 @@ namespace HealthBanc.Controllers
             if (ModelState.IsValid)
             {
                 //get the user
+                var userAgent = agent;
+                string uaString = Convert.ToString(userAgent[0]);
+                var uaParser = Parser.GetDefault();
+                ClientInfo c = uaParser.Parse(uaString);
+                var browser = c.UA.ToString();
+                var deviceIp = IpAddress;
+
                 var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
 
                 if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage { Message = "User detail is invalid, please try again with correct details" +
@@ -204,7 +247,7 @@ namespace HealthBanc.Controllers
                 //check that the user password is correct
                 if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
                 {
-                    var response = await _identityService.Login2(user);
+                    var response = await _identityService.Login2(user,browser, deviceIp);
                     if (response.Status != true)
                     {
                         return BadRequest(response);
@@ -232,7 +275,13 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> RefreshToken(RefreshTokenViewModel refreshModel)
         {
-            var authResponse = await _identityService.Refresh2(refreshModel);
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            var browser = c.UA.ToString();
+            var deviceIp = IpAddress;
+            var authResponse = await _identityService.Refresh2(refreshModel,browser,deviceIp);
             if (!authResponse.Status)
             {
                 return BadRequest(authResponse);

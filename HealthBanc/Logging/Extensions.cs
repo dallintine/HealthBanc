@@ -18,7 +18,7 @@ namespace HealthBanc.Logging
                 var applicationInsightsOptions = context.Configuration.GetOptions<ApplicationInsightsOptions>("applicationinsightsoptions");
                 if (!Enum.TryParse<LogEventLevel>(serilogOptions.Level, true, out var level))
                 {
-                    level = LogEventLevel.Information;
+                    level = LogEventLevel.Warning;
                 }
 
                 applicationName = string.IsNullOrWhiteSpace(applicationName) ? appOptions.Name : applicationName;

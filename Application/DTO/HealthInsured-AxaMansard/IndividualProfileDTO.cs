@@ -8,6 +8,7 @@ namespace HealthBanc.DTO.HealthInsured_AxaMansard
 {
     public class IndividualProfileDTO
     {
+        public int Id { get; set; }
         public string TransId { get; set; }
         public string EnrolleeNumber { get; set; }
         public string Gender { get; set; }

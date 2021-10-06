@@ -41,7 +41,7 @@ namespace Application.Services.Paystack
             Options = paystackAccessor.Value;
         }
         
-        public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard, int id)
+        public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard, int id,string phoneNumber,DateTime dateofBirth)
         {
             // Call Paystack client
             var httpClient = _httpClientFactory.CreateClient("Paystack");
@@ -66,26 +66,16 @@ namespace Application.Services.Paystack
                         return processSuccessOrFailedResult;
                     }
                     // check if status is failed or timeout
-                    else if(!processSuccessOrFailedResult.Status && processSuccessOrFailedResult.ResponseCode!= 13)
+                    else if(!processSuccessOrFailedResult.Status && processSuccessOrFailedResult.ResponseCode != 13)
                     {
                         return processSuccessOrFailedResult;
                     }
                     // check if sucess is neither failes, success or timeout means response code is 13
                     else
                     {
-                        var user = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(id);
-
-                        if(user is null)
-                        {
-                            user = new InsuranceUserProfile
-                            {
-                                PhoneNumber = "",
-                                DateOfBirth = DateTime.Now
-                            };
-                        }
                         // call ProcessValidDataStatus fucntion to process other valid response {send_otp,submit_birthday,send_phonenumber}
-                        var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, user.PhoneNumber
-                            , user.DateOfBirth,chargeCard.pin);
+                        var processStatusResponse = await ProcessValidDataStatus(chargeCardResponse.data.status, chargeCard.reference, phoneNumber
+                            , dateofBirth,chargeCard.pin);
                         //Check if reposne is open_url
                         if(processStatusResponse.ResponseCode == 20 && processStatusResponse.Status)
                         {
@@ -214,13 +204,27 @@ namespace Application.Services.Paystack
             // check if the status is successfully
             if (status == "success")
             {
+                //if (authorization.reusable == false)
+                //{
+                //    return new TokenizationResponse
+                //    {
+                //        Type = authorization.card_type,
+                //        LastDigit = authorization.last4,
+                //        AuthorizationCode = authorization.authorization_code,
+                //        Signature = authorization.signature,
+                //        Message = "Card is not reusable, Please try with another debit card",
+                //        Status = false,
+                //        Reference = reference,
+                //        ResponseCode = 0
+                //    };
+                //}
                 return new TokenizationResponse
                 {
                     Type = authorization.card_type,
                     LastDigit = authorization.last4,
                     AuthorizationCode = authorization.authorization_code,
                     Signature = authorization.signature,
-                    Message = "Card was tokenize successfully",
+                    Message = "Card was tokenized successfully",
                     Status = true,
                     Reference = reference,
                     ResponseCode = 0
@@ -378,11 +382,11 @@ namespace Application.Services.Paystack
                         return processStatusResponse;
                     }
                 }
-                var message = phoneResponse.data.message ?? "";
-                return new TokenizationResponse { Message = phoneResponse.message + ", " + message, Status = false };
+                _logger.LogWarning(apiResponse, phoneResponse.ToString());
+                return new TokenizationResponse { Message = phoneResponse.message, Status = false };
             }
-            var errorMessage = phoneResponse.data.message ?? "";
-            return new TokenizationResponse { Message = phoneResponse.message + ", " + errorMessage, Status = false };
+            //var errorMessage = phoneResponse.data.message ?? "";
+            return new TokenizationResponse { Message = phoneResponse.message, Status = false };
         }
         public async Task<TokenizationResponse> VerifyTransaction(string reference)
         {
@@ -403,7 +407,7 @@ namespace Application.Services.Paystack
                             LastDigit = verifyResponse.data.authorization.last4,
                             AuthorizationCode = verifyResponse.data.authorization.authorization_code,
                             Signature = verifyResponse.data.authorization.signature,
-                            Message = "Card was tokenize successfully",
+                            Message = "Card was tokenized successfully",
                             Status = true,
                             Reference = reference,
                             ResponseCode = 0

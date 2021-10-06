@@ -31,7 +31,8 @@ namespace Application.Services
         {
             var emails = new List<string>
             {
-                /*"oluwaseunayo.lojede@sterling.ng" , "Esther.kerry@sterling.ng","Opeyemi.adebola@sterling.ng",*/"hassan.hassan@sterling.ng","opeyemi.olugunojin@sterling.ng"
+                "oluwaseunayo.lojede@sterling.ng" , "Esther.kerry@sterling.ng","Opeyemi.adebola@sterling.ng","healthbanc@sterling.ng"
+                //"hassan.hassan@sterling.ng","healthbanc@sterling.ng"
             };
 
             var user = await _repoWrapper.HealthFinance.GetByEmailOrPhoneNumber(healthFinance.Email,healthFinance.Phonenumber);

@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+﻿using Application.DTO;
+using Application.Interfaces;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -58,19 +59,32 @@ namespace Infrastructure.ImageService
             var result = await _blockBlob.DeleteIfExistsAsync();
         }
 
-        public string ConvertImageToBase64(IFormFile file)
+        public ResponseMessage ConvertImageToBase64(IFormFile file)
         {
+            var validImageExtension = new [] { ".JPG",".JPEG", ".JPE", ".BMP", ".GIF", ".PNG" };
+
+            var fileExtension = System.IO.Path.GetExtension(file.FileName.ToUpper());
+            if (!validImageExtension.Contains(fileExtension))
+            {
+                return new ResponseMessage { Message = "Image type is not supported - Only upload PNG/JPEG/JPG/JPE" };
+            }
+
+            var fileSize = file.Length;
+            if((fileSize/1048576) > 2.1)
+            {
+                return new ResponseMessage { Message = "Image Size is too large - Size should be less than 2MB" };
+            }
             if (file.Length > 0)
             {
                 using (var ms = new MemoryStream())
                 {
                     file.CopyTo(ms);
                     var fileBytes = ms.ToArray();
-                    string s = Convert.ToBase64String(fileBytes);
-                    return s;
+                    string base64Image = Convert.ToBase64String(fileBytes);
+                    return new ResponseMessage {Status = true, Data= base64Image };
                 }
             }
-            return "false";
+            return new ResponseMessage { Status = false, Message= "Image cannot be processed,please try again later" };
         }
     }
 }

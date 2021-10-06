@@ -15,13 +15,14 @@ namespace Domain.Models
         {
 
         }
-        public PaymentReference(string channel,string refernce, int? insuranceUserProfileId,int? companyProfileId, int userId, decimal amount,string status)
+        public PaymentReference(string channel,string refernce, int? insuranceUserProfileId,int? companyProfileId,int? familyprofileId, int userId, decimal amount,string status)
         {
             Date = DateTime.Now;
             Channel = channel;
             Refernce = refernce;
             InsuranceUserProfileId = insuranceUserProfileId;
             CompanyProfileId = companyProfileId;
+            FamilyProfileId = familyprofileId;
             UserId = userId;
             Amount = amount;
             Status = status;
@@ -55,6 +56,7 @@ namespace Domain.Models
         public string Refernce { get; set; }
         public int? InsuranceUserProfileId { get; set; }
         public int? CompanyProfileId { get; set; }
+        public int? FamilyProfileId { get; set; }
         public int UserId { get; set; }
         public Decimal Amount { get; set; }
 
@@ -79,6 +81,7 @@ namespace Domain.Models
         }
         public InsuranceUserProfile InsuranceUserProfile { get; set; }
         public CompanyProfile CompanyProfile { get; set; }
+        public FamilyProfile FamilyProfile { get; set; }
     }
 
     // <summary>

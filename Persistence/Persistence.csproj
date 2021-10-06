@@ -21,6 +21,14 @@
     <Compile Remove="Migrations\20210309203211_Modify_schedulePAyment_table.Designer.cs" />
     <Compile Remove="Migrations\20210312104636_scac.cs" />
     <Compile Remove="Migrations\20210312104636_scac.Designer.cs" />
+    <Compile Remove="Migrations\20210812084429_create-family-tables2.cs" />
+    <Compile Remove="Migrations\20210812084429_create-family-tables2.Designer.cs" />
+    <Compile Remove="Migrations\20210823150114_added_family.cs" />
+    <Compile Remove="Migrations\20210823150114_added_family.Designer.cs" />
+    <Compile Remove="Migrations\20210920151928_modified_payment_refeence.cs" />
+    <Compile Remove="Migrations\20210920151928_modified_payment_refeence.Designer.cs" />
+    <Compile Remove="Migrations\20210921101053_modified_payment_refeence.cs" />
+    <Compile Remove="Migrations\20210921101053_modified_payment_refeence.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

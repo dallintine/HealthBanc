@@ -89,6 +89,10 @@ namespace Persistence
             //}
             //await context.SaveChangesAsync();
 
+            var session = await context.UserSessions.ToListAsync();
+            context.RemoveRange(session);
+            await context.SaveChangesAsync();
+
 
             if (await userManager.FindByEmailAsync("hassan.hassan@sterling.ng.admin") == null)
             {

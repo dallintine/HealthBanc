@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width" />
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
     <link rel="preconnect" href="https://fonts.gstatic.com" />
-    <title>Password Reset From Pharm Hub</title>
+    <title>Active Subscription From HealthBanc</title>
     <style>
         @media only screen {
             #table {
@@ -12,6 +12,15 @@
                 margin-top: 2% !important;
                 padding: 2% 3%;
                 width: 45% !important;
+            }
+
+            #fist_bump {
+                background-image: url("https://pharmhallstracct.blob.core.windows.net/email/gift.PNG");
+                height: 150px;
+                background-position: center;
+                background-size: contain;
+                background-repeat: no-repeat;
+                width: 100%;
             }
 
             #terms {
@@ -31,6 +40,15 @@
                 margin-top: 2% !important;
                 padding: 2% 3%;
                 width: 50% !important;
+            }
+
+            #fist_bump {
+                background-image: url("https://pharmhallstracct.blob.core.windows.net/email/gift.PNG");
+                height: 150px;
+                background-position: center;
+                background-size: contain;
+                background-repeat: no-repeat;
+                width: 100%;
             }
 
             #terms {
@@ -65,6 +83,15 @@
                 margin-top: 2% !important;
                 padding: 2% 3%;
                 width: 95% !important;
+            }
+
+            #fist_bump {
+                background-image: url("https://pharmhallstracct.blob.core.windows.net/email/gift.PNG");
+                height: 100px !important;
+                background-position: center;
+                background-size: contain !important;
+                background-repeat: no-repeat;
+                width: 100%;
             }
 
             #terms {
@@ -118,14 +145,19 @@
             ">HealthInsured</span>
             </td>
         </tr>
-        <tr style="text-align: justify; letter-spacing: normal; margin-top: 0">
+        <tr id="fist_bump">
+            <td></td>
+        </tr>
+        <tr id="welcome_header" style="text-align: justify">
             <td>
-                <p style="color: black; font-weight: bold">Hello UserName,</p>
-                <p style="color: black; line-height: 1.3em">
-                    A scheduled debit of PremiumAmount failed while attempting to
-                    reactivate the insurance cycle of your beneficiaries.We will continue to carry out the scheduled debit before StopDate within a three hours interval.
-                    Fund your account so your beneficiaries can keep enjoying health benefits. Kindly do this
-                    before the two day probation period elapse so your beneficiaries are not deactivated.
+                <h3>Hello. Welcome to HealthInsured! community.</h3>
+            </td>
+        </tr>
+        <tr style="text-align: justify; line-height: 1.6; letter-spacing: normal">
+            <td>
+                <p style="color: black">
+                    Let’s begin! Payee has decided you deserve a reliable healthinsurance and is gifting you a free insurance cover with all bills on him.
+                    Your activation begins immediately  you sign up .
                 </p>
             </td>
         </tr>
@@ -139,21 +171,30 @@
             border-radius: 5px;
             box-shadow: 0 17px 25px 0 rgba(0, 0, 0, 0.09);
             border: solid 1px #068dd0;
+            font-weight: 900;
             letter-spacing: normal;
             color: #033364;
           ">
-                <a style="text-decoration: none; font-weight: bold"
-                   href="https://healthbanc.ng/signin">Sign In</a>
+                <a style="text-decoration: none" href="BaseUrl/signup">Sign Up</a>
+            </td>
+        </tr>
+        <tr style="text-align: justify; line-height: 1.6; letter-spacing: normal">
+            <td>
+                <p style="color: black">
+                    During the first month after your sign up, you’re put on a 14 day waiting period during which you have access to Medical care via Telemedicine only, as provided by our partners. After this period, physical consultation at your healthcare provider can proceed for the duration of your subscription.
+                </p>
+                <p style="color: black">
+                    To view the details of your healthcare provider, subscription status and other contact information, please visit your profile on our website.
+                    As always, our support team is available to help you with your needs and ease your experience with the Healthbanc community!
+                </p>
+                <p style="color: black">Thank you. </p>
+                <p style="color: black">Regards,</p>
             </td>
         </tr>
         <tr>
-            <td style="text-align: justify">
-                <p style="color: black">Sincerely,</p>
-                <p style="color: black">The HealthBanc Team</p>
-                <p style="line-height: 1.3em; color: black">
-                    <span>P.S.</span> We also love hearing from you and helping you with
-                    any issues you have. Please reply to this email if you want to ask a
-                    question or just say hi.
+            <td>
+                <p style="color: black">
+                    If you didn’t request this email, there’s nothing to worry about — you can safely ignore it
                 </p>
             </td>
         </tr>
@@ -166,21 +207,20 @@
     <table id="terms" cellpadding="0" cellspacing="0">
         <tr align="center"
             style="
-          font-size: 14.4px;
           font-weight: normal;
           font-style: normal;
           letter-spacing: normal;
           color: #545f7d;
         ">
             <td>
-                <a href="https://healthbanc.ng/terms" style="text-decoration: none">Help</a>
+                <a href="BaseUrl/terms" style="text-decoration: none">Help</a>
             </td>
             <td>
-                <a href="https://healthbanc.ng/privacyPolicy"
+                <a href="BaseUrl/privacyPolicy"
                    style="text-decoration: none">Privacy</a>
             </td>
             <td>
-                <a href="https://healthbanc.ng/terms" style="text-decoration: none">Terms</a>
+                <a href="BaseUrl/terms" style="text-decoration: none">Terms</a>
             </td>
         </tr>
     </table>
