@@ -97,13 +97,13 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         {
             var insuranceProfiles =await _repoWrapper.InsuranceProfile.GetPaginatedInsuranceUserProfiles(paginationQuery);
 
-            foreach(var item in insuranceProfiles.Data)
-            {
-                if(item.FamilyProfileId != null)
-                {
-                    item.Email = item.FamilyEmail;
-                }
-            }
+            //foreach(var item in insuranceProfiles.Data)
+            //{
+            //    if(item.FamilyProfileId != null)
+            //    {
+            //        item.Email = item.FamilyEmail;
+            //    }
+            //}
 
             var insuranceProfilesDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>,IEnumerable<IndividualProfileDTO>>(insuranceProfiles.Data);
 
