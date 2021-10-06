@@ -45,7 +45,7 @@ namespace DataAccess.HealthInsured.Implementation
         public async Task<PagedResponse<InsuranceUserProfile>> GetPaginatedInsuranceUserProfiles(PaginationQuery paginationQuery)
         {
             var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
-            var queryable = _context.InsuranceUserProfiles.Where(x => x.FamilyProfileId == null).AsQueryable();
+            var queryable = _context.InsuranceUserProfiles.AsQueryable();
 
             //If Status is null returns all users
             //if status is 1 returns active users

@@ -97,6 +97,14 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         {
             var insuranceProfiles =await _repoWrapper.InsuranceProfile.GetPaginatedInsuranceUserProfiles(paginationQuery);
 
+            foreach(var item in insuranceProfiles.Data)
+            {
+                if(item.FamilyProfileId != null)
+                {
+                    item.Email = item.FamilyEmail;
+                }
+            }
+
             var insuranceProfilesDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>,IEnumerable<IndividualProfileDTO>>(insuranceProfiles.Data);
 
             var paginatedResponse = new PagedResponse<IndividualProfileDTO>
@@ -373,11 +381,11 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         public ResponseMessage DowloadInsuranceProfileExcelData(bool? subStatus, bool? activeStatus,string service)
         {
             var data = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles();
-            if(service == InsuranceProvider.Axamansard.ToString())
+            if(service.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower())
             {
                 data = data.Where(x => x.InsuranceService == service);
             }
-            if (service == InsuranceProvider.Hygeia.ToString())
+            if (service.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
                 data = data.Where(x => x.InsuranceService == service);
             }
@@ -421,7 +429,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
                 foreach (var item in data.ToList())
                 {
-                    worksheet.Cell(count, 1).Value = item.MaidenName+" "+item.Othernames;
+                    worksheet.Cell(count, 1).Value = item.Surname+" "+item.Othernames;
                     worksheet.Cell(count, 2).Value = item.Email;
                     worksheet.Cell(count, 3).Value = item.PhoneNumber;
                     worksheet.Cell(count, 4).Value = item.TransId;

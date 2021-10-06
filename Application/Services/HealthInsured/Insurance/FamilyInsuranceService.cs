@@ -47,7 +47,9 @@ namespace Application.Services.HealthInsured.Insurance
         {
             var familyCreator = await _repoWrapper.FamilyProfile.GetByUserId(userId);
             var insuranceProfile = _mapper.Map<InsuranceUserProfile>(familyMemberViewModel);
+            insuranceProfile.PhoneNumber = familyCreator.PhoneNumber;
             insuranceProfile.FamilyProfileId = familyCreator.Id;
+            insuranceProfile.FamilyEmail = familyCreator.Email;
             insuranceProfile.InsuranceService = InsuranceProvider.Axamansard.ToString();
             insuranceProfile.ActiveStatus = null;
             insuranceProfile.SubscriptionStatus = null;

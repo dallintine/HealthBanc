@@ -18,6 +18,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         public string CompanyName { get; set; }
         public string CompanySubscribedStatus { get; set; }
         public int? FamilyProfileId { get; set; }
+        public string FamilyEmail { get; set; }
         public int? InsurancePayeeId { get; set; }
         public string AxamasardReferenceCode { get; set; }
         public string TransId { get; set; }
