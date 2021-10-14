@@ -154,7 +154,7 @@ namespace Application.Services.Admin
                 var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
                 if (checkOTP == "")
                 {
-                    return new ResponseMessage { Message = "Login detail is invalid, please try again with correct credentials", ResponseCode = 12 };
+                    return new ResponseMessage { Message = "Login details invalid, please try again with correct credentials", ResponseCode = 12 };
                 }
                 if (checkOTP == "false")
                 {

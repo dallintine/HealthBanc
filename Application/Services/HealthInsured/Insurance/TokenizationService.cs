@@ -1767,7 +1767,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 }
                 else
                 {
-                    insuranceUserProfile.TransId = "Pending";
+                    if(insuranceUserProfile.TransId is null)
+                    {
+                        insuranceUserProfile.TransId = "Pending";
+                    }
                 }
             }
             else
