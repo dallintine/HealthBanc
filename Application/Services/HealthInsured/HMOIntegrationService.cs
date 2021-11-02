@@ -120,6 +120,7 @@ namespace Application.Services.HealthInsured
             }
         }
 
+
         public async Task<ResponseMessage> AxamansardDeactivateUser(string axamansardReference)
         {
             string entityCode = AxaAccessor.EntityCode;
@@ -158,6 +159,7 @@ namespace Application.Services.HealthInsured
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
+        [AutomaticRetry(Attempts = 0)]
         public async Task ResendFailedAxamansardReg(EnrollmentModel model)
         {
             model.PlanId ??= "1";
@@ -343,12 +345,13 @@ namespace Application.Services.HealthInsured
             BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddHours(6));
             return new ResponseMessage { Message = "Could not process Hygeia response", Status = false };
         }
-       
+
         /// <summary>
         /// Method to carry out failed Hygeia registration
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
+        [AutomaticRetry(Attempts = 0)]
         public async Task ResendFailedHygeiaReg(RegistrationModel model)
         {
             var response = await HygeiaRegisterUser(model);
