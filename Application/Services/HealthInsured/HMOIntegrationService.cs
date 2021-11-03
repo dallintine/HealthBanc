@@ -48,6 +48,7 @@ namespace Application.Services.HealthInsured
         {
             try
             {
+                throw new InvalidOperationException("Logfile cannot be read-only");
                 var httpClient = _httpClientFactory.CreateClient("AxaMansard");
                 httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-key", $"{AxaAccessor.Apikey}");
                 httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-secret", $"{AxaAccessor.ApiSecret}");
@@ -105,17 +106,17 @@ namespace Application.Services.HealthInsured
                         return new ResponseMessage { Status = false, Message = authResponse.message };
                     }
                     _logger.LogCritical(" Bad request when trying to register user to axamansard  : " + apiResponse);
-                    BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                    BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddMilliseconds(6));
                     return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }
-                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddMilliseconds(6));
                 _logger.LogCritical("BadRequest Axamansard :" + bearerRequest.Message);
                 return new ResponseMessage { Status = false, Message = bearerRequest.Message };
             }
             catch (Exception ex)
             {
                 _logger.LogCritical("An error occurred while enrolling user to axa-mansard" + " " + ex.ToString(), ex);
-                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddMilliseconds(6));
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to axa-mansard.Please try again later" };
             }
         }
@@ -159,7 +160,7 @@ namespace Application.Services.HealthInsured
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        [AutomaticRetry(Attempts = 0)]
+        //[AutomaticRetry(Attempts = 0)]
         public async Task ResendFailedAxamansardReg(EnrollmentModel model)
         {
             model.PlanId ??= "1";
@@ -169,6 +170,7 @@ namespace Application.Services.HealthInsured
             var response = await AxamansardRegisterUser(model);
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(model.Email);
             var enrollmentModel = await _repoWrapper.EnrollmentOnOnboarding.GetLastEnrollmentByInsuranceProfileId(insuranceProfile.Id);
+            throw new InvalidOperationException("Logfile cannot be read-only");
             if (response.Status)
             {
                 enrollmentModel.Status = EnrollmentOnOnboarding_StatusValue.Successful.ToString();

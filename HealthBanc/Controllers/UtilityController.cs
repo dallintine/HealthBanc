@@ -1,6 +1,8 @@
-﻿using Application.DTO;
+﻿using Application.API_RequestModel.HealthInsured;
+using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Services;
+using Application.Services.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.ViewModels.HealthInsured;
 using DataAccess;
@@ -24,15 +26,17 @@ namespace HealthBanc.Controllers
         private readonly IBSIntegrationService _iBSIntegrationService;
         private readonly UtilityService _utilityService;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly HMOIntegrationService _integrationService;
 
         public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
-            IRepositoryWrapper repoWrapper)
+            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService)
         {
             _insuranceService = insuranceService;
             _tokenizationService = tokenizationService;
             _iBSIntegrationService = iBSIntegrationService;
             _utilityService = utilityService;
             _repoWrapper = repoWrapper;
+            _integrationService = integrationService;
         }
 
         /// <summary>
@@ -207,6 +211,19 @@ namespace HealthBanc.Controllers
         {
             await _utilityService.ProcessFailedHMOPayment(Id);
             return Ok();
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> Load()
+        {
+            var load = new EnrollmentModel();
+            load.Email = "hassan@gmail.com";
+            load.Gender = "2";
+            for (int i = 0; i < 10000; i++)
+            {
+                await _integrationService.AxamansardRegisterUser(load);
+            }
+            return Ok();  
         }
     }
 }
