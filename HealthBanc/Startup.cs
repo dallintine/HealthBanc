@@ -248,8 +248,10 @@ namespace HealthBanc
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,UtilityService utilityService)
         {
-            utilityService.MakeHygeiaHMOPayment().Wait();
-            utilityService.MakeAxamansardHMOPayment().Wait();
+            //utilityService.MakeHygeiaHMOPayment().Wait();
+            //utilityService.MakeAxamansardHMOPayment().Wait();
+
+            app.ConfigureExceptionHandler(logger);
 
             var options = new DashboardOptions
             {
@@ -265,9 +267,7 @@ namespace HealthBanc
                (sender, certificate, chain, errors) =>
                {
                    return true;
-               };
-
-            app.ConfigureExceptionHandler(logger);
+               };           
 
             app.Use(async (context, next) =>
             {

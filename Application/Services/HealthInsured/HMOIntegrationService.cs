@@ -163,10 +163,6 @@ namespace Application.Services.HealthInsured
         //[AutomaticRetry(Attempts = 0)]
         public async Task ResendFailedAxamansardReg(EnrollmentModel model)
         {
-            model.PlanId ??= "1";
-            model.State ??= "Lagos";
-            model.Lga ??= "Alimosho";
-            model.Hospital ??= "Hamkad";
             var response = await AxamansardRegisterUser(model);
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(model.Email);
             var enrollmentModel = await _repoWrapper.EnrollmentOnOnboarding.GetLastEnrollmentByInsuranceProfileId(insuranceProfile.Id);

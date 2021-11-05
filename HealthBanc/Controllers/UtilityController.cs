@@ -5,7 +5,9 @@ using Application.Services;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.ViewModels.HealthInsured;
+using AutoMapper;
 using DataAccess;
+using Domain.Models.Axa_Hygeia_Insurance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -27,9 +29,10 @@ namespace HealthBanc.Controllers
         private readonly UtilityService _utilityService;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly HMOIntegrationService _integrationService;
+        private readonly IMapper _mapper;
 
         public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
-            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService)
+            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper)
         {
             _insuranceService = insuranceService;
             _tokenizationService = tokenizationService;
@@ -37,6 +40,7 @@ namespace HealthBanc.Controllers
             _utilityService = utilityService;
             _repoWrapper = repoWrapper;
             _integrationService = integrationService;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -213,6 +217,7 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
+        [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> Load()
         {
@@ -224,6 +229,53 @@ namespace HealthBanc.Controllers
                 await _integrationService.AxamansardRegisterUser(load);
             }
             return Ok();  
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public IActionResult CheckActiveAxamansard()
+        {
+            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => (x.InsuranceService.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower()
+             || x.InsuranceService == null) && x.SubscriptionStatus == true && x.AxamasardReferenceCode == null).ToList();
+
+            return Ok(users);
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SendActiveAxamansard()
+        {
+            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => (x.InsuranceService.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower()
+             || x.InsuranceService == null) && x.SubscriptionStatus == true && x.AxamasardReferenceCode == null).ToList();
+
+            foreach (var item in users)
+            {
+                var enrollmentModel = _mapper.Map<EnrollmentModel>(users);
+                if(item.FamilyProfileId != null)
+                {
+                    enrollmentModel.Email = item.FamilyEmail;
+                }
+                var axaRegResponse = await _integrationService.EnrollUserToAxamansardOnOnboarding(item);
+                var codeReference = axaRegResponse.Data as string;
+                item.AxamasardReferenceCode = codeReference;
+                _repoWrapper.InsuranceProfile.Update(item);
+                await _repoWrapper.Save();
+            }
+            return Ok();
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SetActiveAxamansard(string enrollmentNumber, string reference)
+        {
+            var user = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().FirstOrDefault(x => x.TransId == enrollmentNumber && x.SubscriptionStatus == true 
+            && (x.InsuranceService.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower() || x.InsuranceService == null));
+
+            if (user is null) return NotFound();
+            user.AxamasardReferenceCode = reference;
+            _repoWrapper.InsuranceProfile.Update(user);
+            await _repoWrapper.Save();
+            return Ok();
         }
     }
 }

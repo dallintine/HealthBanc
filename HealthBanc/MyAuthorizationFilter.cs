@@ -30,6 +30,10 @@ namespace HealthBanc
             var access_token = String.Empty;
             var setCookie = false;
 
+            throw new Exception("Error: Occured Hangfire.Authorization");
+
+            return true;
+
             // try to get token from query string
             if (httpContext.Request.Query.ContainsKey("access_token"))
             {

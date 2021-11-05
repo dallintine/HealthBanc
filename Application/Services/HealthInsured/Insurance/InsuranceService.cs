@@ -430,7 +430,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 foreach (var item in data.ToList())
                 {
                     worksheet.Cell(count, 1).Value = item.Surname+" "+item.Othernames;
-                    worksheet.Cell(count, 2).Value = item.Email;
+                    worksheet.Cell(count, 2).Value = item.Email ?? item.FamilyEmail;
                     worksheet.Cell(count, 3).Value = item.PhoneNumber;
                     worksheet.Cell(count, 4).Value = item.TransId;
                     worksheet.Cell(count, 5).Value = item.DateOfBirth.ToString();
