@@ -159,7 +159,7 @@ namespace Application.Services.HealthInsured
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        //[AutomaticRetry(Attempts = 0)]
+        [AutomaticRetry(Attempts = 0)]
         public async Task ResendFailedAxamansardReg(EnrollmentModel model)
         {
             var response = await AxamansardRegisterUser(model);
