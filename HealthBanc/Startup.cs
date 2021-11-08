@@ -251,7 +251,7 @@ namespace HealthBanc
             //utilityService.MakeHygeiaHMOPayment().Wait();
             //utilityService.MakeAxamansardHMOPayment().Wait();
 
-            //app.ConfigureExceptionHandler(logger);
+            app.ConfigureExceptionHandler(logger);
 
             var options = new DashboardOptions
             {
