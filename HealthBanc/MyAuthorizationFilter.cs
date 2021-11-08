@@ -30,7 +30,6 @@ namespace HealthBanc
             var access_token = String.Empty;
             var setCookie = false;
 
-            throw new Exception("Error: Occured Hangfire.Authorization");
 
             return true;
 
