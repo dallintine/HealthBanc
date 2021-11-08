@@ -8,6 +8,7 @@ using Application.ViewModels.HealthInsured;
 using AutoMapper;
 using DataAccess;
 using Domain.Models.Axa_Hygeia_Insurance;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -276,6 +277,34 @@ namespace HealthBanc.Controllers
             _repoWrapper.InsuranceProfile.Update(user);
             await _repoWrapper.Save();
             return Ok();
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> CancelSubscription(string email, int insuranceProfileId)
+        {
+            var insuranceProfile = new InsuranceUserProfile();
+            if (email != null)
+            {
+                insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
+            }
+            else
+            {
+                insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfileId);
+            }
+            if (insuranceProfile != null)
+            {
+                var scheduledJobId = insuranceProfile.PendingJobId;
+
+                BackgroundJob.Delete(scheduledJobId);
+                if (insuranceProfile.PendingEmailJobId != null)
+                {
+                    BackgroundJob.Delete(insuranceProfile.PendingEmailJobId);
+                }
+                await _tokenizationService.ProcessUserActiveStatusCancellation(insuranceProfileId, null);
+                return Ok();
+            }
+            return NotFound();
         }
     }
 }
