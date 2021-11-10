@@ -283,28 +283,30 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         public async Task<IActionResult> CancelSubscription(string email, int insuranceProfileId)
         {
-            var insuranceProfile = new InsuranceUserProfile();
+            var insuranceProfile = new List<InsuranceUserProfile>();
             if (email != null)
             {
-                insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
+                var queryProfiles = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles();
+                var profiles = queryProfiles.Where(x => x.Email == email).ToList();
+                if(profiles != null) insuranceProfile = profiles;
             }
             else
             {
-                insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfileId);
+                var profile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfileId);
+                if(profile != null) insuranceProfile.Add(profile);
             }
-            if (insuranceProfile != null)
+            foreach(var item in insuranceProfile)
             {
-                var scheduledJobId = insuranceProfile.PendingJobId;
+                var scheduledJobId = item.PendingJobId;
 
                 BackgroundJob.Delete(scheduledJobId);
-                if (insuranceProfile.PendingEmailJobId != null)
+                if (item.PendingEmailJobId != null)
                 {
-                    BackgroundJob.Delete(insuranceProfile.PendingEmailJobId);
+                    BackgroundJob.Delete(item.PendingEmailJobId);
                 }
-                await _tokenizationService.ProcessUserActiveStatusCancellation(insuranceProfileId, null);
-                return Ok();
+                await _tokenizationService.ProcessUserActiveStatusCancellation(item.Id, null);               
             }
-            return NotFound();
+            return Ok(insuranceProfile);
         }
     }
 }

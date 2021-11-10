@@ -120,7 +120,7 @@ namespace Application.Services.HealthInsured
             }
         }
 
-
+        [AutomaticRetry(Attempts = 0)]
         public async Task<ResponseMessage> AxamansardDeactivateUser(string axamansardReference)
         {
             string entityCode = AxaAccessor.EntityCode;
@@ -304,6 +304,7 @@ namespace Application.Services.HealthInsured
         /// </summary>
         /// <param name="enrollNumber"></param>
         /// <returns></returns>
+        [AutomaticRetry(Attempts = 0)]
         public async Task<ResponseMessage> HygeiaDeactivateUser(string enrollNumber)
         {
             var encrytedAccess = await _repoWrapper.EncryptedAcessToken.GetEncryptedToken();
@@ -313,7 +314,7 @@ namespace Application.Services.HealthInsured
                 var bearerRequest = await HygeiaGetAuthToken();
                 if (!bearerRequest.Status)
                 {
-                    BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddMinutes(60));
+                    BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddHours(60));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
                 bearerToken = bearerRequest.Message;
