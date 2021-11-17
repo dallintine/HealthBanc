@@ -225,7 +225,7 @@ namespace HealthBanc.Controllers
             var load = new EnrollmentModel();
             load.Email = "hassan@gmail.com";
             load.Gender = "2";
-            for (int i = 0; i < 10000; i++)
+            for (int i = 0; i < 10; i++)
             {
                 await _integrationService.AxamansardRegisterUser(load);
             }
