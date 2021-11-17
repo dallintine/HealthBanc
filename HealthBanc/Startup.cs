@@ -73,7 +73,8 @@ namespace HealthBanc
             services.Configure<AdminAuthSettings>(Configuration.GetSection("AdminAuthSettings"));
             services.Configure<HMOAccountDetails>(Configuration.GetSection("HMOAccountDetails"));
             services.Configure<IBSConfig>(Configuration.GetSection("IBSConfig"));
-            
+            services.Configure<ConnectionStrings>(Configuration.GetSection("ConnectionStrings"));
+
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
                 options.SignIn.RequireConfirmedEmail = true;                
@@ -261,7 +262,7 @@ namespace HealthBanc
                 }
             };
 
-            app.UseHangfireDashboard("/apiResponse1963.", options);
+            app.UseHangfireDashboard("/apiResponse1963.4uQHWqAUeTfcsYAtBGgQuvUh", options);
 
             ServicePointManager.ServerCertificateValidationCallback +=
                (sender, certificate, chain, errors) =>

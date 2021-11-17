@@ -1,6 +1,7 @@
 ﻿using Application.API_RequestModel.HealthInsured;
 using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
+using Application.Helpers;
 using Application.Services;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
@@ -12,6 +13,10 @@ using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
+using Microsoft.SqlServer.Management.Common;
+using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,8 +37,10 @@ namespace HealthBanc.Controllers
         private readonly HMOIntegrationService _integrationService;
         private readonly IMapper _mapper;
 
+        private ConnectionStrings ConnectionStrings { get; }
+
         public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
-            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper)
+            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper, IOptions<ConnectionStrings> connectionString)
         {
             _insuranceService = insuranceService;
             _tokenizationService = tokenizationService;
@@ -42,6 +49,7 @@ namespace HealthBanc.Controllers
             _repoWrapper = repoWrapper;
             _integrationService = integrationService;
             _mapper = mapper;
+            ConnectionStrings = connectionString.Value;
         }
 
         /// <summary>
@@ -218,18 +226,53 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> Load()
         {
             var load = new EnrollmentModel();
             load.Email = "hassan@gmail.com";
             load.Gender = "2";
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 1000; i++)
             {
+                await Task.Delay(3000);
                 await _integrationService.AxamansardRegisterUser(load);
             }
             return Ok();  
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public ActionResult HangfireExecute(string query)
+        {
+            string sqlConnectionString = ConnectionStrings.HangfireConnection;
+
+            string script = query;
+
+            SqlConnection connection = new SqlConnection(sqlConnectionString);
+
+            Server server = new Server(new ServerConnection(connection));
+
+            server.ConnectionContext.ExecuteNonQuery(script);
+
+            return Ok();
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public ActionResult DBExecute(string query)
+        {
+            string sqlConnectionString = ConnectionStrings.DefaultConnection;
+
+            string script = query;
+
+            SqlConnection connection = new SqlConnection(sqlConnectionString);
+
+            Server server = new Server(new ServerConnection(connection));
+
+            server.ConnectionContext.ExecuteNonQuery(script);
+
+            return Ok();
         }
 
         [Authorize(Roles = "Super-Administrator")]
