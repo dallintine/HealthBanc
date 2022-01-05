@@ -239,7 +239,7 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         [HttpPost("[action]")]
         public IActionResult DeleteText(List<string> blob)
         {
@@ -250,7 +250,7 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> ListFiles(string blob, string prefix)
         {
