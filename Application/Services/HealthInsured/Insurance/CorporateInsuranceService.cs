@@ -291,15 +291,6 @@ namespace Application.Services.HealthInsured.Insurance
             else
             {
                 insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == status).ToList();
-                //if (insuranceProvider.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
-                //{
-                    
-                //}
-                //else
-                //{
-                //    insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
-                //    x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
-                //}
             }
 
             foreach (var item in insuranceUserProfiles)
@@ -319,7 +310,7 @@ namespace Application.Services.HealthInsured.Insurance
                 }
                 item.ActiveStatus = true;
                 item.SubscriptionStatus = true;
-                item.StartActiveStatusDate = DateTime.Now;
+                item.StartActiveStatusDate = endActiveStatusDate.AddDays(-SubscriptionAccessor.FreeTrialDayDuration);
                 item.EndActiveStatusDate = endActiveStatusDate;
                 item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
                 _repoWrapper.InsuranceProfile.Update(item);

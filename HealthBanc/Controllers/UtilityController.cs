@@ -1,19 +1,23 @@
 ﻿using Application.API_RequestModel.HealthInsured;
+using Application.AuditAndReport.AuditLog;
 using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Helpers;
 using Application.Services;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
+using Application.ViewModels;
 using Application.ViewModels.HealthInsured;
 using AutoMapper;
 using DataAccess;
 using Domain.Models.Axa_Hygeia_Insurance;
 using Hangfire;
+using Infrastructure.ImageService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
@@ -36,11 +40,16 @@ namespace HealthBanc.Controllers
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly HMOIntegrationService _integrationService;
         private readonly IMapper _mapper;
+        private readonly IOptions<ConnectionStrings> connectionString;
+        private readonly AuditLogService _auditLogServices;
+        private readonly ImageService _imageService;
+        private readonly ILogger<UtilityController> _logger;
 
         private ConnectionStrings ConnectionStrings { get; }
 
         public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
-            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper, IOptions<ConnectionStrings> connectionString)
+            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper, IOptions<ConnectionStrings> connectionString,
+            AuditLogService auditLogServices,ImageService imageService,ILogger<UtilityController> logger)
         {
             _insuranceService = insuranceService;
             _tokenizationService = tokenizationService;
@@ -49,6 +58,10 @@ namespace HealthBanc.Controllers
             _repoWrapper = repoWrapper;
             _integrationService = integrationService;
             _mapper = mapper;
+            this.connectionString = connectionString;
+            _auditLogServices = auditLogServices;
+            _imageService = imageService;
+            _logger = logger;
             ConnectionStrings = connectionString.Value;
         }
 
@@ -226,16 +239,36 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        //[Authorize(Roles = "Super-Administrator")]
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpPost("[action]")]
+        public IActionResult DeleteText(List<string> blob)
+        {
+            foreach(var item in blob)
+            {
+                _imageService.DeleteImage("logfolder", item);
+            }
+            return Ok();
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> ListFiles(string blob, string prefix)
+        {
+             var files = await _imageService.ListFiles(blob,prefix);
+            return Ok(files);
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> Load()
         {
             var load = new EnrollmentModel();
             load.Email = "hassan@gmail.com";
             load.Gender = "2";
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 3; i++)
             {
-                await Task.Delay(3000);
+                var auditViewModel = new AuditLogViewModel(1, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
+                BackgroundJob.Schedule(() => _auditLogServices.UserCreateAuditLog(auditViewModel, "1234", "test"),DateTime.Now.AddMinutes(5)) ;
                 await _integrationService.AxamansardRegisterUser(load);
             }
             return Ok();  
@@ -350,6 +383,40 @@ namespace HealthBanc.Controllers
                 await _tokenizationService.ProcessUserActiveStatusCancellation(item.Id, null);               
             }
             return Ok(insuranceProfile);
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SchedulePaymentIndivdualInsuranceProfile()
+        {
+            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => x.SubscriptionStatus == true &&
+            x.EndActiveStatusDate < DateTime.Now && x.ActiveStatus == true).ToList();
+
+            foreach (var item in users)
+            {
+                item.PendingJobId = _tokenizationService.ProcessScheduledPayment(item);
+                _repoWrapper.InsuranceProfile.Update(item);
+                await _repoWrapper.Save();
+            }
+
+            await _repoWrapper.Save();
+            return Ok();
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SchedulePaymentCoroporateInsuranceProfile()
+        {
+            var companyProfiles = _repoWrapper.CompanyProfile.QueryAllCompanyProfiles().Where(x => x.TokenizationCompleted == true &&
+            x.NextPaymentDate < DateTime.Now &&  x.ProfileCompleted == true).ToList();
+
+            foreach (var item in companyProfiles)
+            {
+                item.PendingJobId = _tokenizationService.ProcessScheduledPayment(item);
+                _repoWrapper.CompanyProfile.Update(item);
+                await _repoWrapper.Save();
+            }
+            return Ok();
         }
     }
 }

@@ -234,27 +234,12 @@ namespace Application.Services.HealthInsured
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
         {
-            //// If payment is scheduled
-            //if (insuranceUserProfile.SubscriptionStatus is true && insuranceUserProfile.ActiveStatus is true && (decimal.Parse(amount) >= decimal.Parse("1000")))
-            //{
-            //    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceUserProfile, reference);
-            //}
             // If user is making payment for the first time,
             if (insuranceUserProfile.SubscriptionStatus == null)
             {
                 await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
                 await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
             }
-            // if user is  making an immediate reactivation
-            //else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
-            //{
-            //    if (decimal.Parse(amount) >= decimal.Parse("1000"))
-            //    {
-            //        await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
-            //        await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
-            //    }
-            //}
-
             if (decimal.Parse(amount) <= decimal.Parse("100"))
             {
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
@@ -263,6 +248,7 @@ namespace Application.Services.HealthInsured
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
         {
+            
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
             insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _insuranceSerivce.GetUniqueCode() : "";
 
@@ -291,29 +277,6 @@ namespace Application.Services.HealthInsured
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
         }
-
-        //private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
-        //{
-        //    insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
-
-        //    //Schedule job to debit user every 28 days
-        //    insuranceUserProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceUserProfile);
-
-        //    // Schedule debit email reminder for user 
-        //    insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _tokenizationService.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-
-        //    insuranceUserProfile.SubscriptionStatus = true;
-        //    insuranceUserProfile.ActiveStatus = true;
-        //    insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-        //    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-
-        //    //Create Audit thats user subscrption changed 
-        //    var activityLog = new ActivityLog(insuranceUserProfile.Id, null, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
-        //    _repoWrapper.ActivityLog.Create(activityLog);
-
-        //    await _repoWrapper.Save();
-        //}
-
         private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference, string amount)
         {
             if (decimal.Parse(amount) > 100)

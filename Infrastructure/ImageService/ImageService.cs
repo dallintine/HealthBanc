@@ -47,15 +47,50 @@ namespace Infrastructure.ImageService
             return blockBlob.Uri.ToString();
         }
 
+        public async Task<List<string>> ListFiles(string containerName,string prefix)
+        {
+            List<string> blobs = new List<string>();
+            var storageAccount = CloudStorageAccount.Parse(ImageAzureConnectionString.AzureConnectionString);
+            var blobClient = storageAccount.CreateCloudBlobClient();
+            var container = blobClient.GetContainerReference(containerName);
+            BlobResultSegment resultSegment = await container.ListBlobsSegmentedAsync(prefix,null);
+
+            foreach (IListBlobItem item in resultSegment.Results)
+            {
+                if (item.GetType() == typeof(CloudBlockBlob))
+                {
+                    CloudBlockBlob blob = (CloudBlockBlob)item;
+                    blobs.Add(blob.Name);
+                }
+                else if (item.GetType() == typeof(CloudPageBlob))
+                {
+                    CloudPageBlob blob = (CloudPageBlob)item;
+                    blobs.Add(blob.Name);
+                }
+                else if (item.GetType() == typeof(CloudBlobDirectory))
+                {
+                    CloudBlobDirectory dir = (CloudBlobDirectory)item;
+                    blobs.Add(dir.Uri.ToString());
+                }
+                else if (item.GetType() == typeof(CloudAppendBlob))
+                {
+                    CloudAppendBlob dir = (CloudAppendBlob)item;
+                    blobs.Add(dir.Name);
+                }
+            }
+            return blobs;
+        }
+
         public async void DeleteImage(string containerName, string picturePath)
         {
             CloudStorageAccount cloudStorageAccount = CloudStorageAccount.Parse(ImageAzureConnectionString.AzureConnectionString);
             CloudBlobClient _blobClient = cloudStorageAccount.CreateCloudBlobClient();
             CloudBlobContainer _cloudBlobContainer = _blobClient.GetContainerReference(containerName);
-            var fileName = picturePath.Split('/');
-            var pathToUse = fileName[fileName.Length - 1];
-            CloudBlockBlob _blockBlob = _cloudBlobContainer.GetBlockBlobReference(pathToUse);
+            //var fileName = picturePath.Split('/');
+            //var pathToUse = fileName[fileName.Length - 1];
+            CloudBlockBlob _blockBlob = _cloudBlobContainer.GetBlockBlobReference(picturePath);
             //delete blob from container    
+            
             var result = await _blockBlob.DeleteIfExistsAsync();
         }
 

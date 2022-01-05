@@ -370,6 +370,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var hygeiaHospitalList = await _repoWrapper.HygeiaHospitalList.GetHealthProviders(state, city);
             return new ResponseMessage { Data = hygeiaHospitalList, Status = true };
         }
+
         public async Task<ResponseMessage> FilterHealthCareProvider(PaginationQuery paginationQuery,string state,string city)
         {
             var filterHealthCareProvider = await _repoWrapper.HygeiaHospitalList.FilterHealthCareProvider(paginationQuery, state, city);
@@ -431,8 +432,8 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 {
                     worksheet.Cell(count, 1).Value = item.Surname+" "+item.Othernames;
                     worksheet.Cell(count, 2).Value = item.Email ?? item.FamilyEmail;
-                    worksheet.Cell(count, 3).Value = item.PhoneNumber;
-                    worksheet.Cell(count, 4).Value = item.TransId;
+                    worksheet.Cell(count, 3).Value = "'"+item.PhoneNumber;
+                    worksheet.Cell(count, 4).Value = "'"+item.TransId;
                     worksheet.Cell(count, 5).Value = item.DateOfBirth.ToString();
                     worksheet.Cell(count, 6).Value = item.Gender;
                     worksheet.Cell(count, 7).Value = item.MaritalStatus;

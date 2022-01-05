@@ -276,7 +276,7 @@ namespace Application.Services.Admin
                 await _repoWrapper.Save();
 
                 var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, backedAdmin.Id, $"{loggedinuser.UniqueUsername} added {adminUser.Email}", ServiceNames.HealthBanc.ToString());
-                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                await _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
                 return new ResponseMessage { Message = "Admin has been created successfully", Status = true };
             }
@@ -307,7 +307,7 @@ namespace Application.Services.Admin
                     await _repoWrapper.Save();
 
                     var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, loggediInAdmin.Id, $"{loggedInUser.UniqueUsername} changed {email} role", ServiceNames.HealthBanc.ToString());
-                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                    await _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
                     return new ResponseMessage { Message = "Role was changed successfully", Status = true };
                 }
@@ -335,7 +335,7 @@ namespace Application.Services.Admin
                     await _repoWrapper.Save();
 
                     var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, loggedInAdmin.Id, $"{loggedInUser.UniqueUsername} removed {email}", ServiceNames.HealthBanc.ToString());
-                    BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                     await _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
                     return new ResponseMessage { Message = "Admin was deleted successfully", Status = true };
                 }
@@ -370,7 +370,7 @@ namespace Application.Services.Admin
                 await _repoWrapper.Save();
 
                 var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, LoggedInAdmin.Id, $"{loggedInUser.UniqueUsername} disabled {email}", ServiceNames.HealthBanc.ToString());
-                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                await _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
                 return new ResponseMessage { Message = "Admin was disabled successfully", Status = true };
             }
@@ -397,7 +397,7 @@ namespace Application.Services.Admin
                 await _repoWrapper.Save();
 
                 var auditViewModel = new AdminAuditLogViewModel(loggedInUserId, loggedInAdmin.Id, $"{loggedInUser.UniqueUsername} enabled {email}", ServiceNames.HealthBanc.ToString());
-                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                await  _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
                 return new ResponseMessage { Message = "Admin was enabled successfully", Status = true };
             }

@@ -75,7 +75,7 @@ namespace HealthBanc.Controllers.BackendAdmin
                 await _repositoryWrapper.Save();
 
                 var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id, $"Notification with ID {notification.Id} was created", "HealthBanc_Admin");
-                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+               await _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
                 return Ok(new ResponseMessage { Message = "Notification was created successfully", Status = true });
             }
@@ -117,7 +117,7 @@ namespace HealthBanc.Controllers.BackendAdmin
                 await _repositoryWrapper.Save();
 
                 var auditViewModel = new AdminAuditLogViewModel(Id,backedAdmin.Id, $"Notification with ID {notification.Id} was restored", "HealthBanc_Admin");
-                BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+                await _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
                 return Ok(new ResponseMessage {Message="Notification was changed successfully", Status=true });
             }
@@ -216,7 +216,7 @@ namespace HealthBanc.Controllers.BackendAdmin
             await _repositoryWrapper.Save();
 
             var auditViewModel = new AdminAuditLogViewModel(adminId,backedAdmin.Id, $"Notification with ID {notification.Id} was trash", "HealthBanc_Admin");
-            BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+            await  _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
             return Ok(new ResponseMessage<Notification> { Data = notification, Status = true, Message = "Notification was trashed successfully" });
         }
@@ -249,7 +249,7 @@ namespace HealthBanc.Controllers.BackendAdmin
             await _repositoryWrapper.Save();
 
             var auditViewModel = new AdminAuditLogViewModel(adminId,backedAdmin.Id, $"Notification with ID {notification.Id} was deleted", "HealthBanc_Admin");
-            BackgroundJob.Enqueue(() => _auditLogServices.AdminCreateAuditLog(auditViewModel));
+            await _auditLogServices.AdminCreateAuditLog(auditViewModel);
 
             return Ok(new ResponseMessage<Notification> { Data = notification, Status = true, Message = "Notification was deleted successfully" });
         }

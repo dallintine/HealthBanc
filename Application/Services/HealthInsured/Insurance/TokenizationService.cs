@@ -101,7 +101,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if (creatResponse.Status)
             {
                 var auditViewModel = new AuditLogViewModel(userId, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
-                BackgroundJob.Enqueue(() => _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device));
+                await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
 
                 return new ResponseMessage
                 {
@@ -539,12 +539,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public async Task Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, FamilyProfile family, InsuranceUserProfile payee, string reference)
         {
-            //if (insuranceUserProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceUserProfile.InsuranceService == null)
-            //{
-            //    await _hmoIntegrationService.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
-            //}
+            insuranceUserProfile.StartActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate : DateTime.Now ;
 
-            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+            insuranceUserProfile.EndActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate.AddDays(SubscriptionAccessor.FreeTrialDayDuration)
+                : DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             //Schedule job to debit user next 28 days
             insuranceUserProfile.PendingJobId = ProcessScheduledPayment(insuranceUserProfile);
@@ -569,7 +567,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             insuranceUserProfile.SubscriptionStatus = true;
             insuranceUserProfile.ActiveStatus = true;
             insuranceUserProfile.FailedScheduledPaymentRetry = null;
-            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
 
             _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
             await _repoWrapper.Save();
@@ -800,7 +797,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var insuranceProfiles = familyProfile.InsuranceUserProfiles;
             foreach(var insuranceUserProfile in insuranceProfiles)
             {
-                insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+                insuranceUserProfile.StartActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate : DateTime.Now;
+
+                insuranceUserProfile.EndActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate.AddDays(SubscriptionAccessor.FreeTrialDayDuration)
+                    : DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
                 // Schedule debit email reminder for user 
                 insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName,
@@ -814,7 +814,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 ? _uniqueIdentifier.GetUniqueCode(10) : "Pending";
                 insuranceUserProfile.SubscriptionStatus = true;
                 insuranceUserProfile.ActiveStatus = true;
-                insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
 
                 _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 await _repoWrapper.Save();
@@ -1041,14 +1040,25 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var jobId = context.BackgroundJob.Id;
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByUserId(userId);
             var activeCard = companyProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+            Decimal premiumFee;
 
-            var premiumFee = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString() ||
-            x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).Select(x => x.Premium).Sum();
+            var daysToLastPay = Math.Floor((DateTime.Now - companyProfile.NextPaymentDate.Value).TotalDays);
 
+            if(daysToLastPay > 28)
+            {
+                premiumFee = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString())
+                    .Select(x => x.Premium).Sum();
+            }
+            else
+            {
+                premiumFee = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString() ||
+                x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString()).Select(x => x.Premium).Sum();
+            }
             // set the next repayment date at first trial i.e when there is no failed scheduled payment attempt !!!!!
             if (companyProfile.FailedScheduledPaymentRetry is null)
             {
-                companyProfile.NextPaymentDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+                companyProfile.NextPaymentDate = companyProfile.NextPaymentDate != null ? companyProfile.NextPaymentDate.Value.AddDays(SubscriptionAccessor.FreeTrialDayDuration) :
+                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
             }
 
             // If there is active or pending users
@@ -1068,14 +1078,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
 
                     //Task to Enroll pending users to HMO
-                    await _corporateInsuranceService.OnboardCompanyUsersToHMO(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString(), companyProfile.NextPaymentDate.Value,
+                    if(daysToLastPay <= 28)
+                    {
+                        await _corporateInsuranceService.OnboardCompanyUsersToHMO(companyProfile.UserId, InsuranceProfile_CompanySubStatusValue.Pending.ToString(), companyProfile.NextPaymentDate.Value,
                         companyProfile.InsuranceService);
+                    }                    
 
                     //Background task to schedule debit at the end of next cycle
                     companyProfile.PendingJobId = ProcessScheduledPayment(companyProfile);
 
                     companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName, "", null),
-                          DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+                          companyProfile.NextPaymentDate.Value.Subtract(new TimeSpan(3, 0, 0, 0)));
 
                     companyProfile.FailedScheduledPaymentRetry = null;
                     companyProfile.TokenizationCompleted = true;
@@ -1085,8 +1098,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var companyBeneficiaires = companyProfile.InsuranceUserProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
                     foreach (var item in companyBeneficiaires)
                     {
-                        item.StartActiveStatusDate = DateTime.Now;
-                        item.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+                        item.StartActiveStatusDate = item.EndActiveStatusDate != default ? item.EndActiveStatusDate : DateTime.Now;
+                        item.EndActiveStatusDate = item.EndActiveStatusDate != default ? item.EndActiveStatusDate.AddDays(SubscriptionAccessor.FreeTrialDayDuration)
+                            : DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
                     }
                     _repoWrapper.InsuranceProfile.UpdateRange(companyBeneficiaires);
 
@@ -1211,22 +1225,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             await Task.CompletedTask;
         }
 
-        // Payment To HealthInsurance Providers Obsolute in A month time 10/12/2021
-
-        [AutomaticRetry(Attempts = 0)]
-        public async Task ProcessHygeiaHMOPayment(string fromAccount, string toAccount, decimal? amount, string getJobId, PerformContext context)
-        {
-            await _utilityService.ProcessHygeiaHMOPayment(fromAccount, toAccount, amount, getJobId, context);
-            await Task.CompletedTask;
-        }
-
-        [AutomaticRetry(Attempts = 0)]
-        public async Task ProcessAxamansardHMOPayment(string fromAccount, string toAccount, decimal? amount, string getJobId, PerformContext context)
-        {
-            await _utilityService.ProcessAxamansardHMOPayment(fromAccount, toAccount, amount, getJobId, context);
-            await Task.CompletedTask;
-        }
-
         /// <summary>
         /// Service to change primary card
         /// </summary>
@@ -1347,7 +1345,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <param name="userId"></param>
         /// <returns></returns>
         public async Task<ResponseMessage> GetCards(int userId,string email)
-    {
+        {
         var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,email);
         List<DebitCard> debitCard = new List<DebitCard>();
         if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
@@ -1372,7 +1370,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         }
         var emptyCardDTO = new List<CardDTO>();
         return new ResponseMessage { Data = emptyCardDTO, Message = "User has no card, Kindly add a card", Status = true };
-    }
+        }   
 
         public async Task<ResponseMessage> DeactivateReferee(int userId, int refereeInsuranceId)
         {
@@ -1411,9 +1409,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var response = await ProcessImmediateReactivationPayment(refereedInsuranceProfile, userId, primaryCard.Authorization_Code);
                     if (response.Status)
                     {
-                        // Schedule debit email reminder for user 
-                        //insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
-                        //    , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
                         _repoWrapper.InsuranceProfile.Update(refereedInsuranceProfile);
                         await _repoWrapper.Save();
                     }
@@ -1425,9 +1420,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     var response = await ProcessScheduledReactivationFlow(refereedInsuranceProfile, refereedInsuranceProfile.EndActiveStatusDate);
                     if (response.Status)
                     {
-                        // Schedule debit email reminder for user 
-                        //insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(familyProfile.Email, familyProfile.FullName
-                        //    , insuranceProfile.Surname + " " + insuranceProfile.Othernames, null), insuranceProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
                         _repoWrapper.InsuranceProfile.Update(refereedInsuranceProfile);
                         await _repoWrapper.Save();
                     }
@@ -1706,7 +1698,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         private async Task Process_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile,FamilyProfile family, InsuranceUserProfile payee)
         {
-            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+            insuranceUserProfile.StartActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate : DateTime.Now;
+
+            insuranceUserProfile.EndActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate.AddDays(SubscriptionAccessor.FreeTrialDayDuration)
+                : DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             //Schedule job to debit user next 28 days
             insuranceUserProfile.PendingJobId = ProcessScheduledPayment(insuranceUserProfile);
