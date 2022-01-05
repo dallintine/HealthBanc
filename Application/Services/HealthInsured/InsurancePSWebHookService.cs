@@ -72,6 +72,9 @@ namespace Application.Services.HealthInsured
                     }
                     else
                     {
+                        _logger.LogInformation($"{insuranceProfile.Email} | {insuranceProfile.Id} | {insuranceProfile.InsuranceService}");
+                        _logger.LogInformation($"{insuranceProfile.UserId.Value}");
+
                         // Create payment reference for the charge.
                         var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                             : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
