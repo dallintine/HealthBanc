@@ -44,20 +44,11 @@ namespace Application.Services.HealthInsured
             _familyInsurance = familyInsurance;
             SubscriptionAccessor = subscriptionAccessor.Value;
         }
-        /// <summary>
-        /// Process Paystack WebHook
-        /// </summary>
-        /// <param name="event"></param>
-        /// <param name="email"></param>
-        /// <param name="reference"></param>
-        /// <param name="authorization_code"></param>
-        /// <param name="last4"></param>
-        /// <param name="card_type"></param>
-        /// <returns></returns>
+
         public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type, string amount)
         {
-            // Log it as criticall cause am not logging informations
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully : " + DateTime.Now.ToLongDateString() + " : " + email + " : " + amount.ToString());
+            _logger.LogInformation($"event {@event} | email : {email} | refeence : {reference} | authcode: {authorization_code} | last4 : {last4} | type : {card_type} |amount :{amount} ");
+            _logger.LogInformation("Hit Pasytackwebhook.Successfully : " + DateTime.Now.ToLongDateString() + " : " + email + " : " + amount.ToString());
 
             if (@event == "charge.success")
             {

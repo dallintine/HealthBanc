@@ -385,7 +385,7 @@ namespace HealthBanc.Controllers
             return Ok(insuranceProfile);
         }
 
-        //[Authorize(Roles = "Super-Administrator")]
+        [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> SchedulePaymentIndivdualInsuranceProfile()
         {

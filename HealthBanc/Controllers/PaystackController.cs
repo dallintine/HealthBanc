@@ -59,7 +59,10 @@ namespace HealthBanc.Controllers
             if (paystackIpaddress.Contains(ipAddress))
             {               
                 var amount = webHookResponse.data.amount / 100;
-               await _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
+                _logger.LogInformation($"event {webHookResponse.@event} | email : {webHookResponse.data.customer.email} | refeence : {webHookResponse.data.reference} " +
+                    $"| authcode: {webHookResponse.data.authorization.authorization_code} | last4 : {webHookResponse.data.authorization.last4} " +
+                    $"| type : {webHookResponse.data.authorization.card_type} |amount :{amount} ");
+                await _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
                     webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString());
                 return Ok();
             }
