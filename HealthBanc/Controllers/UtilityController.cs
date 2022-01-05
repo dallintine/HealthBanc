@@ -418,5 +418,26 @@ namespace HealthBanc.Controllers
             }
             return Ok();
         }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> FixFamilyEmail()
+        {
+            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => x.FamilyProfileId != null).ToList();
+
+            foreach (var item in users)
+            {
+                item.Email = null;
+                if(item.FamilyEmail is null)
+                {
+                    var family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(item.FamilyProfileId.Value);
+                    item.FamilyEmail = family.Email;
+                    item.PhoneNumber = family.PhoneNumber;
+                }
+                _repoWrapper.InsuranceProfile.Update(item);
+                await _repoWrapper.Save();
+            }
+            return Ok();
+        }
     }
 }

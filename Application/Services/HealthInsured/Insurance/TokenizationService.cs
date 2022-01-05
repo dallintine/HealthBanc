@@ -1770,10 +1770,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             else
             {
-                if(insuranceUserProfile.FamilyProfileId != null)
-                {
-                    insuranceUserProfile.Email = insuranceUserProfile.FamilyEmail;
-                }
                 var axaRegResponse = await _hmoIntegrationService.EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
                 var codeReference = axaRegResponse.Data as string;
                 insuranceUserProfile.AxamasardReferenceCode = codeReference;

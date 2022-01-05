@@ -382,6 +382,10 @@ namespace Application.Services.HealthInsured
                 var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);
                 enrollmentModel.Email = payeeInsuranceProfile.Email;
             }
+            if(insuranceUserProfile.FamilyProfileId != null)
+            {
+                enrollmentModel.Email = insuranceUserProfile.FamilyEmail;
+            }
             
             var enrollment = await AxamansardRegisterUser(enrollmentModel);
             if (!enrollment.Status)
@@ -408,6 +412,10 @@ namespace Application.Services.HealthInsured
             {
                 var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);
                 registrationModel.Email = payeeInsuranceProfile.Email;
+            }
+            if (insuranceUserProfile.FamilyProfileId != null)
+            {
+                registrationModel.Email = insuranceUserProfile.FamilyEmail;
             }
             var registration = await HygeiaRegisterUser(registrationModel);
             if (!registration.Status)
