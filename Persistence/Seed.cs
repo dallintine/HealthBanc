@@ -448,7 +448,7 @@ namespace Persistence
 
                 if (item.UserName == "test8@gmail.com")
                 {
-                    var item8 =await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.Email == "test8@gmail.com");
+                    var item8 =await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test8@gmail.com");
                     if(item8 is null)
                     {
                         var insuranceProfile = new InsuranceUserProfile()
@@ -483,7 +483,7 @@ namespace Persistence
                 }
                 else if (item.UserName == "test10@gmail.com")
                 {
-                    var item10 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.Email == "test10@gmail.com");
+                    var item10 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test10@gmail.com");
                     if (item10 is null)
                     {
                         var insuranceProfile = new InsuranceUserProfile()
@@ -513,7 +513,7 @@ namespace Persistence
                 }
                 else
                 {
-                    var item9 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.Email == "test9@gmail.com");
+                    var item9 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test9@gmail.com");
                     if(item9 is null)
                     {
                         var insuranceProfile = new InsuranceUserProfile()
