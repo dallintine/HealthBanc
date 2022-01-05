@@ -222,10 +222,35 @@ namespace Persistence
                     {
                         card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_ysa2h6rlwe");
                     }
-                    else
+                    else if (item.Email == "test3@gmail.com")
                     {
                         card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_yxk6i3q6r2");
                     }
+                    else if (item.Email == "test17@gmail.com")
+                    {
+                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_hoiwcm2r61");
+                    }
+                    else if (item.Email == "test18@gmail.com")
+                    {
+                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_mtx98nltvc");
+                    }
+                    else if (item.Email == "test19@gmail.com")
+                    {
+                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_xg43sm9t60");
+                    }
+                    else if (item.Email == "test20@gmail.com")
+                    {
+                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_p6sts7vv9p");
+                    }
+                    else if (item.Email == "test21@gmail.com")
+                    {
+                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_idlw8v4vfz");
+                    }
+                    else if (item.Email == "test22@gmail.com")
+                    {
+                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_f9glg0rd8j");
+                    }
+
                     context.Cards.Add(card);
                     await context.SaveChangesAsync();
 

@@ -385,12 +385,12 @@ namespace HealthBanc.Controllers
             return Ok(insuranceProfile);
         }
 
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> SchedulePaymentIndivdualInsuranceProfile()
         {
             var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => x.SubscriptionStatus == true &&
-            x.EndActiveStatusDate < DateTime.Now && x.ActiveStatus == true).ToList();
+            x.EndActiveStatusDate < DateTime.Now && x.ActiveStatus == true && x.CompanyProfileId == null).ToList();
 
             foreach (var item in users)
             {
