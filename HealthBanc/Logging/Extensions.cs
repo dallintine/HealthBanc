@@ -47,7 +47,7 @@ namespace HealthBanc.Logging
             if (azureBlobOptions.Enabled)
             {
                 loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, level, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName
-                   , azureBlobOptions.OutputTemplate, false, null, null, false, null, null, 3000000, null);
+                   , azureBlobOptions.OutputTemplate, false, null, null, false, null, null, 1100000, null);
                 loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning);
                 loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Query", Serilog.Events.LogEventLevel.Warning);
             }
