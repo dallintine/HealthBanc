@@ -3,6 +3,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
 using Serilog;
 using Serilog.Events;
+using Serilog.Filters;
 
 namespace HealthBanc.Logging
 {
@@ -46,6 +47,8 @@ namespace HealthBanc.Logging
             if (azureBlobOptions.Enabled)
             {
                 loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, level, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName, azureBlobOptions.OutputTemplate);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Query", Serilog.Events.LogEventLevel.Warning);
             }
 
             if (applicationInsightsOptions.Enabled)
