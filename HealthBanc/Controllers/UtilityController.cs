@@ -239,13 +239,29 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         [HttpPost("[action]")]
         public IActionResult DeleteText(List<string> blob)
         {
             foreach(var item in blob)
             {
                 _imageService.DeleteImage("logfolder", item);
+            }
+            return Ok();
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public IActionResult LogFile()
+        {
+            for(var i=0; i < 100; i++)
+            {
+                _logger.LogInformation("loggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
+                    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
+                    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
+                    "ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
+                    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
+                    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg");
             }
             return Ok();
         }
