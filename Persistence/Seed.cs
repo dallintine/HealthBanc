@@ -69,18 +69,35 @@ namespace Persistence
 
             var appServices = new List<Service>()
             {
-                new Service() { Name="HealthMall"},
+                new Service() { Name="OneDrugStore"},
                 new Service() {Name="HealthInsured"}
             };
 
-            foreach (var item in appServices)
+            var drugServiceExist = await context.Services.Where(x => x.Name == "HealthMall").FirstOrDefaultAsync();
+            if (drugServiceExist != null)
             {
-                var serviceExist = await context.Services.Where(x => x.Name == item.Name).FirstOrDefaultAsync();
-                if (serviceExist == null)
-                {
-                    await context.Services.AddAsync(item);
-                }
+                drugServiceExist.Name = "OneDrugStore";
+                context.Services.Update(drugServiceExist);
             }
+            else
+            {
+                await context.Services.AddAsync(drugServiceExist);
+            }
+
+            var serviceExist = await context.Services.Where(x => x.Name == "HealthInsured").FirstOrDefaultAsync();
+            if (serviceExist == null)
+            {
+                await context.Services.AddAsync(serviceExist);
+            }
+
+            //foreach (var item in appServices)
+            //{
+            //    var serviceExist = await context.Services.Where(x => x.Name == item.Name).FirstOrDefaultAsync();
+            //    if (serviceExist == null)
+            //    {
+            //        await context.Services.AddAsync(item);
+            //    }
+            //}
 
             var serviceCount = await context.Services.ToListAsync();
 

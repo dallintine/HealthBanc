@@ -7,6 +7,7 @@ namespace Domain.Models
     public enum ServiceNames
     {
         HealthBanc = 1,
-        HealthInsured = 2
+        HealthInsured = 2,
+        OneDrugStore = 3
     }
 }

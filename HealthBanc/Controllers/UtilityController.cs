@@ -320,7 +320,6 @@ namespace HealthBanc.Controllers
             Server server = new Server(new ServerConnection(connection));
 
             server.ConnectionContext.ExecuteNonQuery(script);
-
             return Ok();
         }
 
@@ -413,6 +412,7 @@ namespace HealthBanc.Controllers
                 item.PendingJobId = _tokenizationService.ProcessScheduledPayment(item);
                 _repoWrapper.InsuranceProfile.Update(item);
                 await _repoWrapper.Save();
+                await Task.Delay(120000);
             }
 
             await _repoWrapper.Save();
@@ -431,6 +431,7 @@ namespace HealthBanc.Controllers
                 item.PendingJobId = _tokenizationService.ProcessScheduledPayment(item);
                 _repoWrapper.CompanyProfile.Update(item);
                 await _repoWrapper.Save();
+                await Task.Delay(120000);
             }
             return Ok();
         }

@@ -1,4 +1,5 @@
-﻿using DataAccess.General.Implementation;
+﻿using DataAccess.DTO.AuditDTO;
+using DataAccess.General.Implementation;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
 using Domain.Models.ReportAndLogs;
@@ -17,9 +18,8 @@ namespace DataAccess.Logs.Implementation
         {
         }
 
-        public async Task<PagedResponse<AdminAuditLog>> GetPaginatedAdminActivityLog(PaginationQuery paginationQuery,string channel)
+        public async Task<PagedResponse<AdminAuditLogDTO>> GetPaginatedAdminActivityLog(PaginationQuery paginationQuery,string channel)
         {
-            var paginatedResponse = new PagedResponse<AdminAuditLog>();
             IQueryable<AdminAuditLog> queryable;
             if (channel is null)
             {
@@ -31,11 +31,16 @@ namespace DataAccess.Logs.Implementation
             }
             var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
 
-            var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).AsQueryable();
-            paginatedResponse.Data = await newQueryable.ToListAsync();
-            var recordCount2 = await queryable.CountAsync();
-            paginatedResponse.RecordCount = recordCount2;
-            paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount2 / (double)paginationQuery.PageSize));
+            var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).Select(x => new AdminAuditLogDTO {Date = x.Date, ActionApplied = x.ActionApplied });
+            var recordCount = await queryable.CountAsync();
+            var paginatedResponse = new PagedResponse<AdminAuditLogDTO>
+            {
+                Data = await newQueryable.ToListAsync(),
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = recordCount,
+                PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize))
+            };
             return paginatedResponse;
         }
     }

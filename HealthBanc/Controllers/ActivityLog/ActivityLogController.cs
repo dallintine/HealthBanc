@@ -1,6 +1,7 @@
 ﻿using Application.DTO;
 using Application.Services.AuditAndReport;
 using DataAccess;
+using DataAccess.DTO.AuditDTO;
 using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.ExceptionLog;
 using Domain.Models.ReportAndLogs;
@@ -73,7 +74,7 @@ namespace HealthBanc.Controllers.Activity_ErrorLog
         /// <returns></returns>
         [HttpPost("[action]")]
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<AdminAuditLog>>))]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<AdminAuditLogDTO>>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public async Task<IActionResult> GetAdminActivityLogs([FromQuery]PaginationQuery paginationQuery,string channel)
         {

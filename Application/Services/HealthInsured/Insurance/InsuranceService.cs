@@ -97,25 +97,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         {
             var insuranceProfiles =await _repoWrapper.InsuranceProfile.GetPaginatedInsuranceUserProfiles(paginationQuery);
 
-            //foreach(var item in insuranceProfiles.Data)
-            //{
-            //    if(item.FamilyProfileId != null)
-            //    {
-            //        item.Email = item.FamilyEmail;
-            //    }
-            //}
-
-            var insuranceProfilesDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>,IEnumerable<IndividualProfileDTO>>(insuranceProfiles.Data);
-
-            var paginatedResponse = new PagedResponse<IndividualProfileDTO>
-            {
-                Data = insuranceProfilesDTO,
-                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                RecordCount = insuranceProfiles.RecordCount,
-                PageCount = insuranceProfiles.PageCount
-            };
-            return new ResponseMessage { Data = paginatedResponse, Status = true };
+            return new ResponseMessage { Data = insuranceProfiles, Status = true };
         }
 
         public async Task<ResponseMessage> GetReferedInsuranceProfiles(PaginationQuery paginationQuery,int userId)

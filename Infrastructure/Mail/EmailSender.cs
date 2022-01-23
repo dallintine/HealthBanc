@@ -203,14 +203,12 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-
         public void CustomMail(string email,string subject, string content)
         {
             string html = content;
             var emailRequest = new EmailRequest(email, html, subject, "healthbanc@sterling.ng");
             EmailRequest(emailRequest);
         }
-
         public async void EmailRequest(EmailRequest emailRequest)
         {
             var httpClient = _httpClientFactory.CreateClient("EmailSender");
