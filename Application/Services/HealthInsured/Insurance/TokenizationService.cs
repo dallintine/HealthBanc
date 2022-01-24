@@ -552,7 +552,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _familyInsurance.SendPaymentReminder(family.Email, family.FullName
                         , insuranceUserProfile.Surname + " " + insuranceUserProfile.Othernames, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
             }
-            if(insuranceUserProfile.InsurancePayeeId != null)
+            else if(insuranceUserProfile.InsurancePayeeId != null)
             {
                 insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(payee.Email, payee.Surname, "for your friend " + insuranceUserProfile.Surname, null)
                  , insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
@@ -561,7 +561,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname,  "", null)
                 , insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-
             }
             // Schedule debit email reminder for user 
             insuranceUserProfile.SubscriptionStatus = true;
