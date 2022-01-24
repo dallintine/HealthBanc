@@ -1,4 +1,5 @@
-﻿using DataAccess.General.Interfaces;
+﻿using DataAccess.DTO.AuditDTO;
+using DataAccess.General.Interfaces;
 using Domain.Models.ReportAndLogs;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,6 @@ namespace DataAccess.Logs.Interfaces
 {
     public interface IAdminAuditLogRepository : IBaseRepository<AdminAuditLog>
     {
-        Task<PagedResponse<AdminAuditLog>> GetPaginatedAdminActivityLog(PaginationQuery paginationQuery, string channel);
+        Task<PagedResponse<AdminAuditLogDTO>> GetPaginatedAdminActivityLog(PaginationQuery paginationQuery, string channel);
     }
 }

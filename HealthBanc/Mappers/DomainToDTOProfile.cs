@@ -1,7 +1,7 @@
 ﻿using Application.DTO;
 using AutoMapper;
+using DataAccess.DTO.ApplicationUserDTOs;
 using Domain.Models;
-using HealthBanc.DTO.ApplicationUserDTOs;
 using HealthBanc.DTO.DashboardAnalyticsDTOs;
 using Microsoft.Extensions.Options;
 using System;

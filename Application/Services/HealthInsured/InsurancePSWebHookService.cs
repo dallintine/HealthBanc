@@ -44,20 +44,11 @@ namespace Application.Services.HealthInsured
             _familyInsurance = familyInsurance;
             SubscriptionAccessor = subscriptionAccessor.Value;
         }
-        /// <summary>
-        /// Process Paystack WebHook
-        /// </summary>
-        /// <param name="event"></param>
-        /// <param name="email"></param>
-        /// <param name="reference"></param>
-        /// <param name="authorization_code"></param>
-        /// <param name="last4"></param>
-        /// <param name="card_type"></param>
-        /// <returns></returns>
+
         public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type, string amount)
         {
-            // Log it as criticall cause am not logging informations
-            _logger.LogCritical("Hit Pasytackwebhook.Successfully : " + DateTime.Now.ToLongDateString() + " : " + email + " : " + amount.ToString());
+            _logger.LogInformation($"event {@event} | email : {email} | refeence : {reference} | authcode: {authorization_code} | last4 : {last4} | type : {card_type} |amount :{amount} ");
+            _logger.LogInformation("Hit Pasytackwebhook.Successfully : " + DateTime.Now.ToLongDateString() + " : " + email + " : " + amount.ToString());
 
             if (@event == "charge.success")
             {
@@ -81,6 +72,9 @@ namespace Application.Services.HealthInsured
                     }
                     else
                     {
+                        _logger.LogInformation($"{insuranceProfile.Email} | {insuranceProfile.Id} | {insuranceProfile.InsuranceService}");
+                        _logger.LogInformation($"{insuranceProfile.UserId.Value}");
+
                         // Create payment reference for the charge.
                         var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                             : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
@@ -234,27 +228,12 @@ namespace Application.Services.HealthInsured
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
         {
-            //// If payment is scheduled
-            //if (insuranceUserProfile.SubscriptionStatus is true && insuranceUserProfile.ActiveStatus is true && (decimal.Parse(amount) >= decimal.Parse("1000")))
-            //{
-            //    await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceUserProfile, reference);
-            //}
             // If user is making payment for the first time,
             if (insuranceUserProfile.SubscriptionStatus == null)
             {
                 await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
                 await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
             }
-            // if user is  making an immediate reactivation
-            //else if (insuranceUserProfile.SubscriptionStatus is false && insuranceUserProfile.ActiveStatus is false)
-            //{
-            //    if (decimal.Parse(amount) >= decimal.Parse("1000"))
-            //    {
-            //        await ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(insuranceUserProfile);
-            //        await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
-            //    }
-            //}
-
             if (decimal.Parse(amount) <= decimal.Parse("100"))
             {
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
@@ -263,6 +242,7 @@ namespace Application.Services.HealthInsured
 
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
         {
+            
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
             insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _insuranceSerivce.GetUniqueCode() : "";
 
@@ -291,29 +271,6 @@ namespace Application.Services.HealthInsured
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
         }
-
-        //private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile)
-        //{
-        //    insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
-
-        //    //Schedule job to debit user every 28 days
-        //    insuranceUserProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceUserProfile);
-
-        //    // Schedule debit email reminder for user 
-        //    insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _tokenizationService.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname, null), insuranceUserProfile.EndActiveStatusDate.Subtract(new TimeSpan(3, 0, 0, 0)));
-
-        //    insuranceUserProfile.SubscriptionStatus = true;
-        //    insuranceUserProfile.ActiveStatus = true;
-        //    insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-        //    _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
-
-        //    //Create Audit thats user subscrption changed 
-        //    var activityLog = new ActivityLog(insuranceUserProfile.Id, null, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
-        //    _repoWrapper.ActivityLog.Create(activityLog);
-
-        //    await _repoWrapper.Save();
-        //}
-
         private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference, string amount)
         {
             if (decimal.Parse(amount) > 100)

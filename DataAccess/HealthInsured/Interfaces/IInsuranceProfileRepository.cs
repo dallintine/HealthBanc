@@ -1,4 +1,5 @@
-﻿using DataAccess.General.Interfaces;
+﻿using DataAccess.DTO.InsuranceDTO;
+using DataAccess.General.Interfaces;
 using Domain.Models;
 using Domain.Models.Axa_Hygeia_Insurance;
 using System;
@@ -15,7 +16,7 @@ namespace DataAccess.HealthInsured.Interfaces
         Task<InsuranceUserProfile> GetByEmail(string email);
         Task<PagedResponse<InsuranceUserProfile>> GetAllInsuranceProfileUnderCompany(PaginationQuery paginationQuery, int CompanyProfileId);
         Task<IQueryable<InsuranceUserProfile>> QueryableInsuranceProfilesUnderCompany(int userId);
-        Task<PagedResponse<InsuranceUserProfile>> GetPaginatedInsuranceUserProfiles(PaginationQuery paginationQuery);
+        Task<PagedResponse<List_IndividualProfileDTO>> GetPaginatedInsuranceUserProfiles(PaginationQuery paginationQuery);
         Task<InsuranceUserProfile> GetExtendedProfileDetailsByEmail(string email);
         IQueryable<InsuranceUserProfile> QueryAllInsuranceProfiles();
         Task<InsuranceUserProfile> GetByFamilyProfileId(int familyProfileId, int insuranceProfileId);

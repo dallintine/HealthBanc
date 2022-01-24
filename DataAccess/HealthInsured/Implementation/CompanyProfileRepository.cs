@@ -36,5 +36,10 @@ namespace DataAccess.HealthInsured.Implementation
         {
             return await _context.CompanyProfiles.Include(x => x.Cards).Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.UserId == userId);
         }
+
+        public IQueryable<CompanyProfile> QueryAllCompanyProfiles()
+        {
+            return _context.CompanyProfiles.AsQueryable();
+        }
     }
 }

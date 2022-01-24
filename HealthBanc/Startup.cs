@@ -73,7 +73,8 @@ namespace HealthBanc
             services.Configure<AdminAuthSettings>(Configuration.GetSection("AdminAuthSettings"));
             services.Configure<HMOAccountDetails>(Configuration.GetSection("HMOAccountDetails"));
             services.Configure<IBSConfig>(Configuration.GetSection("IBSConfig"));
-            
+            services.Configure<ConnectionStrings>(Configuration.GetSection("ConnectionStrings"));
+
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
                 options.SignIn.RequireConfirmedEmail = true;                
@@ -248,8 +249,10 @@ namespace HealthBanc
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,UtilityService utilityService)
         {
-            utilityService.MakeHygeiaHMOPayment().Wait();
-            utilityService.MakeAxamansardHMOPayment().Wait();
+            //utilityService.MakeHygeiaHMOPayment().Wait();
+            //utilityService.MakeAxamansardHMOPayment().Wait();
+
+            app.ConfigureExceptionHandler(logger);
 
             var options = new DashboardOptions
             {
@@ -259,15 +262,13 @@ namespace HealthBanc
                 }
             };
 
-            app.UseHangfireDashboard("/apiResponse1963.", options);
+            app.UseHangfireDashboard("/apiResponse1963.4uQHWqAUeTfcsYAtBGgQuvUh", options);
 
             ServicePointManager.ServerCertificateValidationCallback +=
                (sender, certificate, chain, errors) =>
                {
                    return true;
-               };
-
-            app.ConfigureExceptionHandler(logger);
+               };           
 
             app.Use(async (context, next) =>
             {

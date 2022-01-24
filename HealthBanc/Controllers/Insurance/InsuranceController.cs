@@ -17,12 +17,6 @@ using Microsoft.AspNetCore.Http;
 using Hangfire;
 using Microsoft.Extensions.Primitives;
 using Application.DTO;
-using HealthBanc.DTO.ApplicationUserDTOs;
-using Application.ViewModels;
-using Domain.Models;
-using DataAccess.HealthInsured.Interfaces;
-using Application.Helpers;
-using DataAccess.General.Interfaces;
 using HealthBanc.DTO.HealthInsured_AxaMansard;
 using Microsoft.AspNetCore.Cors;
 using Application.AuditAndReport.AuditLog;
@@ -37,6 +31,7 @@ using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using ClosedXML.Excel;
 using Application.Services.HealthInsured.Insurance;
+using DataAccess.DTO.InsuranceDTO;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -283,7 +278,7 @@ namespace HealthBanc.Controllers.Insurance
         /// <returns></returns>
         [HttpPost("[action]")]
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<IndividualProfileDTO>>))]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<List_IndividualProfileDTO>>))]
         public async Task<IActionResult> GetPaginatedInsuranceProfiles([FromQuery]PaginationQuery paginationQuery)
         {
             var insuranceProfiles = await _insuranceService.GetPaginatedInsuranceProfiles(paginationQuery);

@@ -118,6 +118,8 @@ namespace HealthBanc
             services.AddScoped<LeadGeneratorService>();
             services.AddScoped<FamilyInsuranceService>();
             services.AddScoped<UtilityService>();
+            services.AddScoped<ImageService>();
+
         }
     }
 }

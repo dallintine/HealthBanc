@@ -1,10 +1,7 @@
 ﻿using Application.DTO;
 using AutoMapper;
 using DataAccess;
-using DataAccess.General.Interfaces;
-using DataAccess.HealthInsured.Interfaces;
-using Domain.Models;
-using HealthBanc.DTO.ApplicationUserDTOs;
+using DataAccess.DTO.ApplicationUserDTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -41,17 +38,7 @@ namespace HealthBanc.Controllers.BackendAdmin
         public async Task<IActionResult> GetAllUsers([FromQuery]PaginationQuery paginationQuery)
         {
             var users = await _repoWrapper.ApplicationUser.GetAllUsers(paginationQuery);
-            var userDT0 = _mapper.Map<IEnumerable<ApplicationUser>, List<ApplicationUserDTO>>(users.Data);
-
-            var paginatedResponse = new PagedResponse<ApplicationUserDTO>
-            {
-                Data = userDT0,
-                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                RecordCount = users.RecordCount,
-                PageCount = users.PageCount
-            };
-            return Ok(paginatedResponse);
+            return Ok(users);
         }
 
         //WORKING1

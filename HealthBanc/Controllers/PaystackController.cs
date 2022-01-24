@@ -50,7 +50,7 @@ namespace HealthBanc.Controllers
         /// <param name="webHookResponse"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        public IActionResult PaystackWebHook([FromBody]PaystackWebHookResponse webHookResponse)
+        public async Task<IActionResult> PaystackWebHook([FromBody]PaystackWebHookResponse webHookResponse)
         {
             var paystackIpaddress = new List<string>()
             {
@@ -59,8 +59,11 @@ namespace HealthBanc.Controllers
             if (paystackIpaddress.Contains(ipAddress))
             {               
                 var amount = webHookResponse.data.amount / 100;
-                BackgroundJob.Enqueue(() => _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
-                    webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
+                _logger.LogInformation($"event {webHookResponse.@event} | email : {webHookResponse.data.customer.email} | refeence : {webHookResponse.data.reference} " +
+                    $"| authcode: {webHookResponse.data.authorization.authorization_code} | last4 : {webHookResponse.data.authorization.last4} " +
+                    $"| type : {webHookResponse.data.authorization.card_type} |amount :{amount} ");
+                await _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
+                    webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString());
                 return Ok();
             }
             return Ok();

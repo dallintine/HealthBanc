@@ -3,6 +3,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
 using Serilog;
 using Serilog.Events;
+using Serilog.Filters;
 
 namespace HealthBanc.Logging
 {
@@ -26,7 +27,7 @@ namespace HealthBanc.Logging
                     .MinimumLevel.Is(level)
                     .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
                     .Enrich.WithProperty("ApplicationName", applicationName);
-                Configure(loggerConfiguration, Serilog.Events.LogEventLevel.Warning, seqOptions, serilogOptions,azureBlobOptions, applicationInsightsOptions);
+                Configure(loggerConfiguration, Serilog.Events.LogEventLevel.Information, seqOptions, serilogOptions,azureBlobOptions, applicationInsightsOptions);
             });
 
         private static void Configure(LoggerConfiguration loggerConfiguration, LogEventLevel level,SeqOptions seqOptions, SerilogOptions serilogOptions,AzureBlobOptions azureBlobOptions,
@@ -45,7 +46,10 @@ namespace HealthBanc.Logging
 
             if (azureBlobOptions.Enabled)
             {
-                loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, level, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName, azureBlobOptions.OutputTemplate);
+                loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, level, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName
+                   , azureBlobOptions.OutputTemplate, false, null, null, false, null, null, 1100000, null);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Query", Serilog.Events.LogEventLevel.Warning);
             }
 
             if (applicationInsightsOptions.Enabled)

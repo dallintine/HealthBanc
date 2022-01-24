@@ -1,4 +1,5 @@
-﻿using DataAccess.General.Implementation;
+﻿using DataAccess.DTO.InsuranceDTO;
+using DataAccess.General.Implementation;
 using DataAccess.HealthInsured.Interfaces;
 using Domain.Models;
 using Domain.Models.Axa_Hygeia_Insurance;
@@ -42,9 +43,8 @@ namespace DataAccess.HealthInsured.Implementation
             return await _context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyProfileId == familyProfileId && x.Id == insuranceProfileId);
         }
 
-        public async Task<PagedResponse<InsuranceUserProfile>> GetPaginatedInsuranceUserProfiles(PaginationQuery paginationQuery)
+        public async Task<PagedResponse<List_IndividualProfileDTO>> GetPaginatedInsuranceUserProfiles(PaginationQuery paginationQuery)
         {
-            var paginatedResponse = new PagedResponse<InsuranceUserProfile>();
             var queryable = _context.InsuranceUserProfiles.Where(x => x.FamilyProfileId == null).AsQueryable();
 
             //If Status is null returns all users
@@ -78,11 +78,18 @@ namespace DataAccess.HealthInsured.Implementation
 
             var skip = (paginationQuery.PageNumber - 1) * paginationQuery.PageSize;
 
-            var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).AsQueryable();
-            paginatedResponse.Data = await newQueryable.ToListAsync();
-            var recordCount2 = await queryable.CountAsync();
-            paginatedResponse.RecordCount = recordCount2;
-            paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount2 / (double)paginationQuery.PageSize));
+            var newQueryable = queryable.Skip(skip).Take(paginationQuery.PageSize).Select(x => new List_IndividualProfileDTO {Surname = x.Surname,CompanyName=x.CompanyName
+                ,Othernames = x.Othernames,Email =x.Email,PhoneNumber=x.PhoneNumber}).AsQueryable();
+
+            var recordCount = await queryable.CountAsync();
+            var paginatedResponse = new PagedResponse<List_IndividualProfileDTO>
+            {
+                Data = await newQueryable.ToListAsync(),
+                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
+                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
+                RecordCount = recordCount,
+                PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)paginationQuery.PageSize))
+            };
             return paginatedResponse;
         }
 

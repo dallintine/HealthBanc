@@ -97,25 +97,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         {
             var insuranceProfiles =await _repoWrapper.InsuranceProfile.GetPaginatedInsuranceUserProfiles(paginationQuery);
 
-            //foreach(var item in insuranceProfiles.Data)
-            //{
-            //    if(item.FamilyProfileId != null)
-            //    {
-            //        item.Email = item.FamilyEmail;
-            //    }
-            //}
-
-            var insuranceProfilesDTO = _mapper.Map<IEnumerable<InsuranceUserProfile>,IEnumerable<IndividualProfileDTO>>(insuranceProfiles.Data);
-
-            var paginatedResponse = new PagedResponse<IndividualProfileDTO>
-            {
-                Data = insuranceProfilesDTO,
-                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                RecordCount = insuranceProfiles.RecordCount,
-                PageCount = insuranceProfiles.PageCount
-            };
-            return new ResponseMessage { Data = paginatedResponse, Status = true };
+            return new ResponseMessage { Data = insuranceProfiles, Status = true };
         }
 
         public async Task<ResponseMessage> GetReferedInsuranceProfiles(PaginationQuery paginationQuery,int userId)
@@ -370,6 +352,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var hygeiaHospitalList = await _repoWrapper.HygeiaHospitalList.GetHealthProviders(state, city);
             return new ResponseMessage { Data = hygeiaHospitalList, Status = true };
         }
+
         public async Task<ResponseMessage> FilterHealthCareProvider(PaginationQuery paginationQuery,string state,string city)
         {
             var filterHealthCareProvider = await _repoWrapper.HygeiaHospitalList.FilterHealthCareProvider(paginationQuery, state, city);
@@ -430,9 +413,9 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 foreach (var item in data.ToList())
                 {
                     worksheet.Cell(count, 1).Value = item.Surname+" "+item.Othernames;
-                    worksheet.Cell(count, 2).Value = item.Email;
-                    worksheet.Cell(count, 3).Value = item.PhoneNumber;
-                    worksheet.Cell(count, 4).Value = item.TransId;
+                    worksheet.Cell(count, 2).Value = item.Email ?? item.FamilyEmail;
+                    worksheet.Cell(count, 3).Value = "'"+item.PhoneNumber;
+                    worksheet.Cell(count, 4).Value = "'"+item.TransId;
                     worksheet.Cell(count, 5).Value = item.DateOfBirth.ToString();
                     worksheet.Cell(count, 6).Value = item.Gender;
                     worksheet.Cell(count, 7).Value = item.MaritalStatus;

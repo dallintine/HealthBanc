@@ -29,7 +29,8 @@ namespace HealthBanc
 
             var access_token = String.Empty;
             var setCookie = false;
-            
+
+
             return true;
 
             // try to get token from query string

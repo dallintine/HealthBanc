@@ -120,7 +120,7 @@ namespace Application.Services.HealthInsured
             }
         }
 
-
+        [AutomaticRetry(Attempts = 0)]
         public async Task<ResponseMessage> AxamansardDeactivateUser(string axamansardReference)
         {
             string entityCode = AxaAccessor.EntityCode;
@@ -162,10 +162,6 @@ namespace Application.Services.HealthInsured
         [AutomaticRetry(Attempts = 0)]
         public async Task ResendFailedAxamansardReg(EnrollmentModel model)
         {
-            model.PlanId ??= "1";
-            model.State ??= "Lagos";
-            model.Lga ??= "Alimosho";
-            model.Hospital ??= "Hamkad";
             var response = await AxamansardRegisterUser(model);
             var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(model.Email);
             var enrollmentModel = await _repoWrapper.EnrollmentOnOnboarding.GetLastEnrollmentByInsuranceProfileId(insuranceProfile.Id);
@@ -308,6 +304,7 @@ namespace Application.Services.HealthInsured
         /// </summary>
         /// <param name="enrollNumber"></param>
         /// <returns></returns>
+        [AutomaticRetry(Attempts = 0)]
         public async Task<ResponseMessage> HygeiaDeactivateUser(string enrollNumber)
         {
             var encrytedAccess = await _repoWrapper.EncryptedAcessToken.GetEncryptedToken();
@@ -317,7 +314,7 @@ namespace Application.Services.HealthInsured
                 var bearerRequest = await HygeiaGetAuthToken();
                 if (!bearerRequest.Status)
                 {
-                    BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddMinutes(60));
+                    BackgroundJob.Schedule(() => HygeiaDeactivateUser(enrollNumber), DateTime.Now.AddHours(60));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
                 bearerToken = bearerRequest.Message;
@@ -385,6 +382,10 @@ namespace Application.Services.HealthInsured
                 var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);
                 enrollmentModel.Email = payeeInsuranceProfile.Email;
             }
+            if(insuranceUserProfile.FamilyProfileId != null)
+            {
+                enrollmentModel.Email = insuranceUserProfile.FamilyEmail;
+            }
             
             var enrollment = await AxamansardRegisterUser(enrollmentModel);
             if (!enrollment.Status)
@@ -411,6 +412,10 @@ namespace Application.Services.HealthInsured
             {
                 var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceUserProfile.InsurancePayeeId.Value);
                 registrationModel.Email = payeeInsuranceProfile.Email;
+            }
+            if (insuranceUserProfile.FamilyProfileId != null)
+            {
+                registrationModel.Email = insuranceUserProfile.FamilyEmail;
             }
             var registration = await HygeiaRegisterUser(registrationModel);
             if (!registration.Status)

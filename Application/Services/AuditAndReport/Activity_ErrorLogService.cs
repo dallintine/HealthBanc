@@ -104,15 +104,7 @@ namespace Application.Services.AuditAndReport
         public async Task<ResponseMessage> GetAdminActivityLogs(PaginationQuery paginationQuery,string channel)
         {
             var adminActivityLog = await _repoWrapper.AdminAuditLog.GetPaginatedAdminActivityLog(paginationQuery,null);
-            var response = new PagedResponse<AdminAuditLog>
-            {
-                Data = adminActivityLog.Data,
-                PageNumber = paginationQuery.PageNumber >= 1 ? paginationQuery.PageNumber : (int?)null,
-                PageSize = paginationQuery.PageSize >= 1 ? paginationQuery.PageSize : (int?)null,
-                RecordCount = adminActivityLog.RecordCount,
-                PageCount = adminActivityLog.PageCount
-            };
-            return new ResponseMessage { Data = response, Status = true };
+            return new ResponseMessage { Data = adminActivityLog, Status = true };
         }
     }
 }

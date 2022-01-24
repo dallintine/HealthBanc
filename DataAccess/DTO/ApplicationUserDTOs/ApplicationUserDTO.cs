@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace HealthBanc.DTO.ApplicationUserDTOs
+namespace DataAccess.DTO.ApplicationUserDTOs
 {
     public class ApplicationUserDTO
     {
