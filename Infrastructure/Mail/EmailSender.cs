@@ -66,11 +66,11 @@ namespace Infrastructure.Mail
         }
         public void SendHealthInsuredFamilyPaymentReminder(string email, string subject, string familyHead, string familyMember)
         {
-            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\FamilyInsurance") + "\\family_healthinsured_paymentreminder.html";
-            string html = System.IO.File.ReadAllText(path);
-            var newHtml = html.Replace("FamilyHead", familyHead).Replace("FamilyMember", familyMember).Replace("BaseUrl", BaseUrl);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
-            EmailRequest(emailRequest);
+            //var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\FamilyInsurance") + "\\family_healthinsured_paymentreminder.html";
+            //string html = System.IO.File.ReadAllText(path);
+            //var newHtml = html.Replace("FamilyHead", familyHead).Replace("FamilyMember", familyMember).Replace("BaseUrl", BaseUrl);
+            //var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            //EmailRequest(emailRequest);
         }
         public void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider, string plan)
         {
@@ -95,11 +95,11 @@ namespace Infrastructure.Mail
         }
         public void SendHealthInsuredPaymentReminder(string email, string subject, string userName,string info)
         {
-            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\healthinsured_paymentreminder.html";
-            string html = System.IO.File.ReadAllText(path);
-            var newHtml = html.Replace("UserName", userName).Replace("BaseUrl", BaseUrl).Replace("Info",info);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
-            EmailRequest(emailRequest);
+            //var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\healthinsured_paymentreminder.html";
+            //string html = System.IO.File.ReadAllText(path);
+            //var newHtml = html.Replace("UserName", userName).Replace("BaseUrl", BaseUrl).Replace("Info",info);
+            //var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            //EmailRequest(emailRequest);
         }        
         public void SendHeliumNotification(string subject,string healthProvider,string providerType,string phonenumber,string providerEmail)
         {

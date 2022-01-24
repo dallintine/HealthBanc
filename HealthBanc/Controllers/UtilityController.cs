@@ -402,36 +402,33 @@ namespace HealthBanc.Controllers
 
         [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
-        public async Task<IActionResult> SchedulePaymentIndivdualInsuranceProfile()
+        public async Task<IActionResult> SchedulePaymentIndivdualInsuranceProfile(int count)
         {
             var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => x.SubscriptionStatus == true &&
-            x.EndActiveStatusDate < DateTime.Now && x.ActiveStatus == true && x.CompanyProfileId == null).ToList();
+            x.EndActiveStatusDate < DateTime.Now && x.ActiveStatus == true && x.CompanyProfileId == null).Take(count).ToList();
 
             foreach (var item in users)
             {
                 item.PendingJobId = _tokenizationService.ProcessScheduledPayment(item);
                 _repoWrapper.InsuranceProfile.Update(item);
                 await _repoWrapper.Save();
-                await Task.Delay(120000);
             }
-
             await _repoWrapper.Save();
             return Ok();
         }
 
         [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
-        public async Task<IActionResult> SchedulePaymentCoroporateInsuranceProfile()
+        public async Task<IActionResult> SchedulePaymentCoroporateInsuranceProfile(int count)
         {
             var companyProfiles = _repoWrapper.CompanyProfile.QueryAllCompanyProfiles().Where(x => x.TokenizationCompleted == true &&
-            x.NextPaymentDate < DateTime.Now &&  x.ProfileCompleted == true).ToList();
+            x.NextPaymentDate < DateTime.Now &&  x.ProfileCompleted == true).Take(count).ToList();
 
             foreach (var item in companyProfiles)
             {
                 item.PendingJobId = _tokenizationService.ProcessScheduledPayment(item);
                 _repoWrapper.CompanyProfile.Update(item);
                 await _repoWrapper.Save();
-                await Task.Delay(120000);
             }
             return Ok();
         }
