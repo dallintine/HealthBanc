@@ -15,57 +15,57 @@ namespace Persistence
     {
         public static async Task SeedData(ApplicationDbContext context, UserManager<ApplicationUser> userManager,RoleManager<AppRole> roleManager)
         {
-            var roles = new List<AppRole>() {
-                 new AppRole() { Name = "SuperAdmin", NormalizedName = "SUPERADMIN" },
-                 new AppRole() { Name = "Test2", NormalizedName = "TEST2" },
-                 new AppRole() { Name = "Test3", NormalizedName = "TEST3" },
-                 new AppRole() { Name = "Test4", NormalizedName = "TEST4" },
-                 new AppRole() { Name = "Test5", NormalizedName = "TEST5" },
-                 new AppRole() { Name = "Super-Administrator", NormalizedName = "SUPER-ADMINISTRATOR" },
-                 new AppRole() { Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
-                 new AppRole() { Name = "Technical-Support", NormalizedName = "TECHNICAL-SUPPORT" },
-                 new AppRole() { Name = "Analyst", NormalizedName = "ANALYST" }
-            };
+            //var roles = new List<AppRole>() {
+            //     new AppRole() { Name = "SuperAdmin", NormalizedName = "SUPERADMIN" },
+            //     new AppRole() { Name = "Test2", NormalizedName = "TEST2" },
+            //     new AppRole() { Name = "Test3", NormalizedName = "TEST3" },
+            //     new AppRole() { Name = "Test4", NormalizedName = "TEST4" },
+            //     new AppRole() { Name = "Test5", NormalizedName = "TEST5" },
+            //     new AppRole() { Name = "Super-Administrator", NormalizedName = "SUPER-ADMINISTRATOR" },
+            //     new AppRole() { Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
+            //     new AppRole() { Name = "Technical-Support", NormalizedName = "TECHNICAL-SUPPORT" },
+            //     new AppRole() { Name = "Analyst", NormalizedName = "ANALYST" }
+            //};
 
 
-            foreach (var item in roles)
-            {
-                var roleExist = await roleManager.RoleExistsAsync(item.Name);
-                if (!roleExist)
-                {
-                    await roleManager.CreateAsync(item);
-                }
-            }
+            //foreach (var item in roles)
+            //{
+            //    var roleExist = await roleManager.RoleExistsAsync(item.Name);
+            //    if (!roleExist)
+            //    {
+            //        await roleManager.CreateAsync(item);
+            //    }
+            //}
 
-            var classRoles = new List<ClassOrRole>()
-            {
-               new ClassOrRole() { Name = "SuperAdmin" },
-               new ClassOrRole() { Name = "Test2"},
-               new ClassOrRole() { Name = "Test3"},
-               new ClassOrRole() { Name = "Test4"},
-               new ClassOrRole() { Name = "Test5" },
-               new ClassOrRole() { Name = "Super-Administrator"},
-               new ClassOrRole() { Name = "Administrator"},
-               new ClassOrRole() { Name = "Technical-Support"},
-               new ClassOrRole() { Name = "Analyst"}
-            };
+            //var classRoles = new List<ClassOrRole>()
+            //{
+            //   new ClassOrRole() { Name = "SuperAdmin" },
+            //   new ClassOrRole() { Name = "Test2"},
+            //   new ClassOrRole() { Name = "Test3"},
+            //   new ClassOrRole() { Name = "Test4"},
+            //   new ClassOrRole() { Name = "Test5" },
+            //   new ClassOrRole() { Name = "Super-Administrator"},
+            //   new ClassOrRole() { Name = "Administrator"},
+            //   new ClassOrRole() { Name = "Technical-Support"},
+            //   new ClassOrRole() { Name = "Analyst"}
+            //};
 
-            foreach (var item in classRoles)
-            {
-                var roleExist = await context.ClassOrRoles.Where(x => x.Name == item.Name).FirstOrDefaultAsync();
-                if (roleExist == null)
-                {
-                    await context.ClassOrRoles.AddAsync(item);
-                }
-            }
+            //foreach (var item in classRoles)
+            //{
+            //    var roleExist = await context.ClassOrRoles.Where(x => x.Name == item.Name).FirstOrDefaultAsync();
+            //    if (roleExist == null)
+            //    {
+            //        await context.ClassOrRoles.AddAsync(item);
+            //    }
+            //}
 
-            var classRolesCount = await context.ClassOrRoles.ToListAsync();
+            //var classRolesCount = await context.ClassOrRoles.ToListAsync();
 
-            if (classRolesCount.Count > 9)
-            {
-                var oustedRoles = await context.ClassOrRoles.Where(x => x.Id > 9).ToListAsync();
-                context.ClassOrRoles.RemoveRange(oustedRoles);
-            }
+            //if (classRolesCount.Count > 9)
+            //{
+            //    var oustedRoles = await context.ClassOrRoles.Where(x => x.Id > 9).ToListAsync();
+            //    context.ClassOrRoles.RemoveRange(oustedRoles);
+            //}
 
             var appServices = new List<Service>()
             {
@@ -176,600 +176,600 @@ namespace Persistence
             }
             await Task.CompletedTask;
 
-            // Individual Users
-            var users = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test1@gmail.com",Email = "test1@gmail.com",FirstName = "test1",LastName = "test1",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test2@gmail.com",Email = "test2@gmail.com",FirstName = "test2",LastName = "test2",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test3@gmail.com",Email = "test3@gmail.com",FirstName = "test3",LastName = "test3",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test17@gmail.com",Email = "test17@gmail.com",FirstName = "test17",LastName = "test17",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test18@gmail.com",Email = "test18@gmail.com",FirstName = "test18",LastName = "test18",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test19@gmail.com",Email = "test19@gmail.com",FirstName = "test19",LastName = "test19",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test20@gmail.com",Email = "test20@gmail.com",FirstName = "test20",LastName = "test20",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test21@gmail.com",Email = "test21@gmail.com",FirstName = "test21",LastName = "test21",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test22@gmail.com",Email = "test22@gmail.com",FirstName = "test22",LastName = "test22",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //// Individual Users
+            //var users = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test1@gmail.com",Email = "test1@gmail.com",FirstName = "test1",LastName = "test1",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test2@gmail.com",Email = "test2@gmail.com",FirstName = "test2",LastName = "test2",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test3@gmail.com",Email = "test3@gmail.com",FirstName = "test3",LastName = "test3",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test17@gmail.com",Email = "test17@gmail.com",FirstName = "test17",LastName = "test17",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test18@gmail.com",Email = "test18@gmail.com",FirstName = "test18",LastName = "test18",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test19@gmail.com",Email = "test19@gmail.com",FirstName = "test19",LastName = "test19",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test20@gmail.com",Email = "test20@gmail.com",FirstName = "test20",LastName = "test20",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test21@gmail.com",Email = "test21@gmail.com",FirstName = "test21",LastName = "test21",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test22@gmail.com",Email = "test22@gmail.com",FirstName = "test22",LastName = "test22",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
 
-            };
+            //};
 
-            foreach (var item in users)
-            {
-                var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
-                if (result2.Succeeded)
-                {
-                    item.EmailConfirmed = true;
-                    await userManager.UpdateAsync(item);
-                    await userManager.AddToRoleAsync(item, "SuperAdmin");
-                    await userManager.UpdateAsync(item);
+            //foreach (var item in users)
+            //{
+            //    var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
+            //    if (result2.Succeeded)
+            //    {
+            //        item.EmailConfirmed = true;
+            //        await userManager.UpdateAsync(item);
+            //        await userManager.AddToRoleAsync(item, "SuperAdmin");
+            //        await userManager.UpdateAsync(item);
 
-                    var insuranceProfile = new InsuranceUserProfile()
-                    {
-                        UserId = item.Id,
-                        Surname = item.LastName,
-                        Othernames = item.LastName,
-                        DateOfBirth = DateTime.Now,
-                        MaritalStatus = "Single",
-                        Gender = "Male",
-                        PhoneNumber = item.PhoneNumber,
-                        Email = item.Email,
-                        PlanCode = "1",
-                        Premium = Decimal.Parse("1000"),
-                        SubscriptionStatus = true,
-                        ActiveStatus = true,
-                        InsuranceService = "Hygeia",
-                        ContactAddress = "lagos",
-                        CareProviderName = "test test",
-                        StateOfResidence = "lagos",
-                        TownOfResidence = "yaba",
-                        StartActiveStatusDate = new DateTime(2021, 9, 25),
-                        EndActiveStatusDate = new DateTime(2021, 9, 25).AddDays(28),
-                        TransId = "0989768965",
-                        PendingJobId = "23",
-                        PendingEmailJobId = "25"
-                    };
+            //        var insuranceProfile = new InsuranceUserProfile()
+            //        {
+            //            UserId = item.Id,
+            //            Surname = item.LastName,
+            //            Othernames = item.LastName,
+            //            DateOfBirth = DateTime.Now,
+            //            MaritalStatus = "Single",
+            //            Gender = "Male",
+            //            PhoneNumber = item.PhoneNumber,
+            //            Email = item.Email,
+            //            PlanCode = "1",
+            //            Premium = Decimal.Parse("1000"),
+            //            SubscriptionStatus = true,
+            //            ActiveStatus = true,
+            //            InsuranceService = "Hygeia",
+            //            ContactAddress = "lagos",
+            //            CareProviderName = "test test",
+            //            StateOfResidence = "lagos",
+            //            TownOfResidence = "yaba",
+            //            StartActiveStatusDate = new DateTime(2021, 9, 25),
+            //            EndActiveStatusDate = new DateTime(2021, 9, 25).AddDays(28),
+            //            TransId = "0989768965",
+            //            PendingJobId = "23",
+            //            PendingEmailJobId = "25"
+            //        };
 
-                    context.InsuranceUserProfiles.Add(insuranceProfile);
-                    await context.SaveChangesAsync();
+            //        context.InsuranceUserProfiles.Add(insuranceProfile);
+            //        await context.SaveChangesAsync();
 
-                    var card = new DebitCard();
-                    if (item.Email == "test1@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_bpyozf6515");
-                    }
-                    else if (item.Email == "test2@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_ysa2h6rlwe");
-                    }
-                    else if (item.Email == "test3@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_yxk6i3q6r2");
-                    }
-                    else if (item.Email == "test17@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_hoiwcm2r61");
-                    }
-                    else if (item.Email == "test18@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_mtx98nltvc");
-                    }
-                    else if (item.Email == "test19@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_xg43sm9t60");
-                    }
-                    else if (item.Email == "test20@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_p6sts7vv9p");
-                    }
-                    else if (item.Email == "test21@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_idlw8v4vfz");
-                    }
-                    else if (item.Email == "test22@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_f9glg0rd8j");
-                    }
+            //        var card = new DebitCard();
+            //        if (item.Email == "test1@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_bpyozf6515");
+            //        }
+            //        else if (item.Email == "test2@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_ysa2h6rlwe");
+            //        }
+            //        else if (item.Email == "test3@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_yxk6i3q6r2");
+            //        }
+            //        else if (item.Email == "test17@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_hoiwcm2r61");
+            //        }
+            //        else if (item.Email == "test18@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_mtx98nltvc");
+            //        }
+            //        else if (item.Email == "test19@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_xg43sm9t60");
+            //        }
+            //        else if (item.Email == "test20@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_p6sts7vv9p");
+            //        }
+            //        else if (item.Email == "test21@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_idlw8v4vfz");
+            //        }
+            //        else if (item.Email == "test22@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_f9glg0rd8j");
+            //        }
 
-                    context.Cards.Add(card);
-                    await context.SaveChangesAsync();
+            //        context.Cards.Add(card);
+            //        await context.SaveChangesAsync();
 
-                    var completionProfile = new InsuranceCompletionProfile(item.Id, true, true, insuranceProfile.InsuranceService);
-                    context.InsuranceCompletionProfiles.Add(completionProfile);
-                    await context.SaveChangesAsync();
-                }
-            }
+            //        var completionProfile = new InsuranceCompletionProfile(item.Id, true, true, insuranceProfile.InsuranceService);
+            //        context.InsuranceCompletionProfiles.Add(completionProfile);
+            //        await context.SaveChangesAsync();
+            //    }
+            //}
 
-            var users2 = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test4@gmail.com",Email = "test4@gmail.com",FirstName = "test4",LastName = "test4",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test5@gmail.com",Email = "test5@gmail.com",FirstName = "test5",LastName = "test5",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-            };
+            //var users2 = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test4@gmail.com",Email = "test4@gmail.com",FirstName = "test4",LastName = "test4",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test5@gmail.com",Email = "test5@gmail.com",FirstName = "test5",LastName = "test5",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //};
 
-            foreach (var item in users2)
-            {
-                var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
-                if (result2.Succeeded)
-                {
-                    item.EmailConfirmed = true;
-                    await userManager.UpdateAsync(item);
-                    await userManager.AddToRoleAsync(item, "SuperAdmin");
-                    await userManager.UpdateAsync(item);
+            //foreach (var item in users2)
+            //{
+            //    var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
+            //    if (result2.Succeeded)
+            //    {
+            //        item.EmailConfirmed = true;
+            //        await userManager.UpdateAsync(item);
+            //        await userManager.AddToRoleAsync(item, "SuperAdmin");
+            //        await userManager.UpdateAsync(item);
 
-                    var insuranceProfile = new InsuranceUserProfile()
-                    {
-                        UserId = item.Id,
-                        Surname = item.LastName,
-                        Othernames = item.LastName,
-                        DateOfBirth = DateTime.Now,
-                        MaritalStatus = "Single",
-                        Gender = "Male",
-                        PhoneNumber = item.PhoneNumber,
-                        Email = item.Email,
-                        PlanCode = "1",
-                        Premium = Decimal.Parse("1000"),
-                        SubscriptionStatus = true,
-                        ActiveStatus = true,
-                        InsuranceService = "Hygeia",
-                        ContactAddress = "lagos",
-                        CareProviderName = "test test",
-                        StateOfResidence = "lagos",
-                        TownOfResidence = "yaba",
-                        StartActiveStatusDate = new DateTime(2021, 11, 5),
-                        EndActiveStatusDate = new DateTime(2021, 11, 5).AddDays(28),
-                        TransId = "0989768965",
-                        PendingJobId = "23",
-                        PendingEmailJobId = "25"
-                    };
+            //        var insuranceProfile = new InsuranceUserProfile()
+            //        {
+            //            UserId = item.Id,
+            //            Surname = item.LastName,
+            //            Othernames = item.LastName,
+            //            DateOfBirth = DateTime.Now,
+            //            MaritalStatus = "Single",
+            //            Gender = "Male",
+            //            PhoneNumber = item.PhoneNumber,
+            //            Email = item.Email,
+            //            PlanCode = "1",
+            //            Premium = Decimal.Parse("1000"),
+            //            SubscriptionStatus = true,
+            //            ActiveStatus = true,
+            //            InsuranceService = "Hygeia",
+            //            ContactAddress = "lagos",
+            //            CareProviderName = "test test",
+            //            StateOfResidence = "lagos",
+            //            TownOfResidence = "yaba",
+            //            StartActiveStatusDate = new DateTime(2021, 11, 5),
+            //            EndActiveStatusDate = new DateTime(2021, 11, 5).AddDays(28),
+            //            TransId = "0989768965",
+            //            PendingJobId = "23",
+            //            PendingEmailJobId = "25"
+            //        };
 
-                    context.InsuranceUserProfiles.Add(insuranceProfile);
-                    await context.SaveChangesAsync();
+            //        context.InsuranceUserProfiles.Add(insuranceProfile);
+            //        await context.SaveChangesAsync();
 
-                    var card = new DebitCard();
-                    if (item.Email == "test4@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_vcljv8t0gx");
-                    }
-                    else if (item.Email == "test5@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_oqk3eogdvl");
-                    }
-                    context.Cards.Add(card);
-                    await context.SaveChangesAsync();
+            //        var card = new DebitCard();
+            //        if (item.Email == "test4@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_vcljv8t0gx");
+            //        }
+            //        else if (item.Email == "test5@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_oqk3eogdvl");
+            //        }
+            //        context.Cards.Add(card);
+            //        await context.SaveChangesAsync();
 
-                    var completionProfile = new InsuranceCompletionProfile(item.Id, true, true, insuranceProfile.InsuranceService);
-                    context.InsuranceCompletionProfiles.Add(completionProfile);
-                    await context.SaveChangesAsync();
-                }
-            }
+            //        var completionProfile = new InsuranceCompletionProfile(item.Id, true, true, insuranceProfile.InsuranceService);
+            //        context.InsuranceCompletionProfiles.Add(completionProfile);
+            //        await context.SaveChangesAsync();
+            //    }
+            //}
 
-            var users3 = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test6@gmail.com",Email = "test6@gmail.com",FirstName = "test6",LastName = "test6",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //var users3 = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test6@gmail.com",Email = "test6@gmail.com",FirstName = "test6",LastName = "test6",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
 
-            };
+            //};
 
-            foreach (var item in users3)
-            {
-                var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
-                if (result2.Succeeded)
-                {
-                    item.EmailConfirmed = true;
-                    await userManager.UpdateAsync(item);
-                    await userManager.AddToRoleAsync(item, "SuperAdmin");
-                    await userManager.UpdateAsync(item);
+            //foreach (var item in users3)
+            //{
+            //    var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
+            //    if (result2.Succeeded)
+            //    {
+            //        item.EmailConfirmed = true;
+            //        await userManager.UpdateAsync(item);
+            //        await userManager.AddToRoleAsync(item, "SuperAdmin");
+            //        await userManager.UpdateAsync(item);
 
-                    var insuranceProfile = new InsuranceUserProfile()
-                    {
-                        UserId = item.Id,
-                        Surname = item.LastName,
-                        Othernames = item.LastName,
-                        DateOfBirth = DateTime.Now,
-                        MaritalStatus = "Single",
-                        Gender = "Male",
-                        PhoneNumber = item.PhoneNumber,
-                        Email = item.Email,
-                        PlanCode = "1",
-                        Premium = Decimal.Parse("1000"),
-                        SubscriptionStatus = true,
-                        ActiveStatus = true,
-                        InsuranceService = "Hygeia",
-                        ContactAddress = "lagos",
-                        CareProviderName = "test test",
-                        StateOfResidence = "lagos",
-                        TownOfResidence = "yaba",
-                        StartActiveStatusDate = new DateTime(2021, 12, 25),
-                        EndActiveStatusDate = new DateTime(2021, 12, 25).AddDays(28),
-                        TransId = "0989768965",
-                        PendingJobId = "23",
-                        PendingEmailJobId = "25"
-                    };
+            //        var insuranceProfile = new InsuranceUserProfile()
+            //        {
+            //            UserId = item.Id,
+            //            Surname = item.LastName,
+            //            Othernames = item.LastName,
+            //            DateOfBirth = DateTime.Now,
+            //            MaritalStatus = "Single",
+            //            Gender = "Male",
+            //            PhoneNumber = item.PhoneNumber,
+            //            Email = item.Email,
+            //            PlanCode = "1",
+            //            Premium = Decimal.Parse("1000"),
+            //            SubscriptionStatus = true,
+            //            ActiveStatus = true,
+            //            InsuranceService = "Hygeia",
+            //            ContactAddress = "lagos",
+            //            CareProviderName = "test test",
+            //            StateOfResidence = "lagos",
+            //            TownOfResidence = "yaba",
+            //            StartActiveStatusDate = new DateTime(2021, 12, 25),
+            //            EndActiveStatusDate = new DateTime(2021, 12, 25).AddDays(28),
+            //            TransId = "0989768965",
+            //            PendingJobId = "23",
+            //            PendingEmailJobId = "25"
+            //        };
 
-                    context.InsuranceUserProfiles.Add(insuranceProfile);
-                    await context.SaveChangesAsync();
+            //        context.InsuranceUserProfiles.Add(insuranceProfile);
+            //        await context.SaveChangesAsync();
 
-                    var card = new DebitCard();
-                    if (item.Email == "test6@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_r6t0u2e2v5");
-                    }
+            //        var card = new DebitCard();
+            //        if (item.Email == "test6@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, insuranceProfile.Id, null, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_r6t0u2e2v5");
+            //        }
 
-                    context.Cards.Add(card);
-                    await context.SaveChangesAsync();
+            //        context.Cards.Add(card);
+            //        await context.SaveChangesAsync();
 
-                    var completionProfile = new InsuranceCompletionProfile(item.Id, true, true, insuranceProfile.InsuranceService);
-                    context.InsuranceCompletionProfiles.Add(completionProfile);
-                    await context.SaveChangesAsync();
-                }
-
-                
-            }
-
-            // Family
-            var users4 = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test7@gmail.com",Email = "test7@gmail.com",FirstName = "test7",LastName = "test7",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-            };
-
-            foreach (var item in users4)
-            {
-                var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
-                if (result2.Succeeded)
-                {
-                    await userManager.UpdateAsync(item);
-                    item.EmailConfirmed = true;
-                    await userManager.AddToRoleAsync(item, "SuperAdmin");
-                    await userManager.UpdateAsync(item);
-
-                    var familyProfile = new FamilyProfile()
-                    {
-                        UserId = item.Id,
-                        PhoneNumber = item.PhoneNumber,
-                        Email = item.Email,
-                        FullName = item.LastName + item.FirstName,
-                        InsuranceService = "Hygeia",
-                        EmailConfirmed = true,
-                        TokenizationCompleted = true,
-                        ProfileCompleted = true,
-                        DateCreated = DateTime.Now,
-                        PendingJobId = "23",
-                        PendingEmailJobId = "25"
-                    };
-                    context.FamilyProfiles.Add(familyProfile);
-                    await context.SaveChangesAsync();
-
-                    var card = new DebitCard();
-                    if (item.Email == "test7@gmail.com")
-                    {
-                        card = new DebitCard(item.Id, null, null, familyProfile.Id, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_87q4acs3h8");
-                    }
-
-                    context.Cards.Add(card);
-                    await context.SaveChangesAsync();
-                }
+            //        var completionProfile = new InsuranceCompletionProfile(item.Id, true, true, insuranceProfile.InsuranceService);
+            //        context.InsuranceCompletionProfiles.Add(completionProfile);
+            //        await context.SaveChangesAsync();
+            //    }
 
                 
-            }
+            //}
 
-            // Add Family Member
+            //// Family
+            //var users4 = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test7@gmail.com",Email = "test7@gmail.com",FirstName = "test7",LastName = "test7",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //};
 
-            var users5 = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test8@gmail.com",FirstName = "test8",LastName = "test8",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test9@gmail.com",FirstName = "test9",LastName = "test9",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test10@gmail.com",FirstName = "test10",LastName = "test10",DateOfRegistration = DateTime.Now},
+            //foreach (var item in users4)
+            //{
+            //    var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
+            //    if (result2.Succeeded)
+            //    {
+            //        await userManager.UpdateAsync(item);
+            //        item.EmailConfirmed = true;
+            //        await userManager.AddToRoleAsync(item, "SuperAdmin");
+            //        await userManager.UpdateAsync(item);
 
-            };
+            //        var familyProfile = new FamilyProfile()
+            //        {
+            //            UserId = item.Id,
+            //            PhoneNumber = item.PhoneNumber,
+            //            Email = item.Email,
+            //            FullName = item.LastName + item.FirstName,
+            //            InsuranceService = "Hygeia",
+            //            EmailConfirmed = true,
+            //            TokenizationCompleted = true,
+            //            ProfileCompleted = true,
+            //            DateCreated = DateTime.Now,
+            //            PendingJobId = "23",
+            //            PendingEmailJobId = "25"
+            //        };
+            //        context.FamilyProfiles.Add(familyProfile);
+            //        await context.SaveChangesAsync();
 
-            var family = context.FamilyProfiles.FirstOrDefault(x => x.Email == "test7@gmail.com");
+            //        var card = new DebitCard();
+            //        if (item.Email == "test7@gmail.com")
+            //        {
+            //            card = new DebitCard(item.Id, null, null, familyProfile.Id, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_87q4acs3h8");
+            //        }
 
-            foreach (var item in users5)
-            {
+            //        context.Cards.Add(card);
+            //        await context.SaveChangesAsync();
+            //    }
 
-                if (item.UserName == "test8@gmail.com")
-                {
-                    var item8 =await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test8@gmail.com");
-                    if(item8 is null)
-                    {
-                        var insuranceProfile = new InsuranceUserProfile()
-                        {
-                            FamilyProfileId = family.Id,
-                            PhoneNumber = family.PhoneNumber,
-                            FamilyEmail = family.Email,
-                            Surname = item.LastName,
-                            Othernames = item.LastName,
-                            DateOfBirth = DateTime.Now,
-                            MaritalStatus = "Single",
-                            Gender = "Male",
-                            PlanCode = "1",
-                            Premium = Decimal.Parse("1000"),
-                            SubscriptionStatus = true,
-                            ActiveStatus = true,
-                            InsuranceService = InsuranceProvider.Axamansard.ToString(),
-                            ContactAddress = "lagos",
-                            CareProviderName = "test test",
-                            StateOfResidence = "lagos",
-                            TownOfResidence = "yaba",
-                            StartActiveStatusDate = new DateTime(2021, 10, 25),
-                            EndActiveStatusDate = new DateTime(2021, 10, 25).AddDays(28),
-                            TransId = "0989768965",
-                            PendingJobId = "23",
-                            PendingEmailJobId = "25"
-                        };
-                        context.InsuranceUserProfiles.Add(insuranceProfile);
-                        await context.SaveChangesAsync();
-                    }
+                
+            //}
+
+            //// Add Family Member
+
+            //var users5 = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test8@gmail.com",FirstName = "test8",LastName = "test8",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test9@gmail.com",FirstName = "test9",LastName = "test9",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test10@gmail.com",FirstName = "test10",LastName = "test10",DateOfRegistration = DateTime.Now},
+
+            //};
+
+            //var family = context.FamilyProfiles.FirstOrDefault(x => x.Email == "test7@gmail.com");
+
+            //foreach (var item in users5)
+            //{
+
+            //    if (item.UserName == "test8@gmail.com")
+            //    {
+            //        var item8 =await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test8@gmail.com");
+            //        if(item8 is null)
+            //        {
+            //            var insuranceProfile = new InsuranceUserProfile()
+            //            {
+            //                FamilyProfileId = family.Id,
+            //                PhoneNumber = family.PhoneNumber,
+            //                FamilyEmail = family.Email,
+            //                Surname = item.LastName,
+            //                Othernames = item.LastName,
+            //                DateOfBirth = DateTime.Now,
+            //                MaritalStatus = "Single",
+            //                Gender = "Male",
+            //                PlanCode = "1",
+            //                Premium = Decimal.Parse("1000"),
+            //                SubscriptionStatus = true,
+            //                ActiveStatus = true,
+            //                InsuranceService = InsuranceProvider.Axamansard.ToString(),
+            //                ContactAddress = "lagos",
+            //                CareProviderName = "test test",
+            //                StateOfResidence = "lagos",
+            //                TownOfResidence = "yaba",
+            //                StartActiveStatusDate = new DateTime(2021, 10, 25),
+            //                EndActiveStatusDate = new DateTime(2021, 10, 25).AddDays(28),
+            //                TransId = "0989768965",
+            //                PendingJobId = "23",
+            //                PendingEmailJobId = "25"
+            //            };
+            //            context.InsuranceUserProfiles.Add(insuranceProfile);
+            //            await context.SaveChangesAsync();
+            //        }
                     
-                }
-                else if (item.UserName == "test10@gmail.com")
-                {
-                    var item10 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test10@gmail.com");
-                    if (item10 is null)
-                    {
-                        var insuranceProfile = new InsuranceUserProfile()
-                        {
-                            FamilyProfileId = family.Id,
-                            PhoneNumber = family.PhoneNumber,
-                            FamilyEmail = family.Email,
-                            Surname = item.LastName,
-                            Othernames = item.LastName,
-                            DateOfBirth = DateTime.Now,
-                            MaritalStatus = "Single",
-                            Gender = "Male",
-                            PlanCode = "1",
-                            Premium = Decimal.Parse("1000"),
-                            SubscriptionStatus = null,
-                            ActiveStatus = null,
-                            InsuranceService = InsuranceProvider.Axamansard.ToString(),
-                            ContactAddress = "lagos",
-                            CareProviderName = "test test",
-                            StateOfResidence = "lagos",
-                            TownOfResidence = "yaba"
-                        };
-                        context.InsuranceUserProfiles.Add(insuranceProfile);
-                        await context.SaveChangesAsync();
-                    }
+            //    }
+            //    else if (item.UserName == "test10@gmail.com")
+            //    {
+            //        var item10 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test10@gmail.com");
+            //        if (item10 is null)
+            //        {
+            //            var insuranceProfile = new InsuranceUserProfile()
+            //            {
+            //                FamilyProfileId = family.Id,
+            //                PhoneNumber = family.PhoneNumber,
+            //                FamilyEmail = family.Email,
+            //                Surname = item.LastName,
+            //                Othernames = item.LastName,
+            //                DateOfBirth = DateTime.Now,
+            //                MaritalStatus = "Single",
+            //                Gender = "Male",
+            //                PlanCode = "1",
+            //                Premium = Decimal.Parse("1000"),
+            //                SubscriptionStatus = null,
+            //                ActiveStatus = null,
+            //                InsuranceService = InsuranceProvider.Axamansard.ToString(),
+            //                ContactAddress = "lagos",
+            //                CareProviderName = "test test",
+            //                StateOfResidence = "lagos",
+            //                TownOfResidence = "yaba"
+            //            };
+            //            context.InsuranceUserProfiles.Add(insuranceProfile);
+            //            await context.SaveChangesAsync();
+            //        }
                     
-                }
-                else
-                {
-                    var item9 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test9@gmail.com");
-                    if(item9 is null)
-                    {
-                        var insuranceProfile = new InsuranceUserProfile()
-                        {
-                            FamilyProfileId = family.Id,
-                            PhoneNumber = family.PhoneNumber,
-                            FamilyEmail = family.Email,
-                            Surname = item.LastName,
-                            Othernames = item.LastName,
-                            DateOfBirth = DateTime.Now,
-                            MaritalStatus = "Single",
-                            Gender = "Male",
-                            PlanCode = "1",
-                            Premium = Decimal.Parse("1000"),
-                            SubscriptionStatus = true,
-                            ActiveStatus = true,
-                            InsuranceService = InsuranceProvider.Axamansard.ToString(),
-                            ContactAddress = "lagos",
-                            CareProviderName = "test test",
-                            StateOfResidence = "lagos",
-                            TownOfResidence = "yaba",
-                            StartActiveStatusDate = new DateTime(2022, 01, 2),
-                            EndActiveStatusDate = new DateTime(2022, 01, 2).AddDays(28),
-                            TransId = "0989768965",
-                            PendingJobId = "23",
-                            PendingEmailJobId = "25"
-                        };
-                        context.InsuranceUserProfiles.Add(insuranceProfile);
-                        await context.SaveChangesAsync();
-                    }
+            //    }
+            //    else
+            //    {
+            //        var item9 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.FamilyEmail == "test9@gmail.com");
+            //        if(item9 is null)
+            //        {
+            //            var insuranceProfile = new InsuranceUserProfile()
+            //            {
+            //                FamilyProfileId = family.Id,
+            //                PhoneNumber = family.PhoneNumber,
+            //                FamilyEmail = family.Email,
+            //                Surname = item.LastName,
+            //                Othernames = item.LastName,
+            //                DateOfBirth = DateTime.Now,
+            //                MaritalStatus = "Single",
+            //                Gender = "Male",
+            //                PlanCode = "1",
+            //                Premium = Decimal.Parse("1000"),
+            //                SubscriptionStatus = true,
+            //                ActiveStatus = true,
+            //                InsuranceService = InsuranceProvider.Axamansard.ToString(),
+            //                ContactAddress = "lagos",
+            //                CareProviderName = "test test",
+            //                StateOfResidence = "lagos",
+            //                TownOfResidence = "yaba",
+            //                StartActiveStatusDate = new DateTime(2022, 01, 2),
+            //                EndActiveStatusDate = new DateTime(2022, 01, 2).AddDays(28),
+            //                TransId = "0989768965",
+            //                PendingJobId = "23",
+            //                PendingEmailJobId = "25"
+            //            };
+            //            context.InsuranceUserProfiles.Add(insuranceProfile);
+            //            await context.SaveChangesAsync();
+            //        }
                     
-                }
+            //    }
 
-            }
+            //}
 
-            // Test Refereee
+            //// Test Refereee
 
-            var users6 = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test11@gmail.com",Email = "test11@gmail.com",FirstName = "test11",LastName = "test11",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-            };
+            //var users6 = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test11@gmail.com",Email = "test11@gmail.com",FirstName = "test11",LastName = "test11",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //};
 
-            var profile = context.InsuranceUserProfiles.FirstOrDefault(x => x.Email == "test6@gmail.com");
+            //var profile = context.InsuranceUserProfiles.FirstOrDefault(x => x.Email == "test6@gmail.com");
 
-            foreach (var item in users6)
-            {
+            //foreach (var item in users6)
+            //{
 
-                var item11 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.Email == "test11@gmail.com");
-                if(item11 is null)
-                {
-                    var insuranceProfile = new InsuranceUserProfile()
-                    {
-                        InsurancePayeeId = profile.Id,
-                        Surname = item.LastName,
-                        Othernames = item.LastName,
-                        PhoneNumber = item.PhoneNumber,
-                        DateOfBirth = DateTime.Now,
-                        MaritalStatus = "Single",
-                        Gender = "Male",
-                        Email = item.Email,
-                        PlanCode = "1",
-                        Premium = Decimal.Parse("1000"),
-                        SubscriptionStatus = true,
-                        ActiveStatus = true,
-                        InsuranceService = "Hygeia",
-                        ContactAddress = "lagos",
-                        CareProviderName = "test test",
-                        StateOfResidence = "lagos",
-                        TownOfResidence = "yaba",
-                        StartActiveStatusDate = new DateTime(2021, 10, 25),
-                        EndActiveStatusDate = new DateTime(2021, 10, 25).AddDays(28),
-                        TransId = "0989768965",
-                        PendingJobId = "23",
-                        PendingEmailJobId = "25"
-                    };
-                    context.InsuranceUserProfiles.Add(insuranceProfile);
-                    await context.SaveChangesAsync();
-                }
-
-                
-            }
-
-            // Coporate
-
-            var users7 = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test12@gmail.com",Email = "test12@gmail.com",FirstName = "test12",LastName = "test12",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-            };
-
-
-            foreach (var item in users7)
-            {
-                var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
-                if (result2.Succeeded)
-                {
-                    item.EmailConfirmed = true;
-                    await userManager.UpdateAsync(item);
-                    await userManager.AddToRoleAsync(item, "SuperAdmin");
-                    await userManager.UpdateAsync(item);
-
-                    var company = new CompanyProfile()
-                    {
-                        UserId = item.Id,
-                        PendingJobId = "12",
-                        PendingEmailJobId = "14",
-                        CompanyName = "Hassan Pharm",
-                        CompanyEmail = item.Email,
-                        PhoneNumber = item.PhoneNumber,
-                        Industry = "Pharmaceutical",
-                        CompanySize = "12",
-                        EmailConfirmed = true,
-                        TokenizationCompleted = true,
-                        ProfileCompleted = true,
-                        InsuranceService = "Hygeia",
-                        NextPaymentDate = new DateTime(2021, 12, 7)
-                    };
-
-                    context.CompanyProfiles.Add(company);
-                    await context.SaveChangesAsync();
-
-                    var card = new DebitCard(item.Id, null, company.Id, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_yulec75efr");
-                    context.Cards.Add(card);
-                    await context.SaveChangesAsync();
-                }
+            //    var item11 = await context.InsuranceUserProfiles.FirstOrDefaultAsync(x => x.Email == "test11@gmail.com");
+            //    if(item11 is null)
+            //    {
+            //        var insuranceProfile = new InsuranceUserProfile()
+            //        {
+            //            InsurancePayeeId = profile.Id,
+            //            Surname = item.LastName,
+            //            Othernames = item.LastName,
+            //            PhoneNumber = item.PhoneNumber,
+            //            DateOfBirth = DateTime.Now,
+            //            MaritalStatus = "Single",
+            //            Gender = "Male",
+            //            Email = item.Email,
+            //            PlanCode = "1",
+            //            Premium = Decimal.Parse("1000"),
+            //            SubscriptionStatus = true,
+            //            ActiveStatus = true,
+            //            InsuranceService = "Hygeia",
+            //            ContactAddress = "lagos",
+            //            CareProviderName = "test test",
+            //            StateOfResidence = "lagos",
+            //            TownOfResidence = "yaba",
+            //            StartActiveStatusDate = new DateTime(2021, 10, 25),
+            //            EndActiveStatusDate = new DateTime(2021, 10, 25).AddDays(28),
+            //            TransId = "0989768965",
+            //            PendingJobId = "23",
+            //            PendingEmailJobId = "25"
+            //        };
+            //        context.InsuranceUserProfiles.Add(insuranceProfile);
+            //        await context.SaveChangesAsync();
+            //    }
 
                 
-            }
+            //}
 
-            // Company beneficiaries Active
+            //// Coporate
 
-            var users8 = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test13@gmail.com",Email = "test13@gmail.com",FirstName = "test13",LastName = "test13",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test14@gmail.com",Email = "test14@gmail.com",FirstName = "test14",LastName = "test14",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-            };
+            //var users7 = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test12@gmail.com",Email = "test12@gmail.com",FirstName = "test12",LastName = "test12",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //};
 
-            var coporate = context.CompanyProfiles.Where(x => x.CompanyEmail == "test12@gmail.com").FirstOrDefault();
 
-            foreach (var item in users8)
-            {
-                var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
-                if (result2.Succeeded)
-                {
-                    item.EmailConfirmed = true;
-                    await userManager.UpdateAsync(item);
-                    await userManager.AddToRoleAsync(item, "SuperAdmin");
-                    await userManager.UpdateAsync(item);
+            //foreach (var item in users7)
+            //{
+            //    var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
+            //    if (result2.Succeeded)
+            //    {
+            //        item.EmailConfirmed = true;
+            //        await userManager.UpdateAsync(item);
+            //        await userManager.AddToRoleAsync(item, "SuperAdmin");
+            //        await userManager.UpdateAsync(item);
 
-                    var insuranceProfile = new InsuranceUserProfile()
-                    {
-                        UserId = item.Id,
-                        CompanyProfileId = coporate.Id,
-                        CompanyName = coporate.CompanyName,
-                        CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString(),
-                        Surname = item.LastName,
-                        Othernames = item.LastName,
-                        DateOfBirth = DateTime.Now,
-                        MaritalStatus = "Single",
-                        Gender = "Male",
-                        PhoneNumber = item.PhoneNumber,
-                        Email = item.Email,
-                        PlanCode = "1",
-                        Premium = Decimal.Parse("1000"),
-                        SubscriptionStatus = true,
-                        ActiveStatus = true,
-                        InsuranceService = "Hygeia",
-                        ContactAddress = "lagos",
-                        CareProviderName = "test test",
-                        StateOfResidence = "lagos",
-                        TownOfResidence = "yaba",
-                        StartActiveStatusDate = new DateTime(2021, 9, 25),
-                        EndActiveStatusDate = new DateTime(2021, 9, 25).AddDays(28),
-                        TransId = "0989768965",
-                        PendingJobId = "23",
-                        PendingEmailJobId = "25"
-                    };
+            //        var company = new CompanyProfile()
+            //        {
+            //            UserId = item.Id,
+            //            PendingJobId = "12",
+            //            PendingEmailJobId = "14",
+            //            CompanyName = "Hassan Pharm",
+            //            CompanyEmail = item.Email,
+            //            PhoneNumber = item.PhoneNumber,
+            //            Industry = "Pharmaceutical",
+            //            CompanySize = "12",
+            //            EmailConfirmed = true,
+            //            TokenizationCompleted = true,
+            //            ProfileCompleted = true,
+            //            InsuranceService = "Hygeia",
+            //            NextPaymentDate = new DateTime(2021, 12, 7)
+            //        };
 
-                    context.InsuranceUserProfiles.Add(insuranceProfile);
-                    await context.SaveChangesAsync();
-                }
+            //        context.CompanyProfiles.Add(company);
+            //        await context.SaveChangesAsync();
+
+            //        var card = new DebitCard(item.Id, null, company.Id, null, 1, "6666", "Visa", Guid.NewGuid().ToString(), "AUTH_yulec75efr");
+            //        context.Cards.Add(card);
+            //        await context.SaveChangesAsync();
+            //    }
 
                 
-            }
+            //}
 
-            // Company beneficiaries Pending
+            //// Company beneficiaries Active
 
-            var users9 = new List<ApplicationUser>
-            {
-                new ApplicationUser{UserName = "test15@gmail.com",Email = "test15@gmail.com",FirstName = "test15",LastName = "test15",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-                new ApplicationUser{UserName = "test16@gmail.com",Email = "test16@gmail.com",FirstName = "test16",LastName = "test16",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
-            };
+            //var users8 = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test13@gmail.com",Email = "test13@gmail.com",FirstName = "test13",LastName = "test13",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test14@gmail.com",Email = "test14@gmail.com",FirstName = "test14",LastName = "test14",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //};
 
-            var coporate2 = context.CompanyProfiles.Where(x => x.CompanyEmail == "test12@gmail.com").FirstOrDefault();
+            //var coporate = context.CompanyProfiles.Where(x => x.CompanyEmail == "test12@gmail.com").FirstOrDefault();
 
-            foreach (var item in users9)
-            {
-                var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
-                if (result2.Succeeded)
-                {
-                    item.EmailConfirmed = true;
-                    await userManager.UpdateAsync(item);
-                    await userManager.AddToRoleAsync(item, "SuperAdmin");
-                    await userManager.UpdateAsync(item);
+            //foreach (var item in users8)
+            //{
+            //    var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
+            //    if (result2.Succeeded)
+            //    {
+            //        item.EmailConfirmed = true;
+            //        await userManager.UpdateAsync(item);
+            //        await userManager.AddToRoleAsync(item, "SuperAdmin");
+            //        await userManager.UpdateAsync(item);
 
-                    var insuranceProfile = new InsuranceUserProfile()
-                    {
-                        UserId = item.Id,
-                        CompanyProfileId = coporate.Id,
-                        CompanyName = coporate.CompanyName,
-                        CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString(),
-                        Surname = item.LastName,
-                        Othernames = item.LastName,
-                        DateOfBirth = DateTime.Now,
-                        MaritalStatus = "Single",
-                        Gender = "Male",
-                        PhoneNumber = item.PhoneNumber,
-                        Email = item.Email,
-                        PlanCode = "1",
-                        Premium = Decimal.Parse("1000"),
-                        SubscriptionStatus = true,
-                        ActiveStatus = true,
-                        InsuranceService = "Hygeia",
-                        ContactAddress = "lagos",
-                        CareProviderName = "test test",
-                        StateOfResidence = "lagos",
-                        TownOfResidence = "yaba",
-                        StartActiveStatusDate = new DateTime(2021, 9, 25),
-                        EndActiveStatusDate = new DateTime(2021, 9, 25).AddDays(28),
-                        TransId = "0989768965",
-                        PendingJobId = "23",
-                        PendingEmailJobId = "25"
-                    };
+            //        var insuranceProfile = new InsuranceUserProfile()
+            //        {
+            //            UserId = item.Id,
+            //            CompanyProfileId = coporate.Id,
+            //            CompanyName = coporate.CompanyName,
+            //            CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString(),
+            //            Surname = item.LastName,
+            //            Othernames = item.LastName,
+            //            DateOfBirth = DateTime.Now,
+            //            MaritalStatus = "Single",
+            //            Gender = "Male",
+            //            PhoneNumber = item.PhoneNumber,
+            //            Email = item.Email,
+            //            PlanCode = "1",
+            //            Premium = Decimal.Parse("1000"),
+            //            SubscriptionStatus = true,
+            //            ActiveStatus = true,
+            //            InsuranceService = "Hygeia",
+            //            ContactAddress = "lagos",
+            //            CareProviderName = "test test",
+            //            StateOfResidence = "lagos",
+            //            TownOfResidence = "yaba",
+            //            StartActiveStatusDate = new DateTime(2021, 9, 25),
+            //            EndActiveStatusDate = new DateTime(2021, 9, 25).AddDays(28),
+            //            TransId = "0989768965",
+            //            PendingJobId = "23",
+            //            PendingEmailJobId = "25"
+            //        };
 
-                    context.InsuranceUserProfiles.Add(insuranceProfile);
-                    await context.SaveChangesAsync();
-                }
+            //        context.InsuranceUserProfiles.Add(insuranceProfile);
+            //        await context.SaveChangesAsync();
+            //    }
 
                 
-            }
+            //}
+
+            //// Company beneficiaries Pending
+
+            //var users9 = new List<ApplicationUser>
+            //{
+            //    new ApplicationUser{UserName = "test15@gmail.com",Email = "test15@gmail.com",FirstName = "test15",LastName = "test15",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //    new ApplicationUser{UserName = "test16@gmail.com",Email = "test16@gmail.com",FirstName = "test16",LastName = "test16",PhoneNumber = "07034889227",DateOfRegistration = DateTime.Now},
+            //};
+
+            //var coporate2 = context.CompanyProfiles.Where(x => x.CompanyEmail == "test12@gmail.com").FirstOrDefault();
+
+            //foreach (var item in users9)
+            //{
+            //    var result2 = await userManager.CreateAsync(item, "Asdflkj2468.");
+            //    if (result2.Succeeded)
+            //    {
+            //        item.EmailConfirmed = true;
+            //        await userManager.UpdateAsync(item);
+            //        await userManager.AddToRoleAsync(item, "SuperAdmin");
+            //        await userManager.UpdateAsync(item);
+
+            //        var insuranceProfile = new InsuranceUserProfile()
+            //        {
+            //            UserId = item.Id,
+            //            CompanyProfileId = coporate.Id,
+            //            CompanyName = coporate.CompanyName,
+            //            CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString(),
+            //            Surname = item.LastName,
+            //            Othernames = item.LastName,
+            //            DateOfBirth = DateTime.Now,
+            //            MaritalStatus = "Single",
+            //            Gender = "Male",
+            //            PhoneNumber = item.PhoneNumber,
+            //            Email = item.Email,
+            //            PlanCode = "1",
+            //            Premium = Decimal.Parse("1000"),
+            //            SubscriptionStatus = true,
+            //            ActiveStatus = true,
+            //            InsuranceService = "Hygeia",
+            //            ContactAddress = "lagos",
+            //            CareProviderName = "test test",
+            //            StateOfResidence = "lagos",
+            //            TownOfResidence = "yaba",
+            //            StartActiveStatusDate = new DateTime(2021, 9, 25),
+            //            EndActiveStatusDate = new DateTime(2021, 9, 25).AddDays(28),
+            //            TransId = "0989768965",
+            //            PendingJobId = "23",
+            //            PendingEmailJobId = "25"
+            //        };
+
+            //        context.InsuranceUserProfiles.Add(insuranceProfile);
+            //        await context.SaveChangesAsync();
+            //    }
+
+                
+            //}
 
         }
     }
