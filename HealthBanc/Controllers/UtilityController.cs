@@ -271,6 +271,7 @@ namespace HealthBanc.Controllers
         public async Task<IActionResult> ListFiles(string blob, string prefix)
         {
              var files = await _imageService.ListFiles(blob,prefix);
+            files = files.Where(x => !x.EndsWith("healthbanclive.txt")).ToList();
             return Ok(files);
         }
 
