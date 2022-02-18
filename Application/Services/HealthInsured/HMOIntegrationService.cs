@@ -141,18 +141,15 @@ namespace Application.Services.HealthInsured
                 if (response.IsSuccessStatusCode)
                 {
                     var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
-                    if (authResponse.success)
-                    {
-                        _logger.LogInformation($"RegisDeactivate user on axamasard successful : [Response { authResponse} | Time {DateTime.Now} | Reference {axamansardReference}]");
-                        return new ResponseMessage { Status = true, Message = authResponse.message };
-                    }
-                    _logger.LogInformation("Axamansard Unsuccessfully Deactivation response : " + apiResponse, authResponse);
-                    BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
-                    return new ResponseMessage { Status = false, Message = authResponse.message };
+                    _logger.LogInformation($"RegisDeactivate user on axamasard successful : [Response { authResponse} | Time {DateTime.Now} | Reference {axamansardReference}]");
+                    return new ResponseMessage { Status = true, Message = authResponse.message };
                 }
-                _logger.LogInformation(" Bad request when trying to deactivate user to axamansard  : " + apiResponse);
-                BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
-                return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
+                else
+                {
+                    _logger.LogInformation($"Bad request when trying to deactivate user to axamansard  :apiResponse {apiResponse}");
+                    BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
+                    return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
+                }               
             }
             BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
             _logger.LogInformation("BadRequest Axamansard Deactivation :" + bearerRequest.Message);
@@ -168,6 +165,17 @@ namespace Application.Services.HealthInsured
         public async Task ResendFailedAxamansardReg(EnrollmentModel model)
         {
             var response = await AxamansardRegisterUser(model);
+            if (response.Status)
+            {
+                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEnrolleNumber(model.EnrollmentNo);
+                if(insuranceProfile != null)
+                {
+                    var codeReference = response.Data as string;
+                    insuranceProfile.AxamasardReferenceCode = codeReference;
+                    _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+                    await _repoWrapper.Save();
+                }
+            }            
             await Task.CompletedTask;
         }
 
