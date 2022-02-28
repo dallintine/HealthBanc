@@ -239,7 +239,7 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        //[Authorize(Roles = "Super-Administrator")]
+        [Authorize(Roles = "Super-Administrator")]
         [HttpPost("[action]")]
         public IActionResult DeleteText(List<string> blob)
         {
@@ -252,42 +252,10 @@ namespace HealthBanc.Controllers
 
         [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
-        public IActionResult LogFile()
-        {
-            for(var i=0; i < 100; i++)
-            {
-                _logger.LogInformation("loggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
-                    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
-                    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
-                    "ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
-                    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" +
-                    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg");
-            }
-            return Ok();
-        }
-
-        [Authorize(Roles = "Super-Administrator")]
-        [HttpGet("[action]")]
         public async Task<IActionResult> ListFiles(string blob, string prefix)
         {
              var files = await _imageService.ListFiles(blob,prefix);
             return Ok(files);
-        }
-
-        [Authorize(Roles = "Super-Administrator")]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> Load()
-        {
-            var load = new EnrollmentModel();
-            load.Email = "hassan@gmail.com";
-            load.Gender = "2";
-            for (int i = 0; i < 3; i++)
-            {
-                var auditViewModel = new AuditLogViewModel(1, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
-                BackgroundJob.Schedule(() => _auditLogServices.UserCreateAuditLog(auditViewModel, "1234", "test"),DateTime.Now.AddMinutes(5)) ;
-                await _integrationService.AxamansardRegisterUser(load);
-            }
-            return Ok();  
         }
 
         [Authorize(Roles = "Super-Administrator")]
@@ -335,7 +303,7 @@ namespace HealthBanc.Controllers
 
         [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
-        public async Task<IActionResult> SendActiveAxamansard()
+        public async Task<IActionResult> SendActiveAxamansard_NoReference()
         {
             var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => (x.InsuranceService.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower()
              || x.InsuranceService == null) && x.SubscriptionStatus == true && x.AxamasardReferenceCode == null).ToList();
@@ -350,6 +318,42 @@ namespace HealthBanc.Controllers
                 var axaRegResponse = await _integrationService.EnrollUserToAxamansardOnOnboarding(item);
                 var codeReference = axaRegResponse.Data as string;
                 item.AxamasardReferenceCode = codeReference;
+                _repoWrapper.InsuranceProfile.Update(item);
+                await _repoWrapper.Save();
+            }
+            return Ok();
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SendActiveAxamansard_IgnoreReference()
+        {
+            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => (x.InsuranceService.ToLower() == InsuranceProvider.Axamansard.ToString().ToLower()
+             || x.InsuranceService == null) && x.SubscriptionStatus == true).ToList();
+
+            foreach (var item in users)
+            {
+                var axaRegResponse = await _integrationService.EnrollUserToAxamansardOnOnboarding(item);
+                var codeReference = axaRegResponse.Data as string;
+                item.AxamasardReferenceCode = codeReference;
+                _repoWrapper.InsuranceProfile.Update(item);
+                await _repoWrapper.Save();
+            }
+            return Ok();
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SendActiveHygeia_NoTransId()
+        {
+            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => (x.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+            && x.SubscriptionStatus == true && x.TransId == null).ToList();
+
+            foreach (var item in users)
+            {
+                var hygeiaRegResponse = await _integrationService.EnrollUserToHygeiaOnOnboarding(item);
+                var codeReference = hygeiaRegResponse.Data as string;
+                item.TransId = codeReference;
                 _repoWrapper.InsuranceProfile.Update(item);
                 await _repoWrapper.Save();
             }
@@ -399,6 +403,28 @@ namespace HealthBanc.Controllers
             }
             return Ok(insuranceProfile);
         }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> CancelInactiveUsersSub(string provider)
+        {
+            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => (x.InsuranceService.ToLower() == provider.ToLower())
+            && x.SubscriptionStatus == false && x.TransId != null).ToList();
+
+            foreach (var item in users)
+            {
+                var scheduledJobId = item.PendingJobId;
+
+                BackgroundJob.Delete(scheduledJobId);
+                if (item.PendingEmailJobId != null)
+                {
+                    BackgroundJob.Delete(item.PendingEmailJobId);
+                }
+                await _tokenizationService.ProcessUserActiveStatusCancellation(item.Id, null);
+            }
+            return Ok();
+        }
+
 
         [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
