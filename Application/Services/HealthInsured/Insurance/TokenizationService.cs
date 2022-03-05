@@ -1697,10 +1697,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         private async Task Process_SuccessfulInsuranceIndividualPayment_ImmediateReactivationPayment(InsuranceUserProfile insuranceUserProfile,FamilyProfile family, InsuranceUserProfile payee)
         {
-            insuranceUserProfile.StartActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate : DateTime.Now;
+            insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
 
-            insuranceUserProfile.EndActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate.AddDays(SubscriptionAccessor.FreeTrialDayDuration)
-                : DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+            insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             //Schedule job to debit user next 28 days
             insuranceUserProfile.PendingJobId = ProcessScheduledPayment(insuranceUserProfile);
