@@ -52,6 +52,7 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> PaystackWebHook([FromBody]PaystackWebHookResponse webHookResponse)
         {
+            _logger.LogInformation($"Paystack Webhook Notification [Payload : {JsonConvert.SerializeObject(webHookResponse)}]");
             var paystackIpaddress = new List<string>()
             {
                 "52.49.173.169","52.214.14.220","52.31.139.75"
@@ -67,6 +68,12 @@ namespace HealthBanc.Controllers
                 return Ok();
             }
             return Ok();
-        }          
+        }
+
+        [HttpGet("[action]")]
+        public ActionResult Test()
+        {
+            return Ok();
+        }
     }
 }
