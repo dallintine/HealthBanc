@@ -27,6 +27,11 @@ namespace DataAccess.HealthInsured.Implementation
             return await _context.FamilyProfiles.Include(x => x.Cards).Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
+        public async Task<FamilyProfile> GetExtendedFamilyDetailsById(int familyId)
+        {
+            return await _context.FamilyProfiles.Include(x => x.Cards).Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.Id == familyId);
+        }
+
         public async Task<FamilyProfile> GetByEmail(string email)
         {
             return await _context.FamilyProfiles.Include(x => x.Cards).Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.Email == email);

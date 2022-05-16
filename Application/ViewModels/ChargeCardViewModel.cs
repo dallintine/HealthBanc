@@ -10,7 +10,7 @@ namespace Application.ViewModels
     {
         [Required]
         public Card card { get; set; }
-        [Required, StringLength(4, ErrorMessage = "OTP cannot be longer than 4 characters.")]
+        [Required]
         public string pin { get; set; }
     }
     public class Card

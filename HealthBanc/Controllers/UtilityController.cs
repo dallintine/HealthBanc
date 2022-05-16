@@ -145,40 +145,6 @@ namespace HealthBanc.Controllers
         }
 
         /// <summary>
-        /// Admin Update individual insurance profile
-        /// </summary>
-        /// <param name="updateProfileViewModel"></param>
-        /// <param name="email"></param> 
-        /// <returns></returns>
-        [HttpPost("[action]")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [Authorize(Roles = "Super-Administrator")]
-        public async Task<IActionResult> AdminUpdateProfileAsync(string email, UpdateProfileViewModel updateProfileViewModel)
-        {
-            if (ModelState.IsValid)
-            {
-                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
-
-                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, insuranceProfile.UserId.Value);
-                if (updateResponse.Status)
-                {
-                    return Ok(updateResponse);
-                }
-                return BadRequest(updateResponse);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
-        }
-
-        /// <summary>
         /// Fix card errors
         /// </summary>
         /// <param name="email"></param>
@@ -250,7 +216,7 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public async Task<IActionResult> ListFiles(string blob, string prefix)
         {
@@ -275,7 +241,7 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Super-Administrator")]
+        //[Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
         public ActionResult DBExecute(string query)
         {
@@ -459,25 +425,103 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Super-Administrator")]
         [HttpGet("[action]")]
-        public async Task<IActionResult> FixFamilyEmail()
+        public async Task<IActionResult> GetProfielDetailsByMailOrId(string email, int id)
         {
-            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => x.FamilyProfileId != null).ToList();
-
-            foreach (var item in users)
+            if(email != null)
             {
-                item.Email = null;
-                if(item.FamilyEmail is null)
+                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
+                if (insuranceProfile != null)
                 {
-                    var family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(item.FamilyProfileId.Value);
-                    item.FamilyEmail = family.Email;
-                    item.PhoneNumber = family.PhoneNumber;
+                    return Ok(insuranceProfile);
                 }
-                _repoWrapper.InsuranceProfile.Update(item);
-                await _repoWrapper.Save();
+                var familyProfile = await _repoWrapper.FamilyProfile.GetByEmail(email);
+                if (familyProfile != null)
+                {
+                    return Ok(familyProfile);
+                }
+                var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
+                if (companyProfile != null)
+                {
+                    return Ok(companyProfile);
+                }
+                return Ok();
+            }
+            else
+            {
+                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(id);
+                if (insuranceProfile != null)
+                {
+                    return Ok(insuranceProfile);
+                }
+                var familyProfile = await _repoWrapper.FamilyProfile.GetExtendedFamilyDetailsById(id);
+                if (familyProfile != null)
+                {
+                    return Ok(familyProfile);
+                }
+                var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceProfiles(id);
+                if (companyProfile != null)
+                {
+                    return Ok(companyProfile);
+                }
+                return Ok();
+            }
+            
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> GetProfielDetailsByUserId(int userId)
+        {
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (insuranceProfile != null)
+            {
+                return Ok(insuranceProfile);
+            }
+            var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
+            if (familyProfile != null)
+            {
+                return Ok(familyProfile);
+            }
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyInsuranceUserProfilesByUserId(userId);
+            if (companyProfile != null)
+            {
+                return Ok(companyProfile);
             }
             return Ok();
         }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SchedulePaymentForIndividualInsurance(int insuranceProfileId)
+        {
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfileId);
+            if (insuranceProfile is null) return NotFound("Insurance Profile Not Found");
+            insuranceProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceProfile);
+            _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+            await _repoWrapper.InsuranceProfile.Save();
+            return Ok("scheduled successfully");
+        }
+
+        [Authorize(Roles = "Super-Administrator")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SchedulePaymentForCompanyInsurance(int companyId)
+        {
+            var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyBeneficiaryReviewUsersByCompanyId(companyId);
+            if (companyProfile is null) return NotFound("Company Profile Not Found");
+            companyProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(companyProfile);
+            _repoWrapper.CompanyProfile.Update(companyProfile);
+            await _repoWrapper.CompanyProfile.Save();
+            return Ok("scheduled successfully");
+        }
+
+        [HttpGet("[action]")]
+        public ActionResult GetAllActiveUsers(bool active, bool sub,int skip,int take)
+        {
+            var users = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles().Where(x => x.SubscriptionStatus == sub &&
+            x.ActiveStatus == active).Skip(skip).Take(take).ToList();
+            return Ok(users);
+        }
+
+
     }
 }

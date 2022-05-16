@@ -1,7 +1,7 @@
 using System;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
-using Serilog;
+//using Serilog;
 using Serilog.Events;
 using Serilog.Filters;
 
@@ -19,7 +19,7 @@ namespace HealthBanc.Logging
                 var applicationInsightsOptions = context.Configuration.GetOptions<ApplicationInsightsOptions>("applicationinsightsoptions");
                 if (!Enum.TryParse<LogEventLevel>(serilogOptions.Level, true, out var level))
                 {
-                    level = LogEventLevel.Warning;
+                    level = LogEventLevel.Information;
                 }
 
                 applicationName = string.IsNullOrWhiteSpace(applicationName) ? appOptions.Name : applicationName;

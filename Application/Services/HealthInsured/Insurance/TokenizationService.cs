@@ -36,6 +36,7 @@ using Application.Services.HealthInsured.Insurance;
 using Application.API_ResponseModel.IBSResponse;
 using Domain.Enums;
 using Application.API_ResponseModel.HealthInsured;
+using Newtonsoft.Json;
 
 namespace Application.Services.HealthInsured_AxaMansard.Insurance
 {
@@ -86,11 +87,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId, string ipAddress, string device)
         {
+            _logger.LogInformation($"Insurance User Onboarding [Payload : {JsonConvert.SerializeObject(userProfile)} | UserId : {userId}]\n");
             var user = await _repoWrapper.ApplicationUser.FindByIdAsync(userId);
 
             var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled != null)
             {
+                _logger.LogInformation($"User onboarding terminated [Reason : user has a profile]\n");
                 if (checkIfUserHasBeenProfiled.ContactAddress != null)
                 {
                     return new ResponseMessage { Message = "User has a profile already" };
@@ -115,6 +118,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile, ApplicationUser user)
         {
+            _logger.LogInformation($"Creating user Inusrance Profile\n");
             var profile = new InsuranceUserProfile();
             string initialContactAddress = null;
             var checkIfProfileWithEmail = await _insuranceSerivce.GetProfileCompletion(null, user.Email);
@@ -124,6 +128,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 {
                     if (checkIfProfileWithEmail.Data.ProfileCompleted)
                     {
+                        _logger.LogInformation($"Create profile terminated [Reason : Profile was completed previously]\n");
                         return new ResponseMessage { Message = "Profile was previously completed" };
                     }
                     else
@@ -134,6 +139,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 }
                 else if (checkIfProfileWithEmail.Data.HealthInsuredPlan != null)
                 {
+                    _logger.LogInformation($"Create Profile terminated. Email is used for another healtinsured service\n");
                     return new ResponseMessage { Message = "Email was used for another Healthinsured Service" };
                 }
             }
@@ -185,6 +191,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
+            _logger.LogInformation($"Insurance Profilke Created Successdfully\n");
             return new ResponseMessage { Status = true };
         }
 
@@ -201,14 +208,17 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id,null);
             if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
             {
+                _logger.LogInformation($"Process Indiviual card tokenization\n");
                 return await ProcessIndividualCardTokenization(chargeCard, id);
             }
             else if(profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Corporate)
             {
+                _logger.LogInformation($"Process corporate card tokenizatio\n");
                 return await ProcessCorporateCardTokenization(chargeCard, id);
             }
             else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Family)
             {
+                _logger.LogInformation($"Process family card tokenization\n");
                 return await ProcessFamilyCardTokenization(chargeCard, id);
             }
             return new ResponseMessage { Message = "User does not have a profile,kindly create your profile", Status = false };
@@ -233,7 +243,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                 // Check if user has card that matches last four card digit
                 var checkIfCardWasPreviouslyTokenized = await _repoWrapper.Card.CheckIfCardWasPreviouslyTokenized(id, cardNumber.Substring(cardNumber.Length - 4));
-                if (checkIfCardWasPreviouslyTokenized != null) return new ResponseMessage { Message = "This card was previously tokenized" };
+                if (checkIfCardWasPreviouslyTokenized != null)
+                {
+                    _logger.LogInformation($"Card was tokenised previously\n");
+                    return new ResponseMessage { Message = "This card was previously tokenized" };
+                }
 
                 var chargeCardRequest = _mapper.Map<API_RequestModel.Paystack.Card>(chargeCard.card);
 
@@ -263,6 +277,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 return await ProcessPaystackChargeCardResponse(chargeCardResponse, insuranceProfile, checkprofileComplete
                     , paymentReference, card.reference);
             }
+            _logger.LogInformation($"Tokenization terminated. User does not have insurance profile\n");
             return new ResponseMessage { Message = "User has not been profiled,kindly create your profile", Status = false };
         }
 
@@ -286,6 +301,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             // if charge card was successfully
             if (chargeCardResponse.Status == true && chargeCardResponse.ResponseCode == 0)
             {
+                _logger.LogInformation($"Process Successful paystack tokenization response\n");
                 int cardStatus = 0;
                 //If card count is 0. it means there is no card available, so the card tokenised will
                 //be the primary card so primary card status is set to 1 
@@ -320,12 +336,15 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     Message = chargeCardResponse.Message
                 };
             }
+            _logger.LogInformation($"Process Not Successful Paystack tokenization response\n");
             // Call method to process other transaction instance that is not successfull e.g Send_Otp,Send_Url,Failed.
             return await ProcessNotSuccessfulPaystackChargeCardResponse(paymentReference, chargeCardResponse);
         }
 
         public async Task Process_SuccessfulInsuranceIndividualPayment_FirstTimePayment(InsuranceUserProfile insuranceUserProfile)
         {
+            _logger.LogInformation($"Process successful first time individual payment [Insuracen profile :{JsonConvert.SerializeObject(insuranceUserProfile)}]\n");
+
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
             insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _uniqueIdentifier.GetUniqueCode(10) : "";
 
@@ -353,14 +372,19 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var activityLog = new ActivityLog(insuranceUserProfile.Id, null, null, "Subscription was activated", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
+            _logger.LogInformation($"First time individual payment ewas successful\n");
         }
 
         public async Task<ResponseMessage> PayForRefereeWithFullDetails(int userId, PayForRefereeViewModel refereeViewModel)
         {
+            _logger.LogInformation($"Process pay for referee with full details [Payload : {JsonConvert.SerializeObject(refereeViewModel)} | " +
+                $"userid : {userId}]\n");
+
             var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(refereeViewModel.Email);
             var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (!(insuranceProfileOfUserPaying.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)))
             {
+                _logger.LogInformation($"Pay fro referee with full details terminated [Reason Payee has not set an active card]");
                 return new ResponseMessage { Message = "Kindly set an active card before transaction can be initiated" };
             }
             if (userToPayFor is null || userToPayFor.ServiceUsed is null || !userToPayFor.ServiceUsed.Equals(ServiceNames.HealthInsured.ToString()))
@@ -381,19 +405,23 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     await Process_SuccessfulReferee_FirstTimePayment(insuranceProfile);
                     _emailSender.RefreeInvitationFullDetail(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}",
                         insuranceProfile.Surname,insuranceProfile.TransId,insuranceProfile.CareProviderName,insuranceProfile.PlanCode);
+                    _logger.LogInformation($"Pay for referee with full details was successfully\n");
                     return new ResponseMessage
                     {
                         Message = $"{refereeViewModel.FirstName} has been activated  and is entitled to a one month free cycle. {refereeViewModel.FirstName} can sign up with {refereeViewModel.Email} to access his/her dashboard",
                         Status = true
                     };
                 }
+                _logger.LogInformation($"Pay for referee terminated [Reason : Healthinsure profile with email exist]\n");
                 return new ResponseMessage { Message = "HealthInsured profile with email exist already", Status = false };
             }
+            _logger.LogInformation($"Pay for referee terminated [Reason : User profile with email exist]\n");
             return new ResponseMessage { Message = "HealthInsured profile with this email exist already", Status = false };
         }
 
         public async Task Process_SuccessfulReferee_FirstTimePayment(InsuranceUserProfile insuranceProfile)
         {
+            _logger.LogInformation($" Process_SuccessfulReferee_FirstTimePayment processing [Payload : {JsonConvert.SerializeObject(insuranceProfile)}]\n");
             insuranceProfile.TransId = insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
 
             insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
@@ -409,9 +437,10 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname,"", null),
                    DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
-            }           
+            }
 
             //Schedule job to debit user every 28 days
+            _logger.LogInformation($"Referee first time payment schedule payment\n");
             insuranceProfile.PendingJobId = ProcessScheduledPayment(insuranceProfile);
 
             insuranceProfile.SubscriptionStatus = true;
@@ -435,6 +464,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <returns></returns>
         public string ProcessScheduledPayment(InsuranceUserProfile insuranceProfile)
         {
+            _logger.LogInformation($"Processing Scheduled Payment\n");
             var executionDate = insuranceProfile.EndActiveStatusDate;
 
             var userId = (insuranceProfile.FamilyProfileId == null && insuranceProfile.InsurancePayeeId == null) ? insuranceProfile.UserId.Value : 0;
@@ -448,6 +478,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         [AutomaticRetry(Attempts = 0)]
         public async Task SchedulePaymentLogic(int userId, int axamansardUserId, PerformContext context)
         {
+            _logger.LogInformation($"SchedulePayment Logic [UserId : {userId} |  insuranceProfileId : {axamansardUserId}] \n");
             var activeCard = new DebitCard();
             var family = new FamilyProfile();
             var payee = new InsuranceUserProfile();
@@ -539,10 +570,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public async Task Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, FamilyProfile family, InsuranceUserProfile payee, string reference)
         {
-            insuranceUserProfile.StartActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate : DateTime.Now ;
-
-            insuranceUserProfile.EndActiveStatusDate = insuranceUserProfile.EndActiveStatusDate != default ? insuranceUserProfile.EndActiveStatusDate.AddDays(SubscriptionAccessor.FreeTrialDayDuration)
-                : DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+            _logger.LogInformation($"Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment\n");
+            insuranceUserProfile.StartActiveStatusDate =  DateTime.Now ;
+            insuranceUserProfile.EndActiveStatusDate =  DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
 
             //Schedule job to debit user next 28 days
             insuranceUserProfile.PendingJobId = ProcessScheduledPayment(insuranceUserProfile);
@@ -1473,6 +1503,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public async Task<ResponseMessage> SubmitOtp(SetOtpViewModel otpViewModel, int id)
         {
+            _logger.LogInformation($"Submit OTP [OTPViewModel : {JsonConvert.SerializeObject(otpViewModel)} | Id : {id}]\n");
             var profileCompletion = await _insuranceSerivce.GetProfileCompletion(id,null);
             var paymentReference = await _repoWrapper.PaymentReference.GetByReference(otpViewModel.reference);
             if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
@@ -1504,18 +1535,22 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         private async Task<ResponseMessage> ProcessCancelSubscription(InsuranceUserProfile insuranceProfile)
         {
+            _logger.LogInformation($"Process Cancel Subscription [Payload : {JsonConvert.SerializeObject(insuranceProfile)}]");
             if (insuranceProfile.SubscriptionStatus == false || insuranceProfile.SubscriptionStatus is null)
             {
                 return new ResponseMessage { Message = "Insurance Profile has no subscription", Status = false };
             }
-            if (insuranceProfile.TransId == null || insuranceProfile.TransId == "" || insuranceProfile.TransId == "Pending")
-            {
-                return new ResponseMessage { Message = "Subscription can only be cancelled after enrollee number has been processed. this should take less than 2 working days" };
-            }
+
+            //if (insuranceProfile.TransId == null || insuranceProfile.TransId == "" || insuranceProfile.TransId == "Pending")
+            //{
+            //    return new ResponseMessage { Message = "Subscription can only be cancelled after enrollee number has been processed. this should take less than 2 working days" };
+            //}
 
             var scheduledJobId = insuranceProfile.PendingJobId;
 
             BackgroundJob.Delete(scheduledJobId);
+            _logger.LogInformation($"Insurance profile of Id {insuranceProfile.Id} backgroud job was deleted[Scheduled Debit background Job Id {scheduledJobId}]\n");
+
             if (insuranceProfile.PendingEmailJobId != null)
             {
                 BackgroundJob.Delete(insuranceProfile.PendingEmailJobId);
@@ -1645,6 +1680,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <returns></returns>
         public async Task<ResponseMessage> ProcessImmediateReactivationPayment(InsuranceUserProfile insuranceProfile,int userId, string authorization_Code)
         {
+            _logger.LogInformation($"ProcessImmediateReactivationPayment [UserId : {userId} | InsuranceProfile : {JsonConvert.SerializeObject(insuranceProfile)}]\n");
             FamilyProfile family = null;
             InsuranceUserProfile payee = null;
             var chageAuthorizationModel = new ChargeAuthorization()
@@ -1751,6 +1787,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
         public async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)
         {
+            _logger.LogInformation($"Sending Details to insurance provider [Payload : {JsonConvert.SerializeObject(insuranceUserProfile)}]\n");
             if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
             {
                 var response = await _hmoIntegrationService.EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);

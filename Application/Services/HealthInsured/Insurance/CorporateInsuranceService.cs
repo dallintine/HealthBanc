@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,13 +56,20 @@ namespace Application.Services.HealthInsured.Insurance
 
         public async Task<ResponseMessage> CreateCorporateUser(CorporateRegistrationViewModel corporateRegViewModel, int userId)
         {
+            _logger.LogInformation($"Creating Corporate User [Corporate User :{JsonConvert.SerializeObject(corporateRegViewModel)} |" +
+                $" userId :{userId}]\n");
             var checkIfUserIsRegisteredAsIndividualUser = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-            if (!(checkIfUserIsRegisteredAsIndividualUser is null)) return new ResponseMessage { Status = false, Message = "User is registered as an individual user" };
+            if (!(checkIfUserIsRegisteredAsIndividualUser is null))
+            {
+                _logger.LogInformation($"Create Corporate user terminated : [Reason : User registered as Individual previosuly]\n");
+                return new ResponseMessage { Status = false, Message = "User is registered as an individual user" };
+            }
 
             var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(corporateRegViewModel.Email);
 
             if (company != null)
             {
+                _logger.LogInformation($"Create Corporate user terminated : [Reason : Company with Email Exists]\n");
                 return new ResponseMessage { Message = "Company profile with this email already exist" };
             }
             var user = await _repoWrapper.ApplicationUser.FindByIdAsync(userId);
@@ -83,6 +91,7 @@ namespace Application.Services.HealthInsured.Insurance
             _repoWrapper.CompanyProfile.Create(company);
             await _repoWrapper.Save();
             _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporate Onboarding", otp);
+            _logger.LogInformation($"Coporate user was created successfully\n");
             return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
         }
 
@@ -94,6 +103,7 @@ namespace Application.Services.HealthInsured.Insurance
         /// <returns></returns>
         public async Task<ResponseMessage> UploadUserProfileFromExcelFile(IFormFile file, int companyUserId)
         {
+            _logger.LogInformation($"Uploading Coporate user beneficiaries from file\n");
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
 
             if (companyProfile.EmailConfirmed)
@@ -104,11 +114,13 @@ namespace Application.Services.HealthInsured.Insurance
                 // If Excel file is not the one supplied from the application
                 if (excelModel is null)
                 {
+                    _logger.LogInformation($"Uploading Coporate user beneficiaries from file terminated [Reason : File format not supported]\n");
                     return new ResponseMessage { Message = "Excel file is not supported. Note: Kindly download excel file from your dashboard." };
                 }
 
                 if (excelModel.Count == 0)
                 {
+                    _logger.LogInformation($"Uploading Coporate user beneficiaries from file terminated [Reason : No data was read]\n");
                     return new ResponseMessage { Message = "No data was read. Kindly add data to excel file" };
                 }
 
@@ -119,6 +131,7 @@ namespace Application.Services.HealthInsured.Insurance
 
                 if (companyBeneficiaries.Count != checkForDisitnctBeneficiaryReviewEmail.ToList().Count)
                 {
+                    _logger.LogInformation($"Uploading Coporate user beneficiaries from file terminated [Reason : Similar email was found in different rows]\n");
                     return new ResponseMessage { Message = "Similar email was found in different rows, please go through the excel data and make sure emails are unique in all rows!" };
                 }
 
@@ -126,6 +139,7 @@ namespace Application.Services.HealthInsured.Insurance
                 // If card is not tokenized we add users in the excel sheet to list of beneficiary Review users
                 if (!companyProfile.TokenizationCompleted)
                 {
+                    _logger.LogInformation($"Creating Beneficiary Review from file\n");
                     foreach (var item in companyBeneficiaries)
                     {
                         //Check beneficiary review list for existing email
@@ -166,6 +180,7 @@ namespace Application.Services.HealthInsured.Insurance
 
                     if (newCompanyBeneficiaries.Count != companyBeneficiaries.Count)
                     {
+                        _logger.LogInformation($"Some beneficiary Reviews Could not be added [Reason : Emails are duplicate of existing users] \n");
                         return new ResponseMessage
                         {
                             Data = paginatedResponse,
@@ -184,6 +199,8 @@ namespace Application.Services.HealthInsured.Insurance
                 // Else we process users in the excel sheet to be added to the Beneficaries List either as pending or active beneficiairy
                 return await CreateInsuranceProfileForCompanyBeneficiaries(companyProfile.Id, companyBeneficiaries);
             }
+            _logger.LogInformation($"Upload n from file terminated . Email Not Confirmed\n");
+
             return new ResponseMessage
             {
                 Message = "Please confirm company email address",
@@ -200,6 +217,7 @@ namespace Application.Services.HealthInsured.Insurance
         /// <returns></returns>
         public async Task<ResponseMessage> CreateInsuranceProfileForCompanyBeneficiaries(int companyId, List<BeneficiaryReviewUser> beneficiaryReviews)
         {
+            _logger.LogInformation($"Creating insurance profile for company beneficiaries [CompanyID : companyId]\n");
             // Count for existing duplicate emails
             int checkIfProfileEmailExistCount = 0;
             var companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Pending.ToString();
@@ -208,12 +226,14 @@ namespace Application.Services.HealthInsured.Insurance
             // if beneficaryReview is null, means user just made payment and subscription status is set to active
             if (beneficiaryReviews is null)
             {
+                _logger.LogInformation($"Set Insurance profile of all beneficiaries to active\n");
                 beneficiaryReviews = companyprofile.BeneficiaryReviewUsers.Where(x => x.IsRemove == false).ToList();
                 companySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
             }
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
             foreach (var item in beneficiaryReviews)
             {
+                _logger.LogInformation($"nCreate user and Update insurance profile of all beneficiaries\n");
                 // if email exist incerease checkIfProfileEmailExistCount count               
                 var checkUserEmail = await UserManager.FindByEmailAsync(item.Email);
                 if (!(checkUserEmail is null))
@@ -271,14 +291,17 @@ namespace Application.Services.HealthInsured.Insurance
             // if duplicate emails do not exist
             if (checkIfProfileEmailExistCount is 0)
             {
+                _logger.LogInformation($"All beneficiaries insurance profile was added and created successfully\n");
                 return new ResponseMessage { Message = "Beneficiaries was added successfully", Status = true };
             }
             // if duplicate emails exist
+            _logger.LogInformation($"Beneficiaries was added successfully, However some could not as theoir email already exist\n");
             return new ResponseMessage { Message = "Beneficiaries was added successfully,however " + checkIfProfileEmailExistCount + " beneficiary could not be added as their email already exist!", Status = true };
         }
 
         public async Task OnboardCompanyUsersToHMO(int companyUserId, string status, DateTime endActiveStatusDate, string insuranceProvider)
         {
+            _logger.LogInformation($"Onboarding Company Users To HMO [Provider :{insuranceProvider}] | tatus : {status} | CompanyUserId : {companyUserId} \n");
             var insuranceProfiles = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
             var insuranceUserProfiles = new List<InsuranceUserProfile>();
             // Onboard users with an active company subscription status
@@ -321,12 +344,13 @@ namespace Application.Services.HealthInsured.Insurance
 
         public async Task<ResponseMessage> ConfirmOtp(string otp, int userId)
         {
+            _logger.LogInformation($"Comfirm OTP processing [OTP : {otp} | UserId : {userId}]\n");
             var corporateUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-
             if (corporateUser != null)
             {
                 if (corporateUser.EmailConfirmed)
                 {
+                    _logger.LogInformation($"Company Email has been comfirmed\n");
                     return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
                 }
                 if (corporateUser.OTPCode != null)
@@ -353,13 +377,16 @@ namespace Application.Services.HealthInsured.Insurance
 
         public async Task<ResponseMessage> ResendOtp(int userId)
         {
+            _logger.LogInformation($"Resent OTP Processing [userID : {userId}]\n");
             var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
             if (company == null)
             {
+                _logger.LogInformation($"Resend OTP terminated : Reason Company does not exist\n");
                 return new ResponseMessage { Message = "Company profile does not exist.", Status = false };
             }
             else if (company.EmailConfirmed)
             {
+                _logger.LogInformation($" Resend OTP Terminated : Reason Company email not comfirmed\n");
                 return new ResponseMessage { Message = "Email was confirmed previously", Status = false };
             }
             var otp = _uniqueIdentifier.GetUniqueCode(6);
@@ -375,6 +402,7 @@ namespace Application.Services.HealthInsured.Insurance
             _repoWrapper.CompanyProfile.Update(company);
             await _repoWrapper.Save();
             _emailSender.CorporateInsuranceOnboarding(company.CompanyEmail, "Corporating Onboarding", otp);
+            _logger.LogInformation($"Resend OTP was successful [UserID : userId]\n");
             return new ResponseMessage { Message = "OTP was sent successfully", Status = true };
         }
 
@@ -455,6 +483,7 @@ namespace Application.Services.HealthInsured.Insurance
 
         public async Task<ResponseMessage> MoveCompanyBeneficiaryFromInactiveToPendingState(BeneficiaryListViewModel beneficiaryListViewModel, int userId)
         {
+            _logger.LogInformation($"Move  List of beneficiary from Inactive to Pending state\n");
             var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
             foreach (var item in beneficiaryListViewModel.Emails)
             {
@@ -475,6 +504,7 @@ namespace Application.Services.HealthInsured.Insurance
 
         public async Task<ResponseMessage> MoveCompanyBeneficiaryFromPendingToInactiveState(BeneficiaryListViewModel beneficiaryListViewModel, int userId)
         {
+            _logger.LogInformation($"Move  List of beneficiary from Pending to active state\n");
             var companyprofile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
             foreach (var item in beneficiaryListViewModel.Emails)
             {
@@ -514,6 +544,7 @@ namespace Application.Services.HealthInsured.Insurance
 
         public async Task<ResponseMessage> GetCompanyProfileDetails(int companyUserId)
         {
+            _logger.LogInformation($" Get Company Profile Details : [CompanyUserID :{companyUserId}]\n");
             var company = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
 
             var companyProfileDTO = _mapper.Map<CompanyProfileDTO>(company);
@@ -523,6 +554,8 @@ namespace Application.Services.HealthInsured.Insurance
 
         public async Task<ResponseMessage> RemoveCompanyBeneficiary(string email, int companyUserId)
         {
+            _logger.LogInformation($"Remove  Company beneficiary [Email : {email} |" +
+               $"CompnayUserId : {companyUserId}]\n");
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
             var beneficiary = await _repoWrapper.BeneficiaryReview.GetByEmail(email);
             if (beneficiary.CompanyProfileId == companyProfile.Id)
@@ -531,14 +564,18 @@ namespace Application.Services.HealthInsured.Insurance
                 _repoWrapper.BeneficiaryReview.Update(beneficiary);
 
                 await _repoWrapper.Save();
-
+                _logger.LogInformation($"Remove Company beneficiary was successfully\n");
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
+            _logger.LogInformation($" Remove terminated : [Reason : Company cannot change beneficiary status]\n");
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
         }
 
         public async Task<ResponseMessage> RestoreCompanyBeneficiary(string email, int companyUserId)
         {
+            _logger.LogInformation($"Move Company beneficiary from removed to pending list [Email : {email} |" +
+                $"CompnayUserId : {companyUserId}]\n");
+
             var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(companyUserId);
             var beneficiary = await _repoWrapper.BeneficiaryReview.GetByEmail(email);
             if (beneficiary.CompanyProfileId == companyProfile.Id)
@@ -546,8 +583,10 @@ namespace Application.Services.HealthInsured.Insurance
                 beneficiary.IsRemove = false;
                 _repoWrapper.BeneficiaryReview.Update(beneficiary);
                 await _repoWrapper.Save();
+                _logger.LogInformation($" Beneficiary restore was successfully\n");
                 return new ResponseMessage { Status = true, Message = "Status was changed successfully" };
             }
+            _logger.LogInformation($" Restore terminated : [Reason : Company cannot move beneficiary]\n");
             return new ResponseMessage { Status = false, Message = "You cannot change beneficiary status" };
         }
     }

@@ -53,6 +53,10 @@ namespace Infrastructure.ImageService
             var storageAccount = CloudStorageAccount.Parse(ImageAzureConnectionString.AzureConnectionString);
             var blobClient = storageAccount.CreateCloudBlobClient();
             var container = blobClient.GetContainerReference(containerName);
+            if (await container.ExistsAsync() == false)
+            {
+                await container.CreateIfNotExistsAsync();
+            }
             BlobResultSegment resultSegment = await container.ListBlobsSegmentedAsync(prefix,null);
 
             foreach (IListBlobItem item in resultSegment.Results)

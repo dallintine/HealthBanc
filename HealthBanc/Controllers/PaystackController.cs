@@ -50,30 +50,28 @@ namespace HealthBanc.Controllers
         /// <param name="webHookResponse"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        public async Task<IActionResult> PaystackWebHook([FromBody]PaystackWebHookResponse webHookResponse)
+        public IActionResult PaystackWebHook([FromBody]PaystackWebHookResponse webHookResponse)
         {
-            _logger.LogInformation($"Paystack Webhook Notification [Payload : {JsonConvert.SerializeObject(webHookResponse)}]");
-            var paystackIpaddress = new List<string>()
+            _logger.LogInformation($"Paystack Webhook Notification [Payload : {JsonConvert.SerializeObject(webHookResponse)}]\n");
+            try
             {
-                "52.49.173.169","52.214.14.220","52.31.139.75"
-            };
-            if (paystackIpaddress.Contains(ipAddress))
-            {               
-                var amount = webHookResponse.data.amount / 100;
-                _logger.LogInformation($"event {webHookResponse.@event} | email : {webHookResponse.data.customer.email} | refeence : {webHookResponse.data.reference} " +
-                    $"| authcode: {webHookResponse.data.authorization.authorization_code} | last4 : {webHookResponse.data.authorization.last4} " +
-                    $"| type : {webHookResponse.data.authorization.card_type} |amount :{amount} ");
-                await _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
-                    webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString());
+                var paystackIpaddress = new List<string>()
+                {
+                    "52.49.173.169","52.214.14.220","52.31.139.75"
+                };
+                if (paystackIpaddress.Contains(ipAddress))
+                {
+                    var amount = webHookResponse.data.amount / 100;
+                    BackgroundJob.Enqueue(() => _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
+                        webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
+                }
                 return Ok();
             }
-            return Ok();
-        }
-
-        [HttpGet("[action]")]
-        public ActionResult Test()
-        {
-            return Ok();
+            catch(Exception ex)
+            {
+                _logger.LogInformation($"Exception occured when paystack notification was received [Exception :{ex}]\n {ex.ToString()}\n");
+                return Ok();
+            }
         }
     }
 }

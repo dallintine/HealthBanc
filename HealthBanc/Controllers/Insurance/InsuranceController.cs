@@ -272,6 +272,40 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
+        /// Admin Update individual insurance profile
+        /// </summary>
+        /// <param name="updateProfileViewModel"></param>
+        /// <param name="email"></param> 
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "Super-Administrator")]
+        public async Task<IActionResult> AdminUpdateProfileAsync(string email, UpdateProfileViewModel updateProfileViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                var insuranceProfile = await _repoWerapper.InsuranceProfile.GetByEmail(email);
+
+                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, insuranceProfile.UserId.Value);
+                if (updateResponse.Status)
+                {
+                    return Ok(updateResponse);
+                }
+                return BadRequest(updateResponse);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
+        /// <summary>
         /// Get paginated list of all users insurance profile. Can only be accessed by the application admins
         /// </summary>
         /// <param name="paginationQuery"></param>

@@ -11,6 +11,7 @@ using Domain.Models.ReportAndLogs;
 using Hangfire;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,23 +46,22 @@ namespace Application.Services.HealthInsured
             SubscriptionAccessor = subscriptionAccessor.Value;
         }
 
+        [AutomaticRetry(Attempts = 0)]
         public async Task ProcessPaystackWebHook(string @event, string email, string reference, string authorization_code, string last4, string card_type, string amount)
         {
-            _logger.LogInformation($"event {@event} | email : {email} | refeence : {reference} | authcode: {authorization_code} | last4 : {last4} | type : {card_type} |amount :{amount} ");
-            _logger.LogInformation("Hit Pasytackwebhook.Successfully : " + DateTime.Now.ToLongDateString() + " : " + email + " : " + amount.ToString());
-
             if (@event == "charge.success")
             {
-                _logger.LogCritical("Successful paystack webhook Charge");
+                _logger.LogInformation("Successful paystack webhook Charge");
                 var status = "";
 
                 var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
                 if (insuranceProfile != null)
                 {
-                    _logger.LogCritical("Process for insurance");
+                    _logger.LogInformation("Process Webhook Payment for insurance");
                     var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                     if (paymentReference != null)
                     {
+                        _logger.LogInformation($"Payment reference [PaymentReference : {JsonConvert.SerializeObject(paymentReference)}]");
                         if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
                         {
                             status = PaymentReference_StatusValue.Send_Url.ToString();
@@ -72,9 +72,6 @@ namespace Application.Services.HealthInsured
                     }
                     else
                     {
-                        _logger.LogInformation($"{insuranceProfile.Email} | {insuranceProfile.Id} | {insuranceProfile.InsuranceService}");
-                        _logger.LogInformation($"{insuranceProfile.UserId.Value}");
-
                         // Create payment reference for the charge.
                         var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
                             : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
@@ -91,10 +88,11 @@ namespace Application.Services.HealthInsured
                     var familyProfile = await _repoWrapper.FamilyProfile.GetByEmail(email);
                     if (familyProfile != null)
                     {
-                        _logger.LogCritical("Process for family");
+                        _logger.LogInformation("Process Webhook Payment for family");
                         var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                         if (paymentReference != null)
                         {
+                            _logger.LogInformation($"Payment reference [PaymentReference : {JsonConvert.SerializeObject(paymentReference)}]");
                             if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
                             {
                                 status = PaymentReference_StatusValue.Send_Url.ToString();
@@ -121,10 +119,11 @@ namespace Application.Services.HealthInsured
                         var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByEmail(email);
                         if (companyProfile != null)
                         {
-                            _logger.LogCritical("Process for company");
+                            _logger.LogInformation("Process Webhook Payment for Company");
                             var paymentReference = await _repoWrapper.PaymentReference.GetByReference(reference);
                             if (paymentReference != null)
                             {
+                                _logger.LogInformation($"Payment reference [PaymentReference : {JsonConvert.SerializeObject(paymentReference)}]");
                                 if (paymentReference.Status == PaymentReference_StatusValue.Send_Url.ToString())
                                 {
                                     status = PaymentReference_StatusValue.Send_Url.ToString();
@@ -159,7 +158,7 @@ namespace Application.Services.HealthInsured
         private async Task ValidateWebHookSuccesfulInsurancePayment(InsuranceUserProfile insuranceUserProfile, CompanyProfile companyProfile, FamilyProfile familyProfile,
             string reference, string authorization_code, string last4, string card_type, string amount, string status)
         {
-            _logger.LogCritical($"Hit Card Status Processor {status}");
+            _logger.LogInformation($"Validate Webhook to Identify Profile Type ");
             if (!(insuranceUserProfile is null))
             {
                 if (status == PaymentReference_StatusValue.Send_Url.ToString())
@@ -225,17 +224,20 @@ namespace Application.Services.HealthInsured
             }
         }
 
-
         private async Task ProcessWebHook_SuccessfulInsuranceIndividualPayment(InsuranceUserProfile insuranceUserProfile, string reference, string amount)
         {
             // If user is making payment for the first time,
             if (insuranceUserProfile.SubscriptionStatus == null)
             {
+                _logger.LogInformation($"Process WebHook Succesful Individual Payment - FirstTime Payment [InsuranceUserProfile : {JsonConvert.SerializeObject(insuranceUserProfile)} " +
+                    $"| Reference :{reference} | Amount : {amount}]");
+
                 await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
                 await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
             }
             if (decimal.Parse(amount) <= decimal.Parse("100"))
             {
+                _logger.LogInformation($"Process WebHook Succesful Individual Payment - Refunding Payment ");
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
             }
         }
@@ -271,10 +273,13 @@ namespace Application.Services.HealthInsured
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
         }
+
         private async Task ProcessWebHook_SuccessfulCorporatePayment(CompanyProfile companyProfile, string reference, string amount)
         {
             if (decimal.Parse(amount) > 100)
             {
+                _logger.LogInformation($"Process WebHook Succesful Corporate Payment [CompanyProfile : {JsonConvert.SerializeObject(companyProfile)} |" +
+                $" Reference :{reference} | Amount :{amount}]");
                 // if user is tokenizng or making payment for first time
                 if (companyProfile.NextPaymentDate is null)
                 {
@@ -285,11 +290,13 @@ namespace Application.Services.HealthInsured
 
                     if (result.Status)
                     {
+                        _logger.LogInformation($"Enqueue Onbording Corporate users");
                         //Background task to Enroll all users to HMO.
-                        BackgroundJob.Enqueue(() => _corporateInsurance.OnboardCompanyUsersToHMO(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value, companyProfile.InsuranceService));
+                       BackgroundJob.Enqueue(() => _corporateInsurance.OnboardCompanyUsersToHMO(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value, companyProfile.InsuranceService));
                     }
 
                     //Background task to schedule debit at the end of next cycle
+                    _logger.LogInformation($"Schedule Monthly Corporate Debit");
                     companyProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(companyProfile);
 
                     companyProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(companyProfile.CompanyEmail, companyProfile.CompanyName,"", null),
@@ -303,13 +310,15 @@ namespace Application.Services.HealthInsured
             // Enqueue method to process refund 0f 50 naira test charge
             else
             {
+                _logger.LogInformation($"Process WebHook Succesful Corporate Payment - Refunding Payment ");
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
             }
             await Task.CompletedTask;
         }
-
         private async Task ProcessWebHook_SuccessfulFamilyPayment(FamilyProfile familyProfile, string reference, string amount)
         {
+            _logger.LogInformation($"Process WebHook Succesful FamilyPayment [FamilyProfile : {JsonConvert.SerializeObject(familyProfile)} |" +
+                $" Reference :{reference} | Amount :{amount}]");
             if (!familyProfile.TokenizationCompleted)
             {
                 familyProfile.TokenizationCompleted = true;
@@ -320,6 +329,7 @@ namespace Application.Services.HealthInsured
             }
             if (decimal.Parse(amount) <= decimal.Parse("100"))
             {
+                _logger.LogInformation($"Process WebHook Succesful FamilyPayment - Refunding Payment ");
                 BackgroundJob.Enqueue(() => _paystackService.RefundTestCardFunds(reference, (50 * 100).ToString()));
             }
         }
