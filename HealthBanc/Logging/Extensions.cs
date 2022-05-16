@@ -1,7 +1,7 @@
 using System;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Hosting;
-//using Serilog;
+using Serilog;
 using Serilog.Events;
 using Serilog.Filters;
 
