@@ -5,6 +5,7 @@ using Application.Helpers;
 using Application.Interfaces;
 using DataAccess;
 using Domain.Models;
+using Domain.Models.Wallet;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -43,8 +44,10 @@ namespace Application.Services.Wallet
         {
             _logger.LogInformation($"Processing GenerateOTPForWallet Payload [UserId :{userId} | MobileNumber : {mobileNumber}]\n");
             var walletData = new GetWalletDetails(mobileNumber);
+            _logger.LogInformation($"Processing Wallet Details For [Mobile :{walletData.Mobile}]\n");
             var encryptData = _encryptionsAndDecryption.Encrypt(JsonConvert.SerializeObject(walletData));
-            var validateWalletResponse = await _walletConnect.WalletDetails(encryptData);
+            var encryptedModel = new EncryptedModel(encryptData);
+            var validateWalletResponse = await _walletConnect.WalletDetails(encryptedModel);
             var decryptedResponse = _encryptionsAndDecryption.Decrypt(validateWalletResponse);
             _logger.LogInformation($"Validate Wallet decrypted response : {decryptedResponse}");
             var response = JsonConvert.DeserializeObject<ApiResponse<WalletValidationResponse>>(decryptedResponse);
@@ -53,6 +56,26 @@ namespace Application.Services.Wallet
                 return await GenerateOtp(mobileNumber, userId);
             }
             return new ResponseMessage { Message = response.Message, ResponseCode = 21 };
+        }
+
+        public async Task<ResponseMessage<WalletValidationResponse>> WalletDetails(int userId)
+        {
+            _logger.LogInformation($"Processing Wallet Details Payload [UserId :{userId}]\n");
+            var wallet =await _repositoryWrapper.Wallet.GetByUserId(userId);
+            if (wallet == null) return new ResponseMessage<WalletValidationResponse> { ResponseCode = 12, Message = "No Record Found - User Does not have a wallet" };
+            var walletData = new GetWalletDetails(wallet.Mobile);
+            _logger.LogInformation($"Processing Wallet Details For [Mobile :{walletData.Mobile}]\n");
+            var encryptData = _encryptionsAndDecryption.Encrypt(JsonConvert.SerializeObject(walletData));
+            var encryptedModel = new EncryptedModel(encryptData);
+            var validateWalletResponse = await _walletConnect.WalletDetails(encryptedModel);
+            var decryptedResponse = _encryptionsAndDecryption.Decrypt(validateWalletResponse);
+            _logger.LogInformation($"Validate Wallet decrypted response for wallet details : {decryptedResponse}");
+            var response = JsonConvert.DeserializeObject<ApiResponse<WalletValidationResponse>>(decryptedResponse);
+            if (response != null && response.Response == "00")
+            {
+                return new ResponseMessage<WalletValidationResponse> { Status = true, ResponseCode = 00, Message = "Approved or Completed Successfully", Data = response.Data };
+            }
+            return new ResponseMessage<WalletValidationResponse> { Message = response.Message, ResponseCode = 21 };
         }
 
         public async Task<ResponseMessage> ValidateOTP(int userID, string otp)
@@ -81,18 +104,20 @@ namespace Application.Services.Wallet
             return new ResponseMessage { ResponseCode = 21, Message = "No Action Taken : OTP code does not match records" };
         }
 
-        public async Task<ResponseMessage> CreateWallet(int userId, string mobileNumber)
+        public async Task<ResponseMessage<string>> CreateWallet(int userId, string mobileNumber)
         {
             _logger.LogInformation($"Processing CreateWallet [UserId :{userId} | MobileNumber : {mobileNumber}]\n");
             var walletData = new GetWalletDetails(mobileNumber);
             var encryptData = _encryptionsAndDecryption.Encrypt(JsonConvert.SerializeObject(walletData));
-            var validateWalletResponse = await _walletConnect.WalletDetails(encryptData);
+            var encryptedModel = new EncryptedModel(encryptData);
+            _logger.LogInformation($"Validating wallet to be created and making sure it does not exxist \n");
+            var validateWalletResponse = await _walletConnect.WalletDetails(encryptedModel);
             var decryptedResponse = _encryptionsAndDecryption.Decrypt(validateWalletResponse);
             _logger.LogInformation($"Validate Wallet decrypted response for creating wallet : {decryptedResponse}");
             var response = JsonConvert.DeserializeObject<ApiResponse<WalletValidationResponse>>(decryptedResponse);
             if (response != null && response.Response == "00")
             {
-                return new ResponseMessage { ResponseCode = 21, Message = "Invalid Request - Wallet exist for this mobile number" };
+                return new ResponseMessage<string> { ResponseCode = 21, Message = "Invalid Request - Wallet exist for this mobile number" };
             }
             var profile = await _repositoryWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             var createWalletData = new CreateWallet
@@ -101,17 +126,36 @@ namespace Application.Services.Wallet
                 Lastname = profile.Surname,
                 Mobile = mobileNumber,
                 DOB = profile.DateOfBirth,
-                CURRENCYCODE = "NGN",
-                AccountTier = ""
+                Gender = "M",
+                ChannelId = int.Parse(_walletSettings.ChannelId),
+                ProductId = int.Parse(_walletSettings.ProductId)
             };
             var payload = JsonConvert.SerializeObject(createWalletData);
             _logger.LogInformation($"Create Wallet Payload [Payload : {payload}]\n");
             var encryptCreatWalletData = _encryptionsAndDecryption.Encrypt(payload);
-            var createWalletResponse = await _walletConnect.CreateWallet(encryptCreatWalletData);
+            var encryptedCreateWalletModel = new EncryptedModel(encryptCreatWalletData);
+            var createWalletResponse = await _walletConnect.CreateWallet(encryptedCreateWalletModel);
             var decryptedCreateWalletResponse = _encryptionsAndDecryption.Decrypt(createWalletResponse);
             _logger.LogInformation($"Create Wallet decrypted response : {decryptedCreateWalletResponse}");
-            var walletResponse = JsonConvert.DeserializeObject<ApiResponse<WalletValidationResponse>>(decryptedResponse);
-            return new ResponseMessage { Status = true};
+            var walletResponse = JsonConvert.DeserializeObject<CreateWalletResponse>(decryptedCreateWalletResponse);
+            if(walletResponse.Response == "00")
+            {
+                _logger.LogInformation($" Creating Wallet Model\n");
+                var wallet = new UserWallet()
+                {
+                    UserId = userId,
+                    Mobile = walletResponse.Data.Mobile,
+                    WalletId = walletResponse.Data.Mobile[1..],
+                    VirtualAccount = walletResponse.Data.VIRTUALACCT,
+                    AccountTier = walletResponse.Data.AcctTier
+                };
+                _repositoryWrapper.Wallet.Create(wallet);
+                await _repositoryWrapper.Save();
+                return new ResponseMessage<string>
+                { Message = "Approved or Completed Successfully", ResponseCode = 00, Status = true,
+                    Data = wallet.WalletId};
+            }
+            return new ResponseMessage<string> { Message = walletResponse.Responsedata,ResponseCode=12};
         }
 
         public async Task<ResponseMessage> WalletToSterling(int userId, decimal amount, string mobileNumber, string channel)
@@ -119,7 +163,7 @@ namespace Application.Services.Wallet
             var wallettransfer = new WalletToAccount
             {
                 CURRENCYCODE = "NGN",
-                ChannelID = int.Parse(_walletSettings.ChannelID),
+                ChannelID = int.Parse(_walletSettings.ChannelId),
                 Toacct = _walletSettings.Toacct,
                 PaymentRef = Guid.NewGuid().ToString(),
                 Amt = amount.ToString(),
@@ -130,7 +174,7 @@ namespace Application.Services.Wallet
             var payload = JsonConvert.SerializeObject(wallettransfer);
             _logger.LogInformation($"Wallet to Sterling payload [Payload : {payload} ]\n");
             var encryptData = _encryptionsAndDecryption.Encrypt(payload);
-            var transferResponse = await _walletConnect.CreateWallet(encryptData);
+            var transferResponse = await _walletConnect.WalletToSterlingFT(encryptData);
             var decryptedResponse = _encryptionsAndDecryption.Decrypt(transferResponse);
             _logger.LogInformation($"Wallet To Account decrypted response : {decryptedResponse}");
 

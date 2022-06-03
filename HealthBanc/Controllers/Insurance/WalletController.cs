@@ -1,4 +1,5 @@
-﻿using Application.DTO;
+﻿using Application.API_ResponseModel.Wallet;
+using Application.DTO;
 using Application.Services.Wallet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -59,8 +60,8 @@ namespace HealthBanc.Controllers.Insurance
         /// </summary>
         /// <param name="mobileNumber"></param>
         /// <returns></returns>
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<string>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<string>))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
         public async Task<IActionResult> CreateWallet(string mobileNumber)
@@ -68,6 +69,23 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
             var response = await _walletService.CreateWallet(id, mobileNumber);
+            if (response.Status) return Ok(response);
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Get logged User Wallet Details
+        /// </summary>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<WalletValidationResponse>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<WalletValidationResponse>))]
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> WalletDetails()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _walletService.WalletDetails(id);
             if (response.Status) return Ok(response);
             return BadRequest(response);
         }

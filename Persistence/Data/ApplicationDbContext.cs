@@ -3,6 +3,7 @@ using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.Axa_Hygeia_Insurance;
 using Domain.Models.ExceptionLog;
 using Domain.Models.ReportAndLogs;
+using Domain.Models.Wallet;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -48,6 +49,8 @@ namespace Persistence
         public DbSet<HMOPayment> HMOPayments { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<OtpValidation> OtpValidations { get; set; }
+        public DbSet<UserWallet> Wallets { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

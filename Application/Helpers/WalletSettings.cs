@@ -13,8 +13,9 @@ namespace Application.Helpers
         public string SecretKey { get; set; }
         public string IV { get; set; }
         public string TransferType { get; set; }
-        public string ChannelID { get; set; }
         public string CURRENCYCODE { get; set; }
         public string Toacct { get; set; }
+        public string ProductId { get; set; }
+        public string ChannelId { get; set; }    
     }
 }

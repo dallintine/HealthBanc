@@ -23,9 +23,19 @@ namespace Application.API_RequestModel.Wallet
         public string Gender { get; set; }
 
         [JsonProperty("CURRENCYCODE")]
-        public string CURRENCYCODE { get; set; }
+        public string CURRENCYCODE { get; set; } = "NGN";
 
         [JsonProperty("AccountTier")]
         public string AccountTier { get; set; }
+
+        [JsonProperty("email")]
+        public string Email { get; set; }
+
+        [JsonProperty("ChannelID")]
+        public int ChannelId { get; set; }
+
+        [JsonProperty("ProductID")]
+        public int ProductId { get; set; }
+        public bool MobileNotNuban { get; set; } = true;
     }
 }

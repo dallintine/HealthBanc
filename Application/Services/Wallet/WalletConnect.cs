@@ -1,4 +1,5 @@
-﻿using Application.Helpers;
+﻿using Application.API_RequestModel.Wallet;
+using Application.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -34,19 +35,21 @@ namespace Application.Services.Wallet
             return apiResponse;
         }
 
-        public async Task<string> CreateWallet(string encryptedRequest)
+        public async Task<string> CreateWallet(EncryptedModel encryptedRequest)
         {
-            _logger.LogInformation($"Create Wallet Sterling Request \n");
+            var payload = JsonConvert.SerializeObject(encryptedRequest);
+            _logger.LogInformation($"Create Wallet Sterling Request [Payload : {payload} ] \n");
             using var request = new HttpRequestMessage(new HttpMethod("POST"), _walletSettings.CreateWallet);
-            HttpContent content = new StringContent(encryptedRequest, Encoding.UTF8, "application/json");
+            HttpContent content = new StringContent(payload, Encoding.UTF8, "application/json");
             return await Execute(request, content);
         }
 
-        public async Task<string> WalletDetails(string encryptedRequest)
+        public async Task<string> WalletDetails(EncryptedModel encryptedRequest)
         {
-            _logger.LogInformation($"Wallet Details Sterling Request \n");
+            var payload = JsonConvert.SerializeObject(encryptedRequest);
+            _logger.LogInformation($"Wallet Details Sterling Request [Payload : {payload}] \n");
             using var request = new HttpRequestMessage(new HttpMethod("POST"), _walletSettings.WalletDetails);
-            HttpContent content = new StringContent(encryptedRequest, Encoding.UTF8, "application/json");
+            HttpContent content = new StringContent(payload, Encoding.UTF8, "application/json");
             return await Execute(request, content);
         }
 
