@@ -45,6 +45,32 @@ namespace DataAccess
         public IHMOPaymentRepository _hmoPayment;
         public IFamilyProfileRepository _familyProfile;
         public IUserSessionRepository _userSession;
+        public IOtpValidationRepository _otpValidation;
+        public IWalletRepository _wallet;
+
+        public IWalletRepository Wallet
+        {
+            get
+            {
+                if (_wallet == null)
+                {
+                    _wallet = new WalletRepository(_context);
+                }
+                return _wallet;
+            }
+        }
+
+        public IOtpValidationRepository OtpValidation
+        {
+            get
+            {
+                if (_otpValidation == null)
+                {
+                    _otpValidation = new OtpValidationRepository(_context);
+                }
+                return _otpValidation;
+            }
+        }
 
         public IFamilyProfileRepository FamilyProfile
         {

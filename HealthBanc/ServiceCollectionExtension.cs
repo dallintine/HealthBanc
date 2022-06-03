@@ -9,6 +9,7 @@ using Application.Services.HealthInsured.Insurance;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services.Identity;
 using Application.Services.Paystack;
+using Application.Services.Wallet;
 using DataAccess;
 using DataAccess.General.Implementation;
 using DataAccess.General.Interfaces;
@@ -21,6 +22,7 @@ using Infrastructure.ImageService;
 using Infrastructure.Mail;
 using Infrastructure.PasswordManager;
 using Infrastructure.ProcessUniqueIdentifier;
+using Infrastructure.SMS;
 using Infrastructure.UploadService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -113,13 +115,16 @@ namespace HealthBanc
             services.AddScoped<PaystackService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            services.AddSingleton<IWalletEncryptionsAndDecryption, WalletEncryptionAndDecryption>();
+            services.AddSingleton<ISMSService, SMSService>();
             services.AddScoped<Dashboard_Analytics>();
             services.AddScoped<IFileProcessor, FileProcessor>();
             services.AddScoped<LeadGeneratorService>();
             services.AddScoped<FamilyInsuranceService>();
             services.AddScoped<UtilityService>();
             services.AddScoped<ImageService>();
-
+            services.AddScoped<WalletConnect>();
+            services.AddScoped<WalletService>();
         }
     }
 }

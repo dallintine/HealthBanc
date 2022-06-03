@@ -213,7 +213,7 @@ namespace Infrastructure.Mail
         }
         public async void EmailRequest(EmailRequest emailRequest)
         {
-            _logger.LogInformation($"Email Request [ Subject :  {emailRequest.subject}]\n");
+            _logger.LogInformation($"Email Request [ Subject :  {emailRequest.subject} | Email : {emailRequest.email}]\n");
             var httpClient = _httpClientFactory.CreateClient("EmailSender");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(emailRequest), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{EmailAccessor.EmailNotificationNotify}", content);

@@ -74,6 +74,7 @@ namespace HealthBanc
             services.Configure<HMOAccountDetails>(Configuration.GetSection("HMOAccountDetails"));
             services.Configure<IBSConfig>(Configuration.GetSection("IBSConfig"));
             services.Configure<ConnectionStrings>(Configuration.GetSection("ConnectionStrings"));
+            services.Configure<OtpParameter>(Configuration.GetSection(nameof(OtpParameter)));
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -115,6 +116,8 @@ namespace HealthBanc
                 .AddTransientHttpErrorPolicy(x =>
                 x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            //-------------------------------------------Paystack Config -----------------------------------------------------//
+
             var paystackUrl = Configuration.GetSection("Paystack");
             services.Configure<Paystack>(paystackUrl);
             var paystackUrlValues = paystackUrl.Get<Paystack>();
@@ -125,6 +128,8 @@ namespace HealthBanc
             })
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+            //-------------------------------------------- Email Config -----------------------------------------------------//
 
             var email = Configuration.GetSection("EmailAuth");
             services.Configure<EmailAuth>(email);
@@ -137,6 +142,7 @@ namespace HealthBanc
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            //-----------------------------------------------------Axa mansard Config ----------------------------------------//
 
             var axaMansard = Configuration.GetSection("AxaMansardConfiguration");
             services.Configure<AxaMansardConfiguration>(axaMansard);
@@ -149,6 +155,8 @@ namespace HealthBanc
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            //-------------------------------------------------------Hygeia Config -----------------------------------------------//
+
             var hygeia = Configuration.GetSection("HygeiaConfiguration");
             services.Configure<HygeiaConfiguration>(hygeia);
             var hygeiaValues = hygeia.Get<HygeiaConfiguration>();
@@ -159,6 +167,21 @@ namespace HealthBanc
             })
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+            //----------------------------------------Wallet Config --------------------------------------------//
+
+            var wallet = Configuration.GetSection("WalletSettings");
+            services.Configure<WalletSettings>(wallet);
+            var walletValues = wallet.Get<WalletSettings>();
+
+            services.AddHttpClient("WalletClient", client =>
+            {
+                client.BaseAddress = new Uri(walletValues.BaseUrl);
+            })
+             .AddTransientHttpErrorPolicy(x =>
+             x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+            //-------------------------------------------------OTP config ---------------------------------------------------------//
 
             var sterlingOTPConfig = Configuration.GetSection("SterlingOtpConfig");
             services.Configure<SterlingOtpConfig>(sterlingOTPConfig);
@@ -262,7 +285,7 @@ namespace HealthBanc
                 }
             };
 
-            app.UseHangfireDashboard("/apiResponse1963.4uQHWqAUeTfcsYAtBGgQuvUh", options);
+            app.UseHangfireDashboard("/apiResponse1963.4uQHWqAUeTfcsYAtBGgQuvUh",options);
 
             ServicePointManager.ServerCertificateValidationCallback +=
                (sender, certificate, chain, errors) =>

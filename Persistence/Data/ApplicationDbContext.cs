@@ -47,6 +47,7 @@ namespace Persistence
         public DbSet<HealthFinance> HealthFinances { get; set; }
         public DbSet<HMOPayment> HMOPayments { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
+        public DbSet<OtpValidation> OtpValidations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
