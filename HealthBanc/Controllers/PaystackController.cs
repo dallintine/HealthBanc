@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using System.Threading;
 using Application.Services.HealthInsured;
+using Microsoft.Extensions.Options;
+using Application.Helpers;
 
 namespace HealthBanc.Controllers
 {
@@ -33,13 +35,18 @@ namespace HealthBanc.Controllers
     {
         private readonly InsurancePSWebHookService _insurancePSWebHookService;
         private readonly ILogger<PaystackController> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly Paystack _paystackOptions;
         public string ipAddress;
         public StringValues agent;
 
-        public PaystackController(InsurancePSWebHookService insurancePSWebHookService, IHttpContextAccessor accessor,ILogger<PaystackController> logger)
+        public PaystackController(InsurancePSWebHookService insurancePSWebHookService, IHttpContextAccessor accessor,ILogger<PaystackController> logger,
+            IOptions<Paystack> paystackOptions,IHttpClientFactory httpClientFactory)
         {
             _insurancePSWebHookService = insurancePSWebHookService;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
+            _paystackOptions = paystackOptions.Value;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -61,17 +68,39 @@ namespace HealthBanc.Controllers
                 };
                 if (paystackIpaddress.Contains(ipAddress))
                 {
-                    var amount = webHookResponse.data.amount / 100;
-                    BackgroundJob.Enqueue(() => _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
-                        webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
+                    var fintechPrefix = _paystackOptions.Healthinsured_FintechWebhookPrefix;
+                    if (webHookResponse.data.reference.StartsWith(fintechPrefix))
+                    {
+                        if(webHookResponse.@event == "charge.success")
+                        {
+                            BackgroundJob.Enqueue(() => ForwardWebHookNotification(webHookResponse));
+                        }                       
+                    }
+                    else
+                    {
+                        var amount = webHookResponse.data.amount / 100;
+                        BackgroundJob.Enqueue(() => _insurancePSWebHookService.ProcessPaystackWebHook(webHookResponse.@event, webHookResponse.data.customer.email, webHookResponse.data.reference,
+                            webHookResponse.data.authorization.authorization_code, webHookResponse.data.authorization.last4, webHookResponse.data.authorization.card_type, amount.ToString()));
+                    }                    
                 }
                 return Ok();
             }
             catch(Exception ex)
             {
-                _logger.LogInformation($"Exception occured when paystack notification was received [Exception :{ex}]\n {ex.ToString()}\n");
+                _logger.LogCritical($"Exception occured when paystack notification was received [Exception :{ex}]\n {ex.ToString()}\n");
                 return Ok();
             }
+        }
+
+        [AutomaticRetry(Attempts = 0)]
+        public  async Task ForwardWebHookNotification(PaystackWebHookResponse webHookResponse)
+        {
+            var client = _httpClientFactory.CreateClient("HealthInsured_Fintech");
+            var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, _paystackOptions.Healthinsured_FintechWebhookURL));
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    BackgroundJob.Enqueue(() => ForwardWebHookNotification(webHookResponse));
+            //}
         }
     }
 }

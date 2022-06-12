@@ -129,6 +129,14 @@ namespace HealthBanc
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            //-------------------------------------------Healthinsured_fintech -----------------------------------------------------//
+            services.AddHttpClient("HealthInsured_Fintech", client =>
+            {
+                client.BaseAddress = new Uri(paystackUrlValues.Healthinsured_FintechBaseURL);
+            })
+             .AddTransientHttpErrorPolicy(x =>
+             x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
             //-------------------------------------------- Email Config -----------------------------------------------------//
 
             var email = Configuration.GetSection("EmailAuth");
@@ -168,6 +176,7 @@ namespace HealthBanc
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+           
             //----------------------------------------Wallet Config --------------------------------------------//
 
             var wallet = Configuration.GetSection("WalletSettings");
