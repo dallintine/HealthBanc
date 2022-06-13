@@ -93,7 +93,7 @@ namespace HealthBanc.Controllers
         }
 
         [AutomaticRetry(Attempts = 0)]
-        public  async Task ForwardWebHookNotification(PaystackWebHookResponse webHookResponse)
+        private  async Task ForwardWebHookNotification(PaystackWebHookResponse webHookResponse)
         {
             var client = _httpClientFactory.CreateClient("HealthInsured_Fintech");
             var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, _paystackOptions.Healthinsured_FintechWebhookURL));
