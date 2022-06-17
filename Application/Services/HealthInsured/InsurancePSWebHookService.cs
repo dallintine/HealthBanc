@@ -56,7 +56,9 @@ namespace Application.Services.HealthInsured
         public async Task ForwardWebHookNotification(PaystackWebHookResponse webHookResponse)
         {
             var client = _httpClientFactory.CreateClient("HealthInsured_Fintech");
-            var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, _paystackOptions.Healthinsured_FintechWebhookURL));
+            var request = new HttpRequestMessage(HttpMethod.Post, _paystackOptions.Healthinsured_FintechWebhookURL);
+            request.Content = new StringContent(JsonConvert.SerializeObject(webHookResponse), Encoding.UTF8, "application/json");
+            var response = await client.SendAsync(request);
             //if (!response.IsSuccessStatusCode)
             //{
             //    BackgroundJob.Enqueue(() => ForwardWebHookNotification(webHookResponse));
