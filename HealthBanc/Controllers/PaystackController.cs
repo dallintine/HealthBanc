@@ -35,17 +35,15 @@ namespace HealthBanc.Controllers
     {
         private readonly InsurancePSWebHookService _insurancePSWebHookService;
         private readonly ILogger<PaystackController> _logger;
-        private readonly IHttpClientFactory _httpClientFactory;
         private readonly Paystack _paystackOptions;
         public string ipAddress;
         public StringValues agent;
 
         public PaystackController(InsurancePSWebHookService insurancePSWebHookService, IHttpContextAccessor accessor,ILogger<PaystackController> logger,
-            IOptions<Paystack> paystackOptions,IHttpClientFactory httpClientFactory)
+            IOptions<Paystack> paystackOptions)
         {
             _insurancePSWebHookService = insurancePSWebHookService;
             _logger = logger;
-            _httpClientFactory = httpClientFactory;
             _paystackOptions = paystackOptions.Value;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
@@ -73,7 +71,7 @@ namespace HealthBanc.Controllers
                     {
                         if(webHookResponse.@event == "charge.success")
                         {
-                            BackgroundJob.Enqueue(() => ForwardWebHookNotification(webHookResponse));
+                            BackgroundJob.Enqueue(() => _insurancePSWebHookService.ForwardWebHookNotification(webHookResponse));
                         }                       
                     }
                     else
@@ -90,17 +88,6 @@ namespace HealthBanc.Controllers
                 _logger.LogCritical($"Exception occured when paystack notification was received [Exception :{ex}]\n {ex.ToString()}\n");
                 return Ok();
             }
-        }
-
-        [AutomaticRetry(Attempts = 0)]
-        private  async Task ForwardWebHookNotification(PaystackWebHookResponse webHookResponse)
-        {
-            var client = _httpClientFactory.CreateClient("HealthInsured_Fintech");
-            var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, _paystackOptions.Healthinsured_FintechWebhookURL));
-            //if (!response.IsSuccessStatusCode)
-            //{
-            //    BackgroundJob.Enqueue(() => ForwardWebHookNotification(webHookResponse));
-            //}
-        }
+        }       
     }
 }

@@ -1,4 +1,5 @@
-﻿using Application.HealthInsured_AxaMansard_Service.Insurance;
+﻿using Application.API_ResponseModel.Paystack;
+using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Helpers;
 using Application.Services.HealthInsured.Insurance;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
@@ -15,6 +16,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,12 +31,14 @@ namespace Application.Services.HealthInsured
         private readonly TokenizationService _tokenizationService;
         private readonly CorporateInsuranceService _corporateInsurance;
         private readonly FamilyInsuranceService _familyInsurance;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly Application.Helpers.Paystack _paystackOptions;
 
         private SubscriptionDuration SubscriptionAccessor { get; }
 
         public InsurancePSWebHookService(InsuranceService insuranceService, IRepositoryWrapper repoWrapper, ILogger<InsurancePSWebHookService> logger, PaystackService paystackService,
              IOptions<SubscriptionDuration> subscriptionAccessor, TokenizationService tokenizationService, CorporateInsuranceService corporateInsurance,
-             FamilyInsuranceService familyInsurance)
+             FamilyInsuranceService familyInsurance, IOptions<Application.Helpers.Paystack> paystackOptions, IHttpClientFactory httpClientFactory)
         {
             _insuranceSerivce = insuranceService;
             _repoWrapper = repoWrapper;
@@ -44,6 +48,19 @@ namespace Application.Services.HealthInsured
             _corporateInsurance = corporateInsurance;
             _familyInsurance = familyInsurance;
             SubscriptionAccessor = subscriptionAccessor.Value;
+            _httpClientFactory = httpClientFactory;
+            _paystackOptions = paystackOptions.Value;
+        }
+
+        [AutomaticRetry(Attempts = 0)]
+        public async Task ForwardWebHookNotification(PaystackWebHookResponse webHookResponse)
+        {
+            var client = _httpClientFactory.CreateClient("HealthInsured_Fintech");
+            var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, _paystackOptions.Healthinsured_FintechWebhookURL));
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    BackgroundJob.Enqueue(() => ForwardWebHookNotification(webHookResponse));
+            //}
         }
 
         [AutomaticRetry(Attempts = 0)]
