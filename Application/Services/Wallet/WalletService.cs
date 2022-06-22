@@ -117,9 +117,15 @@ namespace Application.Services.Wallet
             var response = JsonConvert.DeserializeObject<ApiResponse<WalletValidationResponse>>(decryptedResponse);
             if (response != null && response.Response == "00")
             {
-                return new ResponseMessage<string> { ResponseCode = 21, Message = "Invalid Request - Wallet exist for this mobile number" };
+                _logger.LogInformation($"Create Wallet terminated [Reason : Wallet exist with the mobile number]\n");
+                return new ResponseMessage<string> { ResponseCode = 21, Message = "Invalid Request - Wallet exist for this mobile number \n" };
             }
             var profile = await _repositoryWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if(profile is null)
+            {
+                _logger.LogInformation($"Create Wallet terminated [Reason : Insurance profile not found ]\n");
+                return new ResponseMessage<string> { ResponseCode = 25, Message = "No Record Found - Kindly create an insurance profile" };
+            }
             var createWalletData = new CreateWallet
             {
                 Firstname = profile.Othernames,
