@@ -46,7 +46,7 @@ namespace Application.Services.HealthInsured.Insurance
             _repoWrapper.FamilyProfile.Create(family);
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
-            _logger.LogInformation($"Family Profile was created successfully\n");
+            _logger.LogInformation($"Member Profile was created successfully\n");
             return new ResponseMessage { Status = true, Message = "Profile was created successfully" };
         }
 
@@ -65,7 +65,7 @@ namespace Application.Services.HealthInsured.Insurance
             _repoWrapper.InsuranceProfile.Create(insuranceProfile);
             await _repoWrapper.Save();
             _logger.LogInformation($"Family Member was added Successfully\n");
-            return new ResponseMessage { Status = true, Message = "Family member was added successfully" };
+            return new ResponseMessage { Status = true, Message = "Member was added successfully" };
         }
 
         public async Task<ResponseMessage> GetFamilyMembers(PaginationQuery paginationQuery, int userId)
@@ -80,7 +80,7 @@ namespace Application.Services.HealthInsured.Insurance
                 PageNumber = paginatedResponse.PageNumber,
                 PageSize = paginatedResponse.PageSize
             };
-            return new ResponseMessage { Data = pagedResponse, Message = "Family members was fetched successfully", Status = true };
+            return new ResponseMessage { Data = pagedResponse, Message = "Members was fetched successfully", Status = true };
         }
 
         public async Task<ResponseMessage> UpdateFamilyMember(int userId,int famiyMemeberId, FamilyMemberViewModel familyMemberViewModel)
@@ -98,7 +98,7 @@ namespace Application.Services.HealthInsured.Insurance
                 }
                 return new ResponseMessage { Message = "Family Member does not exist under your current profile" };
             }
-            return new ResponseMessage { Message = "Family Profile does not exist" };            
+            return new ResponseMessage { Message = "Profile does not exist" };            
         }
 
         public async Task<ResponseMessage> RemoveFamilyMember(int userId, int famiyMemeberId)
@@ -116,16 +116,16 @@ namespace Application.Services.HealthInsured.Insurance
                         _repoWrapper.InsuranceProfile.Delete(insuranceProfile);
                         await _repoWrapper.Save();
                         _logger.LogInformation($"Remove Family member was successfully\n");
-                        return new ResponseMessage { Message = "Family Member profile was removed successfully", Status = true };
+                        return new ResponseMessage { Message = "Member profile was removed successfully", Status = true };
                     }
                     _logger.LogInformation($"Remove terminated : An active family member cannot be removed\n");
                     return new ResponseMessage { Message = "An active memeber cannot be removed,Deactivate user and wait till insurance cycle ends" };
                 }
                 _logger.LogInformation($"Family memeber insurance profile do not exist\n");
-                return new ResponseMessage { Message = "Family Member does not exist under your current profile" };
+                return new ResponseMessage { Message = "Member does not exist under your current profile" };
             }
             _logger.LogInformation($"Family profile do not exist\n");
-            return new ResponseMessage { Message = "Family Profile does not exist" };
+            return new ResponseMessage { Message = "Profile does not exist" };
            
         }
 
