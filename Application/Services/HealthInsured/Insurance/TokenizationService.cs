@@ -94,6 +94,9 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             if (checkIfUserHasBeenProfiled != null)
             {
                 _logger.LogInformation($"User onboarding terminated [Reason : user has a profile]\n");
+                // If user has a profile and it is completed
+                /*User may have a profile that is not completed if the user is a referee. That is his profile was created by another individual,
+                but he/she has to login to complete the profile.*/
                 if (checkIfUserHasBeenProfiled.ContactAddress != null)
                 {
                     return new ResponseMessage { Message = "User has a profile already" };
@@ -139,7 +142,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 }
                 else if (checkIfProfileWithEmail.Data.HealthInsuredPlan != null)
                 {
-                    _logger.LogInformation($"Create Profile terminated. Email is used for another healtinsured service\n");
+                    _logger.LogInformation($"Create Profile terminated. Email is used for another healthinsured service\n");
                     return new ResponseMessage { Message = "Email was used for another Healthinsured Service" };
                 }
             }
@@ -191,7 +194,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             _repoWrapper.ApplicationUser.Update(user);
             await _repoWrapper.Save();
-            _logger.LogInformation($"Insurance Profilke Created Successdfully\n");
+            _logger.LogInformation($"Insurance Profile Created Successdfully\n");
             return new ResponseMessage { Status = true };
         }
 
@@ -1253,153 +1256,6 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             }
             await Task.CompletedTask;
         }
-
-        /// <summary>
-        /// Service to change primary card
-        /// </summary>
-        /// <param name="newCardId"></param>
-        /// <param name="userId"></param>
-        /// <param name="ipAddress"></param>
-        /// <param name="device"></param>
-        /// <returns></returns>
-        public async Task<ResponseMessage> ChangePrimaryCard(int newCardId, int userId)
-        {
-            var presentPrimaryCard = await _repoWrapper.Card.GetPrimaryCard(userId);
-            if (presentPrimaryCard == null)
-            {
-                return new ResponseMessage { Message = "You dont have a debit card, Kindly add one" };
-            }
-
-            var newPrimaryCard = await _repoWrapper.Card.GetCardByIdAsync(newCardId, userId);
-            if (newPrimaryCard == null)
-            {
-                return new ResponseMessage { Message = "Card was not found", ResponseCode = 12 };
-            }
-            if (newPrimaryCard.Status == (int)DebitCard_StatusValue.primary)
-            {
-                return new ResponseMessage { Message = "This card is presently the primary card" };
-            }
-            presentPrimaryCard.Status = (int)DebitCard_StatusValue.secondary;
-            _repoWrapper.Card.Update(presentPrimaryCard);
-            newPrimaryCard.Status = (int)DebitCard_StatusValue.primary;
-            _repoWrapper.Card.Update(newPrimaryCard);
-
-            if (newPrimaryCard.InsuranceUserProfileId != null)
-            {
-                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-                var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
-                _repoWrapper.ActivityLog.Create(activityLog);
-            }
-            else if (newPrimaryCard.CompanyProfileId != null)
-            {
-                var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-                var activityLog = new ActivityLog(null, companyProfile.Id, null, "Change Primary Card", ServiceNames.HealthInsured.ToString());
-                _repoWrapper.ActivityLog.Create(activityLog);
-            }
-            else
-            {
-                var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
-                var activityLog = new ActivityLog(null, null, familyProfile.Id, "Change Primary Card", ServiceNames.HealthInsured.ToString());
-                _repoWrapper.ActivityLog.Create(activityLog);
-            }
-
-            await _repoWrapper.Save();
-            return new ResponseMessage { Message = "Primary card was changed successfully", Status = true };
-        }
-
-        /// <summary>
-        /// Service to delete debit card
-        /// </summary>
-        /// <param name="cardId"></param>
-        /// <param name="userId"></param>
-        /// <param name="ipAddress"></param>
-        /// <param name="device"></param>
-        /// <returns></returns>
-        public async Task<ResponseMessage> DeleteCard(int cardId, int userId)
-        {
-            var card = await _repoWrapper.Card.GetCardByIdAsync(cardId, userId);
-            bool isCardDeletable = false;
-            if (card == null) return new ResponseMessage { Message = "Card  was not found", ResponseCode = 12 };
-
-            if (card.InsuranceUserProfileId != null)
-            {
-                var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-                if ((card.Status == (int)DebitCard_StatusValue.primary && insuranceProfile.SubscriptionStatus == true) || card.Status == (int)DebitCard_StatusValue.secondary)
-                {
-                    isCardDeletable = true;
-                    var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                }
-            }
-            else if (card.CompanyProfileId != null)
-            {
-                var companyProfile = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-                if (card.Status == (int)DebitCard_StatusValue.secondary)
-                {
-                    isCardDeletable = true;
-                    var activityLog = new ActivityLog(null, companyProfile.Id, null, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                }
-            }
-            else
-            {
-                var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
-                if (card.Status == (int)DebitCard_StatusValue.secondary)
-                {
-                    isCardDeletable = true;
-                    var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Was Removed", ServiceNames.HealthInsured.ToString());
-                    _repoWrapper.ActivityLog.Create(activityLog);
-                }
-            }
-
-            if (isCardDeletable)
-            {
-                _repoWrapper.Card.Delete(card);
-                await _repoWrapper.Save();
-                return new ResponseMessage { Message = "Card was deleted successfully", Status = true };
-            }
-            else
-            {
-                return new ResponseMessage
-                {
-                    Message = "Kindly set a new card as " +
-                    "primary card to delete present primary card"
-                };
-            }
-        }
-
-        /// <summary>
-        /// Fetch debit card
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        public async Task<ResponseMessage> GetCards(int userId,string email)
-        {
-        var profileCompletion = await _insuranceSerivce.GetProfileCompletion(userId,email);
-        List<DebitCard> debitCard = new List<DebitCard>();
-        if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
-        {
-            var individualInsuranceUser = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
-            debitCard = individualInsuranceUser.Cards;
-        }
-        else if (profileCompletion.Data.HealthInsuredPlan == HealthInsuredPlan.Corporate)
-        {
-            var coporateInsuranceUser = await _repoWrapper.CompanyProfile.GetCompanyProfileByUserId(userId);
-            debitCard = coporateInsuranceUser.Cards;
-        }
-        else
-        {
-            var familyProfile = await _repoWrapper.FamilyProfile.GetByUserId(userId);
-            debitCard = familyProfile.Cards;
-        }
-        if (debitCard.Count > 0)
-        {
-            var cardDTO = _mapper.Map<List<DebitCard>, List<CardDTO>>(debitCard);
-            return new ResponseMessage { Data = cardDTO, Status = true, Message = "Card was fetched successfully" };
-        }
-        var emptyCardDTO = new List<CardDTO>();
-        return new ResponseMessage { Data = emptyCardDTO, Message = "User has no card, Kindly add a card", Status = true };
-        }   
 
         public async Task<ResponseMessage> DeactivateReferee(int userId, int refereeInsuranceId)
         {

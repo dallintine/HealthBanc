@@ -522,6 +522,12 @@ namespace HealthBanc.Controllers
             return Ok(users);
         }
 
+        [HttpPost("[action]")]
+        public async Task<IActionResult> OnboardHygeia(RegistrationModel registrationModel)
+        {
+            var resp = await _integrationService.HygeiaRegisterUser(registrationModel);
+            return Ok(resp);
 
+        }
     }
 }

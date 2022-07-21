@@ -21,6 +21,7 @@ using Application.ViewModels.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services;
 using DataAccess;
+using Application.Services.Card;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -30,18 +31,18 @@ namespace HealthBanc.Controllers.Insurance
     {
         private readonly TokenizationService _tokenizationService;
         private readonly AuditLogService _auditLogServices;
-        private readonly IBSIntegrationService _iBSIntegrationService;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly CardService _cardService;
         public string ipAddress;
         public StringValues agent;
 
-        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices,IBSIntegrationService iBSIntegrationService
-            ,IRepositoryWrapper repoWrapper )
+        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices
+            ,IRepositoryWrapper repoWrapper,CardService cardService)
         {
             _tokenizationService = tokenizationService;
             _auditLogServices = auditLogServices;
-            _iBSIntegrationService = iBSIntegrationService;
             _repoWrapper = repoWrapper;
+            _cardService = cardService;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -132,7 +133,7 @@ namespace HealthBanc.Controllers.Insurance
 
             int Id = int.Parse(userId);
 
-            var cards = await _tokenizationService.GetCards(Id,email);
+            var cards = await _cardService.GetCards(Id,email);
             if (cards.Status)
             {
                 return Ok(cards);
@@ -157,7 +158,7 @@ namespace HealthBanc.Controllers.Insurance
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
 
-                var changePrimaryCardResponse = await _tokenizationService.ChangePrimaryCard(cardId, id);
+                var changePrimaryCardResponse = await _cardService.ChangePrimaryCard(cardId, id);
                 if (changePrimaryCardResponse.Status)
                 {
                     return Ok(changePrimaryCardResponse);
@@ -197,7 +198,7 @@ namespace HealthBanc.Controllers.Insurance
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
 
-                var deleteCardResponse = await _tokenizationService.DeleteCard(cardId, id);
+                var deleteCardResponse = await _cardService.DeleteCard(cardId, id);
                 if (deleteCardResponse.Status)
                 {
                     return Ok(deleteCardResponse);

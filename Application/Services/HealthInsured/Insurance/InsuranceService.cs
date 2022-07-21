@@ -197,12 +197,14 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         public async Task<ResponseMessage<HealthInsuredProfileStateDTO>> GetProfileCompletion(int? userId,string email)
         {
             var notFoundProfileState = new HealthInsuredProfileStateDTO(null, null, false, false, null);
+            // Check if user was signed up as an individual
             var processIndvidualProfileState =  await ProcessIndividualProfileCompletion(userId, email);
             if(processIndvidualProfileState.Status)
             {
                 return processIndvidualProfileState;
             }
-            if(userId != null)
+            // Check if user was signed up under the family/corporate plan
+            if (userId != null)
             {
                 var familyUser = await _repoWrapper.FamilyProfile.GetByUserId(userId.Value);
                 if (familyUser != null)
@@ -246,6 +248,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
         private async Task<ResponseMessage<HealthInsuredProfileStateDTO>> ProcessIndividualProfileCompletion(int? userId, string email)
         {
+            // If user signed up as an individul on the platform
             if(userId != null)
             {
                 var profile = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(userId.Value);
@@ -275,13 +278,16 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 //    }                   
                 //}
             }
-            if(email != null)
+            // If user was signed up as a referee by an individual(referer) on the platform, so has no userId
+            if (email != null)
             {
                 var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
                 if(insuranceProfile != null)
                 {
+                    // User has an InsurancePayeeId because he/she is a referee
                     if (insuranceProfile.InsurancePayeeId != null)
                     {
+                        //If the referee/user has completed his/her profile after he/she was signed up by the referer
                         if (insuranceProfile.ContactAddress != null)
                         {
                             return new ResponseMessage<HealthInsuredProfileStateDTO>
@@ -291,6 +297,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                                 Message = "Profile completion state was fetched successfully"
                             };
                         }
+                        //If the referee/user has not completed his/her profile after he/she was signed up by the referer :  contact address is null
                         return new ResponseMessage<HealthInsuredProfileStateDTO>
                         {
                             Data = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, false, true, insuranceProfile.InsuranceService,true),
