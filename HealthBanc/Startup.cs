@@ -51,6 +51,7 @@ namespace HealthBanc
 
         public void ConfigureServices(IServiceCollection services)
         {
+
             //services.AddMvc(options =>
             //{
             //    options.OutputFormatters.Clear();
