@@ -82,7 +82,6 @@ namespace Domain.Models
                 }
             }
         }
-        [JsonIgnore]
         public InsuranceUserProfile InsuranceUserProfile { get; set; }
         public CompanyProfile CompanyProfile { get; set; }
         public FamilyProfile FamilyProfile { get; set; }
