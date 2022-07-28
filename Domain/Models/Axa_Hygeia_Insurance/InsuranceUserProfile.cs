@@ -3,6 +3,7 @@ using Domain.Models.ReportAndLogs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Domain.Models.Axa_Hygeia_Insurance
@@ -68,6 +69,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         }
         public DateTime? DateCreated { get; set; }
         public List<DebitCard> Cards { get; set; }
+        [JsonIgnore]
         public List<PaymentReference> PaymentReferences { get; set; }
         public List<ActivityLog> HealthInsuredActivityLogs { get; set; }
     }
