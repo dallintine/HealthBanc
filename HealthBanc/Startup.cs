@@ -34,6 +34,9 @@ using Application.Helpers.Jwt_Authorization;
 using Hangfire.Dashboard;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services;
+using Newtonsoft.Json;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using System.Buffers;
 
 namespace HealthBanc
 {
@@ -48,6 +51,15 @@ namespace HealthBanc
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc(options =>
+            {
+                options.OutputFormatters.Clear();
+                options.OutputFormatters.Add(new NewtonsoftJsonOutputFormatter(new JsonSerializerSettings()
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                }, ArrayPool<char>.Shared));
+            });
+
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection")));
             services.AddHangfireServer();
 
