@@ -64,7 +64,7 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         public string PaymentMethod { get; set; }
         public List<DebitCard> Cards { get; set; }
         [JsonIgnore]
-        public List<PaymentReference> PaymentReferences { get; set; }
+        //public List<PaymentReference> PaymentReferences { get; set; }
         public List<ActivityLog> HealthInsuredActivityLogs { get; set; }
         public UserWallet UserWallet { get; set; }
     }

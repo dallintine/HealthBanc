@@ -35,7 +35,7 @@ namespace DataAccess.HealthInsured.Implementation
 
         public async Task<InsuranceUserProfile> GetExtendedProfileDetailsByEmail(string email)
         {
-            return await _context.InsuranceUserProfiles.Where(x => x.Email == email).Include(x => x.Cards).Include(x => x.PaymentReferences).Include(x => x.HealthInsuredActivityLogs).FirstOrDefaultAsync();
+            return await _context.InsuranceUserProfiles.Where(x => x.Email == email).Include(x => x.Cards)/*.Include(x => x.PaymentReferences)*/.Include(x => x.HealthInsuredActivityLogs).FirstOrDefaultAsync();
         }
 
         public async Task<InsuranceUserProfile> GetByIdAsync(int id)
