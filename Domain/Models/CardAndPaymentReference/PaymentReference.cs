@@ -107,10 +107,4 @@ namespace Domain.Models
         healthinsured_hygeia,
         healthinsured_axamansard,
     }
-
-    public enum PaymentMethod
-    {
-        Card,
-        Wallet,
-    }
 }

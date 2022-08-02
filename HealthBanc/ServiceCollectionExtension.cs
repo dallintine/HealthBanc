@@ -4,6 +4,7 @@ using Application.Interfaces;
 using Application.Services;
 using Application.Services.Admin;
 using Application.Services.AuditAndReport;
+using Application.Services.Card;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured.Insurance;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
@@ -11,10 +12,6 @@ using Application.Services.Identity;
 using Application.Services.Paystack;
 using Application.Services.Wallet;
 using DataAccess;
-using DataAccess.General.Implementation;
-using DataAccess.General.Interfaces;
-using DataAccess.HealthInsured.Implementation;
-using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Implementation;
 using DataAccess.Logs.Interfaces;
 using Infrastructure.EncryptionService;
@@ -33,9 +30,7 @@ using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace HealthBanc
 {
@@ -101,6 +96,7 @@ namespace HealthBanc
             services.AddScoped<InsurancePSWebHookService>();
             services.AddScoped<CorporateInsuranceService>();
             services.AddScoped<IBSIntegrationService>();
+            services.AddScoped<Card_SubscriptionService>();
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<InsuranceService>();
             services.AddScoped<ExcelPackage>();
@@ -125,6 +121,7 @@ namespace HealthBanc
             services.AddScoped<ImageService>();
             services.AddScoped<WalletConnect>();
             services.AddScoped<WalletService>();
+            services.AddScoped<OTPService>();
         }
     }
 }

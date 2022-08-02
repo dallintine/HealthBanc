@@ -2,6 +2,7 @@
 using Application.API_ResponseModel.HealthInsured;
 using Application.DTO;
 using Application.Helpers;
+using Application.Interfaces;
 using AutoMapper;
 using DataAccess;
 using Domain.Models.Axa_Hygeia_Insurance;
@@ -25,19 +26,23 @@ namespace Application.Services.HealthInsured
         private readonly ILogger<HMOIntegrationService> _logger;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly IMapper _mapper;
+        private readonly IUniqueIdentifier _uniqueIdentifier;
 
         private AxaMansardConfiguration AxaAccessor { get; }
         private HygeiaConfiguration HygeiaAccessor { get; }
+        private SubscriptionDuration SubscriptionAccessor { get; }
 
         public HMOIntegrationService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IOptions<HygeiaConfiguration> hygeiaAccessor,
-            ILogger<HMOIntegrationService> logger,IRepositoryWrapper repoWrapper, IMapper mapper)
+            ILogger<HMOIntegrationService> logger,IRepositoryWrapper repoWrapper, IMapper mapper,IUniqueIdentifier uniqueIdentifier, IOptions<SubscriptionDuration> subscriptionAccessor)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _repoWrapper = repoWrapper;
             _mapper = mapper;
+            _uniqueIdentifier = uniqueIdentifier;
             HygeiaAccessor = hygeiaAccessor.Value;
             AxaAccessor = axaAccessor.Value;
+            SubscriptionAccessor = subscriptionAccessor.Value;
         }        
 
         /// <summary>
@@ -396,6 +401,77 @@ namespace Application.Services.HealthInsured
             }
             var registration = await HygeiaRegisterUser(registrationModel);
             return registration;
+        }
+
+        public async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)
+        {
+            _logger.LogInformation($"Sending Details to insurance provider [Payload : {JsonConvert.SerializeObject(insuranceUserProfile)}]\n");
+            if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+            {
+                var response = await EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
+                if (response.Status)
+                {
+                    insuranceUserProfile.TransId = response.Message;
+                }
+                else
+                {
+                    if (insuranceUserProfile.TransId is null)
+                    {
+                        insuranceUserProfile.TransId = "Pending";
+                    }
+                }
+            }
+            else
+            {
+                var axaRegResponse = await EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                var codeReference = axaRegResponse.Data as string;
+                insuranceUserProfile.AxamasardReferenceCode = codeReference;
+            }
+            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+            await _repoWrapper.Save();
+        }
+
+        public async Task OnboardCompanyUsersToHMO(int companyUserId, string status, DateTime endActiveStatusDate, string insuranceProvider)
+        {
+            _logger.LogInformation($"Onboarding Company Users To HMO [Provider :{insuranceProvider}] | tatus : {status} | CompanyUserId : {companyUserId} \n");
+            var insuranceProfiles = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
+            var insuranceUserProfiles = new List<InsuranceUserProfile>();
+            // Onboard users with an active company subscription status
+            if (status is null)
+            {
+                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
+                x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
+            }
+            // Onboard users with a pending company subscription status
+            else
+            {
+                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == status).ToList();
+            }
+
+            foreach (var item in insuranceUserProfiles)
+            {
+                if (insuranceProvider.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+                {
+                    var result = await EnrollUserToHygeiaOnOnboarding(item);
+                    if (result.Status)
+                    {
+                        item.TransId = result.Message;
+                    }
+                }
+                else
+                {
+                    item.TransId = _uniqueIdentifier.GetUniqueCode(10);
+                    await EnrollUserToAxamansardOnOnboarding(item);
+                }
+                item.ActiveStatus = true;
+                item.SubscriptionStatus = true;
+                item.StartActiveStatusDate = endActiveStatusDate.AddDays(-SubscriptionAccessor.FreeTrialDayDuration);
+                item.EndActiveStatusDate = endActiveStatusDate;
+                item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
+                _repoWrapper.InsuranceProfile.Update(item);
+            }
+            await _repoWrapper.Save();
+            await Task.CompletedTask;
         }
     }
 }

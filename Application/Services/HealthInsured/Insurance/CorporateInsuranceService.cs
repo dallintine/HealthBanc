@@ -299,49 +299,6 @@ namespace Application.Services.HealthInsured.Insurance
             return new ResponseMessage { Message = "Beneficiaries was added successfully,however " + checkIfProfileEmailExistCount + " beneficiary could not be added as their email already exist!", Status = true };
         }
 
-        public async Task OnboardCompanyUsersToHMO(int companyUserId, string status, DateTime endActiveStatusDate, string insuranceProvider)
-        {
-            _logger.LogInformation($"Onboarding Company Users To HMO [Provider :{insuranceProvider}] | tatus : {status} | CompanyUserId : {companyUserId} \n");
-            var insuranceProfiles = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
-            var insuranceUserProfiles = new List<InsuranceUserProfile>();
-            // Onboard users with an active company subscription status
-            if (status is null)
-            {
-                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
-                x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
-            }
-            // Onboard users with a pending company subscription status
-            else
-            {
-                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == status).ToList();
-            }
-
-            foreach (var item in insuranceUserProfiles)
-            {
-                if (insuranceProvider.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
-                {
-                    var result = await _hMOIntegrationService.EnrollUserToHygeiaOnOnboarding(item);
-                    if (result.Status)
-                    {
-                        item.TransId = result.Message;
-                    }
-                }
-                else
-                {
-                    item.TransId = _uniqueIdentifier.GetUniqueCode(10);
-                    await _hMOIntegrationService.EnrollUserToAxamansardOnOnboarding(item);
-                }
-                item.ActiveStatus = true;
-                item.SubscriptionStatus = true;
-                item.StartActiveStatusDate = endActiveStatusDate.AddDays(-SubscriptionAccessor.FreeTrialDayDuration);
-                item.EndActiveStatusDate = endActiveStatusDate;
-                item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
-                _repoWrapper.InsuranceProfile.Update(item);
-            }
-            await _repoWrapper.Save();
-            await Task.CompletedTask;
-        }
-
         public async Task<ResponseMessage> ConfirmOtp(string otp, int userId)
         {
             _logger.LogInformation($"Comfirm OTP processing [OTP : {otp} | UserId : {userId}]\n");

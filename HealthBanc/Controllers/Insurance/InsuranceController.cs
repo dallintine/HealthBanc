@@ -32,6 +32,7 @@ using Application.HealthInsured_AxaMansard_Service.Insurance;
 using ClosedXML.Excel;
 using Application.Services.HealthInsured.Insurance;
 using DataAccess.DTO.InsuranceDTO;
+using Application.Services.Card;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -43,18 +44,15 @@ namespace HealthBanc.Controllers.Insurance
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repoWerapper;
         private readonly AuditLogService _auditLogServices;
-        private readonly TokenizationService _tokenizationService;
         public string IpAddress;
         public StringValues agent;
 
-        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IRepositoryWrapper repoWerapper,AuditLogService auditLogServices,IHttpContextAccessor accessor,
-            CorporateInsuranceService corporateInsuranceService,TokenizationService tokenizationService)
+        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IRepositoryWrapper repoWerapper,AuditLogService auditLogServices,IHttpContextAccessor accessor)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
             _repoWerapper = repoWerapper;
             _auditLogServices = auditLogServices;
-            _tokenizationService = tokenizationService;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -177,7 +175,7 @@ namespace HealthBanc.Controllers.Insurance
                 int Id = int.Parse(userId);
                 var device = _auditLogServices.GetDevice(agent);
 
-                var creatProfileResponse = await _tokenizationService.UserOnboarding(userProfile, Id, IpAddress, device);
+                var creatProfileResponse = await _insuranceService.UserOnboarding(userProfile, Id, IpAddress, device);
 
                 if (creatProfileResponse.Status)
                 {
@@ -348,7 +346,7 @@ namespace HealthBanc.Controllers.Insurance
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
 
-            var response = await _tokenizationService.PayForRefereeWithFullDetails(userId, refereeViewModel);
+            var response = await _insuranceService.PayForRefereeWithFullDetails(userId, refereeViewModel);
 
             if (response.Status)
             {
@@ -444,26 +442,9 @@ namespace HealthBanc.Controllers.Insurance
 
                 string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
                 string fileName = "identifiers.xlsx";
-                using (var workbook = new XLWorkbook())
-                {
-                    IXLWorksheet worksheet =
-                    workbook.Worksheets.Add("Identifiers");
-                    worksheet.Cell(2, 1).Value = "Id";
-                    worksheet.Cell(2, 2).Value = "Unique Identifier";
 
-                    for (int index = 2; index <= count+1; index++)
-                    {
-                        worksheet.Cell(index, 1).Value = index - 1;
-                        worksheet.Cell(index, 2).Value = _insuranceService.GetUniqueCode();
-                        worksheet.Cell(index, 2).DataType = XLDataType.Text;
-                    }
-                    using (var stream = new MemoryStream())
-                    {
-                        workbook.SaveAs(stream);
-                        var content = stream.ToArray();
-                        return File(content, contentType, fileName);
-                    }
-                }
+                var content = _insuranceService.DownloadIdentifiers(count);
+                return File(content, contentType, fileName);
             }
             return BadRequest(new ResponseMessage { Message = "You do not have permission to access this resource" });
         }
