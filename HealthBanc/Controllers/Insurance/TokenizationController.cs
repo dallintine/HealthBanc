@@ -3,14 +3,9 @@ using Application.DTO;
 using Application.AuditAndReport.AuditLog;
 using Application.ViewModels;
 using Application.ViewModels.Paystack;
-using AutoMapper;
-using DataAccess.HealthInsured.Interfaces;
-using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
@@ -18,8 +13,6 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Application.ViewModels.HealthInsured;
-using Application.Services.HealthInsured_AxaMansard.Insurance;
-using Application.Services;
 using DataAccess;
 using Application.Services.Card;
 
@@ -29,17 +22,14 @@ namespace HealthBanc.Controllers.Insurance
     [ApiController]
     public class TokenizationController : ControllerBase
     {
-        private readonly TokenizationService _tokenizationService;
         private readonly AuditLogService _auditLogServices;
         private readonly IRepositoryWrapper _repoWrapper;
-        private readonly CardService _cardService;
+        private readonly Card_SubscriptionService _cardService;
         public string ipAddress;
         public StringValues agent;
 
-        public TokenizationController(TokenizationService tokenizationService,IHttpContextAccessor accessor, AuditLogService auditLogServices
-            ,IRepositoryWrapper repoWrapper,CardService cardService)
+        public TokenizationController(IHttpContextAccessor accessor, AuditLogService auditLogServices,IRepositoryWrapper repoWrapper,Card_SubscriptionService cardService)
         {
-            _tokenizationService = tokenizationService;
             _auditLogServices = auditLogServices;
             _repoWrapper = repoWrapper;
             _cardService = cardService;
@@ -64,7 +54,7 @@ namespace HealthBanc.Controllers.Insurance
                 int id = int.Parse(userId);
                 var device = _auditLogServices.GetDevice(agent);
 
-                var chargeCardResponse = await _tokenizationService.TokenizeCard(chargeCard, id);
+                var chargeCardResponse = await _cardService.TokenizeCard(chargeCard, id);
                 if (chargeCardResponse.Status)
                 {
                     return Ok(chargeCardResponse);
@@ -99,7 +89,7 @@ namespace HealthBanc.Controllers.Insurance
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
 
-                var otpResponse = await _tokenizationService.SubmitOtp(otpViewModel, id);
+                var otpResponse = await _cardService.SubmitOtp(otpViewModel, id);
                 if (otpResponse.Status)
                 {
                     return Ok(otpResponse);
@@ -233,7 +223,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var cancelSubscriptionResult = await _tokenizationService.CancelSubscription(id, reason);
+            var cancelSubscriptionResult = await _cardService.CancelSubscription(id, reason);
             if (cancelSubscriptionResult.Status)
             {
                 return Ok(cancelSubscriptionResult);
@@ -254,7 +244,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var reactivatewithPrimaryCardResponse = await _tokenizationService.ReactivateWithPresentPrimaryCard(id);
+            var reactivatewithPrimaryCardResponse = await _cardService.ReactivateWithPresentPrimaryCard(id);
 
             if (reactivatewithPrimaryCardResponse.Status)
             {
@@ -276,7 +266,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var response = await _tokenizationService.DeactivateReferee(id, insuranceProfileId);
+            var response = await _cardService.DeactivateReferee(id, insuranceProfileId);
             if (response.Status)
             {
                 return Ok(response);
@@ -297,7 +287,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var response = await _tokenizationService.ActivateRefereeWithPrimaryCard(id, insuranceProfileId);
+            var response = await _cardService.ActivateRefereeWithPrimaryCard(id, insuranceProfileId);
             if (response.Status)
             {
                 return Ok(response);
@@ -319,7 +309,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var response = await _tokenizationService.DeactivateCompanyBeneficiaries(beneficiaryListViewModel, id);
+            var response = await _cardService.DeactivateCompanyBeneficiaries(beneficiaryListViewModel, id);
             if (response.Status)
             {
                 return Ok(response);
@@ -345,7 +335,7 @@ namespace HealthBanc.Controllers.Insurance
             var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == insuranceProfileId).FirstOrDefault();
             if(insuranceProfile != null)
             {
-                var response =  await _tokenizationService.DeactivateFamilyMember(insuranceProfile);
+                var response =  await _cardService.DeactivateFamilyMember(insuranceProfile);
                 if (response.Status)
                 {
                     return Ok(response);
@@ -369,7 +359,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var response = await _tokenizationService.ActivateFamilyMemberWithPrimaryCard(id, insuranceProfileId);
+            var response = await _cardService.ActivateFamilyMemberWithPrimaryCard(id, insuranceProfileId);
             if (response.Status)
             {
                 return Ok(response);

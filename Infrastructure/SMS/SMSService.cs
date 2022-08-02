@@ -50,7 +50,7 @@ namespace Infrastructure.SMS
             {                
                 xmlDoc.LoadXml(getResponse);
                 var responseCode = xmlDoc.GetElementsByTagName("SendSMSResult").Item(0).InnerText;
-                return new ResponseMessage { ResponseCode = 00 , Message="Apprved or Completed Successfully" , Status=true };
+                return new ResponseMessage { ResponseCode = 00 , Message="Approved or Completed Successfully" , Status=true };
             }
             return new ResponseMessage { ResponseCode = 21 , Message ="Could not send OTP, Please try again latter" };
         }

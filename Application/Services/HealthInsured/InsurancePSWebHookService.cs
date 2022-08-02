@@ -1,6 +1,8 @@
 ﻿using Application.API_ResponseModel.Paystack;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Helpers;
+using Application.Interfaces;
+using Application.Services.Card;
 using Application.Services.HealthInsured.Insurance;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services.Paystack;
@@ -30,15 +32,20 @@ namespace Application.Services.HealthInsured
         private readonly PaystackService _paystackService;
         private readonly TokenizationService _tokenizationService;
         private readonly CorporateInsuranceService _corporateInsurance;
+        private readonly IEmailSender _emailSender;
         private readonly FamilyInsuranceService _familyInsurance;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IUniqueIdentifier _uniqueIdentifier;
+        private readonly Card_SubscriptionService _cardService;
+        private readonly HMOIntegrationService _hmoIntegrationService;
         private readonly Application.Helpers.Paystack _paystackOptions;
 
         private SubscriptionDuration SubscriptionAccessor { get; }
 
         public InsurancePSWebHookService(InsuranceService insuranceService, IRepositoryWrapper repoWrapper, ILogger<InsurancePSWebHookService> logger, PaystackService paystackService,
-             IOptions<SubscriptionDuration> subscriptionAccessor, TokenizationService tokenizationService, CorporateInsuranceService corporateInsurance,
-             FamilyInsuranceService familyInsurance, IOptions<Application.Helpers.Paystack> paystackOptions, IHttpClientFactory httpClientFactory)
+             IOptions<SubscriptionDuration> subscriptionAccessor, TokenizationService tokenizationService, CorporateInsuranceService corporateInsurance,IEmailSender emailSender,
+             FamilyInsuranceService familyInsurance, IOptions<Application.Helpers.Paystack> paystackOptions, IHttpClientFactory httpClientFactory,
+             IUniqueIdentifier uniqueIdentifier,Card_SubscriptionService cardService,HMOIntegrationService hmoIntegrationService)
         {
             _insuranceSerivce = insuranceService;
             _repoWrapper = repoWrapper;
@@ -46,9 +53,13 @@ namespace Application.Services.HealthInsured
             _paystackService = paystackService;
             _tokenizationService = tokenizationService;
             _corporateInsurance = corporateInsurance;
+            _emailSender = emailSender;
             _familyInsurance = familyInsurance;
             SubscriptionAccessor = subscriptionAccessor.Value;
             _httpClientFactory = httpClientFactory;
+            _uniqueIdentifier = uniqueIdentifier;
+            _cardService = cardService;
+            _hmoIntegrationService = hmoIntegrationService;
             _paystackOptions = paystackOptions.Value;
         }
 
@@ -254,7 +265,7 @@ namespace Application.Services.HealthInsured
                     $"| Reference :{reference} | Amount : {amount}]");
 
                 await ProcessWebHook_SuccessfulInsuranceIndividualPayment_FirstTimePayment(insuranceUserProfile);
-                await _tokenizationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
+                await _hmoIntegrationService.SendDetailsToInsuranceProvider(insuranceUserProfile);
             }
             if (decimal.Parse(amount) <= decimal.Parse("100"))
             {
@@ -267,7 +278,7 @@ namespace Application.Services.HealthInsured
         {
             
             insuranceUserProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
-            insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _insuranceSerivce.GetUniqueCode() : "";
+            insuranceUserProfile.TransId = (insuranceUserProfile.InsuranceService == null | insuranceUserProfile.InsuranceService == InsuranceProvider.Axamansard.ToString()) ? _uniqueIdentifier.GetUniqueCode(10) : "";
 
             // Schedule debit email reminder for user 
             insuranceUserProfile.PendingEmailJobId = BackgroundJob.Schedule(() => _insuranceSerivce.SendEmailReminder(insuranceUserProfile.Email, insuranceUserProfile.Surname,"", null),
@@ -280,8 +291,8 @@ namespace Application.Services.HealthInsured
             checkprofileComplete.TokenizationCompleted = true;
             _repoWrapper.InsuranceCompletionProfile.Update(checkprofileComplete);
 
-            _insuranceSerivce.SendSuccesfulSubscriptionMail(insuranceUserProfile.Email, insuranceUserProfile.Surname, insuranceUserProfile.TransId, insuranceUserProfile.CareProviderName,
-                insuranceUserProfile.PlanCode);
+            _emailSender.HealthInsuredSubscriptionMail(insuranceUserProfile.Email, "Active Free Trial", insuranceUserProfile.Surname, insuranceUserProfile.TransId,
+               insuranceUserProfile.CareProviderName, insuranceUserProfile.PlanCode);
 
             insuranceUserProfile.SubscriptionStatus = true;
             insuranceUserProfile.ActiveStatus = true;
@@ -313,7 +324,7 @@ namespace Application.Services.HealthInsured
                     {
                         _logger.LogInformation($"Enqueue Onbording Corporate users");
                         //Background task to Enroll all users to HMO.
-                       BackgroundJob.Enqueue(() => _corporateInsurance.OnboardCompanyUsersToHMO(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value, companyProfile.InsuranceService));
+                       BackgroundJob.Enqueue(() => _hmoIntegrationService.OnboardCompanyUsersToHMO(companyProfile.UserId, null, companyProfile.NextPaymentDate.Value, companyProfile.InsuranceService));
                     }
 
                     //Background task to schedule debit at the end of next cycle
@@ -345,7 +356,7 @@ namespace Application.Services.HealthInsured
                 familyProfile.TokenizationCompleted = true;
                 _repoWrapper.FamilyProfile.Update(familyProfile);
                 await _repoWrapper.Save();
-                await _tokenizationService.FamilyMembersActivation(familyProfile);
+                await _cardService.FamilyMembersActivation(familyProfile);
                 _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
             }
             if (decimal.Parse(amount) <= decimal.Parse("100"))

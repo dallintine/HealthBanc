@@ -60,7 +60,7 @@ namespace HealthBanc
 
                         //context.Database.EnsureDeleted();
                         context.Database.Migrate();
-                        Seed.SeedData(context, userManager, roleManager).Wait();
+                        //Seed.SeedData(context, userManager, roleManager).Wait();
                     }
                     catch (Exception ex)
                     {

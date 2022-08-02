@@ -1,8 +1,10 @@
 ﻿using Domain.Models.Axa.Hygeia_Insurance;
 using Domain.Models.ReportAndLogs;
+using Domain.Models.Wallet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Domain.Models.Axa_Hygeia_Insurance
@@ -16,6 +18,9 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         public int? UserId { get; set; }
         public int? CompanyProfileId { get; set; }
         public string CompanyName { get; set; }
+        // <summary>
+        /// The Possible Values for <see cref="InsuranceUserProfile.CompanySubscribedStatus"/>
+        /// </summary>
         public string CompanySubscribedStatus { get; set; }
         public int? FamilyProfileId { get; set; }
         public string FamilyEmail { get; set; }
@@ -50,26 +55,18 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         public DateTime EndActiveStatusDate { get; set; }
         public DateTime StartActiveStatusDate { get; set; }
         public bool? SubscriptionStatus { get; set; }
-        public string _insuranceService;
-        public string InsuranceService
-        {
-            get { return _insuranceService; }
-            set
-            {
-                if (Enum.IsDefined(typeof(InsuranceProvider), value))
-                {
-                    _insuranceService = value;
-                }
-                else
-                {
-                    throw new ArgumentException("Value of InsuranceUserProfile.InsuranceService is not valid. Please check defined enumerated values for providers in the InsuranceProvider class");
-                }
-            }
-        }
+
+        /// <summary>
+        /// The Insurance Service provider. For Possible Providers <see cref="InsuranceProvider"/>
+        /// </summary>
+        public string InsuranceService { get; set; }
         public DateTime? DateCreated { get; set; }
+        public string PaymentMethod { get; set; }
         public List<DebitCard> Cards { get; set; }
+        [JsonIgnore]
         public List<PaymentReference> PaymentReferences { get; set; }
         public List<ActivityLog> HealthInsuredActivityLogs { get; set; }
+        public UserWallet UserWallet { get; set; }
     }
 
     // <summary>
