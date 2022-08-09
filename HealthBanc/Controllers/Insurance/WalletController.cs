@@ -23,7 +23,7 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Generate OTP for wallet
+        /// Generate OTP for existing wallet
         /// </summary>
         /// <param name="mobileNumber"></param>
         /// <returns></returns>
@@ -40,6 +40,11 @@ namespace HealthBanc.Controllers.Insurance
             return BadRequest(response);
         }
 
+        /// <summary>
+        /// Generate OTP for a new wallet
+        /// </summary>
+        /// <param name="mobileNumber"></param>
+        /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
@@ -54,26 +59,38 @@ namespace HealthBanc.Controllers.Insurance
         }
 
         /// <summary>
-        /// Validate OTP
+        /// Validate OTP and link account to an existing wallet
         /// </summary>
-        /// <param name="otp"></param>
-        /// <param name="action"></param>
+        /// <param name="linkWallet"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> LinkWallet(string otp,string action)
+        [HttpPost("[action]")]
+        public async Task<IActionResult> LinkWallet(LinkWalletModel linkWallet )
         {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-            var response = await _walletService.LinkWallet(id, otp,action);
-            if (response.Status) return Ok(response);
-            return BadRequest(response);
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int id = int.Parse(userId);
+                var response = await _walletService.LinkWallet(id, linkWallet);
+                if (response.Status) return Ok(response);
+                return BadRequest(response);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
-        /// Create Wallet
+        /// Validate OTP and Create Wallet for the user
         /// </summary>
         /// <param name="walletModel"></param>
         /// <returns></returns>

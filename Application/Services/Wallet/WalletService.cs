@@ -111,10 +111,10 @@ namespace Application.Services.Wallet
             return new ResponseMessage<WalletValidationResponse> { Message = response.Message, ResponseCode = 21 };
         }
 
-        public async Task<ResponseMessage<string>> LinkWallet(int userID, string otp,string action)
+        public async Task<ResponseMessage<string>> LinkWallet(int userID, LinkWalletModel linkWallet)
         {
-            _logger.LogInformation($"Processing Link  Wallet Payload [UserId :{userID} | OTP : {otp} | Action : {action} ]\n");
-            var validateOTP = await ValidateOtp(userID, otp, action);
+            _logger.LogInformation($"Processing Link  Wallet Payload [UserId :{userID} | OTP : {linkWallet.OTP} | Action : {linkWallet.Action} ]\n");
+            var validateOTP = await ValidateOtp(userID, linkWallet.OTP, linkWallet.Action);
             if (validateOTP.Status)
             {
                 var profile = await _repositoryWrapper.InsuranceProfile.GetByUserIdAsync(userID);
@@ -296,7 +296,8 @@ namespace Application.Services.Wallet
 
         private async Task<ResponseMessage> GenerateOtp(string phoneNumber, int userId, string action)
         {
-            string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
+            //string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
+            string generateOtpCode = "123456";
             string otpMessage = $"Kindly use this OTP:{generateOtpCode} to complete the wallet creation/linking process on HealthInsured." +
                 $"If you did not initiate this, kindly ignore";
             //Send User OTP SMS
