@@ -117,12 +117,18 @@ namespace Application.Services.Wallet
             var validateOTP = await ValidateOtp(userID, linkWallet.OTP, linkWallet.Action);
             if (validateOTP.Status)
             {
-                var profile = await _repositoryWrapper.InsuranceProfile.GetByUserIdAsync(userID);
+                var profile = await _repositoryWrapper.InsuranceProfile.GetWalletByUserIdAsync(userID);
                 if (profile is null)
                 {
                     _logger.LogInformation($"Link Wallet terminated [Reason : Insurance profile not found ]\n");
                     return new ResponseMessage<string> { ResponseCode = 25, Message = "No Record Found - Kindly create an insurance profile" };
                 }
+                if (profile.UserWallet != null)
+                {
+                    _logger.LogInformation($"Link Wallet terminated [Reason : Wallet exist]\n");
+                    return new ResponseMessage<string> { ResponseCode = 30, Message = "Wallet exist for current profile", Status = false };
+                }
+
                 var walletData = new GetWalletDetails(validateOTP.Data.PhoneNumber);
                 _logger.LogInformation($"Processing Wallet Details For [Mobile :{walletData.Mobile}]\n");
                 var encryptData = _encryptionsAndDecryption.Encrypt(JsonConvert.SerializeObject(walletData));
@@ -187,11 +193,16 @@ namespace Application.Services.Wallet
             var validateOTP = await ValidateOtp(userId, walletModel.Otp, walletModel.Action);
             if (validateOTP.Status)
             {
-                var profile = await _repositoryWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+                var profile = await _repositoryWrapper.InsuranceProfile.GetWalletByUserIdAsync(userId);
                 if (profile is null)
                 {
                     _logger.LogInformation($"Create Wallet terminated [Reason : Insurance profile not found ]\n");
                     return new ResponseMessage<string> { ResponseCode = 25, Message = "No Record Found - Kindly create an insurance profile" };
+                }
+                if(profile.UserWallet != null)
+                {
+                    _logger.LogInformation($"Link Wallet terminated [Reason : Wallet exist]\n");
+                    return new ResponseMessage<string> { ResponseCode = 30, Message = "Wallet exist for current profile", Status = false };
                 }
                 var createWalletData = new CreateWallet
                 {
