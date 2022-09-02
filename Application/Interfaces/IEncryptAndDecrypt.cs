@@ -9,5 +9,6 @@ namespace Application.Interfaces
     {
         string EncryptString(string text, string keyString);
         string DecryptString(string cipherText, string keyString);
+        string Sha512Hash(string value);
     }
 }

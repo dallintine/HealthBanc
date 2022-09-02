@@ -29,12 +29,13 @@ namespace Application.Services.Wallet
         private readonly IUniqueIdentifier _uniqueIdentifier;
         private readonly IWalletEncryptionsAndDecryption _encryptionsAndDecryption;
         private readonly ISMSService _smsService;
+        private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly Card_SubscriptionService _cardService;
         private readonly HMOIntegrationService _hmoIntegrationService;
         private readonly WalletSettings _walletSettings;
 
         public WalletService(WalletConnect walletConnect , ILogger<WalletService> logger,IRepositoryWrapper repositoryWrapper, IUniqueIdentifier uniqueIdentifier,
-            IWalletEncryptionsAndDecryption encryptionsAndDecryption,ISMSService smsService, IOptions<WalletSettings> WalletSettings,
+            IWalletEncryptionsAndDecryption encryptionsAndDecryption,ISMSService smsService, IOptions<WalletSettings> WalletSettings,IEncryptAndDecrypt encryptAndDecrypt,
             Card_SubscriptionService cardService, HMOIntegrationService hmoIntegrationService)
         {
             _walletConnect = walletConnect;
@@ -43,7 +44,8 @@ namespace Application.Services.Wallet
             _uniqueIdentifier = uniqueIdentifier;
             _encryptionsAndDecryption = encryptionsAndDecryption;
             _smsService = smsService;
-           _cardService = cardService;
+            _encryptAndDecrypt = encryptAndDecrypt;
+            _cardService = cardService;
             _hmoIntegrationService = hmoIntegrationService;
             _walletSettings = WalletSettings.Value;
         }
@@ -290,8 +292,7 @@ namespace Application.Services.Wallet
 
         private async Task<ResponseMessage> GenerateOtp(string phoneNumber, int userId, string action)
         {
-            //string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
-            string generateOtpCode = "123456";
+            string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
             string otpMessage = $"Kindly use this OTP:{generateOtpCode} to complete the wallet creation/linking process on HealthInsured." +
                 $"If you did not initiate this, kindly ignore";
             //Send User OTP SMS
@@ -303,7 +304,7 @@ namespace Application.Services.Wallet
                 {
                     var saveotp = new OtpValidation()
                     {
-                        OTP = generateOtpCode,
+                        OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode),
                         PhoneNumber = phoneNumber,
                         GeneratedDate = DateTimeOffset.Now,
                         ExpiredDate = DateTimeOffset.Now.AddMinutes(7),
@@ -315,7 +316,7 @@ namespace Application.Services.Wallet
                 }
                 else
                 {
-                    otp.OTP = generateOtpCode;
+                    otp.OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode);
                     otp.PhoneNumber = phoneNumber;
                     otp.GeneratedDate = DateTimeOffset.Now;
                     otp.ExpiredDate = DateTimeOffset.Now.AddMinutes(7);
@@ -346,7 +347,7 @@ namespace Application.Services.Wallet
                 _logger.LogInformation($"Processing Validate OTP Terminated [Reason : OTP Code has expired, Please try again]\n");
                 return new ResponseMessage<OtpValidation> { ResponseCode = 21, Message = "OTP Code has expired, Please try again" };
             }
-            if (otp == otpValidation.OTP && otpValidation.Action.ToLower() == action.ToLower())
+            if (_encryptAndDecrypt.Sha512Hash(otp) == otpValidation.OTP && otpValidation.Action.ToLower() == action.ToLower())
             {
                 _logger.LogInformation($"Processing Validate OTP Successful \n");
                 return new ResponseMessage<OtpValidation> { ResponseCode = 00, Message = "Approved or Completed successfully", Data = otpValidation, Status = true };

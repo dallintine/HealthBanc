@@ -76,5 +76,18 @@ namespace Infrastructure.EncryptionService
                 }
             }
         }
+
+        public string Sha512Hash(string value)
+        {
+            var bytes = Encoding.UTF8.GetBytes(value);
+            using (var hash = SHA512.Create())
+            {
+                var hashedInputBytes = hash.ComputeHash(bytes);
+                var hashedInputStringBuilder = new StringBuilder(128);
+                foreach (var b in hashedInputBytes)
+                    hashedInputStringBuilder.Append(b.ToString("x2"));
+                return hashedInputStringBuilder.ToString().ToUpper(); ;
+            }
+        }
     }
 }
