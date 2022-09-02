@@ -202,7 +202,7 @@ namespace Application.Services.Paystack
             }
             catch(Exception ex)
             {
-                _logger.LogCritical("An error occurred while calling charge transaction", ex);
+                _logger.LogWarning("An error occurred while calling charge transaction", ex);
                 return new TokenizationResponse { Message = ex.Message.ToString(), Status = false };
             }            
         }
@@ -276,7 +276,7 @@ namespace Application.Services.Paystack
             if(status == "pending")
             {
                 _logger.LogInformation($"Charge Card Returned Pending");
-                Thread.Sleep(11000);
+                await Task.Delay(11000);
                 var pending = await CheckPendingCharge(reference, phoneNumber, birthDate, pin);
                 return pending;
             }

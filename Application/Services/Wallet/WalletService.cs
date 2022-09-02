@@ -266,49 +266,26 @@ namespace Application.Services.Wallet
             return new ResponseMessage<string> { Message = validateOTP.Message, ResponseCode = validateOTP.ResponseCode, Status = validateOTP.Status };
         }
 
-        public async Task<ResponseMessage> WalletToSterling(int userId, decimal amount, string mobileNumber, string channel)
-        {           
-            var wallettransfer = new WalletToAccount
+        /// <summary>
+        /// Switch payment method to wallet payment
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<ResponseMessage> SwitchToWalletPayment(int userId)
+        {
+            var insuranceProfile =await  _repositoryWrapper.InsuranceProfile.GetWalletByUserIdAsync( userId);
+            if(insuranceProfile != null)
             {
-                CURRENCYCODE = "NGN",
-                ChannelID = int.Parse(_walletSettings.ChannelId),
-                Toacct = _walletSettings.Toacct,
-                PaymentRef = Guid.NewGuid().ToString(),
-                Amt = amount.ToString(),
-                TransferType = int.Parse(_walletSettings.TransferType),
-                Remarks = "HealthInsured Payment",
-                Frmacct = mobileNumber,
-            };
-            var payload = JsonConvert.SerializeObject(wallettransfer);
-            _logger.LogInformation($"Wallet to Sterling payload [Payload : {payload} ]\n");
-            var encryptData = _encryptionsAndDecryption.Encrypt(payload);
-            var transferResponse = await _walletConnect.WalletToSterlingFT(encryptData);
-            var decryptedResponse = _encryptionsAndDecryption.Decrypt(transferResponse);
-            _logger.LogInformation($"Wallet To Account decrypted response : {decryptedResponse}");
-
-            var response = JsonConvert.DeserializeObject<ApiResponse<WalletToAccountResponse>>(decryptedResponse);
-            var paymentReference = new PaymentReference()
-            {
-                UserId = userId,
-                PaymentMethod = PaymentMethod.Wallet.ToString(),
-                Channel = channel,
-                Refernce = wallettransfer.PaymentRef,
-                Amount = amount
-            };
-            if (response.Data.Sent)
-            {
-                paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
-                _repositoryWrapper.PaymentReference.Create(paymentReference);
+                if(insuranceProfile.UserWallet is null)
+                {
+                    return new ResponseMessage { ResponseCode = 25, Message = "Wallet does not exist please create wallet" };
+                }
+                insuranceProfile.PaymentMethod = PaymentMethod.Wallet.ToString();
+                _repositoryWrapper.InsuranceProfile.Update(insuranceProfile);
                 await _repositoryWrapper.Save();
-                return new ResponseMessage { ResponseCode = 00, Message = "Approved or completed Successfully", Status = true };
+                return new ResponseMessage { Message = "Payment method was switched to wallet successfully", ResponseCode = 00, Status = true };
             }
-            else
-            {
-                paymentReference.Status = PaymentReference_StatusValue.Failed.ToString();
-                _repositoryWrapper.PaymentReference.Create(paymentReference);
-                await _repositoryWrapper.Save();
-                return new ResponseMessage { ResponseCode = int.Parse(response.Response), Message = response.Message };
-            }
+            return new ResponseMessage { ResponseCode = 25, Message = "Profile not found" };
         }
 
         private async Task<ResponseMessage> GenerateOtp(string phoneNumber, int userId, string action)

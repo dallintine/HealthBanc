@@ -15,6 +15,9 @@ using Domain.Models.Axa.Hygeia_Insurance;
 using DataAccess;
 using Microsoft.Extensions.Logging;
 using Application.Services.HealthInsured;
+using Domain.Enums;
+using Application.Services.Wallet;
+
 namespace Application.Services.HealthInsured_AxaMansard.Insurance
 {
     public class TokenizationService
@@ -23,18 +26,20 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         private readonly HMOIntegrationService _hmoIntegrationService;
         private readonly IEmailSender _emailSender;
         private readonly ILogger<TokenizationService> _logger;
+        private readonly WalletPaymentService _walletPaymentService;
         private readonly IRepositoryWrapper _repoWrapper;
 
         private SubscriptionDuration SubscriptionAccessor { get; }
 
 
         public TokenizationService(PaystackService paystackService,HMOIntegrationService hmoIntegrationService,IOptions<SubscriptionDuration> subscriptionAccessor,
-            IEmailSender emailSender,IRepositoryWrapper repoWrapper,ILogger<TokenizationService> logger)
+            IEmailSender emailSender,IRepositoryWrapper repoWrapper,ILogger<TokenizationService> logger, WalletPaymentService walletPaymentService)
         {
             _paystackService = paystackService;
             _hmoIntegrationService = hmoIntegrationService;
             _emailSender = emailSender;
             _logger = logger;
+            _walletPaymentService = walletPaymentService;
             SubscriptionAccessor = subscriptionAccessor.Value;
             _repoWrapper = repoWrapper;
         }
@@ -61,37 +66,54 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         public async Task SchedulePaymentLogic(int userId, int axamansardUserId, PerformContext context)
         {
             _logger.LogInformation($"SchedulePayment Logic [UserId : {userId} |  insuranceProfileId : {axamansardUserId}] \n");
+            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(axamansardUserId);
+
+            var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
+                   : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
+
             var activeCard = new DebitCard();
             var family = new FamilyProfile();
             var payee = new InsuranceUserProfile();
             var jobId = context.BackgroundJob.Id;
             var chageAuthorizationModel = new ChargeAuthorization();
+            bool paymentStatus = false;
+            string reference = null;
 
-            var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByIdAsync(axamansardUserId);
-            if (!(insuranceProfile.FamilyProfileId is null))
+            if (insuranceProfile?.PaymentMethod == PaymentMethod.Wallet.ToString())
             {
-                family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
-                activeCard = family.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
-                chageAuthorizationModel.email = family.Email;
-            }
-            else if(!(insuranceProfile.InsurancePayeeId is null))
-            {
-                payee = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfile.InsurancePayeeId.Value);
-                activeCard = payee.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
-                chageAuthorizationModel.email = payee.Email;
+                var walletpayment = await _walletPaymentService.WalletToSterling(insuranceProfile.UserId.Value, (insuranceProfile.Premium), insuranceProfile.PhoneNumber, channel);
+                if(walletpayment.Status) paymentStatus = true;
             }
             else
             {
-                activeCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
-                chageAuthorizationModel.email = insuranceProfile.Email;
-            }
+                if (!(insuranceProfile.FamilyProfileId is null))
+                {
+                    family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
+                    activeCard = family.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                    chageAuthorizationModel.email = family.Email;
+                }
+                else if (!(insuranceProfile.InsurancePayeeId is null))
+                {
+                    payee = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfile.InsurancePayeeId.Value);
+                    activeCard = payee.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                    chageAuthorizationModel.email = payee.Email;
+                }
+                else
+                {
+                    activeCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                    chageAuthorizationModel.email = insuranceProfile.Email;
+                }
 
+                chageAuthorizationModel.amount = (insuranceProfile.Premium * 100).ToString();
+                chageAuthorizationModel.authorization_code = activeCard.Authorization_Code;
 
-            chageAuthorizationModel.amount = (insuranceProfile.Premium * 100).ToString();
-            chageAuthorizationModel.authorization_code = activeCard.Authorization_Code;
+                var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
 
-            var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
-            if (chargeAuthorization.Status)
+                if (chargeAuthorization.Status) paymentStatus = true;
+                reference = chargeAuthorization.Reference;
+            }           
+            
+            if (paymentStatus)
             {
                 if (insuranceProfile.InsuranceService.ToLower() != InsuranceProvider.Hygeia.ToString().ToLower() || insuranceProfile.InsuranceService == null)
                 {
@@ -103,54 +125,56 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                 if (insuranceProfile.FamilyProfileId != null)
                 {
-                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, family,null, chargeAuthorization.Reference);
+                    var paymentReference = new PaymentReference(channel, reference, null, null, family.Id, family.UserId, insuranceProfile.Premium,
+                        PaymentReference_StatusValue.Successful.ToString());
+                    _repoWrapper.PaymentReference.Create(paymentReference);
+                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, family,null);
                 }
                 else if(insuranceProfile.InsurancePayeeId != null)
                 {
-                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, null,payee, chargeAuthorization.Reference);
+                    var paymentReference = new PaymentReference(channel, reference, payee.Id, null, null, payee.UserId.Value, insuranceProfile.Premium,
+                        PaymentReference_StatusValue.Successful.ToString());
+                    _repoWrapper.PaymentReference.Create(paymentReference);
+                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, null,payee);
                 }
                 else
                 {
-                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, null,null, chargeAuthorization.Reference);
+                    var paymentReference = new PaymentReference(channel, reference, insuranceProfile.Id, null, null, insuranceProfile.UserId.Value, insuranceProfile.Premium,
+                        PaymentReference_StatusValue.Successful.ToString());
+                    _repoWrapper.PaymentReference.Create(paymentReference);
+                    await Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(insuranceProfile, null,null);
                 }
             }
             else
             {
-                var channel = insuranceProfile.InsuranceService == InsuranceProvider.Hygeia.ToString() ? PaymentReference_ChannelValue.healthinsured_hygeia.ToString()
-                    : PaymentReference_ChannelValue.healthinsured_axamansard.ToString();
-
                 if (!(insuranceProfile.FamilyProfileId is null))
                 {
-                    //_insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
-                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, null, null, family.Id, family.UserId
+                    var paymentReference = new PaymentReference(channel, reference, null, null, family.Id, family.UserId
                     , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
                     await Process_FailedInsuranceIndividualPayment_ScheduledPaument(insuranceProfile, family,null);
                 }
                 else if(!(insuranceProfile.InsurancePayeeId is null))
                 {
-                    //_insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
-                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, payee.Id, null, null, payee.UserId.Value
-                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
+                    var paymentReference = new PaymentReference(channel, reference, payee.Id, null, null, payee.UserId.Value, insuranceProfile.Premium,
+                        PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
                     await Process_FailedInsuranceIndividualPayment_ScheduledPaument(insuranceProfile, null,payee);
                 }
                 else
                 {
-                    //_insuranceSerivce.SendEmailOnFailedDebit(insuranceProfile.Email, insuranceProfile.Surname, insuranceProfile.Premium.ToString());
-                    var paymentReference = new PaymentReference(channel, chargeAuthorization.Reference, insuranceProfile.Id, null, null, insuranceProfile.UserId.Value
-                    , insuranceProfile.Premium, PaymentReference_StatusValue.Failed.ToString());
+                    var paymentReference = new PaymentReference(channel, reference, insuranceProfile.Id, null, null, insuranceProfile.UserId.Value , insuranceProfile.Premium,
+                        PaymentReference_StatusValue.Failed.ToString());
                     _repoWrapper.PaymentReference.Create(paymentReference);
                     await Process_FailedInsuranceIndividualPayment_ScheduledPaument(insuranceProfile, null,null);
-                }
-                _repoWrapper.InsuranceProfile.Update(insuranceProfile);
-                await _repoWrapper.InsuranceProfile.Save();
+                }            
                 BackgroundJob.Delete(jobId);
             }
+            await _repoWrapper.InsuranceProfile.Save();
             await Task.CompletedTask;
         }
 
-        public async Task Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, FamilyProfile family, InsuranceUserProfile payee, string reference)
+        public async Task Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment(InsuranceUserProfile insuranceUserProfile, FamilyProfile family, InsuranceUserProfile payee)
         {
             _logger.LogInformation($"Process_SuccessfulInsuranceIndividualPayment_ScheduledPayment\n");
             insuranceUserProfile.StartActiveStatusDate =  DateTime.Now ;

@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Application.ViewModels.HealthInsured;
 using DataAccess;
 using Application.Services.Card;
+using Application.Services.Activation_Deactivation;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -25,14 +26,17 @@ namespace HealthBanc.Controllers.Insurance
         private readonly AuditLogService _auditLogServices;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly Card_SubscriptionService _cardService;
+        private readonly RestrictionService _restrictionService;
         public string ipAddress;
         public StringValues agent;
 
-        public TokenizationController(IHttpContextAccessor accessor, AuditLogService auditLogServices,IRepositoryWrapper repoWrapper,Card_SubscriptionService cardService)
+        public TokenizationController(IHttpContextAccessor accessor, AuditLogService auditLogServices,IRepositoryWrapper repoWrapper,Card_SubscriptionService cardService,
+            RestrictionService restrictionService)
         {
             _auditLogServices = auditLogServices;
             _repoWrapper = repoWrapper;
             _cardService = cardService;
+            _restrictionService = restrictionService;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -223,7 +227,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var cancelSubscriptionResult = await _cardService.CancelSubscription(id, reason);
+            var cancelSubscriptionResult = await _restrictionService.CancelSubscription(id, reason);
             if (cancelSubscriptionResult.Status)
             {
                 return Ok(cancelSubscriptionResult);
@@ -244,7 +248,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var reactivatewithPrimaryCardResponse = await _cardService.ReactivateWithPresentPrimaryCard(id);
+            var reactivatewithPrimaryCardResponse = await _restrictionService.Reactivate(id);
 
             if (reactivatewithPrimaryCardResponse.Status)
             {
@@ -266,7 +270,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var response = await _cardService.DeactivateReferee(id, insuranceProfileId);
+            var response = await _restrictionService.DeactivateReferee(id, insuranceProfileId);
             if (response.Status)
             {
                 return Ok(response);
@@ -287,7 +291,7 @@ namespace HealthBanc.Controllers.Insurance
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var response = await _cardService.ActivateRefereeWithPrimaryCard(id, insuranceProfileId);
+            var response = await _restrictionService.ActivateReferee(id, insuranceProfileId);
             if (response.Status)
             {
                 return Ok(response);
@@ -309,7 +313,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var response = await _cardService.DeactivateCompanyBeneficiaries(beneficiaryListViewModel, id);
+            var response = await _restrictionService.DeactivateCompanyBeneficiaries(beneficiaryListViewModel, id);
             if (response.Status)
             {
                 return Ok(response);
@@ -335,7 +339,7 @@ namespace HealthBanc.Controllers.Insurance
             var insuranceProfile = familyProfile.InsuranceUserProfiles.Where(x => x.Id == insuranceProfileId).FirstOrDefault();
             if(insuranceProfile != null)
             {
-                var response =  await _cardService.DeactivateFamilyMember(insuranceProfile);
+                var response =  await _restrictionService.DeactivateFamilyMember(insuranceProfile);
                 if (response.Status)
                 {
                     return Ok(response);
@@ -359,7 +363,7 @@ namespace HealthBanc.Controllers.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
-            var response = await _cardService.ActivateFamilyMemberWithPrimaryCard(id, insuranceProfileId);
+            var response = await _restrictionService.ActivateFamilyMember(id, insuranceProfileId);
             if (response.Status)
             {
                 return Ok(response);
@@ -368,6 +372,24 @@ namespace HealthBanc.Controllers.Insurance
             {
                 return BadRequest(response);
             }
+        }
+
+
+        /// <summary>
+        /// Switch Payment method to card payment
+        /// </summary>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SwitchToCardPayment()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _cardService.SwitchToCardPayment(id);
+            if (response.Status) return Ok(response);
+            return BadRequest(response);
         }
     }
 }

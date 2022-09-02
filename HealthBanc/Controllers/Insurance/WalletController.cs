@@ -136,5 +136,22 @@ namespace HealthBanc.Controllers.Insurance
             if (response.Status) return Ok(response);
             return BadRequest(response);
         }
+
+        /// <summary>
+        /// Switch Payment method to wallet payment
+        /// </summary>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<WalletValidationResponse>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage<WalletValidationResponse>))]
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SwitchToWalletPayment()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _walletService.SwitchToWalletPayment(id);
+            if (response.Status) return Ok(response);
+            return BadRequest(response);
+        }
     }
 }

@@ -20,7 +20,7 @@ namespace DataAccess.HealthInsured.Implementation
 
         public async Task<InsuranceUserProfile> GetByUserIdAsync(int id)
         {
-            return await _context.InsuranceUserProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.UserId == id);
+            return await _context.InsuranceUserProfiles.Include(x => x.Cards).Include(x => x.UserWallet).FirstOrDefaultAsync(x => x.UserId == id);
         }
 
         public async Task<InsuranceUserProfile> GetWalletByUserIdAsync(int id)

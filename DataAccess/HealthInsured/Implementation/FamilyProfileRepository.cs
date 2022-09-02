@@ -17,6 +17,11 @@ namespace DataAccess.HealthInsured.Implementation
         {
         }
 
+        public async Task<FamilyProfile> GetWalletByUserId(int userId)
+        {
+            return await _context.FamilyProfiles.Include(x => x.UserWallet).FirstOrDefaultAsync(x => x.UserId == userId);
+        }
+
         public async Task<FamilyProfile> GetByUserId(int userId)
         {
             return await _context.FamilyProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.UserId == userId);

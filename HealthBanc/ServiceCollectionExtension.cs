@@ -2,6 +2,7 @@
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Interfaces;
 using Application.Services;
+using Application.Services.Activation_Deactivation;
 using Application.Services.Admin;
 using Application.Services.AuditAndReport;
 using Application.Services.Card;
@@ -122,6 +123,9 @@ namespace HealthBanc
             services.AddScoped<WalletConnect>();
             services.AddScoped<WalletService>();
             services.AddScoped<OTPService>();
+            services.AddScoped<RestrictionService>();
+            services.AddScoped<WalletPaymentService>();
+
         }
     }
 }

@@ -3,6 +3,7 @@ using Application.AuditAndReport.AuditLog;
 using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Helpers;
+using Application.Interfaces;
 using Application.Services;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
@@ -21,10 +22,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace HealthBanc.Controllers
@@ -41,6 +45,7 @@ namespace HealthBanc.Controllers
         private readonly HMOIntegrationService _integrationService;
         private readonly IMapper _mapper;
         private readonly IOptions<ConnectionStrings> connectionString;
+        private readonly ISMSService _smsService;
         private readonly AuditLogService _auditLogServices;
         private readonly ImageService _imageService;
         private readonly ILogger<UtilityController> _logger;
@@ -48,7 +53,7 @@ namespace HealthBanc.Controllers
         private ConnectionStrings ConnectionStrings { get; }
 
         public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
-            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper, IOptions<ConnectionStrings> connectionString,
+            IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper, IOptions<ConnectionStrings> connectionString, ISMSService smsService,
             AuditLogService auditLogServices,ImageService imageService,ILogger<UtilityController> logger)
         {
             _insuranceService = insuranceService;
@@ -59,6 +64,7 @@ namespace HealthBanc.Controllers
             _integrationService = integrationService;
             _mapper = mapper;
             this.connectionString = connectionString;
+            _smsService = smsService;
             _auditLogServices = auditLogServices;
             _imageService = imageService;
             _logger = logger;
@@ -528,6 +534,13 @@ namespace HealthBanc.Controllers
             var resp = await _integrationService.HygeiaRegisterUser(registrationModel);
             return Ok(resp);
 
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> SMSTest()
+        {
+            var smsresponse = await _smsService.SendSmsAsync("07034770338", "test test");
+            return Ok(smsresponse);
         }
     }
 }

@@ -36,6 +36,8 @@ namespace Domain.Models.Axa_Hygeia_Insurance
         /// The Insurance Service provider. For Possible Providers <see cref="InsuranceProvider"/>
         /// </summary>
         public string InsuranceService { get; set; }
+
+        public string PaymentMethod { get; set; }
         public DateTime DateCreated { get; set; }
         public List<InsuranceUserProfile> InsuranceUserProfiles { get; set; }
         public List<DebitCard> Cards { get; set; }
