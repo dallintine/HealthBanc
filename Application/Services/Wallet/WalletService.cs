@@ -32,11 +32,12 @@ namespace Application.Services.Wallet
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly Card_SubscriptionService _cardService;
         private readonly HMOIntegrationService _hmoIntegrationService;
+        private readonly Helpers.Environment _environment;
         private readonly WalletSettings _walletSettings;
 
         public WalletService(WalletConnect walletConnect , ILogger<WalletService> logger,IRepositoryWrapper repositoryWrapper, IUniqueIdentifier uniqueIdentifier,
             IWalletEncryptionsAndDecryption encryptionsAndDecryption,ISMSService smsService, IOptions<WalletSettings> WalletSettings,IEncryptAndDecrypt encryptAndDecrypt,
-            Card_SubscriptionService cardService, HMOIntegrationService hmoIntegrationService)
+            Card_SubscriptionService cardService, HMOIntegrationService hmoIntegrationService,IOptions<Helpers.Environment> environment)
         {
             _walletConnect = walletConnect;
             _logger = logger;
@@ -47,6 +48,7 @@ namespace Application.Services.Wallet
             _encryptAndDecrypt = encryptAndDecrypt;
             _cardService = cardService;
             _hmoIntegrationService = hmoIntegrationService;
+            _environment = environment.Value;
             _walletSettings = WalletSettings.Value;
         }
 
@@ -292,7 +294,12 @@ namespace Application.Services.Wallet
 
         private async Task<ResponseMessage> GenerateOtp(string phoneNumber, int userId, string action)
         {
-            string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
+            string generateOtpCode = _walletSettings.WalletOTP;
+            if (_environment.Production)
+            {
+                generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
+            }
+            
             string otpMessage = $"Kindly use this OTP:{generateOtpCode} to complete the wallet creation/linking process on HealthInsured." +
                 $"If you did not initiate this, kindly ignore";
             //Send User OTP SMS

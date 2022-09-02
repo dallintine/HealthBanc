@@ -16,6 +16,7 @@ namespace Application.Helpers
         public string CURRENCYCODE { get; set; }
         public string Toacct { get; set; }
         public string ProductId { get; set; }
-        public string ChannelId { get; set; }    
+        public string ChannelId { get; set; }  
+        public string WalletOTP { get; set; }
     }
 }
