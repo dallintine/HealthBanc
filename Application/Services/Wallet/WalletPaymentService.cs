@@ -63,7 +63,7 @@ namespace Application.Services.Wallet
                 Refernce = wallettransfer.PaymentRef,
                 Amount = amount
             };
-            if (response.Data.Sent)
+            if (response.Data != null && response.Data.Sent)
             {
                 paymentReference.Status = PaymentReference_StatusValue.Successful.ToString();
                 _repositoryWrapper.PaymentReference.Create(paymentReference);

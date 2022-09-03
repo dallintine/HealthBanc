@@ -755,7 +755,7 @@ namespace Application.Services.Card
                 insuranceProfile.PaymentMethod = PaymentMethod.Card.ToString();
                 _repositoryWrapper.InsuranceProfile.Update(insuranceProfile);
                 await _repositoryWrapper.Save();
-                return new ResponseMessage { Message = "Payment method was switched to wallet successfully", ResponseCode = 00, Status = true };
+                return new ResponseMessage { Message = "Payment method was switched to card successfully", ResponseCode = 00, Status = true };
             }
             return new ResponseMessage { ResponseCode = 25, Message = "Profile not found" };
         }

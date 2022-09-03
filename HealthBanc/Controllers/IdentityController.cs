@@ -13,6 +13,7 @@ using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
+using Domain.Enums;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
@@ -83,17 +84,18 @@ namespace HealthBanc.Controllers
         ///This Creates The User
         ///</summary>        
         ///<param name = "registrationViewModel" ></param >
+        ///<param name="app"></param>
         ///<response code="200">Success : User Created Successfully,Please Check Email To Confirm Your Email Address And Login</response>
         ///<reponse code = "400" > Error : List of Input Validation Errors</reponse>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> RegisterUser([FromBody] RegistrationViewModel registrationViewModel)
+        public async Task<IActionResult> RegisterUser([FromBody] RegistrationViewModel registrationViewModel , string app)
         {
             if (ModelState.IsValid)
             {
-                var response = await _identityService.RegisterUser(registrationViewModel);
+                var response = await _identityService.RegisterUser(registrationViewModel,app);
                 if (response.Status == true)
                 {
                     return Ok(response);
@@ -117,11 +119,12 @@ namespace HealthBanc.Controllers
         /// Social Media registration Link
         /// </summary>
         /// <param name="registrationViewModel"></param>
+        /// <param name="app"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> SocialMediaRegistrationLink([FromBody] RegistrationViewModel registrationViewModel)
+        public async Task<IActionResult> SocialMediaRegistrationLink([FromBody] RegistrationViewModel registrationViewModel, string app)
         {
             if (ModelState.IsValid)
             {
@@ -131,7 +134,7 @@ namespace HealthBanc.Controllers
                 ClientInfo c = uaParser.Parse(uaString);
                 var browser = c.UA.ToString();
                 var deviceIp = IpAddress;
-                var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel,browser, deviceIp);
+                var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel,app,browser, deviceIp);
                 if (response.Status == true)
                 {
                     return Ok(response);
@@ -157,12 +160,13 @@ namespace HealthBanc.Controllers
         /// </summary>
         /// <param name="userId">Encoded String:Takes the UserID as query Parameter</param>
         /// <param name="emailToken">Encoded String:Takes the EmailToken also as query Parameter</param>
+        /// <param name="app"></param>
         /// <response code="200">Success : Redirect to Login</response>
         ///<reponse code="400">Error : List of Input Validation Errors</reponse>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpGet("[action]")]
-        public async Task<IActionResult> ConfirmEmail(string userId, string emailToken)
+        public async Task<IActionResult> ConfirmEmail(string userId, string emailToken,string app)
         {
             if (ModelState.IsValid)
             {
@@ -173,6 +177,10 @@ namespace HealthBanc.Controllers
                 var response = await _identityService.ConfirmEmail(userId, emailToken);
                 if (response.Status == true)
                 {
+                    if(app == HealthbancApps.HealthInsured.ToString())
+                    {
+                        return Redirect(Options.APIUri.HealthInsuredSignin);
+                    }
                     return Redirect(Options.APIUri.HealthBancSignIn);
                 }
                 if(response.ResponseCode  == 23)
@@ -205,7 +213,7 @@ namespace HealthBanc.Controllers
             {
                 return BadRequest(new ResponseMessage { Message = "Your email address has previously been confirmed, kindly proceed to login", Status = false });
             }
-            var confirmResult = await _identityService.SendUserEmailVerificationAsync(user);
+            var confirmResult = await _identityService.SendUserEmailVerificationAsync(user,null);
             if (confirmResult.Status == true)
             {
                 return Ok(new ResponseMessage { Message = "Link was sent successfully, kindly check your email", Status = true });
@@ -289,22 +297,21 @@ namespace HealthBanc.Controllers
             return Ok( authResponse);
         }
 
-        //WORKING1
         /// <summary>
         /// Request user email to reset his password
         /// </summary>
-        /// <response code = "200">Success : Please Check Your Mail For Further Instructions</response>
-        /// <response code = "404">Error : Username Does Not Exist </response>
-        /// <response code = "400">Error : List of Input Validation Errors</response>
+        /// <param name="forgotPassword"></param>
+        /// <param name="app"></param>
+        /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordViewModel forgotPassword)
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordViewModel forgotPassword, string app)
         {
             if (ModelState.IsValid)
             {
-                var response = await _identityService.ForgotPassword(forgotPassword);
+                var response = await _identityService.ForgotPassword(forgotPassword,app);
                 if (response.Status == true)
                 {
                     return Ok(response);

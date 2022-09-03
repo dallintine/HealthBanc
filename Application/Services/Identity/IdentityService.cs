@@ -9,6 +9,7 @@ using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
+using Domain.Enums;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
@@ -70,7 +71,7 @@ namespace Application.Services.Identity
             return (new ResponseMessage { Status = true, ResponseCode = 0, Message = "SignOut Successful" });
         }
 
-        public async Task<ResponseMessage> RegisterUser(RegistrationViewModel registrationViewModel)
+        public async Task<ResponseMessage> RegisterUser(RegistrationViewModel registrationViewModel,string app)
         {
             var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
             if (checkUserEmail == null)
@@ -90,7 +91,7 @@ namespace Application.Services.Identity
                 {
                     await _userManager.UpdateAsync(user);
                     await _userManager.AddToRoleAsync(user, "SuperAdmin");
-                    await SendUserEmailVerificationAsync(user);
+                    await SendUserEmailVerificationAsync(user,app);
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
@@ -109,7 +110,7 @@ namespace Application.Services.Identity
             return new ResponseMessage { Message = "Email Already Exist",Status = false };
         }
 
-        public async Task<ResponseMessage> SocialMediaRegistrationLink(RegistrationViewModel registrationViewModel, string browser, string ip)
+        public async Task<ResponseMessage> SocialMediaRegistrationLink(RegistrationViewModel registrationViewModel,string app, string browser, string ip)
         {
             var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
             if (checkUserEmail == null)
@@ -130,7 +131,7 @@ namespace Application.Services.Identity
                 {
                     await _userManager.UpdateAsync(user);
                     await _userManager.AddToRoleAsync(user, "SuperAdmin");                    
-                    await SendUserEmailVerificationAsync(user);
+                    await SendUserEmailVerificationAsync(user,app);
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
@@ -314,7 +315,7 @@ namespace Application.Services.Identity
             return principal;
         }
 
-        public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword)
+        public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword, string app)
         {
             var user = await _userManager.FindByNameAsync(forgotPassword.Username);
             if (user != null)
@@ -325,11 +326,29 @@ namespace Application.Services.Identity
                 }
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var email = user.UserName;
-
-                var passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}";
+                app ??= ("Healthbanc");
+                string passwordResetLink;
+                if (app == HealthbancApps.HealthInsured.ToString())
+                {
+                    passwordResetLink = $"{Options.APIUri.HealthInsuredForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}" +
+                    $"&app={HttpUtility.UrlEncode(app)}";
+                }
+                else
+                {
+                    passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}" +
+                   $"&app={HttpUtility.UrlEncode(app)}";
+                }
 
                 // Email the user the verification code
-                _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                if (app == HealthbancApps.HealthInsured.ToString())
+                {                    
+                     _emailSender.SendHealthInsuredUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                }
+                else
+                {
+                    _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                }
+               
                 return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
             }
             return new ResponseMessage { Message = "Username Does Not Exist", Status = false };
@@ -406,7 +425,7 @@ namespace Application.Services.Identity
             }
         }      
 
-        public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user)
+        public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user, string app)
         {
             // Get the user details
             var userIdentity = await _userManager.FindByNameAsync(user.UserName);
@@ -417,10 +436,20 @@ namespace Application.Services.Identity
                 // Generate an email verification code
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-                var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(token)}";
+                app ??= ("Healthbanc");
+
+                var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(token)}&app={HttpUtility.UrlEncode(app)}";
 
                 // Email the user the verification code
-                _emailSender.SendUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
+                if(app == HealthbancApps.HealthInsured.ToString())
+                {
+                    _emailSender.SendHealthInsuredUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
+                }
+                else
+                {
+                    _emailSender.SendUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
+                }
+               
                 return new ResponseMessage { Status = true };
             }
             return new ResponseMessage { Status = true, Message = "User does not exist.could not fetch user" };

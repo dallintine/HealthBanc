@@ -26,5 +26,7 @@ namespace Application.Interfaces
         void SendHeliumNotification(string subject, string healthProvider, string providerType, string phonenumber, string providerEmail);
         void SendUserResetPasswordMail(string email, string subject, string resetUrl);
         void SendUserVerificationMail(string email, string subject, string verificationUrl);
+        void SendHealthInsuredUserVerificationMail(string email, string subject, string verificationUrl);
+        void SendHealthInsuredUserResetPasswordMail(string email, string subject, string resetUrl);
     }
 }
