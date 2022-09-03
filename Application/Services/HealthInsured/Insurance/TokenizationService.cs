@@ -78,6 +78,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             var chageAuthorizationModel = new ChargeAuthorization();
             bool paymentStatus = false;
             string reference = null;
+            bool terminateProcess = false;
 
             if (insuranceProfile?.PaymentMethod == PaymentMethod.Wallet.ToString())
             {
@@ -89,28 +90,62 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 if (!(insuranceProfile.FamilyProfileId is null))
                 {
                     family = await _repoWrapper.FamilyProfile.GetFamilyByFamilyId(insuranceProfile.FamilyProfileId.Value);
-                    activeCard = family.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
-                    chageAuthorizationModel.email = family.Email;
+                    // Check to avoid null reference error
+                    if(family.Cards.Count < 1 || family.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary) is null)
+                    {
+                        terminateProcess = true;
+                    }
+                    else
+                    {
+                        activeCard = family.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                        chageAuthorizationModel.email = family.Email;
+                    }
+                   
                 }
                 else if (!(insuranceProfile.InsurancePayeeId is null))
                 {
                     payee = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfile.InsurancePayeeId.Value);
-                    activeCard = payee.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
-                    chageAuthorizationModel.email = payee.Email;
+                    // Check to avoid null reference error
+                    if (payee.Cards.Count < 1 || payee.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary) is null)
+                    {
+                        terminateProcess = true;
+                    }
+                    else
+                    {
+                        activeCard = payee.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                        chageAuthorizationModel.email = payee.Email;
+                    }                   
                 }
                 else
                 {
-                    activeCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
-                    chageAuthorizationModel.email = insuranceProfile.Email;
+                    // Check to avoid null reference error
+                    if (insuranceProfile.Cards.Count < 1 || insuranceProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary) is null)
+                    {
+                        terminateProcess = true;
+                    }
+                    else
+                    {
+                        activeCard = insuranceProfile.Cards.FirstOrDefault(x => x.Status == (int)DebitCard_StatusValue.primary);
+                        chageAuthorizationModel.email = insuranceProfile.Email;
+                    }                    
                 }
 
-                chageAuthorizationModel.amount = (insuranceProfile.Premium * 100).ToString();
-                chageAuthorizationModel.authorization_code = activeCard.Authorization_Code;
+                if (!terminateProcess)
+                {
+                    chageAuthorizationModel.amount = (insuranceProfile.Premium * 100).ToString();
+                    chageAuthorizationModel.authorization_code = activeCard?.Authorization_Code;
 
-                var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
+                    var chargeAuthorization = await _paystackService.ChargeAuthorization(chageAuthorizationModel);
 
-                if (chargeAuthorization.Status) paymentStatus = true;
-                reference = chargeAuthorization.Reference;
+                    if (chargeAuthorization.Status) paymentStatus = true;
+                    reference = chargeAuthorization.Reference;
+                }
+                else
+                {
+                    paymentStatus = false;
+                    reference = Guid.NewGuid().ToString();
+                }
+                
             }           
             
             if (paymentStatus)

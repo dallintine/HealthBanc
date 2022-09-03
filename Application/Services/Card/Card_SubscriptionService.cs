@@ -401,7 +401,7 @@ namespace Application.Services.Card
         /// <param name="chargeCard"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        private async Task<ResponseMessage> ProcessFamilyCardTokenization(ChargeCardViewModel chargeCard, int id)
+        public async Task<ResponseMessage> ProcessFamilyCardTokenization(ChargeCardViewModel chargeCard, int id)
         {
             var familyProfile = await _repositoryWrapper.FamilyProfile.GetExtendedFamilyDetails(id);
             if (familyProfile != null)
@@ -729,7 +729,7 @@ namespace Application.Services.Card
             BackgroundJob.Enqueue(() => SendInsuranceListToInsuranceProvider(insuranceProfiles));
         }
 
-        private async Task SendInsuranceListToInsuranceProvider(List<InsuranceUserProfile> insuranceUserProfiles)
+        public async Task SendInsuranceListToInsuranceProvider(List<InsuranceUserProfile> insuranceUserProfiles)
         {
             foreach (var insuranceUserProfile in insuranceUserProfiles)
             {
