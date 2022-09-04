@@ -294,11 +294,7 @@ namespace Application.Services.Wallet
 
         private async Task<ResponseMessage> GenerateOtp(string phoneNumber, int userId, string action)
         {
-            string generateOtpCode = _walletSettings.WalletOTP;
-            if (_environment.Production)
-            {
-                generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
-            }
+            string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
             
             string otpMessage = $"Kindly use this OTP:{generateOtpCode} to complete the wallet creation/linking process on HealthInsured." +
                 $"If you did not initiate this, kindly ignore";
