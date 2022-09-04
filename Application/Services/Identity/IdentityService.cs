@@ -73,6 +73,7 @@ namespace Application.Services.Identity
 
         public async Task<ResponseMessage> RegisterUser(RegistrationViewModel registrationViewModel,string app)
         {
+            _logger.LogInformation($"Register User [App : {app}]");
             var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
             if (checkUserEmail == null)
             {
@@ -317,6 +318,7 @@ namespace Application.Services.Identity
 
         public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword, string app)
         {
+            _logger.LogInformation($"app : {app}");
             var user = await _userManager.FindByNameAsync(forgotPassword.Username);
             if (user != null)
             {
@@ -340,7 +342,7 @@ namespace Application.Services.Identity
                 }
 
                 // Email the user the verification code
-                if (app == HealthbancApps.HealthInsured.ToString())
+                if (app.ToLower() == HealthbancApps.HealthInsured.ToString().ToLower())
                 {                    
                      _emailSender.SendHealthInsuredUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
                 }
@@ -441,7 +443,7 @@ namespace Application.Services.Identity
                 var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(token)}&app={HttpUtility.UrlEncode(app)}";
 
                 // Email the user the verification code
-                if(app == HealthbancApps.HealthInsured.ToString())
+                if(app.ToLower() == HealthbancApps.HealthInsured.ToString().ToLower())
                 {
                     _emailSender.SendHealthInsuredUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
                 }
