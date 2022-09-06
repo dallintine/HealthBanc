@@ -577,7 +577,8 @@ namespace HealthBanc.Controllers
                 DOB = walletModel.DOB,
                 Gender = walletModel.Gender,
                 ChannelId = walletModel.ChannelId,
-                ProductId = walletModel.ProductId
+                ProductId = walletModel.ProductId,
+                MobileNotNuban = walletModel.MobileNotNuban
             };
             var payload = JsonConvert.SerializeObject(createWalletData);
             _logger.LogInformation($"Create Wallet Payload [Payload : {payload}]\n");
