@@ -216,7 +216,8 @@ namespace Application.Services.Wallet
                     DOB = profile.DateOfBirth,
                     Gender = profile.Gender == "Male" ? "M" : "F",
                     ChannelId = int.Parse(_walletSettings.ChannelId),
-                    ProductId = int.Parse(_walletSettings.ProductId)
+                    ProductId = int.Parse(_walletSettings.ProductId),
+                    MobileNotNuban = false
                 };
                 var payload = JsonConvert.SerializeObject(createWalletData);
                 _logger.LogInformation($"Create Wallet Payload [Payload : {payload}]\n");
