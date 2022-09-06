@@ -146,12 +146,6 @@ namespace Application.Services.Wallet
                     _logger.LogInformation($" Creating Wallet Model\n");
                     var wallet = new UserWallet()
                     {
-                        //UserId = userID,
-                        //Mobile = response.Data.Mobile,
-                        //WalletId = response.Data.Mobile[1..],
-                        //VirtualAccount = response.Data.VIRTUALACCT,
-                        //AccountTier = response.Data.ACCOUNTTIER,
-                        //InsuranceUserProfileId = profile.Id
                         UserId = userID,
                         Mobile = validateOTP.Data.PhoneNumber,
                         WalletId = validateOTP.Data.PhoneNumber[1..],

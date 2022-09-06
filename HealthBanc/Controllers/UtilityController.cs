@@ -589,5 +589,31 @@ namespace HealthBanc.Controllers
             var walletResponse = JsonConvert.DeserializeObject<CreateWalletResponse>(decryptedCreateWalletResponse);
             return Ok(new ResponseMessage { Message = decryptedCreateWalletResponse, Data = walletResponse });
         }
+
+
+        public async Task<IActionResult> WalletToSterling(decimal amount, string mobileNumber)
+        {
+            var wallettransfer = new WalletToAccount
+            {
+                CURRENCYCODE = "NGN",
+                ChannelID = int.Parse("45"),
+                Toacct = "0068632620",
+                PaymentRef = Guid.NewGuid().ToString(),
+                Amt = amount.ToString(),
+                TransferType = int.Parse("0"),
+                Remarks = "HealthInsured Payment",
+                Frmacct = mobileNumber,
+            };
+            var payload = JsonConvert.SerializeObject(wallettransfer);
+            _logger.LogInformation($"Wallet to Sterling payload [Payload : {payload} ]\n");
+            var encryptData = _encryptionsAndDecryption.Encrypt(payload);
+            var transferResponse = await _walletConnect.WalletToSterlingFT(encryptData);
+            var decryptedResponse = _encryptionsAndDecryption.Decrypt(transferResponse);
+            _logger.LogInformation($"Wallet To Account decrypted response : {decryptedResponse}");
+
+            var response = JsonConvert.DeserializeObject<ApiResponse<WalletToAccountResponse>>(decryptedResponse);
+
+            return Ok(new ResponseMessage { ResponseCode = 00, Message = decryptedResponse  , Data = response});
+        }
     }
 }
