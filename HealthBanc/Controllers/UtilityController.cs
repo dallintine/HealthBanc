@@ -1,4 +1,6 @@
 ﻿using Application.API_RequestModel.HealthInsured;
+using Application.API_RequestModel.Wallet;
+using Application.API_ResponseModel.Wallet;
 using Application.AuditAndReport.AuditLog;
 using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
@@ -7,8 +9,10 @@ using Application.Interfaces;
 using Application.Services;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
+using Application.Services.Wallet;
 using Application.ViewModels;
 using Application.ViewModels.HealthInsured;
+using Application.ViewModels.HealthInsured.Wallet;
 using AutoMapper;
 using DataAccess;
 using Domain.Models.Axa_Hygeia_Insurance;
@@ -49,12 +53,15 @@ namespace HealthBanc.Controllers
         private readonly AuditLogService _auditLogServices;
         private readonly ImageService _imageService;
         private readonly ILogger<UtilityController> _logger;
+        private readonly IWalletEncryptionsAndDecryption _encryptionsAndDecryption;
+        private readonly WalletConnect _walletConnect;
 
         private ConnectionStrings ConnectionStrings { get; }
 
         public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
             IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper, IOptions<ConnectionStrings> connectionString, ISMSService smsService,
-            AuditLogService auditLogServices,ImageService imageService,ILogger<UtilityController> logger)
+            AuditLogService auditLogServices,ImageService imageService,ILogger<UtilityController> logger, IWalletEncryptionsAndDecryption encryptionsAndDecryption,
+            WalletConnect walletConnect)
         {
             _insuranceService = insuranceService;
             _tokenizationService = tokenizationService;
@@ -68,6 +75,8 @@ namespace HealthBanc.Controllers
             _auditLogServices = auditLogServices;
             _imageService = imageService;
             _logger = logger;
+            _encryptionsAndDecryption = encryptionsAndDecryption;
+            _walletConnect = walletConnect;
             ConnectionStrings = connectionString.Value;
         }
 
@@ -541,6 +550,44 @@ namespace HealthBanc.Controllers
         {
             var smsresponse = await _smsService.SendSmsAsync("07034770338", "test test");
             return Ok(smsresponse);
+        }
+
+        [HttpGet("[action]")]
+        public async Task<IActionResult> WalletDetails(string mobileNumber)
+        {
+            var walletData = new GetWalletDetails(mobileNumber);
+            _logger.LogInformation($"Processing Wallet Details For [Mobile :{walletData.Mobile}]\n");
+            var encryptData = _encryptionsAndDecryption.Encrypt(JsonConvert.SerializeObject(walletData));
+            var encryptedModel = new EncryptedModel(encryptData);
+            var validateWalletResponse = await _walletConnect.WalletDetails(encryptedModel);
+            var decryptedResponse = _encryptionsAndDecryption.Decrypt(validateWalletResponse);
+            _logger.LogInformation($"Validate Wallet decrypted response : {decryptedResponse}");
+            var response = JsonConvert.DeserializeObject<ApiResponse<WalletValidationResponse>>(decryptedResponse);
+            return Ok(new ResponseMessage {Message = decryptedResponse ,  Data = response });
+        }
+
+        [HttpPost("[action]")]
+        public async Task<IActionResult> CreateWallet(CreateWallet walletModel)
+        {
+            var createWalletData = new CreateWallet
+            {
+                Firstname = walletModel.Firstname,
+                Lastname = walletModel.Lastname,
+                Mobile = walletModel.Mobile,
+                DOB = walletModel.DOB,
+                Gender = walletModel.Gender,
+                ChannelId = walletModel.ChannelId,
+                ProductId = walletModel.ProductId
+            };
+            var payload = JsonConvert.SerializeObject(createWalletData);
+            _logger.LogInformation($"Create Wallet Payload [Payload : {payload}]\n");
+            var encryptCreatWalletData = _encryptionsAndDecryption.Encrypt(payload);
+            var encryptedCreateWalletModel = new EncryptedModel(encryptCreatWalletData);
+            var createWalletResponse = await _walletConnect.CreateWallet(encryptedCreateWalletModel);
+            var decryptedCreateWalletResponse = _encryptionsAndDecryption.Decrypt(createWalletResponse);
+            _logger.LogInformation($"Create Wallet decrypted response : {decryptedCreateWalletResponse}");
+            var walletResponse = JsonConvert.DeserializeObject<CreateWalletResponse>(decryptedCreateWalletResponse);
+            return Ok(new ResponseMessage { Message = decryptedCreateWalletResponse, Data = walletResponse });
         }
     }
 }

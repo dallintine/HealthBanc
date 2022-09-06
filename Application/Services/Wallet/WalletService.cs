@@ -214,7 +214,7 @@ namespace Application.Services.Wallet
                     Lastname = profile.Surname,
                     Mobile = walletModel.MobileNumber,
                     DOB = profile.DateOfBirth,
-                    Gender = "M",
+                    Gender = profile.Gender == "Male" ? "M" : "F",
                     ChannelId = int.Parse(_walletSettings.ChannelId),
                     ProductId = int.Parse(_walletSettings.ProductId)
                 };
@@ -294,8 +294,7 @@ namespace Application.Services.Wallet
 
         private async Task<ResponseMessage> GenerateOtp(string phoneNumber, int userId, string action)
         {
-            //string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
-            string generateOtpCode = "123456";
+            string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
 
             string otpMessage = $"Kindly use this OTP:{generateOtpCode} to complete the wallet creation/linking process on HealthInsured." +
                 $"If you did not initiate this, kindly ignore";
