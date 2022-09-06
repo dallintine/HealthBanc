@@ -591,7 +591,7 @@ namespace HealthBanc.Controllers
             return Ok(new ResponseMessage { Message = decryptedCreateWalletResponse, Data = walletResponse });
         }
 
-
+        [HttpGet("[action]")]
         public async Task<IActionResult> WalletToSterling(decimal amount, string mobileNumber)
         {
             var wallettransfer = new WalletToAccount
