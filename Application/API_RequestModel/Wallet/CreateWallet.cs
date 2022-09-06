@@ -37,6 +37,6 @@ namespace Application.API_RequestModel.Wallet
         [JsonProperty("ProductID")]
         public int ProductId { get; set; }
 
-        public bool MobileNotNuban { get; set; };
+        public bool MobileNotNuban { get; set; }
     }
 }
