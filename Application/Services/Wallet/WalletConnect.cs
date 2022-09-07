@@ -53,11 +53,12 @@ namespace Application.Services.Wallet
             return await Execute(request, content);
         }
 
-        public async Task<string> WalletToSterlingFT(string encryptedRequest)
+        public async Task<string> WalletToSterlingFT(EncryptedModel encryptedRequest)
         {
-            _logger.LogInformation($"Wallet Details Sterling Request \n");
+            var payload = JsonConvert.SerializeObject(encryptedRequest);
+            _logger.LogInformation($"Wallet Details Sterling Request  [Payload : {payload}] \n");
             using var request = new HttpRequestMessage(new HttpMethod("POST"), _walletSettings.WalletToSterling);
-            HttpContent content = new StringContent(encryptedRequest, Encoding.UTF8, "application/json");
+            HttpContent content = new StringContent(payload, Encoding.UTF8, "application/json");
             return await Execute(request, content);
         }
     }

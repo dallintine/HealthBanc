@@ -608,7 +608,8 @@ namespace HealthBanc.Controllers
             var payload = JsonConvert.SerializeObject(wallettransfer);
             _logger.LogInformation($"Wallet to Sterling payload [Payload : {payload} ]\n");
             var encryptData = _encryptionsAndDecryption.Encrypt(payload);
-            var transferResponse = await _walletConnect.WalletToSterlingFT(encryptData);
+            var encryptedTransferModel = new EncryptedModel(encryptData);
+            var transferResponse = await _walletConnect.WalletToSterlingFT(encryptedTransferModel);
             var decryptedResponse = _encryptionsAndDecryption.Decrypt(transferResponse);
             _logger.LogInformation($"Wallet To Account decrypted response : {decryptedResponse}");
 

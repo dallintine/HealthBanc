@@ -117,7 +117,7 @@ namespace Application.Services.Wallet
 
         public async Task<ResponseMessage<string>> LinkWallet(int userID, LinkWalletModel linkWallet)
         {
-            _logger.LogInformation($"Processing Link  Wallet Payload [UserId :{userID} | OTP : {linkWallet.OTP} | Action : {linkWallet.Action} ]\n");
+            _logger.LogInformation($"Processing Link  Wallet Payload [UserId :{userID} | Action : {linkWallet.Action} ]\n");
             var validateOTP = await ValidateOtp(userID, linkWallet.OTP, linkWallet.Action);
             if (validateOTP.Status)
             {
@@ -331,7 +331,7 @@ namespace Application.Services.Wallet
 
         private async Task<ResponseMessage<OtpValidation>> ValidateOtp(int userID, string otp,string action)
         {
-            _logger.LogInformation($"Processing Validate OTP Payload [UserId :{userID} | OTP : {otp} | Action : {action} ]\n");
+            _logger.LogInformation($"Processing Validate OTP Payload [UserId :{userID} | Action : {action} ]\n");
             var otpValidation = await _repositoryWrapper.OtpValidation.GetUserLastOTP(userID);
             if (otpValidation == null)
             {
