@@ -78,7 +78,7 @@ namespace HealthBanc
             services.Configure<HMOAccountDetails>(Configuration.GetSection("HMOAccountDetails"));
             services.Configure<IBSConfig>(Configuration.GetSection("IBSConfig"));
             services.Configure<ConnectionStrings>(Configuration.GetSection("ConnectionStrings"));
-            services.Configure<OtpParameter>(Configuration.GetSection(nameof(OtpParameter)));
+            services.Configure<SMSParameter>(Configuration.GetSection(nameof(SMSParameter)));
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {

@@ -17,6 +17,5 @@ namespace Application.Helpers
         public string Toacct { get; set; }
         public string ProductId { get; set; }
         public string ChannelId { get; set; }  
-        public string WalletOTP { get; set; }
     }
 }

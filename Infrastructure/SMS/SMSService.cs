@@ -16,10 +16,10 @@ namespace Infrastructure.SMS
     public class SMSService : ISMSService
     {
         private readonly ILogger<SMSService> _logger;
-        private OtpParameter OTPParameter;
-        public SMSService(IOptions<OtpParameter> otpParameter,ILogger<SMSService> logger)
+        private SMSParameter SMSParameter;
+        public SMSService(IOptions<SMSParameter> smsParameter,ILogger<SMSService> logger)
         {
-            OTPParameter = otpParameter.Value;
+            SMSParameter = smsParameter.Value;
             _logger = logger;
         }
 
@@ -28,7 +28,7 @@ namespace Infrastructure.SMS
             _logger.LogInformation($"Sending SMS [Mobile : {phone} | Message : {message}]\n");
             XmlDocument xmlDoc = new XmlDocument();
             var client = new HttpClient();
-            client.BaseAddress = new Uri($"{OTPParameter.SmsBaseUrl}");
+            client.BaseAddress = new Uri($"{SMSParameter.SmsBaseUrl}");
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
             var sb = new StringBuilder();
             sb.AppendLine("<?xml version='1.0' encoding='utf - 8'?>");
@@ -43,7 +43,7 @@ namespace Infrastructure.SMS
             var body = sb.ToString();
 
             HttpContent content = new StringContent(body, Encoding.UTF8, "application/soap+xml");
-            var response = await client.PostAsync(OTPParameter.SmsUrl, content);
+            var response = await client.PostAsync(SMSParameter.SmsUrl, content);
             var getResponse = await response.Content.ReadAsStringAsync();
             _logger.LogInformation($"Sending SMS Response [Response : {getResponse}]\n");
             if (response.IsSuccessStatusCode)

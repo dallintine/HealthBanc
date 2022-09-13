@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Application.Helpers
 {
-    public class OtpParameter
+    public class SMSParameter
     {
         public string SmsBaseUrl { get; set; }
         public string SmsUrl { get; set; }

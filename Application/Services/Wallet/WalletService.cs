@@ -34,10 +34,11 @@ namespace Application.Services.Wallet
         private readonly HMOIntegrationService _hmoIntegrationService;
         private readonly Helpers.Environment _environment;
         private readonly WalletSettings _walletSettings;
-
+        private readonly SterlingOtpConfig _otpConfigAccessor;
         public WalletService(WalletConnect walletConnect , ILogger<WalletService> logger,IRepositoryWrapper repositoryWrapper, IUniqueIdentifier uniqueIdentifier,
             IWalletEncryptionsAndDecryption encryptionsAndDecryption,ISMSService smsService, IOptions<WalletSettings> WalletSettings,IEncryptAndDecrypt encryptAndDecrypt,
-            Card_SubscriptionService cardService, HMOIntegrationService hmoIntegrationService,IOptions<Helpers.Environment> environment)
+            Card_SubscriptionService cardService, HMOIntegrationService hmoIntegrationService,IOptions<Helpers.Environment> environment,
+            IOptions<SterlingOtpConfig> otpConfigAccessor)
         {
             _walletConnect = walletConnect;
             _logger = logger;
@@ -50,6 +51,7 @@ namespace Application.Services.Wallet
             _hmoIntegrationService = hmoIntegrationService;
             _environment = environment.Value;
             _walletSettings = WalletSettings.Value;
+            _otpConfigAccessor = otpConfigAccessor.Value;
         }
 
         /// <summary>
@@ -289,45 +291,29 @@ namespace Application.Services.Wallet
 
         private async Task<ResponseMessage> GenerateOtp(string phoneNumber, int userId, string action)
         {
-            //string generateOtpCode = _uniqueIdentifier.GetUniqueCode(6);
             string generateOtpCode = "123456";
+            //string generateOtpCode = _uniqueIdentifier.GetUniqueCode((int)_otpConfigAccessor.Length);
 
             string otpMessage = $"Kindly use this OTP:{generateOtpCode} to complete the wallet creation/linking process on HealthInsured." +
                 $"If you did not initiate this, kindly ignore";
-            //Send User OTP SMS
-            var smsresponse = await _smsService.SendSmsAsync(phoneNumber, otpMessage);
-            if (smsresponse.Status)
+            var saveotp = new OtpValidation()
             {
-                var otp = await _repositoryWrapper.OtpValidation.GetUserLastOTP(userId);
-                if(otp is null)
-                {
-                    var saveotp = new OtpValidation()
-                    {
-                        OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode),
-                        PhoneNumber = phoneNumber,
-                        GeneratedDate = DateTimeOffset.Now,
-                        ExpiredDate = DateTimeOffset.Now.AddMinutes(7),
-                        ApplicationUserId = userId,
-                        Status = true,
-                        Action = action
-                    };
-                    _repositoryWrapper.OtpValidation.Create(saveotp);
-                }
-                else
-                {
-                    otp.OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode);
-                    otp.PhoneNumber = phoneNumber;
-                    otp.GeneratedDate = DateTimeOffset.Now;
-                    otp.ExpiredDate = DateTimeOffset.Now.AddMinutes(7);
-                    otp.ApplicationUserId = userId;
-                    otp.Status = true;
-                    otp.Action = action;
-                    _repositoryWrapper.OtpValidation.Update(otp);
-                }    
-                await _repositoryWrapper.Save();
-                return new ResponseMessage { ResponseCode = 00, Message = "Approved or Completed Successfully", Status = true };
+                OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode),
+                PhoneNumber = phoneNumber,
+                GeneratedDate = DateTimeOffset.Now,
+                ExpiredDate = DateTimeOffset.Now.AddMinutes(_otpConfigAccessor.ExpiryTime),
+                ApplicationUserId = userId,
+                Status = true,
+                Action = action
+            };
+            _repositoryWrapper.OtpValidation.Create(saveotp);
+            await _repositoryWrapper.Save();
+            var smsresponse = await _smsService.SendSmsAsync(phoneNumber, otpMessage);
+            if(smsresponse is null || smsresponse.Status is false)
+            {
+                _logger.LogInformation($"Generate OTP SMS feature not completed [Reason : SMS service returned not successful response]");
             }
-            return smsresponse;
+            return new ResponseMessage { ResponseCode = 00, Message = "Approved or Completed Successfully", Status = true };
         }
 
         private async Task<ResponseMessage<OtpValidation>> ValidateOtp(int userID, string otp,string action)
@@ -341,7 +327,7 @@ namespace Application.Services.Wallet
             }
             var now = DateTimeOffset.Now;
             var timeDifference = (now - otpValidation.GeneratedDate).Minutes;
-            if (timeDifference > 7)
+            if (timeDifference > (int)_otpConfigAccessor.ExpiryTime)
             {
                 _logger.LogInformation($"Processing Validate OTP Terminated [Reason : OTP Code has expired, Please try again]\n");
                 return new ResponseMessage<OtpValidation> { ResponseCode = 21, Message = "OTP Code has expired, Please try again" };
@@ -349,6 +335,9 @@ namespace Application.Services.Wallet
             if (_encryptAndDecrypt.Sha512Hash(otp) == otpValidation.OTP && otpValidation.Action.ToLower() == action.ToLower())
             {
                 _logger.LogInformation($"Processing Validate OTP Successful \n");
+                otpValidation.Status = false;
+                _repositoryWrapper.OtpValidation.Update(otpValidation);
+                await _repositoryWrapper.Save();
                 return new ResponseMessage<OtpValidation> { ResponseCode = 00, Message = "Approved or Completed successfully", Data = otpValidation, Status = true };
             }
             _logger.LogInformation($"Processing Validate OTP Terminated [No Action Taken : OTP code does not match records]\n");
