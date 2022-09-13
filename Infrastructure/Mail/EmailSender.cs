@@ -56,7 +56,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthinsuredVerify.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("token", verificationUrl).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
 
@@ -75,7 +75,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthinsuredPassword_reset.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("token", resetUrl).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
 
@@ -84,7 +84,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\FamilyInsurance") + "\\familysubscription.html";
             string html = System.IO.File.ReadAllText(path);
             string newHtml = html.Replace("UserName", userName).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void SendHealthInsuredFamilyPaymentReminder(string email, string subject, string familyHead, string familyMember)
@@ -92,7 +92,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\FamilyInsurance") + "\\family_healthinsured_paymentreminder.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("FamilyHead", familyHead).Replace("FamilyMember", familyMember).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider, string plan)
@@ -113,7 +113,7 @@ namespace Infrastructure.Mail
             string newHtml = html.Replace("UserName", userName).Replace("HealthServiceProviderName", healthCareProvider).Replace("EnroleeNumber", processedEnrolleNumber)
                 .Replace("SubscriptionType", subType).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
 
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void SendHealthInsuredPaymentReminder(string email, string subject, string userName,string info)
@@ -121,7 +121,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\healthinsured_paymentreminder.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("UserName", userName).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase).Replace("Info", info);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }        
         public void SendHeliumNotification(string subject,string healthProvider,string providerType,string phonenumber,string providerEmail)
@@ -162,7 +162,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\faileddebit_notification.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium).Replace("Info", info).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void HealthInsuredDeactivationNotification(string email, string subject, string userName,string premium,string info)
@@ -170,7 +170,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance") + "\\deactivation_notification.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium).Replace("Info",info).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium,string stopDate)
@@ -178,7 +178,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\CorporateInsurance") + "\\failedcompany_debit.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium).Replace("StopDate",stopDate).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void HealthInsuredCompanyDeactivation(string email, string subject, string userName, string premium)
@@ -186,7 +186,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\CorporateInsurance") + "\\deactivate_companybeneficiaries.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("UserName", userName).Replace("PremiumAmount", premium).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void CorporateInsuranceOnboarding(string email, string subject, string otp)
@@ -194,7 +194,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\CorporateInsurance") + "\\corporate_onboarding.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("OTPCODE", otp).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void RefreeInvitation(string email,string subject,string payee)
@@ -202,7 +202,7 @@ namespace Infrastructure.Mail
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\IndividualInsurance\\Payee") + "\\refereeinvitation.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("Payee", payee).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void RefreeInvitationFullDetail(string email, string subject, string payee,string userName, string enroleeNumber, string healthCareProvider, string plan)
@@ -223,13 +223,13 @@ namespace Infrastructure.Mail
             string subType = plan == "1" ? "Ruby" : "Sapphire";
             var newHtml = html.Replace("Payee", payee).Replace("UserName", userName).Replace("HealthServiceProviderName", healthCareProvider).Replace("EnroleeNumber", processedEnrolleNumber)
                 .Replace("SubscriptionType", subType).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
-            var emailRequest = new EmailRequest(email, newHtml, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public void CustomMail(string email,string subject, string content)
         {
             string html = content;
-            var emailRequest = new EmailRequest(email, html, subject, "healthbanc@sterling.ng");
+            var emailRequest = new EmailRequest(email, html, subject, "healthInsured@sterling.ng");
             EmailRequest(emailRequest);
         }
         public async void EmailRequest(EmailRequest emailRequest)
