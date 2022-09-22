@@ -84,7 +84,8 @@ namespace Application.Services.Identity
                     FirstName = registrationViewModel.FirstName,
                     LastName = registrationViewModel.LastName,
                     PhoneNumber = registrationViewModel.PhoneNumber,
-                    DateOfRegistration = DateTime.Now
+                    DateOfRegistration = DateTime.Now,
+                    EmailConfirmed = true
                 };
 
                 var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
@@ -92,14 +93,14 @@ namespace Application.Services.Identity
                 {
                     await _userManager.UpdateAsync(user);
                     await _userManager.AddToRoleAsync(user, "SuperAdmin");
-                    await SendUserEmailVerificationAsync(user,app);
+                    //await SendUserEmailVerificationAsync(user,app);
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
                     await ProcessInsuranceUserId(user, user.Email);
                     return new ResponseMessage
                     {
-                        Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
+                        Message = "User Created Successfully,Please Login",
                         Status = true
                     };
                 }
