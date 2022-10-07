@@ -68,9 +68,9 @@ namespace Application.Services.Wallet
             var encryptData = _encryptionsAndDecryption.Encrypt(JsonConvert.SerializeObject(walletData));
             var encryptedModel = new EncryptedModel(encryptData);
             var validateWalletResponse = await _walletConnect.WalletDetails(encryptedModel);
-            var decryptedResponse = _encryptionsAndDecryption.Decrypt(validateWalletResponse);
-            _logger.LogInformation($"Validate Wallet decrypted response : {decryptedResponse}");
+            var decryptedResponse = _encryptionsAndDecryption.Decrypt(validateWalletResponse);           
             var response = JsonConvert.DeserializeObject<ApiResponse<WalletValidationResponse>>(decryptedResponse);
+            _logger.LogInformation($"Validate Wallet decrypted [UserId : {userId} | PhoneNumber :{response?.Data?.Mobile}] \n");
             if (response != null && response.Response == "00")
             {
                 return await GenerateOtp(mobileNumber, userId, OTPActions.LinkWallet.ToString());
@@ -220,9 +220,9 @@ namespace Application.Services.Wallet
                 var encryptCreatWalletData = _encryptionsAndDecryption.Encrypt(payload);
                 var encryptedCreateWalletModel = new EncryptedModel(encryptCreatWalletData);
                 var createWalletResponse = await _walletConnect.CreateWallet(encryptedCreateWalletModel);
-                var decryptedCreateWalletResponse = _encryptionsAndDecryption.Decrypt(createWalletResponse);
-                _logger.LogInformation($"Create Wallet decrypted response : {decryptedCreateWalletResponse}");
+                var decryptedCreateWalletResponse = _encryptionsAndDecryption.Decrypt(createWalletResponse);               
                 var walletResponse = JsonConvert.DeserializeObject<CreateWalletResponse>(decryptedCreateWalletResponse);
+                _logger.LogInformation($"Create Wallet decrypted Props [UserId : {userId} | Mobile : {walletResponse?.Data?.Mobile} ] \n");
                 if (walletResponse.Response == "00")
                 {
                     _logger.LogInformation($" Creating Wallet Model\n");
@@ -293,8 +293,8 @@ namespace Application.Services.Wallet
         {
             string generateOtpCode = _uniqueIdentifier.GetUniqueCode((int)_otpConfigAccessor.Length);
 
-            string otpMessage = $"Kindly use this OTP:{generateOtpCode} to complete the wallet creation/linking process on HealthInsured." +
-                $"If you did not initiate this, kindly ignore";
+            string otpMessageTemplate = _otpConfigAccessor.OtpMessage;
+            string otpMessage = otpMessageTemplate.Replace("{OTPCode}", generateOtpCode);
             var saveotp = new OtpValidation()
             {
                 OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode),
@@ -311,7 +311,9 @@ namespace Application.Services.Wallet
             if(smsresponse is null || smsresponse.Status is false)
             {
                 _logger.LogInformation($"Generate OTP SMS feature not completed [Reason : SMS service returned not successful response]");
+                return new ResponseMessage { ResponseCode = 12, Message = "Unable to send OTP. Please try again later"};
             }
+            _logger.LogInformation($"Generate OTP SMS feature completed [UserId : {userId}]");
             return new ResponseMessage { ResponseCode = 00, Message = "Approved or Completed Successfully", Status = true };
         }
 
