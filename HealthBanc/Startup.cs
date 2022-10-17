@@ -37,6 +37,7 @@ using Application.Services;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using System.Buffers;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 
 namespace HealthBanc
 {
@@ -283,7 +284,8 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,UtilityService utilityService)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,
+             IApiVersionDescriptionProvider provider)
         {
             //utilityService.MakeHygeiaHMOPayment().Wait();
             //utilityService.MakeAxamansardHMOPayment().Wait();
@@ -327,12 +329,31 @@ namespace HealthBanc
                 var swaggerOptions = new SwaggerOptions();
                 Configuration.GetSection(nameof(SwaggerOptions)).Bind(swaggerOptions);
 
-                app.UseSwagger(option => { option.RouteTemplate = swaggerOptions.JsonRoute; });
+                //app.UseSwagger(option => { option.RouteTemplate = swaggerOptions.JsonRoute; });
 
-                app.UseSwaggerUI(option =>
+                //app.UseSwaggerUI(option =>
+                //{
+                //    option.SwaggerEndpoint(swaggerOptions.UiEndpoint, swaggerOptions.Description);
+                //});
+
+                app.UseSwagger(options =>
                 {
-                    option.SwaggerEndpoint(swaggerOptions.UiEndpoint, swaggerOptions.Description);
+                    options.PreSerializeFilters.Add((swagger, req) =>
+                    {
+                        swagger.Servers = new List<OpenApiServer>() { new OpenApiServer() { Url = $"https://{req.Host}" } };
+                    });
                 });
+
+                app.UseSwaggerUI(options =>
+                {
+                    foreach (var desc in provider.ApiVersionDescriptions)
+                    {
+                        options.SwaggerEndpoint($"../swagger/{desc.GroupName}/swagger.json", desc.ApiVersion.ToString());
+                        options.DefaultModelsExpandDepth(-1);
+                        options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+                    }
+                });
+
             }  
 
             app.UseRouting();

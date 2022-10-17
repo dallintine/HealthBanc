@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Application.API_RequestModel.Wallet
+namespace Application.DTO
 {
     public class EncryptedModel
     {

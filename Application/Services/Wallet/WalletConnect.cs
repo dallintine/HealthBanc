@@ -1,4 +1,5 @@
 ﻿using Application.API_RequestModel.Wallet;
+using Application.DTO;
 using Application.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

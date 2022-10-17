@@ -1,25 +1,30 @@
 ﻿using Application.API_ResponseModel.Wallet;
 using Application.DTO;
+using Application.Interfaces;
 using Application.Services.Wallet;
 using Application.ViewModels.HealthInsured.Wallet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace HealthBanc.Controllers.Insurance
+namespace HealthBanc.Controllers.V2.Insurance
 {
-    [Route("v1/api/[controller]")]
+    [Route("v{version:apiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("2.0")]
     public class WalletController : ControllerBase
     {
         private readonly WalletService _walletService;
+        private readonly IEncryptAndDecrypt _encryptDecrypt;
 
-        public WalletController(WalletService walletService)
+        public WalletController(WalletService walletService, IEncryptAndDecrypt encryptDecrypt)
         {
             _walletService = walletService;
+            _encryptDecrypt = encryptDecrypt;
         }
 
         /// <summary>
@@ -31,12 +36,13 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> GenerateOTPForExistingWallet(string mobileNumber)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
-            var response = await _walletService.GenerateOTPForExistingWallet(id,mobileNumber);
-            if(response.Status) return Ok(response);
+            var response = await _walletService.GenerateOTPForExistingWallet(id, mobileNumber);
+            if (response.Status) return Ok(response);
             return BadRequest(response);
         }
 
@@ -49,6 +55,7 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> GenerateOTPForNewWallet(string mobileNumber)
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -61,16 +68,20 @@ namespace HealthBanc.Controllers.Insurance
         /// <summary>
         /// Validate OTP and link account to an existing wallet
         /// </summary>
-        /// <param name="linkWallet"></param>
+        /// <param name="encryptedModel"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
-        public async Task<IActionResult> LinkWallet(LinkWalletModel linkWallet )
+        [MapToApiVersion("2.0")]
+        public async Task<IActionResult> LinkWallet(EncryptedModel encryptedModel)
         {
             if (ModelState.IsValid)
             {
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var linkWallet = JsonConvert.DeserializeObject<LinkWalletModel>(decryptedString.Item2);
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
                 var response = await _walletService.LinkWallet(id, linkWallet);
@@ -92,16 +103,20 @@ namespace HealthBanc.Controllers.Insurance
         /// <summary>
         /// Validate OTP and Create Wallet for the user
         /// </summary>
-        /// <param name="walletModel"></param>
+        /// <param name="encryptedModel"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage<string>))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage<string>))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpPost("[action]")]
-        public async Task<IActionResult> CreateWallet(CreateWalletModel walletModel)
+        [MapToApiVersion("2.0")]
+        public async Task<IActionResult> CreateWallet(EncryptedModel encryptedModel)
         {
             if (ModelState.IsValid)
             {
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var walletModel = JsonConvert.DeserializeObject<CreateWalletModel>(decryptedString.Item2);
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
                 var response = await _walletService.CreateWallet(id, walletModel);
@@ -117,7 +132,7 @@ namespace HealthBanc.Controllers.Insurance
             {
                 errors.Add(error);
             }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });            
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
@@ -128,6 +143,7 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(400, Type = typeof(ResponseMessage<WalletValidationResponse>))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> WalletDetails()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -145,6 +161,7 @@ namespace HealthBanc.Controllers.Insurance
         [ProducesResponseType(400, Type = typeof(ResponseMessage<WalletValidationResponse>))]
         [Authorize(Roles = "SuperAdmin")]
         [HttpGet("[action]")]
+        [MapToApiVersion("2.0")]
         public async Task<IActionResult> SwitchToWalletPayment()
         {
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;

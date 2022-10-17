@@ -21,5 +21,8 @@ namespace Application.Helpers.ThirdPartyAPI
         public string HealthBancApiBase { get; set; }
         public string FiorianoBaseAddress { get; set; }
         public string FiorianoADAuthentication { get; set; }
+        public string Salt { get; set; }
+        public string VectorKey { get; set; }
+
     }
 }

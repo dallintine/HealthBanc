@@ -7,8 +7,8 @@ namespace Application.Interfaces
 {
     public interface IEncryptAndDecrypt
     {
-        string EncryptString(string text, string keyString);
-        string DecryptString(string cipherText, string keyString);
+        (bool, string) DecryptString(string encryptedText);
+        string EncryptString(string plainText);
         string Sha512Hash(string value);
     }
 }

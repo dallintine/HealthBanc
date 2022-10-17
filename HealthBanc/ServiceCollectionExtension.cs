@@ -25,9 +25,12 @@ using Infrastructure.UploadService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using OfficeOpenXml;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -46,6 +49,22 @@ namespace HealthBanc
             });
 
             services.AddControllersWithViews();
+            services.AddApiVersioning(options =>
+            {
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.DefaultApiVersion = Microsoft.AspNetCore.Mvc.ApiVersion.Default;
+                //options.ApiVersionReader = ApiVersionReader.Combine(
+                //    new HeaderApiVersionReader("X-Version"),
+                //    new MediaTypeApiVersionReader("version")
+                //);
+                options.ReportApiVersions = true;
+            });
+
+            services.AddVersionedApiExplorer(setup =>
+            {
+                setup.GroupNameFormat = "'v'VVV";
+                setup.SubstituteApiVersionInUrl = true;
+            });
 
             services.AddApplicationInsightsTelemetry();
 
@@ -54,7 +73,7 @@ namespace HealthBanc
             ///////////////Add Swagger Service/////////////////////////
             services.AddSwaggerGen(x =>
             {
-                x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
+                //x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
 
                 x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -88,6 +107,8 @@ namespace HealthBanc
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 x.IncludeXmlComments(xmlPath);
             });
+
+            services.AddTransient<IConfigureOptions<SwaggerGenOptions>, SwaggerConfigureOptions>();
 
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddScoped<Activity_ErrorLogService>();
@@ -125,7 +146,6 @@ namespace HealthBanc
             services.AddScoped<OTPService>();
             services.AddScoped<RestrictionService>();
             services.AddScoped<WalletPaymentService>();
-
         }
     }
 }
