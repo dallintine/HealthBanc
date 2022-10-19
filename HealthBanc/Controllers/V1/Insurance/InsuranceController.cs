@@ -36,8 +36,9 @@ using Application.Services.Card;
 
 namespace HealthBanc.Controllers.Insurance
 {
-    [Route("v1/api/[controller]")]
+    [Route("v{version:apiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class InsuranceController : ControllerBase
     {
         private readonly InsuranceService _insuranceService;
@@ -248,9 +249,11 @@ namespace HealthBanc.Controllers.Insurance
             if (ModelState.IsValid)
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var device = _auditLogServices.GetDevice(agent);
                 int id = int.Parse(userId);
 
-                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, id);
+                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, id,IpAddress,device);
                 if (updateResponse.Status)
                 {
                     return Ok(updateResponse);
@@ -282,9 +285,10 @@ namespace HealthBanc.Controllers.Insurance
         {
             if (ModelState.IsValid)
             {
+                var device = _auditLogServices.GetDevice(agent);
                 var insuranceProfile = await _repoWerapper.InsuranceProfile.GetByEmail(email);
 
-                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, insuranceProfile.UserId.Value);
+                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, insuranceProfile.UserId.Value,IpAddress, device);
                 if (updateResponse.Status)
                 {
                     return Ok(updateResponse);
@@ -329,8 +333,9 @@ namespace HealthBanc.Controllers.Insurance
         {
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
+            var device = _auditLogServices.GetDevice(agent);
 
-            var response = await _insuranceService.PayforNewIndividualWithEmail(userId, email,insuranceService);
+            var response = await _insuranceService.PayforNewIndividualWithEmail(userId, email,insuranceService,IpAddress,device);
 
             if (response.Status)
             {
@@ -345,8 +350,9 @@ namespace HealthBanc.Controllers.Insurance
         {
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
+            var device = _auditLogServices.GetDevice(agent);
 
-            var response = await _insuranceService.PayForRefereeWithFullDetails(userId, refereeViewModel);
+            var response = await _insuranceService.PayForRefereeWithFullDetails(userId, refereeViewModel,IpAddress,device);
 
             if (response.Status)
             {
@@ -379,10 +385,12 @@ namespace HealthBanc.Controllers.Insurance
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> RemovePaidReferee(string email)
         {
+
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
+            var device = _auditLogServices.GetDevice(agent);
 
-            var response = await _insuranceService.RemovePaidReferee(userId, email);
+            var response = await _insuranceService.RemovePaidReferee(userId, email,IpAddress,device);
             if (response.Status)
             {
                 return Ok(response);

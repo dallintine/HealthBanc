@@ -17,8 +17,9 @@ using System.Threading.Tasks;
 namespace HealthBanc.Controllers.BackendAdmin
 {
 
-    [Route("v1/api/[controller]")]
+    [Route("v{version:apiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class DashboardAnalyticsController : ControllerBase
     {
         private readonly Dashboard_Analytics _dashboardAnalytics;

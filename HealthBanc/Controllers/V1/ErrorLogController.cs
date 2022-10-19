@@ -11,8 +11,9 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.Controllers
 {
-    [Route("v1/api/[controller]")]
+    [Route("v{version:apiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class ErrorLogController : ControllerBase
     {
         public Activity_ErrorLogService _activity_ErrorLogService { get; }

@@ -19,8 +19,9 @@ using Application.Services.Activation_Deactivation;
 
 namespace HealthBanc.Controllers.Insurance
 {
-    [Route("v1/api/[controller]")]
+    [Route("v{version:apiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class TokenizationController : ControllerBase
     {
         private readonly AuditLogService _auditLogServices;

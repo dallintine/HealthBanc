@@ -15,5 +15,10 @@ namespace DataAccess.Logs.Implementation
         public UserAuditLogRepository(ApplicationDbContext context) : base(context)
         {
         }
+
+        public List<UserAuditLog> GetLastFive()
+        {
+            return _context.UserAuditLogs.OrderByDescending(x => x.Id).Take(5).ToList();
+        }
     }
 }

@@ -147,6 +147,7 @@ namespace HealthBanc.Controllers.V2
         {
             if (ModelState.IsValid)
             {
+
                 var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
                 if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
                 var loginViewModel = JsonConvert.DeserializeObject<LoginViewModel>(decryptedString.Item2);
@@ -239,10 +240,17 @@ namespace HealthBanc.Controllers.V2
         {
             if (ModelState.IsValid)
             {
+                var userAgent = agent;
+                string uaString = Convert.ToString(userAgent[0]);
+                var uaParser = Parser.GetDefault();
+                ClientInfo c = uaParser.Parse(uaString);
+                var browser = c.UA.ToString();
+                var deviceIp = IpAddress;
+
                 var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
                 if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
                 var forgotPassword = JsonConvert.DeserializeObject<ForgotPasswordViewModel>(decryptedString.Item2);
-                var response = await _identityService.ForgotPassword(forgotPassword, app);
+                var response = await _identityService.ForgotPassword(forgotPassword, app,browser, deviceIp);
                 if (response.Status == true)
                 {
                     return Ok(response);
@@ -279,6 +287,13 @@ namespace HealthBanc.Controllers.V2
         {
             if (ModelState.IsValid)
             {
+                var userAgent = agent;
+                string uaString = Convert.ToString(userAgent[0]);
+                var uaParser = Parser.GetDefault();
+                ClientInfo c = uaParser.Parse(uaString);
+                var browser = c.UA.ToString();
+                var deviceIp = IpAddress;
+
                 var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
                 if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
                 var viewModel = JsonConvert.DeserializeObject<ResetPasswordViewModel>(decryptedString.Item2);
@@ -294,7 +309,7 @@ namespace HealthBanc.Controllers.V2
                     return NotFound(new ResponseMessage { Message = "User with the email could not be found" });
                 }
 
-                var response = await _identityService.ResetPassword(email, emailToken, viewModel);
+                var response = await _identityService.ResetPassword(email, emailToken, viewModel,browser,deviceIp);
 
                 if (response.Status == true)
                 {

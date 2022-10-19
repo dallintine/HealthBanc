@@ -29,8 +29,9 @@ using Application.Helpers;
 
 namespace HealthBanc.Controllers
 {
-    [Route("v1/api/[controller]")]
+    [Route("v{version:apiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class PaystackController : ControllerBase
     {
         private readonly InsurancePSWebHookService _insurancePSWebHookService;

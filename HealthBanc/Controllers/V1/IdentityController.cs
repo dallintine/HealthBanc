@@ -312,7 +312,14 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
-                var response = await _identityService.ForgotPassword(forgotPassword,app);
+                var userAgent = agent;
+                string uaString = Convert.ToString(userAgent[0]);
+                var uaParser = Parser.GetDefault();
+                ClientInfo c = uaParser.Parse(uaString);
+                var browser = c.UA.ToString();
+                var deviceIp = IpAddress;
+
+                var response = await _identityService.ForgotPassword(forgotPassword,app,browser,IpAddress);
                 if (response.Status == true)
                 {
                     return Ok(response);
@@ -349,6 +356,13 @@ namespace HealthBanc.Controllers
         {
             if (ModelState.IsValid)
             {
+                var userAgent = agent;
+                string uaString = Convert.ToString(userAgent[0]);
+                var uaParser = Parser.GetDefault();
+                ClientInfo c = uaParser.Parse(uaString);
+                var browser = c.UA.ToString();
+                var deviceIp = IpAddress;
+
                 if (email is null || emailToken is null)
                 {
                     return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
@@ -360,7 +374,7 @@ namespace HealthBanc.Controllers
                     return NotFound(new ResponseMessage { Message = "User with the email could not be found" });
                 }
 
-                var response = await _identityService.ResetPassword(email, emailToken, viewModel);
+                var response = await _identityService.ResetPassword(email, emailToken, viewModel,browser,IpAddress);
 
                 if (response.Status == true)
                 {

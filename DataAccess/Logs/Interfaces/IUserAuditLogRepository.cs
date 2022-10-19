@@ -9,5 +9,6 @@ namespace DataAccess.Logs.Interfaces
 {
     public interface IUserAuditLogRepository : IBaseRepository<UserAuditLog>
     {
+        List<UserAuditLog> GetLastFive();
     }
 }

@@ -37,8 +37,9 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.Controllers
 {
-    [Route("v1/api/[controller]")]
+    [Route("v{version:apiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class UtilityController : ControllerBase
     {
         private readonly InsuranceService _insuranceService;
@@ -616,6 +617,13 @@ namespace HealthBanc.Controllers
             var response = JsonConvert.DeserializeObject<ApiResponse<WalletToAccountResponse>>(decryptedResponse);
 
             return Ok(new ResponseMessage { ResponseCode = 00, Message = decryptedResponse  , Data = response});
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult AudtLog()
+        {
+            var data = _repoWrapper.UserAuditLog.GetLastFive();
+            return Ok(data);
         }
     }
 }

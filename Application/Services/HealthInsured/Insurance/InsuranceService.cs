@@ -95,7 +95,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var creatResponse = await CreateUserProfile(userProfile, user);
             if (creatResponse.Status)
             {
-                var auditViewModel = new AuditLogViewModel(userId, null, null, "Created HealthInsured profile", "Created HealthInsured profile");
+                var auditViewModel = new AuditLogViewModel(userId, null, "No insurance Profile", AuditAction.Created_HealthInsurance_Profile.ToString(), "Created HealthInsured profile");
                 await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
 
                 return new ResponseMessage
@@ -187,7 +187,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             return new ResponseMessage { Status = true };
         }
 
-        public async Task<ResponseMessage> PayForRefereeWithFullDetails(int userId, PayForRefereeViewModel refereeViewModel)
+        public async Task<ResponseMessage> PayForRefereeWithFullDetails(int userId, PayForRefereeViewModel refereeViewModel, string ipAddress, string device)
         {
             _logger.LogInformation($"Process pay for referee with full details [Payload : {JsonConvert.SerializeObject(refereeViewModel)} | " +
                 $"userid : {userId}]\n");
@@ -218,6 +218,10 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     _emailSender.RefreeInvitationFullDetail(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}",
                         insuranceProfile.Surname, insuranceProfile.TransId, insuranceProfile.CareProviderName, insuranceProfile.PlanCode);
                     _logger.LogInformation($"Pay for referee with full details was successfully\n");
+
+                    var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.PayForReferee_FullDetails.ToString(), "Created referee with full details");
+                    await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+
                     return new ResponseMessage
                     {
                         Message = $"{refereeViewModel.FirstName} has been activated  and is entitled to a one month free cycle. {refereeViewModel.FirstName} can sign up with {refereeViewModel.Email} to access his/her dashboard",
@@ -269,7 +273,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             await _repoWrapper.Save();
         }
 
-        public async Task<ResponseMessage> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel,int userId)
+        public async Task<ResponseMessage> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel,int userId, string ipAddress, string device)
         {
             var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled == null) return new ResponseMessage { Message = "User does not have a profile", Status=false };
@@ -290,6 +294,11 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var activityLog = new ActivityLog(checkIfUserHasBeenProfiled.Id, null,null, "Updated HealthInsured Profile", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
+
+            var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.UpdatedInsuranceProfile.ToString(), "Updated HealthinsuredProfile");
+            await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+
+
             return new ResponseMessage { Status = true, Message = "Profile was updated successfully" };
         }
 
@@ -317,7 +326,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             return new ResponseMessage { Data = paginatedResponse, Status = true };
         }
 
-        public async Task<ResponseMessage> RemovePaidReferee(int userId, string email)
+        public async Task<ResponseMessage> RemovePaidReferee(int userId, string email, string ipAddress, string device)
         {
             var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             var refereedInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
@@ -343,6 +352,9 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                         _repoWrapper.InsuranceProfile.Delete(refereedInsuranceProfile);
                     }
                     await _repoWrapper.Save();
+
+                    var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.RemoveReferee.ToString(), "Remove Referee");
+                    await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
                     return new ResponseMessage { Message = "Referee was removed successfully", Status=true };
                 }
                 return new ResponseMessage { Message = "Insurance profile of referee does not exist"};
@@ -646,7 +658,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             }
         }
 
-        public async Task<ResponseMessage> PayforNewIndividualWithEmail(int userId,string email, string insuranceService)
+        public async Task<ResponseMessage> PayforNewIndividualWithEmail(int userId,string email, string insuranceService,string ipAddress, string device )
         {            
             var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(email);
             var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
@@ -668,6 +680,10 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     _repoWrapper.InsuranceProfile.Create(insuranceProfile);
                     await _repoWrapper.Save();
                     _emailSender.RefreeInvitation(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}");
+                   
+                    var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.PayForReferee_Email.ToString(), "pay for referee with email");
+                    await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+
                     return new ResponseMessage
                     {
                         Message = "Invite was sent successfully. User would be activated immediately after sign up/profile creation " +

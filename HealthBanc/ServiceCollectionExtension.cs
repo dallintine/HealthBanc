@@ -15,6 +15,7 @@ using Application.Services.Wallet;
 using DataAccess;
 using DataAccess.Logs.Implementation;
 using DataAccess.Logs.Interfaces;
+using Domain.Models.ReportAndLogs;
 using Infrastructure.EncryptionService;
 using Infrastructure.ImageService;
 using Infrastructure.Mail;
@@ -112,6 +113,7 @@ namespace HealthBanc
 
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddScoped<Activity_ErrorLogService>();
+            services.AddScoped<ActivityLog>();
             services.AddScoped<IdentityService>();
             services.AddScoped<HMOIntegrationService>();
             services.AddScoped<BackendAdminService>();

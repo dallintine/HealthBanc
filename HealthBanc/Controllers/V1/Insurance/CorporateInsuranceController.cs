@@ -17,8 +17,9 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.Controllers.Insurance
 {
-    [Route("v1/api/[controller]")]
+    [Route("v{version:apiVersion}/api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
     public class CorporateInsuranceController : ControllerBase
     {
         private readonly CorporateInsuranceService _corporateInsuranceService;

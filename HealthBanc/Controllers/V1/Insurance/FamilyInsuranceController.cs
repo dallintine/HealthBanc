@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 
 namespace HealthBanc.Controllers.Insurance
 {
+    [Route("v{version:apiVersion}/api/[controller]")]
+    [ApiController]
+    [ApiVersion("1.0", Deprecated = true)]
     public class FamilyInsuranceController : ControllerBase
     {
         private readonly IRepositoryWrapper _repoWrapper;

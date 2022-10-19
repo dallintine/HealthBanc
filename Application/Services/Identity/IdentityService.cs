@@ -1,8 +1,10 @@
-﻿using Application.DTO;
+﻿using Application.AuditAndReport.AuditLog;
+using Application.DTO;
 using Application.Helpers;
 using Application.Helpers.Jwt_Authorization;
 using Application.Helpers.ThirdPartyAPI;
 using Application.Interfaces;
+using Application.ViewModels;
 using Application.ViewModels.UserReg_Login;
 using AutoMapper;
 using DataAccess;
@@ -37,7 +39,8 @@ namespace Application.Services.Identity
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IEmailSender _emailSender;
-        private readonly IOptions<JwtSettings> jwtsettings;
+        private readonly ActivityLog _activityLog;
+        private readonly AuditLogService _auditLog;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly ILogger<IdentityService> _logger;
         private readonly JwtSettings _jwtsettings;
@@ -49,7 +52,7 @@ namespace Application.Services.Identity
 
 
 
-        public IdentityService(UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
+        public IdentityService(UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,ActivityLog activityLog, AuditLogService auditLog,
              IOptions<JwtSettings> jwtsettings, IRepositoryWrapper repoWrapper, ILogger<IdentityService> logger,
               TokenValidationParameters tokenValidationParameters,IPasswordHasher passwordHasher, IOptions<AppEndpoint> optionAccessor)
         {
@@ -57,7 +60,8 @@ namespace Application.Services.Identity
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
             _emailSender = emailSender;
-            this.jwtsettings = jwtsettings;
+            _activityLog = activityLog;
+            _auditLog = auditLog;
             _repoWrapper = repoWrapper;
             _logger = logger;
             _jwtsettings = jwtsettings.Value;
@@ -253,6 +257,8 @@ namespace Application.Services.Identity
                     new Claim("LastName",user.LastName??"Not Available"),
                     new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
                     new Claim("id",user.Id.ToString()),
+                    new Claim("IP",ip),
+                    new Claim("UAParser",browser),
                     new Claim(ClaimTypes.Email, user.Email),
                     //new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
                     new Claim("LoggedOn", DateTime.Now.ToString()),
@@ -297,6 +303,7 @@ namespace Application.Services.Identity
                 loggedInResponse.Services = serviceList;
             }
             await SessionStorage(browser, ip, user.Id, expiryTime);
+            await _auditLog.UserCreateAuditLog(new AuditLogViewModel(user.Id, null, "NA", AuditAction.Login.ToString(), "Logged In User"), ip, browser);
             return loggedInResponse;
         }
 
@@ -317,7 +324,7 @@ namespace Application.Services.Identity
             return principal;
         }
 
-        public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword, string app)
+        public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword, string app, string browser, string ip)
         {
             _logger.LogInformation($"app : {app}");
             var user = await _userManager.FindByNameAsync(forgotPassword.Username);
@@ -351,13 +358,16 @@ namespace Application.Services.Identity
                 {
                     _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
                 }
-               
+
+                await _auditLog.UserCreateAuditLog(new AuditLogViewModel(user.Id, null, "NA", AuditAction.ForgotPassword.ToString(), "Forgot Password Mail sent"), ip, browser);
+
+
                 return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
             }
             return new ResponseMessage { Message = "Username Does Not Exist", Status = false };
         }
 
-        public async Task<ResponseMessage> ResetPassword(string email, string emailToken, ResetPasswordViewModel viewModel)
+        public async Task<ResponseMessage> ResetPassword(string email, string emailToken, ResetPasswordViewModel viewModel, string browser, string ip)
         {
             var user = await _userManager.FindByEmailAsync(email);
 
@@ -414,6 +424,10 @@ namespace Application.Services.Identity
 
                     var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, false, true);
                     _repoWrapper.PasswordChange.Create(passwordChangehistory2);
+
+                    await _auditLog.UserCreateAuditLog(new AuditLogViewModel(user.Id, null, "NA", AuditAction.ResetPassword.ToString(), "Passwword reset successful"), ip, browser);
+
+
                     return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                 }
                 else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))
