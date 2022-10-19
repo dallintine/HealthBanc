@@ -312,6 +312,8 @@ namespace HealthBanc
             {
                 context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
                 context.Response.Headers.Add("X-Frame-Options", "DENY");
+                context.Response.Headers.Add("Cache-control", "no-store");
+                context.Response.Headers.Add("Pragma", "no-cache");
                 context.Response.Headers.Add("Referrer-Policy", "no-referrer-when-downgrade");
                 context.Response.Headers.Add("X-Permitted-Cross-Domain-Policies", "none");
                 context.Response.Headers.Add("Content-Security-Policy", "unsafe-inline 'self'");
