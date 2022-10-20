@@ -1,0 +1,535 @@
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System;
+using System.Buffers.Text;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using Microsoft.Extensions.Logging;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Serialization;
+using Microsoft.AspNetCore.Http;
+using Hangfire;
+using Microsoft.Extensions.Primitives;
+using Application.DTO;
+using HealthBanc.DTO.HealthInsured_AxaMansard;
+using Microsoft.AspNetCore.Cors;
+using Application.AuditAndReport.AuditLog;
+using Application.API_ResponseModel.HealthInsured;
+using Application.ViewModels.HealthInsured;
+using Infrastructure.UploadService;
+using DataAccess;
+using Application.DTO.HealthInsured_AxaMansard;
+using Domain.Models.Axa.Hygeia_Insurance;
+using Domain.Models.Axa_Hygeia_Insurance;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
+using Application.HealthInsured_AxaMansard_Service.Insurance;
+using ClosedXML.Excel;
+using Application.Services.HealthInsured.Insurance;
+using DataAccess.DTO.InsuranceDTO;
+using Application.Services.Card;
+using Application.Interfaces;
+using Application.ViewModels;
+
+namespace HealthBanc.Controllers.V2.Insurance
+{
+    [Route("v{version:apiVersion}/api/[controller]")]
+    [ApiController]
+    [ApiVersion("2.0")]
+    public class InsuranceController : ControllerBase
+    {
+        private readonly InsuranceService _insuranceService;
+        private readonly IMapper _mapper;
+        private readonly IRepositoryWrapper _repoWerapper;
+        private readonly AuditLogService _auditLogServices;
+        private readonly IEncryptAndDecrypt _encryptDecrypt;
+        public string IpAddress;
+        public StringValues agent;
+
+        public InsuranceController(InsuranceService insuranceService, IMapper mapper,IRepositoryWrapper repoWerapper,AuditLogService auditLogServices,IHttpContextAccessor accessor,
+             IEncryptAndDecrypt encryptDecrypt)
+        {
+            _insuranceService = insuranceService;
+            _mapper = mapper;
+            _repoWerapper = repoWerapper;
+            _auditLogServices = auditLogServices;
+            _encryptDecrypt = encryptDecrypt;
+            IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
+            agent = accessor.HttpContext.Request.Headers["User-Agent"];
+        }
+
+        /// <summary>
+        /// Get State in Nigeria
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
+        [ProducesResponseType(200, Type = typeof(List<string>))]
+        public List<string> GetState()
+        {
+            var stateList = new List<string>()
+
+            { "Abia","Abuja","Adamawa","AkwaIbom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti",
+             "Enugu","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger",
+             "Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"
+            };
+            return stateList;
+        }
+
+        /// <summary>
+        /// Get Towns with HMO coverge with state and insurance provider.insurance provider is either hygeia or axamansard 
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<List<CityListDTO>>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [HttpPost("[action]")]
+        public IActionResult GetTowns(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<GetTownsViewModel>(decryptedString.Item2);
+
+            if (string.IsNullOrEmpty(model.State) || String.IsNullOrEmpty(model.InsurancePovider))
+            {
+                return BadRequest(new ResponseMessage { Status = false, Message = "State or insurance provider cannot be null" });
+            }
+            var townList = _insuranceService.GetTowns(model.State, model.InsurancePovider);
+            return Ok(townList);
+        }
+
+        /// <summary>
+        /// Get Health care providers based on state,city and insurance provider.Insurance provider is either hygeia or axamansard 
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<List<AxaMansardHospitalList>>))]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
+        public async Task<IActionResult> GetHealthProvider(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<GetHealthProviderViewModel>(decryptedString.Item2);
+
+            if (string.IsNullOrEmpty(model.State) || String.IsNullOrEmpty(model.InsurancePovider))
+            {
+                return BadRequest(new ResponseMessage { Status = false, Message = "State or insurance provider cannot be null" });
+            }
+            var healthProvider = await _insuranceService.GetHealthProvider(model.State, null, model.InsurancePovider);
+            return Ok(healthProvider);
+        }
+
+        /// <summary>
+        ///  Get filtered hygeia healthcare provider
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<HygeiaHospitalList>>))]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
+        public async Task<IActionResult> FilterHygeiaHealthCareProvider(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<FilterHygeiaHealthCareProviderModel>(decryptedString.Item2);
+
+            var FilterHealthCareProvider = await _insuranceService.FilterHealthCareProvider(model, model.State, model.City);
+            return Ok(FilterHealthCareProvider);
+        }
+
+        /// <summary>
+        /// Get Health insurance plans
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<AxaListResponseRoot>))]
+        public IActionResult AxaMansardGetHealthPlans()
+        {
+            var axaListResponse = new List<AxaListResponse>();
+            var axaResponse = new AxaListResponse()
+            {
+                Text = "Rugby",
+                Code = "7"
+            };
+            axaListResponse.Add(axaResponse);
+            var axaResponse2 = new AxaListResponse()
+            {
+                Text = "Sapphire",
+                Code = "8"
+            };
+            axaListResponse.Add(axaResponse2);
+            return Ok(new ResponseMessage<List<AxaListResponse>> { Data = axaListResponse, Message = "HealthPan was fetched successfully", Status = true });
+        }
+
+        /// <summary>
+        /// Create Insurance profile for indivivuals. hygeia or axamansard is passed as insurance provider in the model
+        /// </summary>
+        /// <param name="userProfile"></param>
+        /// <returns></returns>
+        [EnableCors("Cors")]
+        [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
+        public async Task<IActionResult> CreateUserInsuranceProfile([FromForm] UserProfileviewModel userProfile)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var device = _auditLogServices.GetDevice(agent);
+
+                var creatProfileResponse = await _insuranceService.UserOnboarding(userProfile, Id, IpAddress, device);
+
+                if (creatProfileResponse.Status)
+                {
+                    return Ok(creatProfileResponse);
+                }
+                return BadRequest(creatProfileResponse);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
+        /// <summary>
+        /// Get Logged in User Individual Insurance profile details
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualProfileDTO>))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        public async Task<IActionResult> GetUserInsuranceProfile()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var profile = await _repoWerapper.InsuranceProfile.GetByUserIdAsync(Id);
+            if (profile != null)
+            {
+                var profileDTO = _mapper.Map<IndividualProfileDTO>(profile);
+                return Ok(new ResponseMessage { Data = profileDTO, Message = "User profile was fetched successfully", Status = true });
+            }
+            return BadRequest(new ResponseMessage { Message = "Profile was not found" });
+        }
+
+        /// <summary>
+        /// Get extended information on users insurance profile
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualProfileDTO>))]
+        public async Task<IActionResult> GetExtendedInsuranceProfileByEmail(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<EmailViewModel>(decryptedString.Item2);
+
+            if (model.Email != null)
+            {
+                var profileDetails = await _insuranceService.GetExtendedInsuranceProfileDetailByEmail(model.Email);
+                if (!profileDetails.Status) return NotFound(profileDetails);
+                return Ok(profileDetails);
+            }
+            return BadRequest(new ResponseMessage { Message = "Email Cannot be null", Status = false });
+        }
+
+        /// <summary>
+        /// Update individual insurance profile
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> UpdateProfileAsync(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var updateProfileViewModel = JsonConvert.DeserializeObject<UpdateProfileViewModel>(decryptedString.Item2);
+
+            if (ModelState.IsValid)
+            {
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int Id = int.Parse(userId);
+                var device = _auditLogServices.GetDevice(agent);
+                int id = int.Parse(userId);
+
+                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, id,IpAddress,device);
+                if (updateResponse.Status)
+                {
+                    return Ok(updateResponse);
+                }
+                return BadRequest(updateResponse);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
+        /// <summary>
+        /// Admin Update individual insurance profile
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [Authorize(Roles = "Super-Administrator")]
+        public async Task<IActionResult> AdminUpdateProfileAsync(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<AdminUpdateProfileAsyncViewModel>(decryptedString.Item2);
+
+            if (ModelState.IsValid)
+            {
+                var device = _auditLogServices.GetDevice(agent);
+                var insuranceProfile = await _repoWerapper.InsuranceProfile.GetByEmail(model.Email);
+
+                var updateResponse = await _insuranceService.UpdateProfileAsync(model, insuranceProfile.UserId.Value,IpAddress, device);
+                if (updateResponse.Status)
+                {
+                    return Ok(updateResponse);
+                }
+                return BadRequest(updateResponse);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+        }
+
+        /// <summary>
+        /// Get paginated list of all users insurance profile. Can only be accessed by the application admins
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<List_IndividualProfileDTO>>))]
+        public async Task<IActionResult> GetPaginatedInsuranceProfiles(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var paginationQuery = JsonConvert.DeserializeObject<PaginationQuery>(decryptedString.Item2);
+
+            var insuranceProfiles = await _insuranceService.GetPaginatedInsuranceProfiles(paginationQuery);
+            return Ok(insuranceProfiles);
+        }
+
+        /// <summary>
+        /// Pay for individual with just email details
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult>  PayforRefereeWithEmail(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<PayforRefereeWithEmailViewModel>(decryptedString.Item2);
+
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+            var device = _auditLogServices.GetDevice(agent);
+
+            var response = await _insuranceService.PayforNewIndividualWithEmail(userId, model.Email, model.InsuranceService, IpAddress,device);
+
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> PayForRefereeWithFullDetails(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var refereeViewModel = JsonConvert.DeserializeObject<PayForRefereeViewModel>(decryptedString.Item2);
+
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+            var device = _auditLogServices.GetDevice(agent);
+
+            var response = await _insuranceService.PayForRefereeWithFullDetails(userId, refereeViewModel,IpAddress,device);
+
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Get insuranceProfiles of paid referees
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetPaginatedRefereeInsuranceProfiles(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var paginationQuery = JsonConvert.DeserializeObject<PaginationQuery>(decryptedString.Item2);
+
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+            var insuranceProfiles = await _insuranceService.GetReferedInsuranceProfiles(paginationQuery, userId);
+            return Ok(insuranceProfiles);            
+        }
+
+        /// <summary>
+        /// Removed paid referee from list
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> RemovePaidReferee(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<EmailViewModel>(decryptedString.Item2);
+
+            string id = User.FindFirst(ClaimTypes.Name)?.Value;
+            int userId = int.Parse(id);
+            var device = _auditLogServices.GetDevice(agent);
+
+            var response = await _insuranceService.RemovePaidReferee(userId, model.Email,IpAddress,device);
+            if (response.Status)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        /// <summary>
+        /// Get healthinsured completion profile details
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<HealthInsuredProfileStateDTO>))]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> GetProfileCompletion()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+
+            var user = await _repoWerapper.ApplicationUser.FindByIdAsync(Id);
+            var profileCompletion = await _insuranceService.GetProfileCompletion(Id,user.Email);
+            return Ok(profileCompletion);
+        }
+
+        /// <summary>
+        /// Get paginated transaction log of all users or specific user by specifying email. Can only be accessed by the application admins
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
+        [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<TransactionLogDTO>>))]
+        public async Task<IActionResult> GetPaginatedTransactionLogs(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<PaginatedTransactionLogsViewModel>(decryptedString.Item2);
+
+            var transLogs = await _insuranceService.GetPaginatedTransactionLogs(model, model.Email);
+
+            return Ok(transLogs);
+        }
+
+        /// <summary>
+        /// Generate Unique identifier
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
+        [ProducesResponseType(200, Type = typeof(File))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        public IActionResult DownloadIdentifiers(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<IdViewModel>(decryptedString.Item2);
+
+            var count = model.Id.Value;
+            var checkRole = User.IsInRole("Super-Administrator");
+            if (checkRole)
+            {
+                if (count < 1) return BadRequest(new ResponseMessage { Message = "Count has to be larger than zero" });
+                if (count >150) return BadRequest(new ResponseMessage { Message = "Count has to be less than 150" });
+
+                string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                string fileName = "identifiers.xlsx";
+
+                var content = _insuranceService.DownloadIdentifiers(count);
+                return File(content, contentType, fileName);
+            }
+            return BadRequest(new ResponseMessage { Message = "You do not have permission to access this resource" });
+        }
+
+        /// <summary>
+        /// Download insurance profile data
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [Authorize(Roles = "Super-Administrator")]
+        [ProducesResponseType(200, Type = typeof(File))]
+        [ProducesResponseType(400, Type = typeof(ResponseMessage))]
+        public IActionResult DowloadInsuranceProfileExcelData(EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var model = JsonConvert.DeserializeObject<DowloadInsuranceProfileViewModel>(decryptedString.Item2);
+
+            var response = _insuranceService.DowloadInsuranceProfileExcelData(model.SubStatus, model.ActiveStatus, model.Service);
+            if (response.Status)
+            {
+                string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                string fileName = "HealthInsurance.xlsx";
+
+                var content = response.Data as byte[];
+                return File(content, contentType, fileName);
+            }
+            return BadRequest(response);
+        }
+    }
+}

@@ -54,6 +54,28 @@ namespace HealthBanc.Controllers.V2
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
         }
 
+        /// <summary>
+        /// Log user out
+        /// </summary>
+        /// <returns></returns>
+        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> LogOut()
+        {
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                int id = int.Parse(userId);
+                var session = await _repoWrapper.UserSession.GetByUserId_Device(id, IpAddress);
+                if (session != null)
+                {
+                    _repoWrapper.UserSession.Delete(session);
+                    await _repoWrapper.Save();
+                }
+            }
+            return Ok(new ResponseMessage { Status = true, Message = "Log out successful" });
+        }
+
         ///<summary>
         ///This Creates The User
         ///</summary>        

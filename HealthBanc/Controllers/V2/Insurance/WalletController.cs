@@ -30,39 +30,72 @@ namespace HealthBanc.Controllers.V2.Insurance
         /// <summary>
         /// Generate OTP for existing wallet
         /// </summary>
-        /// <param name="mobileNumber"></param>
+        /// <param name="encryptedModel"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
-        [HttpGet("[action]")]
+        [HttpPost("[action]")]
         [MapToApiVersion("2.0")]
-        public async Task<IActionResult> GenerateOTPForExistingWallet(string mobileNumber)
+        public async Task<IActionResult> GenerateOTPForExistingWallet(EncryptedModel encryptedModel)
         {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-            var response = await _walletService.GenerateOTPForExistingWallet(id, mobileNumber);
-            if (response.Status) return Ok(response);
-            return BadRequest(response);
+            if (ModelState.IsValid)
+            {
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var generateOTP = JsonConvert.DeserializeObject<GenerateWalletOTPViewModel>(decryptedString.Item2);
+
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int id = int.Parse(userId);
+                var response = await _walletService.GenerateOTPForExistingWallet(id, generateOTP.MobileNumber);
+                if (response.Status) return Ok(response);
+                return BadRequest(response);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
         /// Generate OTP for a new wallet
         /// </summary>
-        /// <param name="mobileNumber"></param>
+        /// <param name="encryptedModel"></param>
         /// <returns></returns>
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin")]
-        [HttpGet("[action]")]
+        [HttpPost("[action]")]
         [MapToApiVersion("2.0")]
-        public async Task<IActionResult> GenerateOTPForNewWallet(string mobileNumber)
+        public async Task<IActionResult> GenerateOTPForNewWallet(EncryptedModel encryptedModel)
         {
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-            var response = await _walletService.GenerateOTPForNewWallet(id, mobileNumber);
-            if (response.Status) return Ok(response);
-            return BadRequest(response);
+            if (ModelState.IsValid)
+            {
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var generateOTP = JsonConvert.DeserializeObject<GenerateWalletOTPViewModel>(decryptedString.Item2);
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int id = int.Parse(userId);
+                var response = await _walletService.GenerateOTPForNewWallet(id, generateOTP.MobileNumber);
+                if (response.Status) return Ok(response);
+                return BadRequest(response);
+            }
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
