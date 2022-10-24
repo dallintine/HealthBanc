@@ -418,6 +418,9 @@ namespace Persistence.Migrations
                     b.Property<string>("InsuranceService")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("PendingEmailJobId")
                         .HasColumnType("nvarchar(max)");
 
@@ -581,6 +584,9 @@ namespace Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Othernames")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentMethod")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PendingEmailJobId")
@@ -1005,6 +1011,42 @@ namespace Persistence.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("Domain.Models.OtpValidation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Action")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ApplicationUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("ExpiredDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("GeneratedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("OTP")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Status")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OtpValidations");
+                });
+
             modelBuilder.Entity("Domain.Models.PaymentReference", b =>
                 {
                     b.Property<int>("Id")
@@ -1029,6 +1071,9 @@ namespace Persistence.Migrations
 
                     b.Property<int?>("InsuranceUserProfileId")
                         .HasColumnType("int");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Refernce")
                         .HasColumnType("nvarchar(max)");
@@ -1298,6 +1343,54 @@ namespace Persistence.Migrations
                     b.ToTable("UserSessions");
                 });
 
+            modelBuilder.Entity("Domain.Models.Wallet.UserWallet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("AccountTier")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CompanyProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FamilyProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("InsuranceUserProfileId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Mobile")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VirtualAccount")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WalletId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyProfileId")
+                        .IsUnique()
+                        .HasFilter("[CompanyProfileId] IS NOT NULL");
+
+                    b.HasIndex("FamilyProfileId")
+                        .IsUnique()
+                        .HasFilter("[FamilyProfileId] IS NOT NULL");
+
+                    b.HasIndex("InsuranceUserProfileId")
+                        .IsUnique()
+                        .HasFilter("[InsuranceUserProfileId] IS NOT NULL");
+
+                    b.ToTable("Wallets");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
@@ -1498,15 +1591,15 @@ namespace Persistence.Migrations
             modelBuilder.Entity("Domain.Models.PaymentReference", b =>
                 {
                     b.HasOne("Domain.Models.Axa.Hygeia_Insurance.CompanyProfile", "CompanyProfile")
-                        .WithMany("PaymentReferences")
+                        .WithMany()
                         .HasForeignKey("CompanyProfileId");
 
                     b.HasOne("Domain.Models.Axa_Hygeia_Insurance.FamilyProfile", "FamilyProfile")
-                        .WithMany("PaymentReferences")
+                        .WithMany()
                         .HasForeignKey("FamilyProfileId");
 
                     b.HasOne("Domain.Models.Axa_Hygeia_Insurance.InsuranceUserProfile", "InsuranceUserProfile")
-                        .WithMany("PaymentReferences")
+                        .WithMany()
                         .HasForeignKey("InsuranceUserProfileId");
                 });
 
@@ -1532,6 +1625,21 @@ namespace Persistence.Migrations
                         .HasForeignKey("BackendAdminUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Models.Wallet.UserWallet", b =>
+                {
+                    b.HasOne("Domain.Models.Axa.Hygeia_Insurance.CompanyProfile", null)
+                        .WithOne("UserWallet")
+                        .HasForeignKey("Domain.Models.Wallet.UserWallet", "CompanyProfileId");
+
+                    b.HasOne("Domain.Models.Axa_Hygeia_Insurance.FamilyProfile", null)
+                        .WithOne("UserWallet")
+                        .HasForeignKey("Domain.Models.Wallet.UserWallet", "FamilyProfileId");
+
+                    b.HasOne("Domain.Models.Axa_Hygeia_Insurance.InsuranceUserProfile", null)
+                        .WithOne("UserWallet")
+                        .HasForeignKey("Domain.Models.Wallet.UserWallet", "InsuranceUserProfileId");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>

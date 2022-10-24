@@ -16,5 +16,8 @@ namespace Application.Helpers
         public string ChargeAuthorization { get; set; }
         public string VerifyTransaction { get; set; }
         public string Refund { get; set; }
+        public string Healthinsured_FintechBaseURL { get; set; }
+        public string Healthinsured_FintechWebhookURL { get; set; }
+        public string Healthinsured_FintechWebhookPrefix { get; set; }
     }
 }

@@ -7,10 +7,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <StartupObject></StartupObject>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
   </PropertyGroup>
   
   <ItemGroup>
@@ -22,6 +23,9 @@
     <PackageReference Include="AutoMapper" Version="10.1.1" />
     <PackageReference Include="ClosedXML" Version="0.95.4" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.15.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0.0" />
     <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="161.46521.71" />
     <PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="3.1.0" />
     <PackageReference Include="Autofac" Version="4.9.2" />

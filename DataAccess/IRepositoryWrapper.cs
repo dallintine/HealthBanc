@@ -39,6 +39,8 @@ namespace DataAccess
         IHMOPaymentRepository HMOPayment { get; }
         IFamilyProfileRepository FamilyProfile { get; }
         IUserSessionRepository UserSession { get; }
+        IOtpValidationRepository OtpValidation { get; }
+        IWalletRepository Wallet { get; }
 
         Task<int> Save();
     }

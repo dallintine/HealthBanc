@@ -59,8 +59,8 @@ namespace HealthBanc
                         var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
 
                         //context.Database.EnsureDeleted();
-                        //context.Database.Migrate();
-                        Seed.SeedData(context, userManager, roleManager).Wait();
+                        context.Database.Migrate();
+                        //Seed.SeedData(context, userManager, roleManager).Wait();
                     }
                     catch (Exception ex)
                     {

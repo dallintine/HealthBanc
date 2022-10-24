@@ -10,7 +10,7 @@ namespace Application.ViewModels
     {
         [Required]
         public Card card { get; set; }
-        [Required, StringLength(4, ErrorMessage = "OTP cannot be longer than 4 characters.")]
+        [Required]
         public string pin { get; set; }
     }
     public class Card
@@ -22,6 +22,8 @@ namespace Application.ViewModels
         [Required]
         public int expiry_year { get; set; }
         [Required]
+        //[Required, RegularExpression("^[0-9]*$", ErrorMessage = "Card Number can only contain numerical values.")]
+        [StringLength(25, ErrorMessage = "Card number must be  at least 13 digit long", MinimumLength = 13)]
         public string number { get; set; }
         public string type { get; set; }
     }

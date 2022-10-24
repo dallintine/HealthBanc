@@ -2,6 +2,7 @@
 using Application.API_ResponseModel.HealthInsured;
 using Application.DTO;
 using Application.Helpers;
+using Application.Interfaces;
 using AutoMapper;
 using DataAccess;
 using Domain.Models.Axa_Hygeia_Insurance;
@@ -25,19 +26,23 @@ namespace Application.Services.HealthInsured
         private readonly ILogger<HMOIntegrationService> _logger;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly IMapper _mapper;
+        private readonly IUniqueIdentifier _uniqueIdentifier;
 
         private AxaMansardConfiguration AxaAccessor { get; }
         private HygeiaConfiguration HygeiaAccessor { get; }
+        private SubscriptionDuration SubscriptionAccessor { get; }
 
         public HMOIntegrationService(IHttpClientFactory httpClientFactory, IOptions<AxaMansardConfiguration> axaAccessor, IOptions<HygeiaConfiguration> hygeiaAccessor,
-            ILogger<HMOIntegrationService> logger,IRepositoryWrapper repoWrapper, IMapper mapper)
+            ILogger<HMOIntegrationService> logger,IRepositoryWrapper repoWrapper, IMapper mapper,IUniqueIdentifier uniqueIdentifier, IOptions<SubscriptionDuration> subscriptionAccessor)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _repoWrapper = repoWrapper;
             _mapper = mapper;
+            _uniqueIdentifier = uniqueIdentifier;
             HygeiaAccessor = hygeiaAccessor.Value;
             AxaAccessor = axaAccessor.Value;
+            SubscriptionAccessor = subscriptionAccessor.Value;
         }        
 
         /// <summary>
@@ -48,22 +53,22 @@ namespace Application.Services.HealthInsured
         {
             try
             {
+                _logger.LogInformation($"Axamansard auth token request\n]");
                 var httpClient = _httpClientFactory.CreateClient("AxaMansard");
                 httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-key", $"{AxaAccessor.Apikey}");
                 httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-api-secret", $"{AxaAccessor.ApiSecret}");
                 httpClient.DefaultRequestHeaders.TryAddWithoutValidation("x-client-key", $"{AxaAccessor.ClientKey}");
 
                 var response = await httpClient.GetAsync($"{AxaAccessor.AxaMansardToken}");
+                string apiResponse = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Axamansard auth token response [ Response : {apiResponse} \n]");
                 if (response.IsSuccessStatusCode)
                 {
-                    string apiResponse = await response.Content.ReadAsStringAsync();
                     var authResponse = JsonConvert.DeserializeObject<AuthenticationResponse>(apiResponse);
                     if (authResponse.Succeeded)
                     {
-                        _logger.LogInformation($"Axamansard auth token was successful [ AuthResponse : {authResponse} | Date {DateTime.Now}]");
                         return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = true, Message = "Request was processed successfully" };
                     }
-                    _logger.LogInformation($"Axamansard auth token was not successful [ AuthResponse : {authResponse} | Date {DateTime.Now}]");
                     return new ResponseMessage<AuthenticationResponse> { Data = authResponse, Status = false, Message = authResponse.Message.ToString() };
                 }
                 _logger.LogInformation($"Axamansard auth token was not successful [ StatusCode : {response.StatusCode} | Date {DateTime.Now} | Message - Could not make connection]");
@@ -85,8 +90,8 @@ namespace Application.Services.HealthInsured
         {
             try
             {
+                _logger.LogInformation($"Register user to axamansard payload [Payload {JsonConvert.SerializeObject(model)}] /n");
                 model.EntityCode = AxaAccessor.EntityCode;
-                _logger.LogInformation($"Register user to axamansard payload [Payload {JsonConvert.SerializeObject(model)}]");
                 var bearerRequest = await AxaMansardAuthentication();
                 if (bearerRequest.Status)
                 {
@@ -95,17 +100,15 @@ namespace Application.Services.HealthInsured
                     HttpContent content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
                     var response = await httpClient.PostAsync($"{AxaAccessor.AxaMansardEnrollement}", content);
                     string apiResponse = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation($"Register user on axamasard Response : [Response { apiResponse}  ]");
 
                     if (response.IsSuccessStatusCode)
                     {
                         var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
                         if (authResponse.success)
                         {
-                            _logger.LogInformation($"Register user on axamasard successful : [Response { authResponse} | Time {DateTime.Now} ]");
                             return new ResponseMessage { Status = true, Message = authResponse.message , Data= authResponse.code};
-                        }
-                        _logger.LogInformation($" Axamansard User Unsuccessfully response : [ApiResponse { apiResponse} | Deseialised Response { authResponse}]");
-                        BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
+                        }BackgroundJob.Schedule(() => ResendFailedAxamansardReg(model), DateTime.Now.AddHours(6));
                         return new ResponseMessage { Status = false, Message = authResponse.message };
                     }
                     _logger.LogInformation($"Bad request when trying to register user to axamansard [StatusCode {response.StatusCode} | apiResponse - {apiResponse}");
@@ -127,6 +130,7 @@ namespace Application.Services.HealthInsured
         [AutomaticRetry(Attempts = 0)]
         public async Task<ResponseMessage> AxamansardDeactivateUser(string axamansardReference)
         {
+            _logger.LogInformation($"Deactivate user on axamasard : [Reference {axamansardReference}]");
             string entityCode = AxaAccessor.EntityCode;
             var axaDeactivation = new AxaDeactivation(axamansardReference, entityCode);
             var bearerRequest = await AxaMansardAuthentication();
@@ -137,16 +141,14 @@ namespace Application.Services.HealthInsured
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(axaDeactivation), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync($"{AxaAccessor.AxaMansardDeactivation}", content);
                 string apiResponse = await response.Content.ReadAsStringAsync();
-
+                _logger.LogInformation($"Deactivate user on axamasard response : [Response { apiResponse} |Reference {axamansardReference}]");
                 if (response.IsSuccessStatusCode)
                 {
-                    var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);
-                    _logger.LogInformation($"RegisDeactivate user on axamasard successful : [Response { authResponse} | Time {DateTime.Now} | Reference {axamansardReference}]");
+                    var authResponse = JsonConvert.DeserializeObject<EnrollementResponse>(apiResponse);                   
                     return new ResponseMessage { Status = true, Message = authResponse.message };
                 }
                 else
                 {
-                    _logger.LogInformation($"Bad request when trying to deactivate user to axamansard  :apiResponse {apiResponse}");
                     BackgroundJob.Schedule(() => AxamansardDeactivateUser(axamansardReference), DateTime.Now.AddHours(6));
                     return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
                 }               
@@ -164,6 +166,7 @@ namespace Application.Services.HealthInsured
         [AutomaticRetry(Attempts = 0)]
         public async Task ResendFailedAxamansardReg(EnrollmentModel model)
         {
+            _logger.LogInformation($"Resending Failed Axareg  [Payload {JsonConvert.SerializeObject(model)}]");
             var response = await AxamansardRegisterUser(model);
             if (response.Status)
             {
@@ -188,6 +191,8 @@ namespace Application.Services.HealthInsured
         {
             try
             {
+                _logger.LogInformation($"Hygeia Get Token Request]");
+
                 var hygeiaAuthModel = new HygeiaAuthModel()
                 {
                     username = HygeiaAccessor.Username,
@@ -199,6 +204,7 @@ namespace Application.Services.HealthInsured
                 HttpContent content = new FormUrlEncodedContent(dictionObj);
                 var response = await httpClient.PostAsync($"{HygeiaAccessor.HygeiaAuth}", content);
                 string apiResponse = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Hygeia Get Token Response [Response : {apiResponse}] \n");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -220,15 +226,13 @@ namespace Application.Services.HealthInsured
                         RecurringJob.AddOrUpdate(() => HygeiaGetAuthToken(), Cron.HourInterval(12));
                         return new ResponseMessage { Status = true, Message = authResponse.Access_Token };
                     }
-                    _logger.LogInformation("Hygeia Unsuccessfully response : " + apiResponse, authResponse);
                     return new ResponseMessage { Status = false, Message = "" };
                 }
-                _logger.LogInformation(" Bad request when trying to get hygeia auth token : " + apiResponse);
                 return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("An error occurred while getting hygeia auth token"+ " "+ex.ToString(), ex.ToString());
+                _logger.LogInformation("An error occurred while getting hygeia auth token"+ " "+ex.ToString(), ex.ToString() + "\n");
                 return new ResponseMessage { Status = false, Message = "This on us.An error occurred while enrolling user to hygeia.Please try again later" };
             }
         }
@@ -241,7 +245,7 @@ namespace Application.Services.HealthInsured
         public async Task<ResponseMessage> HygeiaRegisterUser(RegistrationModel model)
         {
             try
-            {
+            {               
                 var encrytedAccess = await _repoWrapper.EncryptedAcessToken.GetEncryptedToken();
                 string bearerToken;
                 if (encrytedAccess == null)
@@ -261,34 +265,31 @@ namespace Application.Services.HealthInsured
 
                 model.PlanId = HygeiaAccessor.HygeiaPlanCode;
                 model.DataConsent = true;
-                model.ImagePath ??= "iVBORw0KGgoAAAANSUhEUgAAARMAAAC3CAMAAAAGjUrGAAAAMFBMVEX////f39/d3d38/Pzh4eHs7Ozy8vL4+Pj19fXq6urk5OTv7+/m5ubr6+v29/bn6Of+ydA3AAAEWElEQVR4nO2d2XLDIAxFbcDGW5r//9vGbdM2xU4EKha+6Dx0pm/kjJBYDDSNoiiKoiiKoiiKoiiKoiiKoiiKoiiKohyOtbbv/e2vlW5JGdh5HifTrhjjxrnz0i2Sxi/OfAr54vafc3Nfrxi7tA9CfomZbn1JunkSeLcl5FvMch2kW3g4/WaMPITLMtcVLM+j5Jteup1HspCU3LpQPfl2eNVzfqzM0m09igvZSWuulWQVspFViqtAivfXGCdt6+CTymDoHecuBTxShlghFUiZUpxgS6FX4QegS3Jkev0Bd0jr08JkjRTY3pPupB2l254L4jxnE9RRSlrV+QQ1zXKcOOnG5yGxEn9iMFfeZpYTzHLM6TqonYcTJqgDfJYSTCdenQR0vL7TIhYeVtkBnRxznXTSPyADI0sJpBNL2/yrywkzxaoTdaJOEp0g1mLeFBBzzHbhKYEc2zPHbJBOmPMdSCc9S0nbSrc/C6yBLGIpbphrSqDrsaxJIKgT1l4G6kYgZ9Q2STc+D6zVAgfZd+zE6juQ8x3uGjXiNyjMsb06USc01EkQJoifb3FzLGCYcONkkW5/Dnh76KDfKWmYhLDC5E269XmION8VMCFm2Ia3VnCVbnwmOPNiVCeMagy6GnvDJocJ4lzni6SjbyuwYdKk74/ihkmTuPGFOji5Y8foRIt/bUHsdyj4Z66b2K0v0L2uP8Sto6gTdaJO7kSW4xpSbOQ6ShVlJ7LwgO6d/+XlTWQPcSLd2mOIWqyuIsU2UZ0HdLk+hHhn3Qd1pNgmIlCqCZOIu2Fgl2FDqHEC+W3SDguxGuMuTYeQnWichNQyOmnolwhBnsXYgZpja3LSqZMA8m66dEMPhLwfKN3QAyHPjKUbeiDqJITqpKYcS90LVCcb1LNUQHZS0xyQHCeI39jvQN72qmMXsFkPwVGVrKsFVaTZuE9CjevxrfjYE7XGXaCt2Jm8nPTbihlRrdjZbT/iRbACuZfuB+d4h5qmAertM+vH+LdDwmAx04BiZeiYEfLby4hQnIfkJLJj5exHvvzMvOVx04q7nDfh2vkfssi2lus5rdguQ4z8WFnOt47g+/9LrDtWxnNZseP/JtYdK9N5rLztPDqbxcopSnOfMqVJZ+qKtzLwbghKwExFrybYjnshapoVN5Vamm32UvOEIntQ3uHIa8orzf0sGCNfUsy1pBXtW6eRNvKBKeVmu7T1xEyYpYQXj+U7zV+k063l3hyVAel3oDn3vGREUgr7HrpMCEYK962UbAjuM8ffPXAUcgc6RGY3NKQ6D+Pt3dyYizoJkDpvyruIPC9STjhvNOdGqhqXWolXhKpxsaOTFXUSIuTkTfp3P0PISdRdDEejTkLUSYg62UDms/SyncgMZAtdY7sjMpAteWgvNbiX/tXPUScbSGyrFz20b2XOzZXuRGKAok7O50TkPpmynYjcsZN8MfsxiJzDLXD3/AGJowqlO5EYtHXGlQzjeZp3TSc+LoSs340AAAAASUVORK5CYII=";
+
+                _logger.LogInformation($"Register user Hygeia [Payload : {JsonConvert.SerializeObject(model)}] \n");
+                model.ImagePath ??= HygeiaAccessor.DefaultImage;
                 var httpClient = _httpClientFactory.CreateClient("Hygeia");
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
 
                 // Serialize our concrete class into a JSON String
                 var stringPayload = JsonConvert.SerializeObject(model);
-                _logger.LogInformation($"Register user to Hygeia payload [Payload - {stringPayload}]");
                 var content = new StringContent(stringPayload, Encoding.UTF8, "application/json");
-
-                //var dictionObj = model.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(model).ToString());
-                //HttpContent content = new FormUrlEncodedContent(dictionObj);
 
                 var response = await httpClient.PostAsync($"{HygeiaAccessor.HygeiaRegistration}", content);
                 string apiResponse = await response.Content.ReadAsStringAsync();
-
+                _logger.LogInformation($"Register user Hygeia  Response [Response : {apiResponse}] \n");
                 if (response.IsSuccessStatusCode)
                 {
                     var authResponse = JsonConvert.DeserializeObject<HygeiaRegistrationResponse>(apiResponse);
                     if (authResponse.Success)
                     {
-                        _logger.LogInformation($"Register user on Hygeia successful : [Response { authResponse} | Time {DateTime.Now} ]");
                         return new ResponseMessage { Status = true, Message = authResponse.MemberId };
                     }
-                    _logger.LogCritical("Hygeia Unsuccessfully response : " + apiResponse, authResponse);
+                    _logger.LogCritical("Hygeia Unsuccessfully response : \n");
                     BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddHours(6));
                     return new ResponseMessage { Status = false, Message = "" };
                 }
-                _logger.LogCritical(" Bad request when trying to register user to hygeia  : " + apiResponse);
+                _logger.LogCritical(" Bad request when trying to register user to hygeia  \n");
                 BackgroundJob.Schedule(() => ResendFailedHygeiaReg(model), DateTime.Now.AddHours(6));
                 return new ResponseMessage { Status = false, Message = "Could not connect to insurance provider. Please try again later" };
             }
@@ -308,6 +309,7 @@ namespace Application.Services.HealthInsured
         [AutomaticRetry(Attempts = 0)]
         public async Task<ResponseMessage> HygeiaDeactivateUser(string enrollNumber)
         {
+            _logger.LogInformation($"Deactivate user Hygeia [EnrolleNumber : {enrollNumber}] \n");
             var encrytedAccess = await _repoWrapper.EncryptedAcessToken.GetEncryptedToken();
             string bearerToken;
             if (encrytedAccess == null)
@@ -328,14 +330,15 @@ namespace Application.Services.HealthInsured
             var httpClient = _httpClientFactory.CreateClient("Hygeia");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
             var response = await httpClient.PutAsync($"{HygeiaAccessor.HygeiaDeactivate}/{enrollNumber}", null);
-
             string apiResponse = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Deactivate user Hygeia  Response [Response : {apiResponse}] \n");
+
             if (response.IsSuccessStatusCode)
             {
                 var deactivateResponse = JsonConvert.DeserializeObject<HygeiaDeactivateResponse>(apiResponse);
                 if (deactivateResponse.Success)
                 {
-                    _logger.LogInformation($"Deactivate user on axamasard successful : [Response { deactivateResponse} | Time {DateTime.Now} | enrolleNumber {enrollNumber} ]");
+                    _logger.LogInformation($"Deactivate user on axamasard successful : [enrolleNumber {enrollNumber} ]\n");
                     return new ResponseMessage { Message = deactivateResponse.Message, Status = true };
                 }
                 return new ResponseMessage { Message = "User was previously deactivated", Status = false };
@@ -353,6 +356,7 @@ namespace Application.Services.HealthInsured
         [AutomaticRetry(Attempts = 0)]
         public async Task ResendFailedHygeiaReg(RegistrationModel model)
         {
+            _logger.LogInformation($"Resend Failed Hygeia Reg [Payload : {JsonConvert.SerializeObject(model)}] \n");
             var response = await HygeiaRegisterUser(model);
             await Task.CompletedTask;
         }
@@ -396,6 +400,77 @@ namespace Application.Services.HealthInsured
             }
             var registration = await HygeiaRegisterUser(registrationModel);
             return registration;
+        }
+
+        public async Task SendDetailsToInsuranceProvider(InsuranceUserProfile insuranceUserProfile)
+        {
+            _logger.LogInformation($"Sending Details to insurance provider [Payload : {JsonConvert.SerializeObject(insuranceUserProfile)}]\n");
+            if (insuranceUserProfile.InsuranceService.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+            {
+                var response = await EnrollUserToHygeiaOnOnboarding(insuranceUserProfile);
+                if (response.Status)
+                {
+                    insuranceUserProfile.TransId = response.Message;
+                }
+                else
+                {
+                    if (insuranceUserProfile.TransId is null)
+                    {
+                        insuranceUserProfile.TransId = "Pending";
+                    }
+                }
+            }
+            else
+            {
+                var axaRegResponse = await EnrollUserToAxamansardOnOnboarding(insuranceUserProfile);
+                var codeReference = axaRegResponse.Data as string;
+                insuranceUserProfile.AxamasardReferenceCode = codeReference;
+            }
+            _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
+            await _repoWrapper.Save();
+        }
+
+        public async Task OnboardCompanyUsersToHMO(int companyUserId, string status, DateTime endActiveStatusDate, string insuranceProvider)
+        {
+            _logger.LogInformation($"Onboarding Company Users To HMO [Provider :{insuranceProvider}] | tatus : {status} | CompanyUserId : {companyUserId} \n");
+            var insuranceProfiles = await _repoWrapper.InsuranceProfile.QueryableInsuranceProfilesUnderCompany(companyUserId);
+            var insuranceUserProfiles = new List<InsuranceUserProfile>();
+            // Onboard users with an active company subscription status
+            if (status is null)
+            {
+                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Pending.ToString() ||
+                x.CompanySubscribedStatus == InsuranceProfile_CompanySubStatusValue.Active.ToString()).ToList();
+            }
+            // Onboard users with a pending company subscription status
+            else
+            {
+                insuranceUserProfiles = insuranceProfiles.Where(x => x.CompanySubscribedStatus == status).ToList();
+            }
+
+            foreach (var item in insuranceUserProfiles)
+            {
+                if (insuranceProvider.ToLower() == InsuranceProvider.Hygeia.ToString().ToLower())
+                {
+                    var result = await EnrollUserToHygeiaOnOnboarding(item);
+                    if (result.Status)
+                    {
+                        item.TransId = result.Message;
+                    }
+                }
+                else
+                {
+                    item.TransId = _uniqueIdentifier.GetUniqueCode(10);
+                    await EnrollUserToAxamansardOnOnboarding(item);
+                }
+                item.ActiveStatus = true;
+                item.SubscriptionStatus = true;
+                item.StartActiveStatusDate = endActiveStatusDate.AddDays(-SubscriptionAccessor.FreeTrialDayDuration);
+                item.EndActiveStatusDate = endActiveStatusDate;
+                item.CompanySubscribedStatus = InsuranceProfile_CompanySubStatusValue.Active.ToString();
+                _repoWrapper.InsuranceProfile.Update(item);
+            }
+            await _repoWrapper.Save();
+            await Task.CompletedTask;
         }
     }
 }

@@ -1,14 +1,17 @@
-﻿using Application.DTO;
+﻿using Application.AuditAndReport.AuditLog;
+using Application.DTO;
 using Application.Helpers;
 using Application.Helpers.Jwt_Authorization;
 using Application.Helpers.ThirdPartyAPI;
 using Application.Interfaces;
+using Application.ViewModels;
 using Application.ViewModels.UserReg_Login;
 using AutoMapper;
 using DataAccess;
 using DataAccess.General.Interfaces;
 using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Interfaces;
+using Domain.Enums;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
@@ -36,7 +39,8 @@ namespace Application.Services.Identity
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IEmailSender _emailSender;
-        private readonly IOptions<JwtSettings> jwtsettings;
+        private readonly ActivityLog _activityLog;
+        private readonly AuditLogService _auditLog;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly ILogger<IdentityService> _logger;
         private readonly JwtSettings _jwtsettings;
@@ -48,7 +52,7 @@ namespace Application.Services.Identity
 
 
 
-        public IdentityService(UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,
+        public IdentityService(UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,ActivityLog activityLog, AuditLogService auditLog,
              IOptions<JwtSettings> jwtsettings, IRepositoryWrapper repoWrapper, ILogger<IdentityService> logger,
               TokenValidationParameters tokenValidationParameters,IPasswordHasher passwordHasher, IOptions<AppEndpoint> optionAccessor)
         {
@@ -56,7 +60,8 @@ namespace Application.Services.Identity
             _userManager = userManager;
             _encryptAndDecrypt = encryptAndDecrypt;
             _emailSender = emailSender;
-            this.jwtsettings = jwtsettings;
+            _activityLog = activityLog;
+            _auditLog = auditLog;
             _repoWrapper = repoWrapper;
             _logger = logger;
             _jwtsettings = jwtsettings.Value;
@@ -70,8 +75,9 @@ namespace Application.Services.Identity
             return (new ResponseMessage { Status = true, ResponseCode = 0, Message = "SignOut Successful" });
         }
 
-        public async Task<ResponseMessage> RegisterUser(RegistrationViewModel registrationViewModel)
+        public async Task<ResponseMessage> RegisterUser(RegistrationViewModel registrationViewModel,string app)
         {
+            _logger.LogInformation($"Register User [App : {app}]");
             var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
             if (checkUserEmail == null)
             {
@@ -82,7 +88,8 @@ namespace Application.Services.Identity
                     FirstName = registrationViewModel.FirstName,
                     LastName = registrationViewModel.LastName,
                     PhoneNumber = registrationViewModel.PhoneNumber,
-                    DateOfRegistration = DateTime.Now
+                    DateOfRegistration = DateTime.Now,
+                    EmailConfirmed = true
                 };
 
                 var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
@@ -90,14 +97,14 @@ namespace Application.Services.Identity
                 {
                     await _userManager.UpdateAsync(user);
                     await _userManager.AddToRoleAsync(user, "SuperAdmin");
-                    await SendUserEmailVerificationAsync(user);
+                    //await SendUserEmailVerificationAsync(user,app);
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
                     await ProcessInsuranceUserId(user, user.Email);
                     return new ResponseMessage
                     {
-                        Message = "User Created Successfully,Please Check Email To Confirm Your Email Address And Login",
+                        Message = "User Created Successfully,Please Login",
                         Status = true
                     };
                 }
@@ -109,7 +116,7 @@ namespace Application.Services.Identity
             return new ResponseMessage { Message = "Email Already Exist",Status = false };
         }
 
-        public async Task<ResponseMessage> SocialMediaRegistrationLink(RegistrationViewModel registrationViewModel, string browser, string ip)
+        public async Task<ResponseMessage> SocialMediaRegistrationLink(RegistrationViewModel registrationViewModel,string app, string browser, string ip)
         {
             var checkUserEmail = await _userManager.FindByEmailAsync(registrationViewModel.EmailAddress);
             if (checkUserEmail == null)
@@ -130,7 +137,7 @@ namespace Application.Services.Identity
                 {
                     await _userManager.UpdateAsync(user);
                     await _userManager.AddToRoleAsync(user, "SuperAdmin");                    
-                    await SendUserEmailVerificationAsync(user);
+                    await SendUserEmailVerificationAsync(user,app);
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
@@ -250,6 +257,8 @@ namespace Application.Services.Identity
                     new Claim("LastName",user.LastName??"Not Available"),
                     new Claim("PhoneNumber",user.PhoneNumber??"Not Available"),
                     new Claim("id",user.Id.ToString()),
+                    new Claim("IP",ip),
+                    new Claim("UAParser",browser),
                     new Claim(ClaimTypes.Email, user.Email),
                     //new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
                     new Claim("LoggedOn", DateTime.Now.ToString()),
@@ -294,6 +303,7 @@ namespace Application.Services.Identity
                 loggedInResponse.Services = serviceList;
             }
             await SessionStorage(browser, ip, user.Id, expiryTime);
+            await _auditLog.UserCreateAuditLog(new AuditLogViewModel(user.Id, null, "NA", AuditAction.Login.ToString(), "Logged In User"), ip, browser);
             return loggedInResponse;
         }
 
@@ -314,8 +324,9 @@ namespace Application.Services.Identity
             return principal;
         }
 
-        public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword)
+        public async Task<ResponseMessage> ForgotPassword(ForgotPasswordViewModel forgotPassword, string app, string browser, string ip)
         {
+            _logger.LogInformation($"app : {app}");
             var user = await _userManager.FindByNameAsync(forgotPassword.Username);
             if (user != null)
             {
@@ -325,17 +336,38 @@ namespace Application.Services.Identity
                 }
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var email = user.UserName;
-
-                var passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}";
+                app ??= ("Healthbanc");
+                string passwordResetLink;
+                if (app == HealthbancApps.HealthInsured.ToString())
+                {
+                    passwordResetLink = $"{Options.APIUri.HealthInsuredForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}" +
+                    $"&app={HttpUtility.UrlEncode(app)}";
+                }
+                else
+                {
+                    passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}" +
+                   $"&app={HttpUtility.UrlEncode(app)}";
+                }
 
                 // Email the user the verification code
-                _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                if (app.ToLower() == HealthbancApps.HealthInsured.ToString().ToLower())
+                {                    
+                     _emailSender.SendHealthInsuredUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                }
+                else
+                {
+                    _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                }
+
+                await _auditLog.UserCreateAuditLog(new AuditLogViewModel(user.Id, null, "NA", AuditAction.ForgotPassword.ToString(), "Forgot Password Mail sent"), ip, browser);
+
+
                 return new ResponseMessage { Message = "Please Check Your Mail For Further Instructions", Status = true };
             }
             return new ResponseMessage { Message = "Username Does Not Exist", Status = false };
         }
 
-        public async Task<ResponseMessage> ResetPassword(string email, string emailToken, ResetPasswordViewModel viewModel)
+        public async Task<ResponseMessage> ResetPassword(string email, string emailToken, ResetPasswordViewModel viewModel, string browser, string ip)
         {
             var user = await _userManager.FindByEmailAsync(email);
 
@@ -392,6 +424,10 @@ namespace Application.Services.Identity
 
                     var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, false, true);
                     _repoWrapper.PasswordChange.Create(passwordChangehistory2);
+
+                    await _auditLog.UserCreateAuditLog(new AuditLogViewModel(user.Id, null, "NA", AuditAction.ResetPassword.ToString(), "Passwword reset successful"), ip, browser);
+
+
                     return new ResponseMessage { Message = "Password Changed Succefully", Status = true };
                 }
                 else if(!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))
@@ -406,7 +442,7 @@ namespace Application.Services.Identity
             }
         }      
 
-        public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user)
+        public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user, string app)
         {
             // Get the user details
             var userIdentity = await _userManager.FindByNameAsync(user.UserName);
@@ -417,10 +453,20 @@ namespace Application.Services.Identity
                 // Generate an email verification code
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-                var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(token)}";
+                app ??= ("Healthbanc");
+
+                var confirmationUrl = $"{Options.APIUri.HealthBancApiBase}v1/api/Identity/ConfirmEmail?userId={HttpUtility.UrlEncode(encryptedUserIdentity)}&emailToken={HttpUtility.UrlEncode(token)}&app={HttpUtility.UrlEncode(app)}";
 
                 // Email the user the verification code
-                _emailSender.SendUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
+                if(app.ToLower() == HealthbancApps.HealthInsured.ToString().ToLower())
+                {
+                    _emailSender.SendHealthInsuredUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
+                }
+                else
+                {
+                    _emailSender.SendUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
+                }
+               
                 return new ResponseMessage { Status = true };
             }
             return new ResponseMessage { Status = true, Message = "User does not exist.could not fetch user" };

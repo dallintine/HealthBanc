@@ -2,38 +2,40 @@
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Interfaces;
 using Application.Services;
+using Application.Services.Activation_Deactivation;
 using Application.Services.Admin;
 using Application.Services.AuditAndReport;
+using Application.Services.Card;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured.Insurance;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services.Identity;
 using Application.Services.Paystack;
+using Application.Services.Wallet;
 using DataAccess;
-using DataAccess.General.Implementation;
-using DataAccess.General.Interfaces;
-using DataAccess.HealthInsured.Implementation;
-using DataAccess.HealthInsured.Interfaces;
 using DataAccess.Logs.Implementation;
 using DataAccess.Logs.Interfaces;
+using Domain.Models.ReportAndLogs;
 using Infrastructure.EncryptionService;
 using Infrastructure.ImageService;
 using Infrastructure.Mail;
 using Infrastructure.PasswordManager;
 using Infrastructure.ProcessUniqueIdentifier;
+using Infrastructure.SMS;
 using Infrastructure.UploadService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using OfficeOpenXml;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace HealthBanc
 {
@@ -48,6 +50,22 @@ namespace HealthBanc
             });
 
             services.AddControllersWithViews();
+            services.AddApiVersioning(options =>
+            {
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.DefaultApiVersion = Microsoft.AspNetCore.Mvc.ApiVersion.Default;
+                //options.ApiVersionReader = ApiVersionReader.Combine(
+                //    new HeaderApiVersionReader("X-Version"),
+                //    new MediaTypeApiVersionReader("version")
+                //);
+                options.ReportApiVersions = true;
+            });
+
+            services.AddVersionedApiExplorer(setup =>
+            {
+                setup.GroupNameFormat = "'v'VVV";
+                setup.SubstituteApiVersionInUrl = true;
+            });
 
             services.AddApplicationInsightsTelemetry();
 
@@ -56,7 +74,7 @@ namespace HealthBanc
             ///////////////Add Swagger Service/////////////////////////
             services.AddSwaggerGen(x =>
             {
-                x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
+                //x.SwaggerDoc("v1", new OpenApiInfo { Title = "HealthBanc", Version = "v1" });
 
                 x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -91,14 +109,18 @@ namespace HealthBanc
                 x.IncludeXmlComments(xmlPath);
             });
 
+            services.AddTransient<IConfigureOptions<SwaggerGenOptions>, SwaggerConfigureOptions>();
+
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddScoped<Activity_ErrorLogService>();
+            services.AddScoped<ActivityLog>();
             services.AddScoped<IdentityService>();
             services.AddScoped<HMOIntegrationService>();
             services.AddScoped<BackendAdminService>();
             services.AddScoped<InsurancePSWebHookService>();
             services.AddScoped<CorporateInsuranceService>();
             services.AddScoped<IBSIntegrationService>();
+            services.AddScoped<Card_SubscriptionService>();
             services.AddScoped<IEncryptAndDecrypt, EncryptAndDecrypt>();
             services.AddScoped<InsuranceService>();
             services.AddScoped<ExcelPackage>();
@@ -113,13 +135,20 @@ namespace HealthBanc
             services.AddScoped<PaystackService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            services.AddSingleton<IWalletEncryptionsAndDecryption, WalletEncryptionAndDecryption>();
+            services.AddSingleton<ISMSService, SMSService>();
             services.AddScoped<Dashboard_Analytics>();
             services.AddScoped<IFileProcessor, FileProcessor>();
             services.AddScoped<LeadGeneratorService>();
             services.AddScoped<FamilyInsuranceService>();
             services.AddScoped<UtilityService>();
             services.AddScoped<ImageService>();
-
+            services.AddScoped<WalletConnect>();
+            services.AddScoped<WalletService>();
+            services.AddScoped<OTPService>();
+            services.AddScoped<RestrictionService>();
+            services.AddScoped<WalletPaymentService>();
+            services.AddScoped<ResponseHelper>();
         }
     }
 }

@@ -60,9 +60,11 @@ namespace Application.Services.Admin
 
         public async Task<ResponseMessage> BackendLogin(ADCredentialsViewModel aDCredentials)
         {
+            _logger.LogInformation($"Process backend admin login [Payload : {JsonConvert.SerializeObject(aDCredentials)}]");
             var checkIfUserExist = await _repoWrapper.ApplicationUser.FindByUniqueUsername(aDCredentials.AD_Username);
             if (checkIfUserExist is null)
             {
+                _logger.LogInformation($"Process backend admin login terminated [Reason : User does not exist]");
                 return new ResponseMessage { Message = "User Does Not Exist" };
             }
             if (!(checkIfUserExist.LockoutEnd is null)) return new ResponseMessage { Message = "Your account has been disabled, please contact admin." };
@@ -81,8 +83,10 @@ namespace Application.Services.Admin
                     var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
                     return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
                 }
+                _logger.LogInformation($"Backend Login failed. OTP [Reason : OTP could not be validated]");
                 return otpValidation;
             }
+            _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
             return passwordValidation;
         }
 
@@ -118,6 +122,7 @@ namespace Application.Services.Admin
         {
             if (AdminAuthSettings.Enable_ADCredentials)
             {
+                _logger.LogInformation($"Processs Password Validation[Payload : {JsonConvert.SerializeObject(aDCredentials)}]");
                 var httpClient = _httpClientFactory.CreateClient("Fiorano");
                 var loginCredentials = new ADCredentialsRoot
                 {
@@ -128,9 +133,11 @@ namespace Application.Services.Admin
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
 
                 var authentication = await httpClient.PostAsync(AppEndpoint.APIUri.FiorianoADAuthentication, content);
+                string apiResponse = await authentication.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Processs Password Validation Response[{JsonConvert.SerializeObject(aDCredentials)}]");
+
                 if (authentication.IsSuccessStatusCode)
                 {
-                    string apiResponse = await authentication.Content.ReadAsStringAsync();
                     var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
                     if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
                     {
@@ -138,7 +145,7 @@ namespace Application.Services.Admin
                     }
                     return new ResponseMessage { Message = "Login detail is invalid, please try again with correct credentials", ResponseCode = 12 };
                 }
-                _logger.LogCritical("Could not connnect with ADCredentials password sevice", await authentication.Content.ReadAsStringAsync());
+                _logger.LogInformation("Could not connnect with ADCredentials password sevice");
                 return new ResponseMessage { Message = "Could not connect to Password ADService" };
             }
             else
@@ -151,6 +158,7 @@ namespace Application.Services.Admin
         {
             if (AdminAuthSettings.Enable_OTP)
             {
+                _logger.LogInformation($"Processs OTP Validation[Payload : {JsonConvert.SerializeObject(aDCredentials)}]");
                 var checkOTP = _otpService.SOAPManual(aDCredentials.AD_OTP, aDCredentials.AD_Username);
                 if (checkOTP == "")
                 {
@@ -234,6 +242,8 @@ namespace Application.Services.Admin
 
         public async Task<ResponseMessage> CreateBackendAdmin(CreateAdminViewModel createAdminViewModel,string loggedInUserEmail,int loggedInUserId)
         {
+            _logger.LogInformation($"Processs Create backend Admin[Admin Payload : {JsonConvert.SerializeObject(createAdminViewModel)}" +
+                $" loggedin Usermail : {loggedInUserEmail}");
             // get logged in user
             var loggedinuser = await _repoWrapper.ApplicationUser.GetByEmailAsync(loggedInUserEmail);
             //get logged in admin mail
@@ -241,11 +251,16 @@ namespace Application.Services.Admin
 
             if (!createAdminViewModel.Email.EndsWith("@sterling.ng"))
             {
+                _logger.LogInformation($"Create admin Terminated [ Reason : Email is not a valid sterling email]");
                 return new ResponseMessage { Message = "Email is not a valid sterling email" };
             }
 
             var checkEmail = await _userManager.FindByEmailAsync($"{createAdminViewModel.Email}.admin");
-            if (checkEmail != null) return new ResponseMessage { Message = "Email Already Exist" };
+            if (checkEmail != null)
+            {
+                _logger.LogInformation($"Create admin Terminated [ Reason : Email exist]");
+                return new ResponseMessage { Message = "Email Already Exist" };
+            }
             var checkIfUserExist = await _repoWrapper.ApplicationUser.FindByUniqueUsername(createAdminViewModel.UserName);
             if (checkIfUserExist != null) return new ResponseMessage { Message = "Username Already Exist" };
 
@@ -263,6 +278,7 @@ namespace Application.Services.Admin
             var result = _userManager.CreateAsync(appUser).Result;
             if (result.Succeeded)
             {
+                _logger.LogInformation($"Create admin user Succesful ");
                 var role = await _repoWrapper.ClassOrRole.GetRole(createAdminViewModel.RoleId);
                 await _userManager.AddToRoleAsync(appUser, role.Name);
                 BackendAdminUser adminUser = new BackendAdminUser()
@@ -285,6 +301,8 @@ namespace Application.Services.Admin
 
         public async Task<ResponseMessage> ChangeAdminRole(int loggedInUserId,string email, int roleId)
         {
+            _logger.LogInformation($"Change admin role process [ Email : {email} | RoleId :{roleId}]");
+
             var loggedInUser = await _repoWrapper.ApplicationUser.FindByIdAsync(loggedInUserId);
             var loggedInUserMail = loggedInUser.Email;
             var loggedInAdminMail = loggedInUserMail.Remove(loggedInUserMail.Length - 6);

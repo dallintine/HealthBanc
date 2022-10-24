@@ -7,6 +7,7 @@ using Application.Helpers;
 using Application.Interfaces;
 using Application.Services.HealthInsured;
 using Application.Services.HealthInsured.Insurance;
+using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services.Identity;
 using Application.ViewModels;
 using Application.ViewModels.HealthInsured;
@@ -50,12 +51,14 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly HMOIntegrationService _hmoIntegrationService;
         private readonly IImageService _imageService;
+        private readonly TokenizationService _tokenizationService;
 
         public UserManager<ApplicationUser> UserManager { get; }
+        private SubscriptionDuration SubscriptionAccessor { get; }
 
         public InsuranceService(IMapper mapper, AuditLogService auditLogServices,ILogger<InsuranceService> logger, IUniqueIdentifier uniqueIdentifier, IEmailSender emailSender,
             IFileProcessor fileProcessor, IRepositoryWrapper repoWrapper, UserManager<ApplicationUser> userManager, HMOIntegrationService hmoIntegrationService,
-            IImageService imageService)
+            IImageService imageService, IOptions<SubscriptionDuration> subscriptionAccessor,TokenizationService tokenizationService)
         {
             _mapper = mapper;
             _auditLogServices = auditLogServices;
@@ -67,9 +70,210 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             UserManager = userManager;
             _hmoIntegrationService = hmoIntegrationService;
             _imageService = imageService;
+            _tokenizationService = tokenizationService;
+            SubscriptionAccessor = subscriptionAccessor.Value;
         }
 
-        public async Task<ResponseMessage> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel,int userId)
+        public async Task<ResponseMessage> UserOnboarding(UserProfileviewModel userProfile, int userId, string ipAddress, string device)
+        {
+            _logger.LogInformation($"Insurance User Onboarding [Payload : {JsonConvert.SerializeObject(userProfile)} | UserId : {userId}]\n");
+            var user = await _repoWrapper.ApplicationUser.FindByIdAsync(userId);
+
+            var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (checkIfUserHasBeenProfiled != null)
+            {
+                _logger.LogInformation($"User onboarding terminated [Reason : user has a profile]\n");
+                // If user has a profile and it is completed
+                /*User may have a profile that is not completed if the user is a referee. That is his profile was created by another individual,
+                but he/she has to login to complete the profile.*/
+                if (checkIfUserHasBeenProfiled.ContactAddress != null)
+                {
+                    return new ResponseMessage { Message = "User has a profile already" };
+                }
+            }
+
+            var creatResponse = await CreateUserProfile(userProfile, user);
+            if (creatResponse.Status)
+            {
+                var auditViewModel = new AuditLogViewModel(userId, null, "No insurance Profile", AuditAction.Created_HealthInsurance_Profile.ToString(), "Created HealthInsured profile");
+                await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+
+                return new ResponseMessage
+                {
+                    Data = new AxaResponse() { IsSuccessful = "True", Message = "Profile was created successfully" },
+                    Message = "Profile was created successfully",
+                    Status = true
+                };
+            }
+            return creatResponse;
+        }
+
+        public async Task<ResponseMessage> CreateUserProfile(UserProfileviewModel userProfile, ApplicationUser user)
+        {
+            _logger.LogInformation($"Creating user Inusrance Profile\n");
+            var profile = new InsuranceUserProfile();
+            string initialContactAddress = null;
+            var checkIfProfileWithEmail = await GetProfileCompletion(null, user.Email);
+            if (checkIfProfileWithEmail.Status)
+            {
+                if (checkIfProfileWithEmail.Data.HealthInsuredPlan == HealthInsuredPlan.Individual)
+                {
+                    if (checkIfProfileWithEmail.Data.ProfileCompleted)
+                    {
+                        _logger.LogInformation($"Create profile terminated [Reason : Profile was completed previously]\n");
+                        return new ResponseMessage { Message = "Profile was previously completed" };
+                    }
+                    else
+                    {
+                        profile = await _repoWrapper.InsuranceProfile.GetByEmail(user.Email);
+                        initialContactAddress = profile.ContactAddress;
+                    }
+                }
+                else if (checkIfProfileWithEmail.Data.HealthInsuredPlan != null)
+                {
+                    _logger.LogInformation($"Create Profile terminated. Email is used for another healthinsured service\n");
+                    return new ResponseMessage { Message = "Email was used for another Healthinsured Service" };
+                }
+            }
+
+            userProfile.InsuranceService ??= InsuranceProvider.Axamansard.ToString();
+
+            profile = _mapper.Map(userProfile, profile);
+            profile.UserId = user.Id;
+
+            if (profile.InsurancePayeeId != null && (initialContactAddress is null))
+            {
+                profile.PlanCode = "1";
+                profile.Premium = Decimal.Parse("1000");
+            }
+
+
+            profile.CareProviderName = userProfile.CareProviderName.Split(":")[0]; profile.CPAddress = userProfile.CareProviderName.Split(":")[1];
+            profile.CPCity = userProfile.CareProviderName.Split(":").Length == 3 ? userProfile.CareProviderName.Split(":")[2] : "";
+            profile.InsuranceService = userProfile.InsuranceService;
+
+            var base64ImageResponse = _imageService.ConvertImageToBase64(userProfile.UserImage);
+            if (!base64ImageResponse.Status)
+            {
+                return base64ImageResponse;
+            }
+            profile.Image = base64ImageResponse.Data.ToString();
+
+            var updatedProfile = _mapper.Map(user, profile);
+
+            if (checkIfProfileWithEmail.Status)
+            {
+                _repoWrapper.InsuranceProfile.Update(updatedProfile);
+                var completionProfile = new InsuranceCompletionProfile(user.Id, true, true, userProfile.InsuranceService);
+                _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
+                await Process_SuccessfulReferee_FirstTimePayment(updatedProfile);
+            }
+            else
+            {
+                _repoWrapper.InsuranceProfile.Create(updatedProfile);
+                var completionProfile = new InsuranceCompletionProfile(user.Id, true, false, userProfile.InsuranceService);
+                _repoWrapper.InsuranceCompletionProfile.Create(completionProfile);
+            }
+            await _repoWrapper.Save();
+
+            if (user.ServiceUsed == null || !(user.ServiceUsed.Contains(ServiceNames.HealthInsured.ToString())))
+            {
+                var newServiceString = user.ServiceUsed + ServiceNames.HealthInsured.ToString();
+                user.ServiceUsed = newServiceString;
+            }
+            _repoWrapper.ApplicationUser.Update(user);
+            await _repoWrapper.Save();
+            _logger.LogInformation($"Insurance Profile Created Successdfully\n");
+            return new ResponseMessage { Status = true };
+        }
+
+        public async Task<ResponseMessage> PayForRefereeWithFullDetails(int userId, PayForRefereeViewModel refereeViewModel, string ipAddress, string device)
+        {
+            _logger.LogInformation($"Process pay for referee with full details [Payload : {JsonConvert.SerializeObject(refereeViewModel)} | " +
+                $"userid : {userId}]\n");
+
+            var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(refereeViewModel.Email);
+            var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
+            if (!(insuranceProfileOfUserPaying.Cards.Any(x => x.Status == (int)DebitCard_StatusValue.primary)))
+            {
+                _logger.LogInformation($"Pay fro referee with full details terminated [Reason Payee has not set an active card]");
+                return new ResponseMessage { Message = "Kindly set an active card before transaction can be initiated" };
+            }
+            if (userToPayFor is null || userToPayFor.ServiceUsed is null || !userToPayFor.ServiceUsed.Equals(ServiceNames.HealthInsured.ToString()))
+            {
+                var profile = await _repoWrapper.InsuranceProfile.GetByEmail(refereeViewModel.Email);
+                if (profile is null)
+                {
+                    var insuranceProfile = _mapper.Map<InsuranceUserProfile>(refereeViewModel);
+                    insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;
+                    var base64ImageResponse = _imageService.ConvertImageToBase64(refereeViewModel.UserImage);
+                    if (!base64ImageResponse.Status)
+                    {
+                        return base64ImageResponse;
+                    }
+                    insuranceProfile.Image = base64ImageResponse.Data.ToString();
+                    _repoWrapper.InsuranceProfile.Create(insuranceProfile);
+                    await _repoWrapper.Save();
+                    await Process_SuccessfulReferee_FirstTimePayment(insuranceProfile);
+                    _emailSender.RefreeInvitationFullDetail(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}",
+                        insuranceProfile.Surname, insuranceProfile.TransId, insuranceProfile.CareProviderName, insuranceProfile.PlanCode);
+                    _logger.LogInformation($"Pay for referee with full details was successfully\n");
+
+                    var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.PayForReferee_FullDetails.ToString(), "Created referee with full details");
+                    await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+
+                    return new ResponseMessage
+                    {
+                        Message = $"{refereeViewModel.FirstName} has been activated  and is entitled to a one month free cycle. {refereeViewModel.FirstName} can sign up with {refereeViewModel.Email} to access his/her dashboard",
+                        Status = true
+                    };
+                }
+                _logger.LogInformation($"Pay for referee terminated [Reason : Healthinsure profile with email exist]\n");
+                return new ResponseMessage { Message = "HealthInsured profile with email exist already", Status = false };
+            }
+            _logger.LogInformation($"Pay for referee terminated [Reason : User profile with email exist]\n");
+            return new ResponseMessage { Message = "HealthInsured profile with this email exist already", Status = false };
+        }
+
+        public async Task Process_SuccessfulReferee_FirstTimePayment(InsuranceUserProfile insuranceProfile)
+        {
+            _logger.LogInformation($" Process_SuccessfulReferee_FirstTimePayment processing [Payload : {JsonConvert.SerializeObject(insuranceProfile)}]\n");
+            insuranceProfile.TransId = insuranceProfile.InsuranceService == InsuranceProvider.Axamansard.ToString() ? _uniqueIdentifier.GetUniqueCode(10) : "";
+
+            insuranceProfile.EndActiveStatusDate = DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration);
+
+            // Schedule debit email reminder for user 
+            if (insuranceProfile.InsurancePayeeId != null)
+            {
+                var payee = await _repoWrapper.InsuranceProfile.GetByIdAsync(insuranceProfile.InsurancePayeeId.Value);
+                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(payee.Email, payee.Surname, "for your friend " + insuranceProfile.Surname, null),
+                   DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+            }
+            else
+            {
+                insuranceProfile.PendingEmailJobId = BackgroundJob.Schedule(() => SendEmailReminder(insuranceProfile.Email, insuranceProfile.Surname, "", null),
+                   DateTime.Now.AddDays(SubscriptionAccessor.FreeTrialDayDuration).Subtract(new TimeSpan(3, 0, 0, 0)));
+            }
+
+            //Schedule job to debit user every 28 days
+            _logger.LogInformation($"Referee first time payment schedule payment\n");
+            insuranceProfile.PendingJobId = _tokenizationService.ProcessScheduledPayment(insuranceProfile);
+
+            insuranceProfile.SubscriptionStatus = true;
+            insuranceProfile.ActiveStatus = true;
+            insuranceProfile.StartActiveStatusDate = DateTime.Now;
+
+            _repoWrapper.InsuranceProfile.Update(insuranceProfile);
+
+            //Create Audit thats user subscrption changed 
+            var activityLog = new ActivityLog(insuranceProfile.Id, null, null, "Subscription Activated", ServiceNames.HealthInsured.ToString());
+            _repoWrapper.ActivityLog.Create(activityLog);
+            await _hmoIntegrationService.SendDetailsToInsuranceProvider(insuranceProfile);
+
+            await _repoWrapper.Save();
+        }
+
+        public async Task<ResponseMessage> UpdateProfileAsync(UpdateProfileViewModel updateProfileViewModel,int userId, string ipAddress, string device)
         {
             var checkIfUserHasBeenProfiled = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             if (checkIfUserHasBeenProfiled == null) return new ResponseMessage { Message = "User does not have a profile", Status=false };
@@ -90,6 +294,11 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             var activityLog = new ActivityLog(checkIfUserHasBeenProfiled.Id, null,null, "Updated HealthInsured Profile", ServiceNames.HealthInsured.ToString());
             _repoWrapper.ActivityLog.Create(activityLog);
             await _repoWrapper.Save();
+
+            var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.UpdatedInsuranceProfile.ToString(), "Updated HealthinsuredProfile");
+            await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+
+
             return new ResponseMessage { Status = true, Message = "Profile was updated successfully" };
         }
 
@@ -117,7 +326,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             return new ResponseMessage { Data = paginatedResponse, Status = true };
         }
 
-        public async Task<ResponseMessage> RemovePaidReferee(int userId, string email)
+        public async Task<ResponseMessage> RemovePaidReferee(int userId, string email, string ipAddress, string device)
         {
             var payeeInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
             var refereedInsuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
@@ -143,6 +352,9 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                         _repoWrapper.InsuranceProfile.Delete(refereedInsuranceProfile);
                     }
                     await _repoWrapper.Save();
+
+                    var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.RemoveReferee.ToString(), "Remove Referee");
+                    await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
                     return new ResponseMessage { Message = "Referee was removed successfully", Status=true };
                 }
                 return new ResponseMessage { Message = "Insurance profile of referee does not exist"};
@@ -197,12 +409,14 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         public async Task<ResponseMessage<HealthInsuredProfileStateDTO>> GetProfileCompletion(int? userId,string email)
         {
             var notFoundProfileState = new HealthInsuredProfileStateDTO(null, null, false, false, null);
+            // Check if user was signed up as an individual
             var processIndvidualProfileState =  await ProcessIndividualProfileCompletion(userId, email);
             if(processIndvidualProfileState.Status)
             {
                 return processIndvidualProfileState;
             }
-            if(userId != null)
+            // Check if user was signed up under the family/corporate plan
+            if (userId != null)
             {
                 var familyUser = await _repoWrapper.FamilyProfile.GetByUserId(userId.Value);
                 if (familyUser != null)
@@ -246,6 +460,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
         private async Task<ResponseMessage<HealthInsuredProfileStateDTO>> ProcessIndividualProfileCompletion(int? userId, string email)
         {
+            // If user signed up as an individul on the platform
             if(userId != null)
             {
                 var profile = await _repoWrapper.InsuranceCompletionProfile.GetCompletionStateByUserId(userId.Value);
@@ -275,13 +490,16 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 //    }                   
                 //}
             }
-            if(email != null)
+            // If user was signed up as a referee by an individual(referer) on the platform, so has no userId
+            if (email != null)
             {
                 var insuranceProfile = await _repoWrapper.InsuranceProfile.GetByEmail(email);
                 if(insuranceProfile != null)
                 {
+                    // User has an InsurancePayeeId because he/she is a referee
                     if (insuranceProfile.InsurancePayeeId != null)
                     {
+                        //If the referee/user has completed his/her profile after he/she was signed up by the referer
                         if (insuranceProfile.ContactAddress != null)
                         {
                             return new ResponseMessage<HealthInsuredProfileStateDTO>
@@ -291,6 +509,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                                 Message = "Profile completion state was fetched successfully"
                             };
                         }
+                        //If the referee/user has not completed his/her profile after he/she was signed up by the referer :  contact address is null
                         return new ResponseMessage<HealthInsuredProfileStateDTO>
                         {
                             Data = new HealthInsuredProfileStateDTO(HealthInsuredPlan.Individual, null, false, true, insuranceProfile.InsuranceService,true),
@@ -335,7 +554,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
         }
 
         /// <summary>
-        /// Get Health care providers. for Axamansard we use 1 as insuranceProvider params, For Hygeia we use 2 as insuranceprovider params3
+        /// Get Health care providers.
         /// </summary>
         /// <param name="state"></param>
         /// <param name="city"></param>
@@ -361,6 +580,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
 
             return new ResponseMessage { Data = filterHealthCareProvider, Status = true, Message = "Care provider was fetched successfully" };
         }
+
         public ResponseMessage DowloadInsuranceProfileExcelData(bool? subStatus, bool? activeStatus,string service)
         {
             var data = _repoWrapper.InsuranceProfile.QueryAllInsuranceProfiles();
@@ -437,7 +657,8 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                 }
             }
         }
-        public async Task<ResponseMessage> PayforNewIndividualWithEmail(int userId,string email, string insuranceService)
+
+        public async Task<ResponseMessage> PayforNewIndividualWithEmail(int userId,string email, string insuranceService,string ipAddress, string device )
         {            
             var userToPayFor = await _repoWrapper.ApplicationUser.FindByEmailAsync(email);
             var insuranceProfileOfUserPaying = await _repoWrapper.InsuranceProfile.GetByUserIdAsync(userId);
@@ -459,6 +680,10 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     _repoWrapper.InsuranceProfile.Create(insuranceProfile);
                     await _repoWrapper.Save();
                     _emailSender.RefreeInvitation(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}");
+                   
+                    var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.PayForReferee_Email.ToString(), "pay for referee with email");
+                    await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
+
                     return new ResponseMessage
                     {
                         Message = "Invite was sent successfully. User would be activated immediately after sign up/profile creation " +
@@ -471,55 +696,37 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             return new ResponseMessage { Message = "HealthInsured profile with this email exist already", Status = false };
         }
 
-        /// <summary>
-        /// Get hygeia access token
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        public async Task HygeiaGetAuthToken()
+        public byte[] DownloadIdentifiers(int count)
         {
-            await _hmoIntegrationService.HygeiaGetAuthToken();            
+            using (var workbook = new XLWorkbook())
+            {
+                IXLWorksheet worksheet =
+                workbook.Worksheets.Add("Identifiers");
+                worksheet.Cell(2, 1).Value = "Id";
+                worksheet.Cell(2, 2).Value = "Unique Identifier";
+
+                for (int index = 2; index <= count + 1; index++)
+                {
+                    worksheet.Cell(index, 1).Value = index - 1;
+                    worksheet.Cell(index, 2).Value = _uniqueIdentifier.GetUniqueCode(10);
+                    worksheet.Cell(index, 2).DataType = XLDataType.Text;
+                }
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    return content;
+                }
+            }
         }
+
         public void SendEmailReminder(string email, string userName,string info, PerformContext context)
         {
             _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName,info);
         }
-
         public void SendEmailReminder(string email, string userName, PerformContext context)
         {
             _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName, "");
-        }
-
-        /// <summary>
-        /// Function to send successful subscription email.Send this only to user when subscription status is null
-        /// </summary>
-        /// <param name="email"></param>
-        /// <param name="userName"></param>
-        /// <param name="enroleeNumber"></param>
-        /// <param name="healthCareProvider"></param>
-        public void SendSuccesfulSubscriptionMail(string email, string userName, string enroleeNumber, string healthCareProvider,string plan)
-        {
-            _emailSender.HealthInsuredSubscriptionMail(email, "Active Free Trial", userName, enroleeNumber, healthCareProvider,plan);
-        }
-
-        public void SendEmailOnFailedDebit(string email, string userName, string premium,string info)
-        {
-            _emailSender.HealthInsuredDeactivationNotification(email, "Failed Transaction", userName, premium,info);
-        }
-
-        public void SendCompanyEmailOnFailedDebit(string email, string userName, string premium, string stopDate)
-        {
-            _emailSender.HealthInsuredFailedCompanyDebit(email, "Failed Transaction", userName, premium, stopDate);
-        }
-
-        public void SendCompanyDeactivationMail(string email, string userName, string premium)
-        {
-            _emailSender.HealthInsuredCompanyDeactivation(email, "Deactivate Beneficiaries", userName, premium);
-        }        
-        
-        public string GetUniqueCode()
-        {
-            return _uniqueIdentifier.GetUniqueCode(10);
         }
     }    
 }

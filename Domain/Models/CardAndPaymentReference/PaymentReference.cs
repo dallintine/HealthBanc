@@ -15,7 +15,8 @@ namespace Domain.Models
         {
 
         }
-        public PaymentReference(string channel,string refernce, int? insuranceUserProfileId,int? companyProfileId,int? familyprofileId, int userId, decimal amount,string status)
+        public PaymentReference(string channel,string refernce, int? insuranceUserProfileId,int? companyProfileId,int? familyprofileId, int userId, decimal amount,string status
+            ,string paymentMethod = "Card")
         {
             Date = DateTime.Now;
             Channel = channel;
@@ -26,6 +27,7 @@ namespace Domain.Models
             UserId = userId;
             Amount = amount;
             Status = status;
+            PaymentMethod = paymentMethod;
         }
 
         public int Id { get; set; }
@@ -59,6 +61,7 @@ namespace Domain.Models
         public int? FamilyProfileId { get; set; }
         public int UserId { get; set; }
         public Decimal Amount { get; set; }
+        public string PaymentMethod { get; set; }
 
         public string _status;
         /// <summary>

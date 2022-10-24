@@ -19,7 +19,7 @@ namespace HealthBanc.Logging
                 var applicationInsightsOptions = context.Configuration.GetOptions<ApplicationInsightsOptions>("applicationinsightsoptions");
                 if (!Enum.TryParse<LogEventLevel>(serilogOptions.Level, true, out var level))
                 {
-                    level = LogEventLevel.Warning;
+                    level = LogEventLevel.Information;
                 }
 
                 applicationName = string.IsNullOrWhiteSpace(applicationName) ? appOptions.Name : applicationName;
@@ -41,7 +41,8 @@ namespace HealthBanc.Logging
 
             if (serilogOptions.ConsoleEnabled)
             {
-                loggerConfiguration.WriteTo.Console();
+                loggerConfiguration.WriteTo.Console(level);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Hangfire", Serilog.Events.LogEventLevel.Warning);
             }
 
             if (azureBlobOptions.Enabled)
@@ -50,6 +51,7 @@ namespace HealthBanc.Logging
                    , azureBlobOptions.OutputTemplate, false, null, null, false, null, null, 1100000, null);
                 loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning);
                 loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Query", Serilog.Events.LogEventLevel.Warning);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Hangfire", Serilog.Events.LogEventLevel.Verbose);
             }
 
             if (applicationInsightsOptions.Enabled)

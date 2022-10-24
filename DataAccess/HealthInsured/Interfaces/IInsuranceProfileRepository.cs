@@ -22,5 +22,6 @@ namespace DataAccess.HealthInsured.Interfaces
         Task<InsuranceUserProfile> GetByFamilyProfileId(int familyProfileId, int insuranceProfileId);
         Task<PagedResponse<InsuranceUserProfile>> GetPaginatedReferredInsuranceProfiles(PaginationQuery paginationQuery, int insuranceProfileId);
         Task<InsuranceUserProfile> GetByEnrolleNumber(string enrollee);
+        Task<InsuranceUserProfile> GetWalletByUserIdAsync(int id);
     }
 }

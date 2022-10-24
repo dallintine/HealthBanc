@@ -30,6 +30,7 @@ namespace Application.Services.Admin
 
             try
             {
+                _logger.LogInformation($"Validate Admin OTP soap request processing [username : {username} | OTP : {otp}]");
                 XmlDocument soapEnvelopeXml = CreateSoapEnvelope(otp, username);
                 HttpWebRequest webRequest = CreateWebRequest(url, action);
                 webRequest.Host = "az-cpibap2-serv";
@@ -41,6 +42,7 @@ namespace Application.Services.Admin
                 using WebResponse response = webRequest.GetResponse();
                 using StreamReader rd = new StreamReader(response.GetResponseStream());
                 result = rd.ReadToEnd();
+                _logger.LogInformation($"Validate Admin OTP soap response [Response : {result}]");
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.LoadXml(result);
                 var resultResponse = xmlDoc.GetElementsByTagName("OtpValidationResult").Item(0).InnerText;

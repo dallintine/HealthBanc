@@ -32,6 +32,11 @@ namespace DataAccess.HealthInsured.Implementation
             return await _context.CompanyProfiles.Include(x => x.BeneficiaryReviewUsers).FirstOrDefaultAsync(x => x.Id == companyId);
         }
 
+        public async Task<CompanyProfile> GetCompanyInsuranceProfiles(int companyId)
+        {
+            return await _context.CompanyProfiles.Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.Id == companyId);
+        }
+
         public async Task<CompanyProfile> GetCompanyInsuranceUserProfilesByUserId(int userId)
         {
             return await _context.CompanyProfiles.Include(x => x.Cards).Include(x => x.InsuranceUserProfiles).FirstOrDefaultAsync(x => x.UserId == userId);

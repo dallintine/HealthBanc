@@ -44,13 +44,16 @@ namespace Application.Services.Paystack
         public async Task<TokenizationResponse> ChargeCard(ChargeCard chargeCard, int id,string phoneNumber,DateTime dateofBirth)
         {
             // Call Paystack client
+            _logger.LogInformation($"Process Charge Card Request");
             var httpClient = _httpClientFactory.CreateClient("Paystack");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(chargeCard), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{Options.PayStackChargeCard}", content);
 
             string apiResponse = await response.Content.ReadAsStringAsync();
-            var chargeCardResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
+            _logger.LogInformation($"Charge Card Request Response [Payload : {apiResponse}]");
+            var chargeCardResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);          
+
             if (response.IsSuccessStatusCode)
             {     
                 // Check if the response from paystack has a status of true
@@ -102,6 +105,7 @@ namespace Application.Services.Paystack
         }
         public async Task<TokenizationResponse> SendOtp(string otp, string reference,string phoneNumber, DateTime dateOfBirth,string pin)
         {
+            _logger.LogInformation($"Process Send OTP Request | OTP :{otp} | Reference :{reference}");
             var otpRequest = new SendOtp(otp, reference);
             // call paystack client
             var httpClient = _httpClientFactory.CreateClient("Paystack");
@@ -110,6 +114,7 @@ namespace Application.Services.Paystack
             var response = await httpClient.PostAsync($"{Options.PayStackSendOtp}", content);
 
             string apiResponse = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Send OTP Response [{apiResponse}]");
             var otpResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
             {               
@@ -155,12 +160,14 @@ namespace Application.Services.Paystack
             try
             {
                 // call paystack client
+                _logger.LogInformation($"Process Charge Authorization Request [ Payload : {JsonConvert.SerializeObject(chargeAuthorization)}]");
                 var httpClient = _httpClientFactory.CreateClient("Paystack");
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
                 HttpContent content = new StringContent(JsonConvert.SerializeObject(chargeAuthorization), Encoding.UTF8, "application/json");
                 var response = await httpClient.PostAsync($"{Options.ChargeAuthorization}", content);
 
                 string apiResponse = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Process Charge Authorization Response [ {apiResponse}]");
                 var chargeAuthorizationResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
                 if (response.IsSuccessStatusCode)
                 {
@@ -195,7 +202,7 @@ namespace Application.Services.Paystack
             }
             catch(Exception ex)
             {
-                _logger.LogCritical("An error occurred while calling charge transaction", ex);
+                _logger.LogWarning("An error occurred while calling charge transaction", ex);
                 return new TokenizationResponse { Message = ex.Message.ToString(), Status = false };
             }            
         }
@@ -204,20 +211,7 @@ namespace Application.Services.Paystack
             // check if the status is successfully
             if (status == "success")
             {
-                //if (authorization.reusable == false)
-                //{
-                //    return new TokenizationResponse
-                //    {
-                //        Type = authorization.card_type,
-                //        LastDigit = authorization.last4,
-                //        AuthorizationCode = authorization.authorization_code,
-                //        Signature = authorization.signature,
-                //        Message = "Card is not reusable, Please try with another debit card",
-                //        Status = false,
-                //        Reference = reference,
-                //        ResponseCode = 0
-                //    };
-                //}
+                _logger.LogInformation($"Charge Card was successful");
                 return new TokenizationResponse
                 {
                     Type = authorization.card_type,
@@ -234,6 +228,7 @@ namespace Application.Services.Paystack
             // check if the chargeCardResponse.data.status is failed or timeout 
             if (status == "failed" || status == "timeout")
             {
+                _logger.LogInformation($"Charge Card Failed or timed out");
                 return new TokenizationResponse
                 {
                     Message = message,
@@ -241,7 +236,7 @@ namespace Application.Services.Paystack
                     ResponseCode = 0
                 };
             }
-
+            _logger.LogInformation($"Charge Card responded with another validation");
             // if status is not failed,timeout or successfull return okenization response with response code 13.
             return new TokenizationResponse
             {
@@ -253,6 +248,7 @@ namespace Application.Services.Paystack
             //Check if the data.status was send_otp : Means we need user OTP
             if (status == "send_otp")
             {
+                _logger.LogInformation($"Charge Card Returned Send OTP");
                 var otpViewModel = new SetOtpViewModel(null, pin, reference);
                 return new TokenizationResponse { Data = otpViewModel, Message = "Please enter your OTP code", Status = true, ResponseCode = 12, };
             }
@@ -260,6 +256,7 @@ namespace Application.Services.Paystack
             //Check if the data.status was send_birthday
             if (status == "send_birthday")
             {
+                _logger.LogInformation($"Charge Card Returned Submit Birthday");
                 // if status is Send Birthday, Call SubmitBirthday function.
                 var sendBirthday = await SubmitBirthDay(reference, phoneNumber, birthDate,pin);
                 return sendBirthday;
@@ -267,6 +264,7 @@ namespace Application.Services.Paystack
             if (status == "open_url")
             {
                 // if status is open url
+                _logger.LogInformation($"Charge Card Returned a url");
                 return new TokenizationResponse
                 {
                     Message = "Redirect to Redirect Url",
@@ -277,16 +275,19 @@ namespace Application.Services.Paystack
             }
             if(status == "pending")
             {
-                Thread.Sleep(11000);
+                _logger.LogInformation($"Charge Card Returned Pending");
+                await Task.Delay(11000);
                 var pending = await CheckPendingCharge(reference, phoneNumber, birthDate, pin);
                 return pending;
             }
             if (status == "send_phone")
             {
                 // if status is Submit Phone call submit Phone function
+                _logger.LogInformation($"Charge Card Returned Send Phonenumber");
                 var submitPhone = await SubmitPhone(reference, phoneNumber, birthDate,pin);
                 return submitPhone;
             }
+            _logger.LogInformation($"Charge Card Please try again");
             return new TokenizationResponse { Message = "Please try again later" };
         }
         private async Task<TokenizationResponse> SubmitBirthDay(string reference,string phoneNumber, DateTime birthDate,string pin)
@@ -294,13 +295,14 @@ namespace Application.Services.Paystack
             var birthRequest = new SubmitBirthday(birthDate, reference);
 
             // Call Paystack client
+            _logger.LogInformation($"Submit Birthday Request[Birthday :{birthDate} | Reference : {reference}]\n");
             var httpClient = _httpClientFactory.CreateClient("Paystack");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(birthRequest), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{Options.PayStackSubmitBirthDay}", content);
 
-
             string apiResponse = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Submit Birthday Response[{apiResponse}]\n");
             var birthdayResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
             {
@@ -343,12 +345,14 @@ namespace Application.Services.Paystack
         private async Task<TokenizationResponse> SubmitPhone(string reference, string phoneNumber, DateTime birthDate,string pin)
         {
             var phoneRequest = new SubmitPhoneNumber(phoneNumber, reference);
+            _logger.LogInformation($"Submit Phone Request[Phonenumber :{phoneNumber} | Reference : {reference}]");
             var httpClient = _httpClientFactory.CreateClient("Paystack");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(phoneRequest), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{Options.PayStackSubmitPhone}", content);
 
             string apiResponse = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Submit Phone Response[{apiResponse}]");
             var phoneResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
             {                
@@ -390,12 +394,14 @@ namespace Application.Services.Paystack
         }
         public async Task<TokenizationResponse> VerifyTransaction(string reference)
         {
+            _logger.LogInformation($"Verify Transaction Request[ Reference : {reference}]");
             var httpClient = _httpClientFactory.CreateClient("Paystack");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             var response = await httpClient.GetAsync($"{Options.VerifyTransaction}/{reference}");
             if (response.IsSuccessStatusCode)
             {
                 string apiResponse = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Verify Transaction Response[{apiResponse}]");
                 var verifyResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
                 if (verifyResponse.status == true)
                 {
@@ -450,11 +456,13 @@ namespace Application.Services.Paystack
         }
         private async Task<TokenizationResponse> CheckPendingCharge(string reference,string phoneNumber, DateTime birthDate,string pin)
         {
+            _logger.LogInformation($"Check Pending Charge Request[Reference : {reference}]");
             var httpClient = _httpClientFactory.CreateClient("Paystack");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
             var response = await httpClient.GetAsync($"{Options.PayStackChargeCard}/{reference}");
 
             string apiResponse = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Check Pending Charge Respnse[{apiResponse}]");
             var verifyResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
 
             if (response.IsSuccessStatusCode)
@@ -505,6 +513,7 @@ namespace Application.Services.Paystack
         /// <returns></returns>
         public async Task RefundTestCardFunds(string reference, string amount)
         {
+            _logger.LogInformation($"Refund Request[Amount :{amount} | Reference : {reference}]");
             var refund = new Refund(reference, amount);
             var httpClient = _httpClientFactory.CreateClient("Paystack");
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"{Options.SecretKey}");
@@ -512,6 +521,7 @@ namespace Application.Services.Paystack
             var response = await httpClient.PostAsync($"{Options.Refund}", content);
 
             string apiResponse = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Refund Response[{apiResponse}]");
             var refundResponse = JsonConvert.DeserializeObject<ChargeCardResponse>(apiResponse);
             if (response.IsSuccessStatusCode)
             {

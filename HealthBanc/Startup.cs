@@ -34,6 +34,11 @@ using Application.Helpers.Jwt_Authorization;
 using Hangfire.Dashboard;
 using Application.Services.HealthInsured_AxaMansard.Insurance;
 using Application.Services;
+using Newtonsoft.Json;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using System.Buffers;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Application.Interfaces;
 
 namespace HealthBanc
 {
@@ -48,6 +53,7 @@ namespace HealthBanc
 
         public void ConfigureServices(IServiceCollection services)
         {
+
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("HangfireConnection")));
             services.AddHangfireServer();
 
@@ -74,6 +80,7 @@ namespace HealthBanc
             services.Configure<HMOAccountDetails>(Configuration.GetSection("HMOAccountDetails"));
             services.Configure<IBSConfig>(Configuration.GetSection("IBSConfig"));
             services.Configure<ConnectionStrings>(Configuration.GetSection("ConnectionStrings"));
+            services.Configure<SMSParameter>(Configuration.GetSection(nameof(SMSParameter)));
 
             services.AddIdentity<ApplicationUser, AppRole>(options =>
             {
@@ -115,6 +122,8 @@ namespace HealthBanc
                 .AddTransientHttpErrorPolicy(x =>
                 x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            //-------------------------------------------Paystack Config -----------------------------------------------------//
+
             var paystackUrl = Configuration.GetSection("Paystack");
             services.Configure<Paystack>(paystackUrl);
             var paystackUrlValues = paystackUrl.Get<Paystack>();
@@ -125,6 +134,16 @@ namespace HealthBanc
             })
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+            //-------------------------------------------Healthinsured_fintech -----------------------------------------------------//
+            services.AddHttpClient("HealthInsured_Fintech", client =>
+            {
+                client.BaseAddress = new Uri(paystackUrlValues.Healthinsured_FintechBaseURL);
+            })
+             .AddTransientHttpErrorPolicy(x =>
+             x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+            //-------------------------------------------- Email Config -----------------------------------------------------//
 
             var email = Configuration.GetSection("EmailAuth");
             services.Configure<EmailAuth>(email);
@@ -137,6 +156,7 @@ namespace HealthBanc
               .AddTransientHttpErrorPolicy(x =>
               x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            //-----------------------------------------------------Axa mansard Config ----------------------------------------//
 
             var axaMansard = Configuration.GetSection("AxaMansardConfiguration");
             services.Configure<AxaMansardConfiguration>(axaMansard);
@@ -149,6 +169,8 @@ namespace HealthBanc
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            //-------------------------------------------------------Hygeia Config -----------------------------------------------//
+
             var hygeia = Configuration.GetSection("HygeiaConfiguration");
             services.Configure<HygeiaConfiguration>(hygeia);
             var hygeiaValues = hygeia.Get<HygeiaConfiguration>();
@@ -159,6 +181,22 @@ namespace HealthBanc
             })
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+           
+            //----------------------------------------Wallet Config --------------------------------------------//
+
+            var wallet = Configuration.GetSection("WalletSettings");
+            services.Configure<WalletSettings>(wallet);
+            var walletValues = wallet.Get<WalletSettings>();
+
+            services.AddHttpClient("WalletClient", client =>
+            {
+                client.BaseAddress = new Uri(walletValues.BaseUrl);
+            })
+             .AddTransientHttpErrorPolicy(x =>
+             x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
+            //-------------------------------------------------OTP config ---------------------------------------------------------//
 
             var sterlingOTPConfig = Configuration.GetSection("SterlingOtpConfig");
             services.Configure<SterlingOtpConfig>(sterlingOTPConfig);
@@ -247,7 +285,8 @@ namespace HealthBanc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,UtilityService utilityService)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,
+             IApiVersionDescriptionProvider provider,IEncryptAndDecrypt encryptAndDecrypt)
         {
             //utilityService.MakeHygeiaHMOPayment().Wait();
             //utilityService.MakeAxamansardHMOPayment().Wait();
@@ -262,7 +301,7 @@ namespace HealthBanc
                 }
             };
 
-            app.UseHangfireDashboard("/apiResponse1963.4uQHWqAUeTfcsYAtBGgQuvUh", options);
+            app.UseHangfireDashboard("/apiResponse1963.4uQHWqAUeTfcsYAtBGgQuvUh",options);
 
             ServicePointManager.ServerCertificateValidationCallback +=
                (sender, certificate, chain, errors) =>
@@ -274,12 +313,29 @@ namespace HealthBanc
             {
                 context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
                 context.Response.Headers.Add("X-Frame-Options", "DENY");
+                context.Response.Headers.Add("Cache-control", "no-store");
+                context.Response.Headers.Add("Pragma", "no-cache");
                 context.Response.Headers.Add("Referrer-Policy", "no-referrer-when-downgrade");
                 context.Response.Headers.Add("X-Permitted-Cross-Domain-Policies", "none");
                 context.Response.Headers.Add("Content-Security-Policy", "unsafe-inline 'self'");
                 context.Response.Headers.Add("Feature-Policy", "accelerometer 'none'; camera 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none';");
                 await next();
             });
+
+            //app.Use(async (context, next) =>
+            //{
+            //    var jsonString = String.Empty;
+            //    using (var inputStream = new StreamReader(context.Response.Body))
+            //    {
+            //        jsonString = inputStream.ReadToEnd();
+            //    }
+            //    var encryptedObject = encryptAndDecrypt.EncryptString(jsonString);
+
+            //    byte[] byteArray = Encoding.UTF8.GetBytes(encryptedObject);
+            //    MemoryStream stream = new MemoryStream(byteArray);
+            //    context.Response.Body = stream;
+            //    await next();
+            //});
 
             app.UseHttpsRedirection();
 
@@ -291,12 +347,31 @@ namespace HealthBanc
                 var swaggerOptions = new SwaggerOptions();
                 Configuration.GetSection(nameof(SwaggerOptions)).Bind(swaggerOptions);
 
-                app.UseSwagger(option => { option.RouteTemplate = swaggerOptions.JsonRoute; });
+                //app.UseSwagger(option => { option.RouteTemplate = swaggerOptions.JsonRoute; });
 
-                app.UseSwaggerUI(option =>
+                //app.UseSwaggerUI(option =>
+                //{
+                //    option.SwaggerEndpoint(swaggerOptions.UiEndpoint, swaggerOptions.Description);
+                //});
+
+                app.UseSwagger(options =>
                 {
-                    option.SwaggerEndpoint(swaggerOptions.UiEndpoint, swaggerOptions.Description);
+                    options.PreSerializeFilters.Add((swagger, req) =>
+                    {
+                        swagger.Servers = new List<OpenApiServer>() { new OpenApiServer() { Url = $"https://{req.Host}" } };
+                    });
                 });
+
+                app.UseSwaggerUI(options =>
+                {
+                    foreach (var desc in provider.ApiVersionDescriptions)
+                    {
+                        options.SwaggerEndpoint($"../swagger/{desc.GroupName}/swagger.json", desc.ApiVersion.ToString());
+                        options.DefaultModelsExpandDepth(-1);
+                        options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+                    }
+                });
+
             }  
 
             app.UseRouting();

@@ -10,5 +10,8 @@ namespace Application.Helpers
         public string Hashkey { get; set; }
         public string Url { get; set; }
         public string Action { get; set; }
+        public double ExpiryTime { get; set; }
+        public double Length { get; set; }
+        public string OtpMessage { get; set; }
     }
 }

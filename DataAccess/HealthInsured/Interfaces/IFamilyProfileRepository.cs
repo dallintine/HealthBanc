@@ -15,5 +15,7 @@ namespace DataAccess.HealthInsured.Interfaces
         Task<FamilyProfile> GetFamilyByFamilyId(int familyId);
         Task<FamilyProfile> GetExtendedFamilyDetails(int userId);
         Task<PagedResponse<InsuranceUserProfile>> PaginatedFamilyMembers(PaginationQuery paginationQuery, int userId);
+        Task<FamilyProfile> GetExtendedFamilyDetailsById(int familyId);
+        Task<FamilyProfile> GetWalletByUserId(int userId);
     }
 }

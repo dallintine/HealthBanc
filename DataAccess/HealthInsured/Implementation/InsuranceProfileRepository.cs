@@ -20,7 +20,12 @@ namespace DataAccess.HealthInsured.Implementation
 
         public async Task<InsuranceUserProfile> GetByUserIdAsync(int id)
         {
-            return await _context.InsuranceUserProfiles.Include(x => x.Cards).FirstOrDefaultAsync(x => x.UserId == id);
+            return await _context.InsuranceUserProfiles.Include(x => x.Cards).Include(x => x.UserWallet).FirstOrDefaultAsync(x => x.UserId == id);
+        }
+
+        public async Task<InsuranceUserProfile> GetWalletByUserIdAsync(int id)
+        {
+            return await _context.InsuranceUserProfiles.Include(x => x.UserWallet).FirstOrDefaultAsync(x => x.UserId == id);
         }
 
         public async Task<InsuranceUserProfile> GetByEnrolleNumber(string enrollee)
@@ -35,7 +40,7 @@ namespace DataAccess.HealthInsured.Implementation
 
         public async Task<InsuranceUserProfile> GetExtendedProfileDetailsByEmail(string email)
         {
-            return await _context.InsuranceUserProfiles.Where(x => x.Email == email).Include(x => x.Cards).Include(x => x.PaymentReferences).Include(x => x.HealthInsuredActivityLogs).FirstOrDefaultAsync();
+            return await _context.InsuranceUserProfiles.Where(x => x.Email == email).Include(x => x.Cards)/*.Include(x => x.PaymentReferences)*/.Include(x => x.HealthInsuredActivityLogs).FirstOrDefaultAsync();
         }
 
         public async Task<InsuranceUserProfile> GetByIdAsync(int id)
