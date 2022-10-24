@@ -1,5 +1,6 @@
 ﻿using Application.DTO;
 using Application.Interfaces;
+using Application.Services;
 using Application.ViewModels.HealthInsured;
 using AutoMapper;
 using DataAccess;
@@ -21,13 +22,16 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         private readonly IMapper _mapper;
         private readonly ILogger<ApplicationUserController> _logger;
         private readonly IEncryptAndDecrypt _encryptDecrypt;
+        private readonly ResponseHelper _responseHelper;
 
-        public ApplicationUserController(IRepositoryWrapper repoWrapper, IMapper mapper, ILogger<ApplicationUserController> logger, IEncryptAndDecrypt encryptDecrypt)
+        public ApplicationUserController(IRepositoryWrapper repoWrapper, IMapper mapper, ILogger<ApplicationUserController> logger, IEncryptAndDecrypt encryptDecrypt,
+            ResponseHelper responseHelper)
         {
             _repoWrapper = repoWrapper;
             _mapper = mapper;
             _logger = logger;
             _encryptDecrypt = encryptDecrypt;
+            _responseHelper = responseHelper;
         }
 
         //WORKING1
@@ -40,12 +44,15 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> GetAllUsers(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var paginationQuery = JsonConvert.DeserializeObject<PaginationQuery>(decryptedString.Item2);
 
             var users = await _repoWrapper.ApplicationUser.GetAllUsers(paginationQuery);
-            return Ok(users);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(users));
+            return Ok(data);
         }
 
         //WORKING1
@@ -58,17 +65,21 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> GetUser(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var emailViewModel = JsonConvert.DeserializeObject<EmailViewModel>(decryptedString.Item2);
             var email = emailViewModel.Email;
             if (email != null)
             {
                 var user = await _repoWrapper.ApplicationUser.GetByEmailAsync(email);
                 var userDTO = _mapper.Map<ApplicationUserDTO>(user);
-                return Ok(new ResponseMessage<ApplicationUserDTO> { Data = userDTO, Status = true, Message = "User detail was fetched successfully" });
+                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage<ApplicationUserDTO> { Data = userDTO, Status = true, Message = "User detail was fetched successfully" }));
+                return Ok(data);
             }
-            return BadRequest(new ResponseMessage { Message = "email can not be null" });
+            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "email can not be null" }));
+            return BadRequest(data2);
         }
     }
 }

@@ -38,6 +38,7 @@ using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using System.Buffers;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Application.Interfaces;
 
 namespace HealthBanc
 {
@@ -285,7 +286,7 @@ namespace HealthBanc
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, Serilog.ILogger logger, TokenValidationParameters tokenValidationParameters,
-             IApiVersionDescriptionProvider provider)
+             IApiVersionDescriptionProvider provider,IEncryptAndDecrypt encryptAndDecrypt)
         {
             //utilityService.MakeHygeiaHMOPayment().Wait();
             //utilityService.MakeAxamansardHMOPayment().Wait();
@@ -320,6 +321,21 @@ namespace HealthBanc
                 context.Response.Headers.Add("Feature-Policy", "accelerometer 'none'; camera 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none';");
                 await next();
             });
+
+            //app.Use(async (context, next) =>
+            //{
+            //    var jsonString = String.Empty;
+            //    using (var inputStream = new StreamReader(context.Response.Body))
+            //    {
+            //        jsonString = inputStream.ReadToEnd();
+            //    }
+            //    var encryptedObject = encryptAndDecrypt.EncryptString(jsonString);
+
+            //    byte[] byteArray = Encoding.UTF8.GetBytes(encryptedObject);
+            //    MemoryStream stream = new MemoryStream(byteArray);
+            //    context.Response.Body = stream;
+            //    await next();
+            //});
 
             app.UseHttpsRedirection();
 

@@ -1,6 +1,7 @@
 ﻿using Application.DTO;
 using Application.Helpers.ThirdPartyAPI;
 using Application.Interfaces;
+using Application.Services;
 using Application.Services.Identity;
 using Application.ViewModels.UserReg_Login;
 using DataAccess;
@@ -35,13 +36,14 @@ namespace HealthBanc.Controllers.V2
         private readonly IEncryptAndDecrypt _encryptDecrypt;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly ResponseHelper _responseHelper;
 
         private AppEndpoint Options { get; }
         public StringValues agent;
         public string IpAddress;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptDecrypt
-            , IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper, IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor)
+            , IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper, IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor,ResponseHelper responseHelper)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -50,6 +52,7 @@ namespace HealthBanc.Controllers.V2
             _encryptDecrypt = encryptDecrypt;
             _passwordHasher = passwordHasher;
             _repoWrapper = repoWrapper;
+            _responseHelper = responseHelper;
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
         }
@@ -73,7 +76,8 @@ namespace HealthBanc.Controllers.V2
                     await _repoWrapper.Save();
                 }
             }
-            return Ok(new ResponseMessage { Status = true, Message = "Log out successful" });
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Status = true, Message = "Log out successful" }));
+            return Ok(data);
         }
 
         ///<summary>
@@ -90,29 +94,17 @@ namespace HealthBanc.Controllers.V2
         [MapToApiVersion("2.0")]
         public async Task<IActionResult> RegisterUser(EncryptedModel encryptedModel, string app)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var registrationViewModel = JsonConvert.DeserializeObject<RegistrationViewModel>(decryptedString.Item2);
+            var response = await _identityService.RegisterUser(registrationViewModel, app);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status == true)
             {
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var registrationViewModel = JsonConvert.DeserializeObject<RegistrationViewModel>(decryptedString.Item2);
-                var response = await _identityService.RegisterUser(registrationViewModel, app);
-                if (response.Status == true)
-                {
-                    return Ok(response);
-                }
-                return BadRequest(response);
+                return Ok(data);
             }
-            //return validation errors
-            var errors = new List<ResponseMessage>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(new ResponseMessage() { Message = error, Status = false });
-                _logger.LogInformation(error);
-            }
-            return BadRequest(errors);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -127,35 +119,23 @@ namespace HealthBanc.Controllers.V2
         [MapToApiVersion("2.0")]
         public async Task<IActionResult> SocialMediaRegistrationLink([FromBody] EncryptedModel encryptedModel, string app)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var registrationViewModel = JsonConvert.DeserializeObject<RegistrationViewModel>(decryptedString.Item2);
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            var browser = c.UA.ToString();
+            var deviceIp = IpAddress;
+            var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel, app, browser, deviceIp);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status == true)
             {
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var registrationViewModel = JsonConvert.DeserializeObject<RegistrationViewModel>(decryptedString.Item2);
-                var userAgent = agent;
-                string uaString = Convert.ToString(userAgent[0]);
-                var uaParser = Parser.GetDefault();
-                ClientInfo c = uaParser.Parse(uaString);
-                var browser = c.UA.ToString();
-                var deviceIp = IpAddress;
-                var response = await _identityService.SocialMediaRegistrationLink(registrationViewModel, app, browser, deviceIp);
-                if (response.Status == true)
-                {
-                    return Ok(response);
-                }
-                return BadRequest(response);
+                return Ok(data);
             }
-            //return validation errors
-            var errors = new List<ResponseMessage>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(new ResponseMessage() { Message = error, Status = false });
-                _logger.LogInformation(error);
-            }
-            return BadRequest(errors);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -167,61 +147,54 @@ namespace HealthBanc.Controllers.V2
         [MapToApiVersion("2.0")]
         public async Task<ActionResult> Login([FromBody] EncryptedModel encryptedModel)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var loginViewModel = JsonConvert.DeserializeObject<LoginViewModel>(decryptedString.Item2);
+            //get the user
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            var browser = c.UA.ToString();
+            var deviceIp = IpAddress;
+
+            var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
+
+            if (user == null || user.IsDeleted == true)
             {
-
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var loginViewModel = JsonConvert.DeserializeObject<LoginViewModel>(decryptedString.Item2);
-                //get the user
-                var userAgent = agent;
-                string uaString = Convert.ToString(userAgent[0]);
-                var uaParser = Parser.GetDefault();
-                ClientInfo c = uaParser.Parse(uaString);
-                var browser = c.UA.ToString();
-                var deviceIp = IpAddress;
-
-                var user = await _userManager.FindByEmailAsync(loginViewModel.EmailAddress);
-
-                if (user == null || user.IsDeleted == true) return NotFound(new ResponseMessage
-                {
-                    Message = "User detail is invalid, please try again with correct details" +
-                    "",
-                    Status = false
-                });
-
-
-                if (user.EmailConfirmed == false) return Unauthorized(new ResponseMessage { Message = "Please confirm your email address", Status = false });
-
-                if (user.LockoutEnd != null)
-                {
-                    return Unauthorized(new ResponseMessage { Message = "Your account has been locked, you exceeded the maximum failed password attempt. Kindly unlock your account by resetting your password", Status = false });
-                }
-
-                //check that the user password is correct
-                if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
-                {
-                    var response = await _identityService.Login2(user, browser, deviceIp);
-                    if (response.Status != true)
-                    {
-                        return BadRequest(response);
-                    }
-                    return Ok(response);
-                }
-                //increase access failed count
-                await _userManager.AccessFailedAsync(user);
-                return Unauthorized(new ResponseMessage { Message = "User detail is invalid, please try again with correct details.", Status = false });
+               var userData = new ResponseMessage{Message = "User detail is invalid, please try again with correct details", Status = false};
+                var userEncryptedData = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(userData));
+                return Unauthorized(userEncryptedData);
             }
-            //return validation errors
-            var errors = new List<ResponseMessage>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
+
+            if (user.EmailConfirmed == false)
             {
-                errors.Add(new ResponseMessage() { Message = error, Status = false });
+                var emailConfirm = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "Please confirm your email address", Status = false }));
+                return Unauthorized(emailConfirm);
             }
-            return BadRequest(errors);
+
+            if (user.LockoutEnd != null)
+            {
+                var lockedData = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "Your account has been locked, you exceeded the maximum failed password attempt. Kindly unlock your account by resetting your password", Status = false }));
+                return Unauthorized(lockedData);
+            }
+
+            //check that the user password is correct
+            if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
+            {
+                var response = await _identityService.Login2(user, browser, deviceIp);
+                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+                if (response.Status != true)
+                {
+                    return BadRequest(data);
+                }
+                return Ok(data);
+            }
+            //increase access failed count
+            await _userManager.AccessFailedAsync(user);
+            var unauthorisedData = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "User detail is invalid, please try again with correct details.", Status = false }));
+            return Unauthorized(unauthorisedData);
         }
 
         [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]
@@ -230,6 +203,7 @@ namespace HealthBanc.Controllers.V2
         [MapToApiVersion("2.0")]
         public async Task<IActionResult> RefreshToken(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
             if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var refreshModel = JsonConvert.DeserializeObject<RefreshTokenViewModel>(decryptedString.Item2);
@@ -241,11 +215,12 @@ namespace HealthBanc.Controllers.V2
             var browser = c.UA.ToString();
             var deviceIp = IpAddress;
             var authResponse = await _identityService.Refresh2(refreshModel, browser, deviceIp);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(authResponse));
             if (!authResponse.Status)
             {
-                return BadRequest(authResponse);
+                return BadRequest(data);
             }
-            return Ok(authResponse);
+            return Ok(data);
         }
 
         /// <summary>
@@ -260,34 +235,24 @@ namespace HealthBanc.Controllers.V2
         [HttpPost("[action]")]
         public async Task<IActionResult> ForgotPassword([FromBody] EncryptedModel encryptedModel, string app)
         {
-            if (ModelState.IsValid)
-            {
-                var userAgent = agent;
-                string uaString = Convert.ToString(userAgent[0]);
-                var uaParser = Parser.GetDefault();
-                ClientInfo c = uaParser.Parse(uaString);
-                var browser = c.UA.ToString();
-                var deviceIp = IpAddress;
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            var browser = c.UA.ToString();
+            var deviceIp = IpAddress;
 
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var forgotPassword = JsonConvert.DeserializeObject<ForgotPasswordViewModel>(decryptedString.Item2);
-                var response = await _identityService.ForgotPassword(forgotPassword, app,browser, deviceIp);
-                if (response.Status == true)
-                {
-                    return Ok(response);
-                }
-                return BadRequest(response);
-            }
-            var errors = new List<ResponseMessage>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var forgotPassword = JsonConvert.DeserializeObject<ForgotPasswordViewModel>(decryptedString.Item2);
+            var response = await _identityService.ForgotPassword(forgotPassword, app,browser, deviceIp);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status == true)
             {
-                errors.Add(new ResponseMessage() { Message = error, Status = false });
+                return Ok(data);
             }
-            return BadRequest(errors);
+            return BadRequest(data);
         }
 
 
@@ -307,52 +272,42 @@ namespace HealthBanc.Controllers.V2
         [HttpPost("[action]")]
         public async Task<IActionResult> ResetPassword(string email, string emailToken, [FromBody] EncryptedModel encryptedModel)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            var browser = c.UA.ToString();
+            var deviceIp = IpAddress;
+
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var viewModel = JsonConvert.DeserializeObject<ResetPasswordViewModel>(decryptedString.Item2);
+
+            if (email is null || emailToken is null)
             {
-                var userAgent = agent;
-                string uaString = Convert.ToString(userAgent[0]);
-                var uaParser = Parser.GetDefault();
-                ClientInfo c = uaParser.Parse(uaString);
-                var browser = c.UA.ToString();
-                var deviceIp = IpAddress;
-
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var viewModel = JsonConvert.DeserializeObject<ResetPasswordViewModel>(decryptedString.Item2);
-
-                if (email is null || emailToken is null)
-                {
-                    return BadRequest(new ResponseMessage { Message = "email or email token can not be null" });
-                }
-
-                var user = await _userManager.FindByEmailAsync(email);
-                if (user == null)
-                {
-                    return NotFound(new ResponseMessage { Message = "User with the email could not be found" });
-                }
-
-                var response = await _identityService.ResetPassword(email, emailToken, viewModel,browser,deviceIp);
-
-                if (response.Status == true)
-                {
-                    return Ok(response);
-                }
-                if (response.ResponseCode == 23)
-                {
-                    return BadRequest(response);
-                }
-                return BadRequest(response);
+                var data1 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "email or email token can not be null" }));
+                return BadRequest(data1);
             }
-            //return validation errors
-            var errors = new List<ResponseMessage>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
             {
-                errors.Add(new ResponseMessage() { Message = error });
+                var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "User with the email could not be found" }));
+                return NotFound(data2);
             }
-            return BadRequest(errors);
+
+            var response = await _identityService.ResetPassword(email, emailToken, viewModel,browser,deviceIp);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status == true)
+            {
+                return Ok(data);
+            }
+            if (response.ResponseCode == 23)
+            {
+                return BadRequest(data);
+            }
+            return BadRequest(data);
         }
 
         //WORKING1
@@ -369,87 +324,76 @@ namespace HealthBanc.Controllers.V2
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> ChangePassword([FromBody] EncryptedModel encryptedModel)
         {
-            if (ModelState.IsValid)
-            {
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var changePassword = JsonConvert.DeserializeObject<ChangePasswordViewModel>(decryptedString.Item2);
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                var user = await _userManager.FindByIdAsync(userId);
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var changePassword = JsonConvert.DeserializeObject<ChangePasswordViewModel>(decryptedString.Item2);
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            var user = await _userManager.FindByIdAsync(userId);
 
-                if (user != null)
+            if (user != null)
+            {
+                PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, changePassword.ConfirmPassword);
+                if (passResult.Equals(PasswordVerificationResult.Failed))
                 {
-                    PasswordVerificationResult passResult = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, changePassword.ConfirmPassword);
-                    if (passResult.Equals(PasswordVerificationResult.Failed))
+                    if (user.HashedPasswordHistory != null)
                     {
+                        var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
+                        if (hashedPassword.LastOrDefault() == "")
+                        {
+                            hashedPassword.RemoveAt(hashedPassword.Count - 1);
+                        }
+                        foreach (var item in hashedPassword)
+                        {
+                            var (Verified, NeedsUpgrade) = _passwordHasher.Check(item, changePassword.ConfirmPassword);
+                            if (Verified == true)
+                            {
+                                var verificationData = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "The password you entered has been used before,please try another" }));
+                                return BadRequest(verificationData);
+                            }
+                            var checkForValidPassword = _passwordHasher.Check(item, changePassword.ConfirmPassword);
+                        }
+                    }
+
+                    var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
+                    if (userPassword.Succeeded)
+                    {
+                        var passwordHashed = _passwordHasher.Hash(changePassword.NewPassword);
                         if (user.HashedPasswordHistory != null)
                         {
                             var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
                             if (hashedPassword.LastOrDefault() == "")
                             {
                                 hashedPassword.RemoveAt(hashedPassword.Count - 1);
-                            }
-                            foreach (var item in hashedPassword)
-                            {
-                                var (Verified, NeedsUpgrade) = _passwordHasher.Check(item, changePassword.ConfirmPassword);
-                                if (Verified == true)
+                                if (hashedPassword.Count > 3)
                                 {
-                                    return BadRequest(new ResponseMessage { Message = "The password you entered has been used before,please try another" });
-                                }
-                                var checkForValidPassword = _passwordHasher.Check(item, changePassword.ConfirmPassword);
-                            }
-                        }
-
-                        var userPassword = await _userManager.ChangePasswordAsync(user, changePassword.Password, changePassword.NewPassword);
-                        if (userPassword.Succeeded)
-                        {
-                            var passwordHashed = _passwordHasher.Hash(changePassword.NewPassword);
-                            if (user.HashedPasswordHistory != null)
-                            {
-                                var hashedPassword = user.HashedPasswordHistory.Split(",").ToList();
-                                if (hashedPassword.LastOrDefault() == "")
-                                {
-                                    hashedPassword.RemoveAt(hashedPassword.Count - 1);
-                                    if (hashedPassword.Count > 3)
-                                    {
-                                        hashedPassword.RemoveAt(0);
-                                        var newPaswordHash = string.Join(",", hashedPassword);
-                                        user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
-                                        await _userManager.UpdateAsync(user);
-                                        var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, true, false);
-                                        _repoWrapper.PasswordChange.Create(passwordChangehistory2);
-                                        await _repoWrapper.Save();
-                                        return Ok(new ResponseMessage { Message = "Password changed successfully", Status = true });
-                                    }
+                                    hashedPassword.RemoveAt(0);
+                                    var newPaswordHash = string.Join(",", hashedPassword);
+                                    user.HashedPasswordHistory = $"{newPaswordHash},{passwordHashed},";
+                                    await _userManager.UpdateAsync(user);
+                                    var passwordChangehistory2 = new PasswordChangeHistory(user.Id, user.Email, true, false);
+                                    _repoWrapper.PasswordChange.Create(passwordChangehistory2);
+                                    await _repoWrapper.Save();
+                                    var successData = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "Password changed successfully", Status = true }));
+                                    return Ok(successData);
                                 }
                             }
-                            user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
-                            await _userManager.UpdateAsync(user);
-                            var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, true, false);
-                            _repoWrapper.PasswordChange.Create(passwordChangehistory);
-                            await _repoWrapper.Save();
-                            return Ok(new ResponseMessage { Message = "Password changed succesfully", Status = true });
                         }
-                        return BadRequest(new ResponseMessage { Message = "Current password is wrong,please input correct one or reset password" });
+                        user.HashedPasswordHistory = user.HashedPasswordHistory += passwordHashed + ",";
+                        await _userManager.UpdateAsync(user);
+                        var passwordChangehistory = new PasswordChangeHistory(user.Id, user.Email, true, false);
+                        _repoWrapper.PasswordChange.Create(passwordChangehistory);
+                        await _repoWrapper.Save();
+                        return Ok(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "Password changed succesfully", Status = true })));
                     }
-                    else
-                    {
-                        return BadRequest(new ResponseMessage { Message = "New password can not be similar with old password" });
-                    }
-                };
-                return BadRequest(new ResponseMessage { Message = "User does not exist" });
-            }
-            //return validation errors
-            var errors = new List<ResponseMessage>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(new ResponseMessage() { Message = error });
-            }
-            return BadRequest(errors);
+                    return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "Current password is wrong,please input correct one or reset password" })));
+                }
+                else
+                {
+                    return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "New password can not be similar with old password" })));
+                }
+            };
+            return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "User does not exist" })));
         }
-
     }
 }

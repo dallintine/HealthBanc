@@ -1,6 +1,7 @@
 ﻿using Application.DTO;
 using Application.DTO.DashboardAnalyticsDTOs;
 using Application.Interfaces;
+using Application.Services;
 using Application.Services.Admin;
 using Application.ViewModels;
 using DataAccess;
@@ -28,12 +29,15 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         private readonly Dashboard_Analytics _dashboardAnalytics;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly IEncryptAndDecrypt _encryptDecrypt;
+        private readonly ResponseHelper _responseHelper;
 
-        public DashboardAnalyticsController(Dashboard_Analytics dashboardAnalytics,IRepositoryWrapper repoWrapper, IEncryptAndDecrypt encryptDecrypt)
+        public DashboardAnalyticsController(Dashboard_Analytics dashboardAnalytics,IRepositoryWrapper repoWrapper, IEncryptAndDecrypt encryptDecrypt,
+            ResponseHelper responseHelper)
         {
             _dashboardAnalytics = dashboardAnalytics;
             _repoWrapper = repoWrapper;
             _encryptDecrypt = encryptDecrypt;
+            _responseHelper = responseHelper;
         }
 
         /// <summary>
@@ -46,8 +50,8 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         public async Task<IActionResult> DashboardAnalytics()
         {
             var allDashboardAnalytics = await _dashboardAnalytics.GetAllDashboardAnalystics();
-
-            return Ok(new ResponseMessage<DashboardDTO> { Data = allDashboardAnalytics, Status = true, Message = "All dashboard analytics was fetched successfully" });           
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage<DashboardDTO> { Data = allDashboardAnalytics, Status = true, Message = "All dashboard analytics was fetched successfully" }));
+            return Ok(data);           
         }
         
         /// <summary>
@@ -60,7 +64,8 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         public async Task<IActionResult> GetUsersStatus()
         {
             var userStatus = await _dashboardAnalytics.GetUsersStatus();
-            return Ok(new ResponseMessage { Data = userStatus, Status = true, Message = "User status was fetched successfully" });
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Data = userStatus, Status = true, Message = "User status was fetched successfully" }));
+            return Ok(data);
         }
 
         
@@ -73,16 +78,20 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> GetServiceBreakdown(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<IdViewModel>(decryptedString.Item2);
 
             if (model.Id is null || (model.Id > 0 && model.Id < 3))
             {
                 var serviceBreakdown = await _dashboardAnalytics.GetServiceBreakdown(model.Id);
-                return Ok(new ResponseMessage { Data = serviceBreakdown, Status = true, Message = "Service breakdown was fetched successfully" });
+                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Data = serviceBreakdown, Status = true, Message = "Service breakdown was fetched successfully" }));
+                return Ok(data);
             }
-            return BadRequest(new ResponseMessage { Message = "timeId is invalid" });
+            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "timeId is invalid" }));
+            return BadRequest(data2);
         }
 
         /// <summary>
@@ -94,16 +103,20 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> GetSignUpAnalytics(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<IdViewModel>(decryptedString.Item2);
 
             if (model.Id is null || model.Id == 1)
             {
                 var signUpAnalytics = await _dashboardAnalytics.GetSignUpAnalytics(model.Id);
-                return Ok(new ResponseMessage { Data = signUpAnalytics, Status = true, Message = "SignUp analytics was fetched successfully" });
+                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Data = signUpAnalytics, Status = true, Message = "SignUp analytics was fetched successfully" }));
+                return Ok(data);
             }
-            return BadRequest(new ResponseMessage { Message = "timeId is invalid" });
+            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "timeId is invalid" }));
+            return BadRequest(data2);
         }
 
         /// <summary>
@@ -116,7 +129,9 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         public async Task<IActionResult> GetServices()
         {            
             var services = await _repoWrapper.Service.GetServicesAsync();
-            return Ok(new ResponseMessage { Data = services, Status = true, Message = "Service was fetched successfully" });            
+            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Data = services, Status = true, Message = "Service was fetched successfully" }));
+
+            return Ok(data2);            
         }
 
         /// <summary>
@@ -128,13 +143,15 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> HealthInsuredDashBoardAnalytics(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<IdViewModel>(decryptedString.Item2);
 
             var healthInsuredDashboard = await _dashboardAnalytics.GetHealthInsuredDashBoardAnalytics(model.Id);
-
-            return Ok(healthInsuredDashboard);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(healthInsuredDashboard));
+            return Ok(data);
         }
 
         /// <summary>
@@ -147,12 +164,15 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> HealthInsuredUserAcquisition(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<IdViewModel>(decryptedString.Item2);
 
             var healthInsuredAcquisistions = await _dashboardAnalytics.HealthInsuredUserAcquisition(model.Id);
-            return Ok(healthInsuredAcquisistions);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(healthInsuredAcquisistions));
+            return Ok(data);
         }
 
         /// <summary>
@@ -165,12 +185,15 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [Authorize(Roles = "Super-Administrator,Administrator,Technical-Support,Analyst")]
         public async Task<IActionResult> HealthInsuredSubscriberAcquisition(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<IdViewModel>(decryptedString.Item2);
 
             var subscriberAcqusition = await _dashboardAnalytics.HealthInsuredSubscriberAcquisition(model.Id);
-            return Ok(subscriberAcqusition);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(subscriberAcqusition));
+            return Ok(data);
         }
     }
 }

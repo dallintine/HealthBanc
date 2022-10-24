@@ -56,13 +56,14 @@ namespace HealthBanc.Controllers
         private readonly ILogger<UtilityController> _logger;
         private readonly IWalletEncryptionsAndDecryption _encryptionsAndDecryption;
         private readonly WalletConnect _walletConnect;
+        private readonly IEncryptAndDecrypt _encryptAndDecrypt;
 
         private ConnectionStrings ConnectionStrings { get; }
 
         public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
             IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper, IOptions<ConnectionStrings> connectionString, ISMSService smsService,
             AuditLogService auditLogServices,ImageService imageService,ILogger<UtilityController> logger, IWalletEncryptionsAndDecryption encryptionsAndDecryption,
-            WalletConnect walletConnect)
+            WalletConnect walletConnect,IEncryptAndDecrypt encryptAndDecrypt)
         {
             _insuranceService = insuranceService;
             _tokenizationService = tokenizationService;
@@ -78,6 +79,7 @@ namespace HealthBanc.Controllers
             _logger = logger;
             _encryptionsAndDecryption = encryptionsAndDecryption;
             _walletConnect = walletConnect;
+            _encryptAndDecrypt = encryptAndDecrypt;
             ConnectionStrings = connectionString.Value;
         }
 
@@ -547,9 +549,9 @@ namespace HealthBanc.Controllers
         }
 
         [HttpGet("[action]")]
-        public async Task<IActionResult> SMSTest()
+        public async Task<IActionResult> SMSTest(string mobile)
         {
-            var smsresponse = await _smsService.SendSmsAsync("07034770338", "test test");
+            var smsresponse = await _smsService.SendSmsAsync(mobile, "test test");
             return Ok(smsresponse);
         }
 
@@ -624,6 +626,20 @@ namespace HealthBanc.Controllers
         {
             var data = _repoWrapper.UserAuditLog.GetLastFive();
             return Ok(data);
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult Encryypt(string json)
+        {
+            var data = _encryptAndDecrypt.EncryptString(json);
+            return Ok(data);
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult Decryypt(string text)
+        {
+            var data = _encryptAndDecrypt.DecryptString(text);
+            return Ok(data.Item2);
         }
     }
 }

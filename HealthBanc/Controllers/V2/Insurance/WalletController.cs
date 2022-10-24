@@ -1,6 +1,7 @@
 ﻿using Application.API_ResponseModel.Wallet;
 using Application.DTO;
 using Application.Interfaces;
+using Application.Services;
 using Application.Services.Wallet;
 using Application.ViewModels.HealthInsured.Wallet;
 using Microsoft.AspNetCore.Authorization;
@@ -20,11 +21,13 @@ namespace HealthBanc.Controllers.V2.Insurance
     {
         private readonly WalletService _walletService;
         private readonly IEncryptAndDecrypt _encryptDecrypt;
+        private readonly ResponseHelper _responseHelper;
 
-        public WalletController(WalletService walletService, IEncryptAndDecrypt encryptDecrypt)
+        public WalletController(WalletService walletService, IEncryptAndDecrypt encryptDecrypt,ResponseHelper responseHelper)
         {
             _walletService = walletService;
             _encryptDecrypt = encryptDecrypt;
+            _responseHelper = responseHelper;
         }
 
         /// <summary>
@@ -39,28 +42,20 @@ namespace HealthBanc.Controllers.V2.Insurance
         [MapToApiVersion("2.0")]
         public async Task<IActionResult> GenerateOTPForExistingWallet(EncryptedModel encryptedModel)
         {
-            if (ModelState.IsValid)
-            {
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var generateOTP = JsonConvert.DeserializeObject<GenerateWalletOTPViewModel>(decryptedString.Item2);
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
 
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int id = int.Parse(userId);
-                var response = await _walletService.GenerateOTPForExistingWallet(id, generateOTP.MobileNumber);
-                if (response.Status) return Ok(response);
-                return BadRequest(response);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+
+            var generateOTP = JsonConvert.DeserializeObject<GenerateWalletOTPViewModel>(decryptedString.Item2);
+
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _walletService.GenerateOTPForExistingWallet(id, generateOTP.MobileNumber);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status) return Ok(data);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -75,27 +70,17 @@ namespace HealthBanc.Controllers.V2.Insurance
         [MapToApiVersion("2.0")]
         public async Task<IActionResult> GenerateOTPForNewWallet(EncryptedModel encryptedModel)
         {
-            if (ModelState.IsValid)
-            {
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var generateOTP = JsonConvert.DeserializeObject<GenerateWalletOTPViewModel>(decryptedString.Item2);
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int id = int.Parse(userId);
-                var response = await _walletService.GenerateOTPForNewWallet(id, generateOTP.MobileNumber);
-                if (response.Status) return Ok(response);
-                return BadRequest(response);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            var generateOTP = JsonConvert.DeserializeObject<GenerateWalletOTPViewModel>(decryptedString.Item2);
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _walletService.GenerateOTPForNewWallet(id, generateOTP.MobileNumber);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status) return Ok(data);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -110,27 +95,17 @@ namespace HealthBanc.Controllers.V2.Insurance
         [MapToApiVersion("2.0")]
         public async Task<IActionResult> LinkWallet(EncryptedModel encryptedModel)
         {
-            if (ModelState.IsValid)
-            {
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var linkWallet = JsonConvert.DeserializeObject<LinkWalletModel>(decryptedString.Item2);
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int id = int.Parse(userId);
-                var response = await _walletService.LinkWallet(id, linkWallet);
-                if (response.Status) return Ok(response);
-                return BadRequest(response);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            var linkWallet = JsonConvert.DeserializeObject<LinkWalletModel>(decryptedString.Item2);
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _walletService.LinkWallet(id, linkWallet);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status) return Ok(data);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -145,27 +120,17 @@ namespace HealthBanc.Controllers.V2.Insurance
         [MapToApiVersion("2.0")]
         public async Task<IActionResult> CreateWallet(EncryptedModel encryptedModel)
         {
-            if (ModelState.IsValid)
-            {
-                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-                var walletModel = JsonConvert.DeserializeObject<CreateWalletModel>(decryptedString.Item2);
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int id = int.Parse(userId);
-                var response = await _walletService.CreateWallet(id, walletModel);
-                if (response.Status) return Ok(response);
-                return BadRequest(response);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
-            {
-                errors.Add(error);
-            }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            var walletModel = JsonConvert.DeserializeObject<CreateWalletModel>(decryptedString.Item2);
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int id = int.Parse(userId);
+            var response = await _walletService.CreateWallet(id, walletModel);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status) return Ok(data);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -182,8 +147,9 @@ namespace HealthBanc.Controllers.V2.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
             var response = await _walletService.WalletDetails(id);
-            if (response.Status) return Ok(response);
-            return BadRequest(response);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status) return Ok(data);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -200,8 +166,9 @@ namespace HealthBanc.Controllers.V2.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
             var response = await _walletService.SwitchToWalletPayment(id);
-            if (response.Status) return Ok(response);
-            return BadRequest(response);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+            if (response.Status) return Ok(data);
+            return BadRequest(data);
         }
     }
 }

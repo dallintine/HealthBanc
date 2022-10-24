@@ -35,6 +35,8 @@ using DataAccess.DTO.InsuranceDTO;
 using Application.Services.Card;
 using Application.Interfaces;
 using Application.ViewModels;
+using HealthBanc.Decorators;
+using Application.Services;
 
 namespace HealthBanc.Controllers.V2.Insurance
 {
@@ -48,17 +50,19 @@ namespace HealthBanc.Controllers.V2.Insurance
         private readonly IRepositoryWrapper _repoWerapper;
         private readonly AuditLogService _auditLogServices;
         private readonly IEncryptAndDecrypt _encryptDecrypt;
+        private readonly ResponseHelper _responsehelper;
         public string IpAddress;
         public StringValues agent;
 
         public InsuranceController(InsuranceService insuranceService, IMapper mapper,IRepositoryWrapper repoWerapper,AuditLogService auditLogServices,IHttpContextAccessor accessor,
-             IEncryptAndDecrypt encryptDecrypt)
+             IEncryptAndDecrypt encryptDecrypt, ResponseHelper responsehelper)
         {
             _insuranceService = insuranceService;
             _mapper = mapper;
             _repoWerapper = repoWerapper;
             _auditLogServices = auditLogServices;
             _encryptDecrypt = encryptDecrypt;
+            _responsehelper = responsehelper;
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -70,7 +74,7 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpGet("[action]")]
         [Authorize(Roles = "SuperAdmin,Super-Administrator")]
         [ProducesResponseType(200, Type = typeof(List<string>))]
-        public List<string> GetState()
+        public IActionResult GetState()
         {
             var stateList = new List<string>()
 
@@ -78,7 +82,8 @@ namespace HealthBanc.Controllers.V2.Insurance
              "Enugu","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger",
              "Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"
             };
-            return stateList;
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(stateList));
+            return Ok(data);
         }
 
         /// <summary>
@@ -92,8 +97,10 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public IActionResult GetTowns(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<GetTownsViewModel>(decryptedString.Item2);
 
             if (string.IsNullOrEmpty(model.State) || String.IsNullOrEmpty(model.InsurancePovider))
@@ -101,7 +108,8 @@ namespace HealthBanc.Controllers.V2.Insurance
                 return BadRequest(new ResponseMessage { Status = false, Message = "State or insurance provider cannot be null" });
             }
             var townList = _insuranceService.GetTowns(model.State, model.InsurancePovider);
-            return Ok(townList);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(townList));
+            return Ok(data);
         }
 
         /// <summary>
@@ -111,11 +119,13 @@ namespace HealthBanc.Controllers.V2.Insurance
         /// <returns></returns>
         [HttpPost("[action]")]
         [ProducesResponseType(200, Type = typeof(ResponseMessage<List<AxaMansardHospitalList>>))]
-        [Authorize(Roles = "SuperAdmin,Super-Administrator")]
+        //[Authorize(Roles = "SuperAdmin,Super-Administrator")]
         public async Task<IActionResult> GetHealthProvider(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<GetHealthProviderViewModel>(decryptedString.Item2);
 
             if (string.IsNullOrEmpty(model.State) || String.IsNullOrEmpty(model.InsurancePovider))
@@ -123,7 +133,8 @@ namespace HealthBanc.Controllers.V2.Insurance
                 return BadRequest(new ResponseMessage { Status = false, Message = "State or insurance provider cannot be null" });
             }
             var healthProvider = await _insuranceService.GetHealthProvider(model.State, null, model.InsurancePovider);
-            return Ok(healthProvider);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(healthProvider));
+            return Ok(data);
         }
 
         /// <summary>
@@ -136,12 +147,16 @@ namespace HealthBanc.Controllers.V2.Insurance
         [Authorize(Roles = "SuperAdmin,Super-Administrator")]
         public async Task<IActionResult> FilterHygeiaHealthCareProvider(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<FilterHygeiaHealthCareProviderModel>(decryptedString.Item2);
 
             var FilterHealthCareProvider = await _insuranceService.FilterHealthCareProvider(model, model.State, model.City);
-            return Ok(FilterHealthCareProvider);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(FilterHealthCareProvider));
+
+            return Ok(data);
         }
 
         /// <summary>
@@ -166,7 +181,10 @@ namespace HealthBanc.Controllers.V2.Insurance
                 Code = "8"
             };
             axaListResponse.Add(axaResponse2);
-            return Ok(new ResponseMessage<List<AxaListResponse>> { Data = axaListResponse, Message = "HealthPan was fetched successfully", Status = true });
+            var result = new ResponseMessage<List<AxaListResponse>> { Data = axaListResponse, Message = "HealthPan was fetched successfully", Status = true };
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(result));
+
+            return Ok(data);
         }
 
         /// <summary>
@@ -179,32 +197,21 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [Authorize(Roles = "SuperAdmin,Super-Administrator")]
-        public async Task<IActionResult> CreateUserInsuranceProfile([FromForm] UserProfileviewModel userProfile)
+        public async Task<IActionResult> CreateUserInsuranceProfile([FromForm]UserProfileviewModel userProfile)
         {
-            if (ModelState.IsValid)
-            {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-                var device = _auditLogServices.GetDevice(agent);
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var device = _auditLogServices.GetDevice(agent);
 
-                var creatProfileResponse = await _insuranceService.UserOnboarding(userProfile, Id, IpAddress, device);
 
-                if (creatProfileResponse.Status)
-                {
-                    return Ok(creatProfileResponse);
-                }
-                return BadRequest(creatProfileResponse);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
+            var creatProfileResponse = await _insuranceService.UserOnboarding(userProfile, Id, IpAddress, device);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(creatProfileResponse));
+            if (creatProfileResponse.Status)
             {
-                errors.Add(error);
+                return Ok(data);
             }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -223,9 +230,11 @@ namespace HealthBanc.Controllers.V2.Insurance
             if (profile != null)
             {
                 var profileDTO = _mapper.Map<IndividualProfileDTO>(profile);
-                return Ok(new ResponseMessage { Data = profileDTO, Message = "User profile was fetched successfully", Status = true });
+                var profileData = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Data = profileDTO, Message = "User profile was fetched successfully", Status = true }));
+                return Ok(profileData);
             }
-            return BadRequest(new ResponseMessage { Message = "Profile was not found" });
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "Profile was not found" }));
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -238,17 +247,21 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage<IndividualProfileDTO>))]
         public async Task<IActionResult> GetExtendedInsuranceProfileByEmail(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<EmailViewModel>(decryptedString.Item2);
 
             if (model.Email != null)
             {
                 var profileDetails = await _insuranceService.GetExtendedInsuranceProfileDetailByEmail(model.Email);
-                if (!profileDetails.Status) return NotFound(profileDetails);
-                return Ok(profileDetails);
+                var profileData = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(profileDetails));
+                if (!profileDetails.Status) return NotFound(profileData);
+                return Ok(profileData);
             }
-            return BadRequest(new ResponseMessage { Message = "Email Cannot be null", Status = false });
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "Email Cannot be null", Status = false }));
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -261,34 +274,25 @@ namespace HealthBanc.Controllers.V2.Insurance
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> UpdateProfileAsync(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var updateProfileViewModel = JsonConvert.DeserializeObject<UpdateProfileViewModel>(decryptedString.Item2);
 
-            if (ModelState.IsValid)
-            {
-                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-                int Id = int.Parse(userId);
-                var device = _auditLogServices.GetDevice(agent);
-                int id = int.Parse(userId);
+            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+            int Id = int.Parse(userId);
+            var device = _auditLogServices.GetDevice(agent);
+            int id = int.Parse(userId);
 
-                var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, id,IpAddress,device);
-                if (updateResponse.Status)
-                {
-                    return Ok(updateResponse);
-                }
-                return BadRequest(updateResponse);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
+            var updateResponse = await _insuranceService.UpdateProfileAsync(updateProfileViewModel, id, IpAddress, device);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(updateResponse));
+
+            if (updateResponse.Status)
             {
-                errors.Add(error);
+                return Ok(data);
             }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -301,32 +305,22 @@ namespace HealthBanc.Controllers.V2.Insurance
         [Authorize(Roles = "Super-Administrator")]
         public async Task<IActionResult> AdminUpdateProfileAsync(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<AdminUpdateProfileAsyncViewModel>(decryptedString.Item2);
+            var device = _auditLogServices.GetDevice(agent);
+            var insuranceProfile = await _repoWerapper.InsuranceProfile.GetByEmail(model.Email);
 
-            if (ModelState.IsValid)
-            {
-                var device = _auditLogServices.GetDevice(agent);
-                var insuranceProfile = await _repoWerapper.InsuranceProfile.GetByEmail(model.Email);
+            var updateResponse = await _insuranceService.UpdateProfileAsync(model, insuranceProfile.UserId.Value, IpAddress, device);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(updateResponse));
 
-                var updateResponse = await _insuranceService.UpdateProfileAsync(model, insuranceProfile.UserId.Value,IpAddress, device);
-                if (updateResponse.Status)
-                {
-                    return Ok(updateResponse);
-                }
-                return BadRequest(updateResponse);
-            }
-            //return validation errors
-            var errors = new List<string>();
-            var errorList = ModelState.Values.SelectMany(m => m.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-            foreach (var error in errorList)
+            if (updateResponse.Status)
             {
-                errors.Add(error);
+                return Ok(data);
             }
-            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -339,12 +333,16 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<List_IndividualProfileDTO>>))]
         public async Task<IActionResult> GetPaginatedInsuranceProfiles(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var paginationQuery = JsonConvert.DeserializeObject<PaginationQuery>(decryptedString.Item2);
 
             var insuranceProfiles = await _insuranceService.GetPaginatedInsuranceProfiles(paginationQuery);
-            return Ok(insuranceProfiles);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(insuranceProfiles));
+
+            return Ok(data);
         }
 
         /// <summary>
@@ -356,8 +354,10 @@ namespace HealthBanc.Controllers.V2.Insurance
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult>  PayforRefereeWithEmail(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<PayforRefereeWithEmailViewModel>(decryptedString.Item2);
 
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -365,33 +365,35 @@ namespace HealthBanc.Controllers.V2.Insurance
             var device = _auditLogServices.GetDevice(agent);
 
             var response = await _insuranceService.PayforNewIndividualWithEmail(userId, model.Email, model.InsuranceService, IpAddress,device);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+
 
             if (response.Status)
             {
-                return Ok(response);
+                return Ok(data);
             }
-            return BadRequest(response);
+            return BadRequest(data);
         }
 
         [HttpPost("[action]")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> PayForRefereeWithFullDetails(EncryptedModel encryptedModel)
+        public async Task<IActionResult> PayForRefereeWithFullDetails([FromForm] PayForRefereeViewModel refereeViewModel)
         {
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
-            var refereeViewModel = JsonConvert.DeserializeObject<PayForRefereeViewModel>(decryptedString.Item2);
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
 
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
             var device = _auditLogServices.GetDevice(agent);
 
             var response = await _insuranceService.PayForRefereeWithFullDetails(userId, refereeViewModel,IpAddress,device);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+
 
             if (response.Status)
             {
-                return Ok(response);
+                return Ok(data);
             }
-            return BadRequest(response);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -403,14 +405,18 @@ namespace HealthBanc.Controllers.V2.Insurance
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetPaginatedRefereeInsuranceProfiles(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var paginationQuery = JsonConvert.DeserializeObject<PaginationQuery>(decryptedString.Item2);
 
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
             var insuranceProfiles = await _insuranceService.GetReferedInsuranceProfiles(paginationQuery, userId);
-            return Ok(insuranceProfiles);            
+            var profileData = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(insuranceProfiles));
+
+            return Ok(profileData);            
         }
 
         /// <summary>
@@ -422,8 +428,10 @@ namespace HealthBanc.Controllers.V2.Insurance
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> RemovePaidReferee(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<EmailViewModel>(decryptedString.Item2);
 
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -431,11 +439,13 @@ namespace HealthBanc.Controllers.V2.Insurance
             var device = _auditLogServices.GetDevice(agent);
 
             var response = await _insuranceService.RemovePaidReferee(userId, model.Email,IpAddress,device);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+
             if (response.Status)
             {
-                return Ok(response);
+                return Ok(data);
             }
-            return BadRequest(response);
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -452,7 +462,9 @@ namespace HealthBanc.Controllers.V2.Insurance
 
             var user = await _repoWerapper.ApplicationUser.FindByIdAsync(Id);
             var profileCompletion = await _insuranceService.GetProfileCompletion(Id,user.Email);
-            return Ok(profileCompletion);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(profileCompletion));
+
+            return Ok(data);
         }
 
         /// <summary>
@@ -465,13 +477,17 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<TransactionLogDTO>>))]
         public async Task<IActionResult> GetPaginatedTransactionLogs(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<PaginatedTransactionLogsViewModel>(decryptedString.Item2);
 
             var transLogs = await _insuranceService.GetPaginatedTransactionLogs(model, model.Email);
 
-            return Ok(transLogs);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(transLogs));
+
+            return Ok(data);
         }
 
         /// <summary>
@@ -485,8 +501,10 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public IActionResult DownloadIdentifiers(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<IdViewModel>(decryptedString.Item2);
 
             var count = model.Id.Value;
@@ -502,7 +520,9 @@ namespace HealthBanc.Controllers.V2.Insurance
                 var content = _insuranceService.DownloadIdentifiers(count);
                 return File(content, contentType, fileName);
             }
-            return BadRequest(new ResponseMessage { Message = "You do not have permission to access this resource" });
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "You do not have permission to access this resource" }));
+
+            return BadRequest(data);
         }
 
         /// <summary>
@@ -516,8 +536,10 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public IActionResult DowloadInsuranceProfileExcelData(EncryptedModel encryptedModel)
         {
+            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
+                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
             var model = JsonConvert.DeserializeObject<DowloadInsuranceProfileViewModel>(decryptedString.Item2);
 
             var response = _insuranceService.DowloadInsuranceProfileExcelData(model.SubStatus, model.ActiveStatus, model.Service);
@@ -529,7 +551,9 @@ namespace HealthBanc.Controllers.V2.Insurance
                 var content = response.Data as byte[];
                 return File(content, contentType, fileName);
             }
-            return BadRequest(response);
+            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
+
+            return BadRequest(data);
         }
     }
 }
