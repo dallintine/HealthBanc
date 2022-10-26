@@ -18,7 +18,6 @@ using Application.Services.Card;
 using Application.Services.Activation_Deactivation;
 using Newtonsoft.Json;
 using Application.Interfaces;
-using Application.Services;
 
 namespace HealthBanc.Controllers.V2.Insurance
 {
@@ -32,19 +31,17 @@ namespace HealthBanc.Controllers.V2.Insurance
         private readonly Card_SubscriptionService _cardService;
         private readonly RestrictionService _restrictionService;
         private readonly IEncryptAndDecrypt _encryptDecrypt;
-        private readonly ResponseHelper _responseHelper;
         public string ipAddress;
         public StringValues agent;
 
         public TokenizationController(IHttpContextAccessor accessor, AuditLogService auditLogServices,IRepositoryWrapper repoWrapper,Card_SubscriptionService cardService,
-            RestrictionService restrictionService , IEncryptAndDecrypt encryptDecrypt,ResponseHelper responseHelper)
+            RestrictionService restrictionService , IEncryptAndDecrypt encryptDecrypt)
         {
             _auditLogServices = auditLogServices;
             _repoWrapper = repoWrapper;
             _cardService = cardService;
             _restrictionService = restrictionService;
             _encryptDecrypt = encryptDecrypt;
-            _responseHelper = responseHelper;
             ipAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
         }
@@ -60,23 +57,33 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> ChargeCard(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var chargeCard = JsonConvert.DeserializeObject<ChargeCardViewModel>(decryptedString.Item2);
-
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-            var device = _auditLogServices.GetDevice(agent);
-
-            var chargeCardResponse = await _cardService.TokenizeCard(chargeCard, id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(chargeCardResponse));
-            if (chargeCardResponse.Status)
+            if (ModelState.IsValid)
             {
-                return Ok(data);
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var chargeCard = JsonConvert.DeserializeObject<ChargeCardViewModel>(decryptedString.Item2);
+
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int id = int.Parse(userId);
+                var device = _auditLogServices.GetDevice(agent);
+
+                var chargeCardResponse = await _cardService.TokenizeCard(chargeCard, id);
+                if (chargeCardResponse.Status)
+                {
+                    return Ok(chargeCardResponse);
+                }
+                return BadRequest(chargeCardResponse);
             }
-            return BadRequest(data);
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
@@ -90,22 +97,32 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> SubmitOtp(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var otpViewModel = JsonConvert.DeserializeObject<SetOtpViewModel>(decryptedString.Item2);
-
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-
-            var otpResponse = await _cardService.SubmitOtp(otpViewModel, id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(otpResponse));
-            if (otpResponse.Status)
+            if (ModelState.IsValid)
             {
-                return Ok(data);
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var otpViewModel = JsonConvert.DeserializeObject<SetOtpViewModel>(decryptedString.Item2);
+
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int id = int.Parse(userId);
+
+                var otpResponse = await _cardService.SubmitOtp(otpViewModel, id);
+                if (otpResponse.Status)
+                {
+                    return Ok(otpResponse);
+                }
+                return BadRequest(otpResponse);
             }
-            return BadRequest(data);
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
@@ -124,13 +141,11 @@ namespace HealthBanc.Controllers.V2.Insurance
             int Id = int.Parse(userId);
 
             var cards = await _cardService.GetCards(Id,email);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(cards));
-
             if (cards.Status)
             {
-                return Ok(data);
+                return Ok(cards);
             }
-            return BadRequest(data);
+            return BadRequest(cards);
         }
 
         /// <summary>
@@ -145,27 +160,36 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> ChangePrimaryCard(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var model = JsonConvert.DeserializeObject<TokenizationIdViewModel>(decryptedString.Item2);
-
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-
-            var changePrimaryCardResponse = await _cardService.ChangePrimaryCard(model.Id, id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(changePrimaryCardResponse));
-
-            if (changePrimaryCardResponse.Status)
+            if (ModelState.IsValid)
             {
-                return Ok(data);
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var model = JsonConvert.DeserializeObject<TokenizationIdViewModel>(decryptedString.Item2);
+
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int id = int.Parse(userId);
+
+                var changePrimaryCardResponse = await _cardService.ChangePrimaryCard(model.Id, id);
+                if (changePrimaryCardResponse.Status)
+                {
+                    return Ok(changePrimaryCardResponse);
+                }
+                else if(!changePrimaryCardResponse.Status && changePrimaryCardResponse.ResponseCode == 12)
+                {
+                    return NotFound(changePrimaryCardResponse);
+                }
+                return BadRequest(changePrimaryCardResponse);
             }
-            else if(!changePrimaryCardResponse.Status && changePrimaryCardResponse.ResponseCode == 12)
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
             {
-                return NotFound(data);
+                errors.Add(error);
             }
-            return BadRequest(data);
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
@@ -180,26 +204,36 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> DeleteCard(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var model = JsonConvert.DeserializeObject<TokenizationIdViewModel>(decryptedString.Item2);
-
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            int id = int.Parse(userId);
-
-            var deleteCardResponse = await _cardService.DeleteCard(model.Id, id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(deleteCardResponse));
-            if (deleteCardResponse.Status)
+            if (ModelState.IsValid)
             {
-                return Ok(data);
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var model = JsonConvert.DeserializeObject<TokenizationIdViewModel>(decryptedString.Item2);
+
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                int id = int.Parse(userId);
+
+                var deleteCardResponse = await _cardService.DeleteCard(model.Id, id);
+                if (deleteCardResponse.Status)
+                {
+                    return Ok(deleteCardResponse);
+                }
+                else if(!deleteCardResponse.Status && deleteCardResponse.ResponseCode == 12)
+                {
+                    return NotFound(deleteCardResponse);
+                }
+                return BadRequest(deleteCardResponse);
             }
-            else if(!deleteCardResponse.Status && deleteCardResponse.ResponseCode == 12)
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
             {
-                return NotFound(data);
+                errors.Add(error);
             }
-            return BadRequest(data);
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
@@ -211,22 +245,19 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> CancelSubscription(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<CancelSubscriptionViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
             var cancelSubscriptionResult = await _restrictionService.CancelSubscription(id, model.Reason);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(cancelSubscriptionResult));
             if (cancelSubscriptionResult.Status)
             {
-                return Ok(data);
+                return Ok(cancelSubscriptionResult);
             }
-            return BadRequest(data);
+            return BadRequest(cancelSubscriptionResult);
         }
 
         /// <summary>
@@ -243,12 +274,12 @@ namespace HealthBanc.Controllers.V2.Insurance
             int id = int.Parse(userId);
 
             var reactivatewithPrimaryCardResponse = await _restrictionService.Reactivate(id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(reactivatewithPrimaryCardResponse));
+
             if (reactivatewithPrimaryCardResponse.Status)
             {
-                return Ok(data);
+                return Ok(reactivatewithPrimaryCardResponse);
             }
-            return BadRequest(data);            
+            return BadRequest(reactivatewithPrimaryCardResponse);            
         }
 
         /// <summary>
@@ -262,21 +293,18 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> DeactivteReferee(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<TokenizationIdViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
             var response = await _restrictionService.DeactivateReferee(id, model.Id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
-            return BadRequest(data);
+            return BadRequest(response);
         }
 
         /// <summary>
@@ -290,21 +318,18 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> ActivateRefereeWithPrimaryCard(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<TokenizationIdViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
             var response = await _restrictionService.ActivateReferee(id, model.Id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
-            return BadRequest(data);
+            return BadRequest(response);
         }
 
         /// <summary>
@@ -318,22 +343,19 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> DeactivateCompanyBeneficiary(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var beneficiaryListViewModel = JsonConvert.DeserializeObject<BeneficiaryListViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
             var response = await _restrictionService.DeactivateCompanyBeneficiaries(beneficiaryListViewModel, id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
-            return BadRequest(data);
+            return BadRequest(response);
         }
 
         /// <summary>
@@ -347,10 +369,8 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> DeactivateFamilyMember(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<TokenizationIdViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -361,15 +381,13 @@ namespace HealthBanc.Controllers.V2.Insurance
             if(insuranceProfile != null)
             {
                 var response =  await _restrictionService.DeactivateFamilyMember(insuranceProfile);
-                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
                 if (response.Status)
                 {
-                    return Ok(data);
+                    return Ok(response);
                 }
-                return BadRequest(data);
+                return BadRequest(response);
             }
-            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "You cannot delete current profile" }));
-            return NotFound(data2);
+            return NotFound(new ResponseMessage { Message = "You cannot delete current profile" });
             
         }
 
@@ -383,24 +401,21 @@ namespace HealthBanc.Controllers.V2.Insurance
         [HttpPost("[action]")]
         public async Task<IActionResult> ActivateFamilyMember(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<TokenizationIdViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
             var response = await _restrictionService.ActivateFamilyMember(id, model.Id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
             else
             {
-                return BadRequest(data);
+                return BadRequest(response);
             }
         }
 
@@ -418,9 +433,8 @@ namespace HealthBanc.Controllers.V2.Insurance
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
             var response = await _cardService.SwitchToCardPayment(id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
-            if (response.Status) return Ok(data);
-            return BadRequest(data);
+            if (response.Status) return Ok(response);
+            return BadRequest(response);
         }
     }
 }

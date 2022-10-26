@@ -22,13 +22,11 @@ namespace HealthBanc.Controllers.V2
     {
         private readonly LeadGeneratorService _leadGenerator;
         private readonly IEncryptAndDecrypt _encryptDecrypt;
-        private readonly ResponseHelper _responseHelper;
 
-        public LeadGeneratorController(LeadGeneratorService leadGenerator, IEncryptAndDecrypt encryptDecrypt,ResponseHelper responseHelper)
+        public LeadGeneratorController(LeadGeneratorService leadGenerator, IEncryptAndDecrypt encryptDecrypt)
         {
             _leadGenerator = leadGenerator;
             _encryptDecrypt = encryptDecrypt;
-            _responseHelper = responseHelper;
         }
 
         /// <summary>
@@ -39,14 +37,25 @@ namespace HealthBanc.Controllers.V2
         [HttpPost("[action]")]
         public IActionResult SendHeliumNotification(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var heliumHealth = JsonConvert.DeserializeObject<HeliumHealthCollectionViewModel>(decryptedString.Item2);
-            var response = _leadGenerator.SendHeliumNotification(heliumHealth);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
-            return Ok(data);
+            if (ModelState.IsValid)
+            {
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var heliumHealth = JsonConvert.DeserializeObject<HeliumHealthCollectionViewModel>(decryptedString.Item2);
+
+                var response = _leadGenerator.SendHeliumNotification(heliumHealth);
+                return Ok(response);
+               
+            }
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage() { Data = errors, Message = errors.FirstOrDefault() });
         }
 
         /// <summary>
@@ -59,19 +68,28 @@ namespace HealthBanc.Controllers.V2
         [HttpPost("[action]")]
         public async Task<IActionResult> SendHealthFinanceData(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var healthFinance = JsonConvert.DeserializeObject<HealthFinanceCollectionViewModel>(decryptedString.Item2);
-
-            var response = await _leadGenerator.SendHealthFinanceData(healthFinance);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
-            if (response.Status)
+            if (ModelState.IsValid)
             {
-                return Ok(data);
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var healthFinance = JsonConvert.DeserializeObject<HealthFinanceCollectionViewModel>(decryptedString.Item2);
+
+                var response = await _leadGenerator.SendHealthFinanceData(healthFinance);
+                if (response.Status)
+                {
+                    return Ok(response);
+                }
+                return BadRequest(response);
             }
-            return BadRequest(data);
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage() { Data = errors, Message = errors.FirstOrDefault() });
         }
 
         /// <summary>
@@ -84,28 +102,23 @@ namespace HealthBanc.Controllers.V2
         [HttpPost("[action]")]
         public async Task<IActionResult> GetPaginatedFinanceData(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<GetPaginatedFinanceDataViewModel>(decryptedString.Item2);
 
+
             var response = await _leadGenerator.GetPaginatedHealthFinanceData(model, model.StartDate, model.EndDate);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
-            return Ok(data);
+            return Ok(response);
         }
 
         [HttpPost("[action]")]
         public IActionResult DowloadFinaceExcelData(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new
-                ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<DowloadFinaceExcelDataViewModel>(decryptedString.Item2);
 
             var response = _leadGenerator.DowloadFinaceExcelData(model.StartDate, model.EndDate);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
                 string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -114,7 +127,8 @@ namespace HealthBanc.Controllers.V2
                 var content = response.Data as byte[];
                 return File(content, contentType, fileName);
             }
-            return BadRequest(data);          
+            return BadRequest(response);
+           
         }
     }
 }

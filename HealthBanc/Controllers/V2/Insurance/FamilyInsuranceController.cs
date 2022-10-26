@@ -1,7 +1,6 @@
 ﻿using Application.DTO;
 using Application.DTO.HealthInsured_AxaMansard;
 using Application.Interfaces;
-using Application.Services;
 using Application.Services.HealthInsured.Insurance;
 using Application.ViewModels.HealthInsured;
 using DataAccess;
@@ -24,15 +23,12 @@ namespace HealthBanc.Controllers.V2.Insurance
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly FamilyInsuranceService _familyInsuranceService;
         private readonly IEncryptAndDecrypt _encryptDecrypt;
-        private readonly ResponseHelper _responseHelper;
 
-        public FamilyInsuranceController(IRepositoryWrapper repoWrapper,FamilyInsuranceService familyInsuranceService, IEncryptAndDecrypt encryptDecrypt
-            ,ResponseHelper responseHelper )
+        public FamilyInsuranceController(IRepositoryWrapper repoWrapper,FamilyInsuranceService familyInsuranceService, IEncryptAndDecrypt encryptDecrypt)
         {
             _repoWrapper = repoWrapper;
             _familyInsuranceService = familyInsuranceService;
             _encryptDecrypt = encryptDecrypt;
-            _responseHelper = responseHelper;
         }
 
         /// <summary>
@@ -45,17 +41,14 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         public async Task<IActionResult> CreateFamilyProfile(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<CreateFamilyProfileViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
             var createFamilyProfileResponse = await _familyInsuranceService.CreateFamilyProfile(id, model.InsuranceService);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(createFamilyProfileResponse));
-            return Ok(data);
+            return Ok(createFamilyProfileResponse);
         }
 
         /// <summary>
@@ -69,21 +62,31 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public async Task<IActionResult> CreateInsuranceProfileForFamilyMember(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var familyMemberViewModel = JsonConvert.DeserializeObject<FamilyMemberViewModel>(decryptedString.Item2);
-
-            string id = User.FindFirst(ClaimTypes.Name)?.Value;
-            int userId = int.Parse(id);
-            var createInsuranceProfileResponse = await _familyInsuranceService.CreateInsuranceProfileForFamilyMemeber(familyMemberViewModel, userId);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(createInsuranceProfileResponse));
-            if (createInsuranceProfileResponse.Status)
+            if (ModelState.IsValid)
             {
-                return Ok(data);
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var familyMemberViewModel = JsonConvert.DeserializeObject<FamilyMemberViewModel>(decryptedString.Item2);
+
+                string id = User.FindFirst(ClaimTypes.Name)?.Value;
+                int userId = int.Parse(id);
+                var createInsuranceProfileResponse = await _familyInsuranceService.CreateInsuranceProfileForFamilyMemeber(familyMemberViewModel, userId);
+                if (createInsuranceProfileResponse.Status)
+                {
+                    return Ok(createInsuranceProfileResponse);
+                }
+                return BadRequest(createInsuranceProfileResponse);
             }
-            return BadRequest(data);
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
@@ -97,21 +100,31 @@ namespace HealthBanc.Controllers.V2.Insurance
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> GetFamilyMembers(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var paginationQuery = JsonConvert.DeserializeObject<PaginationQuery>(decryptedString.Item2);
-
-            string id = User.FindFirst(ClaimTypes.Name)?.Value;
-            int userId = int.Parse(id);
-            var createInsuranceProfileResponse = await _familyInsuranceService.GetFamilyMembers(paginationQuery, userId);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(createInsuranceProfileResponse));
-            if (createInsuranceProfileResponse.Status)
+            if (ModelState.IsValid)
             {
-                return Ok(data);
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var paginationQuery = JsonConvert.DeserializeObject<PaginationQuery>(decryptedString.Item2);
+
+                string id = User.FindFirst(ClaimTypes.Name)?.Value;
+                int userId = int.Parse(id);
+                var createInsuranceProfileResponse = await _familyInsuranceService.GetFamilyMembers(paginationQuery, userId);
+                if (createInsuranceProfileResponse.Status)
+                {
+                    return Ok(createInsuranceProfileResponse);
+                }
+                return BadRequest(createInsuranceProfileResponse);
             }
-            return BadRequest(data);
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
+            {
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Message = errors.FirstOrDefault().ToString() });
         }
 
         /// <summary>
@@ -125,22 +138,19 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         public async Task<IActionResult> RemoveFamilyMember(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<RemoveFamilyMemberViewModel>(decryptedString.Item2);
 
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
 
             var response = await _familyInsuranceService.RemoveFamilyMember(userId, model.FamiyMemeberId);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
-            return NotFound(data);
+            return NotFound(response);
         }
 
         /// <summary>
@@ -154,22 +164,19 @@ namespace HealthBanc.Controllers.V2.Insurance
         [ProducesResponseType(404, Type = typeof(ResponseMessage))]
         public async Task<IActionResult> UpdateFamilyMemberProfile(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<UpdateFamilyMemberProfileViewModel>(decryptedString.Item2);
 
             string id = User.FindFirst(ClaimTypes.Name)?.Value;
             int userId = int.Parse(id);
 
             var response = await _familyInsuranceService.UpdateFamilyMember(userId, model.FamilyMemberId, model);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
-            return NotFound(data);
+            return NotFound(response);
         }
 
     }
