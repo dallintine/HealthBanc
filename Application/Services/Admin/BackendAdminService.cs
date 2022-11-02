@@ -75,19 +75,19 @@ namespace Application.Services.Admin
                 return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
             }
             var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials);
-            if (passwordValidation.Status)
+            if (!passwordValidation.Status)
             {
-                var otpValidation = ValidateAdminOTPAuth(aDCredentials);
-                if(otpValidation.Status)
-                {
-                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                    return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
-                }
-                _logger.LogInformation($"Backend Login failed. OTP [Reason : OTP could not be validated]");
-                return otpValidation;
+                _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
+                return passwordValidation;
             }
-            _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
-            return passwordValidation;
+            var otpValidation = ValidateAdminOTPAuth(aDCredentials);
+            if (otpValidation.Status)
+            {
+                var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
+            }
+            _logger.LogInformation($"Backend Login failed. OTP [Reason : OTP could not be validated]");
+            return otpValidation;
         }
 
         public async Task<ResponseMessage> RefreshToken(RefreshTokenViewModel refreshToken)
