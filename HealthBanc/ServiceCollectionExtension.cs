@@ -86,6 +86,8 @@ namespace HealthBanc
                     Scheme = "Bearer"
                 });
 
+                x.DocumentFilter<CustomSwaggerFilter>();
+
                 x.AddSecurityRequirement(new OpenApiSecurityRequirement()
                 {
                     {
@@ -148,7 +150,6 @@ namespace HealthBanc
             services.AddScoped<OTPService>();
             services.AddScoped<RestrictionService>();
             services.AddScoped<WalletPaymentService>();
-            services.AddScoped<ResponseHelper>();
         }
     }
 }

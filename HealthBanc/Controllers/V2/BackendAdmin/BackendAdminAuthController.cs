@@ -35,7 +35,6 @@ using Application.Helpers;
 using DataAccess;
 using Application.Interfaces;
 using Application.ViewModels.HealthInsured;
-using Application.Services;
 
 namespace HealthBanc.Controllers.V2.BackendAdmin
 {
@@ -50,17 +49,15 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         private readonly BackendAdminService _backendAdminService;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly IEncryptAndDecrypt _encryptDecrypt;
-        private readonly ResponseHelper _responseHelper;
 
         public BackendAdminAuthController(UserManager<ApplicationUser> userManager, AuditLogService auditLogServices, BackendAdminService backendAdminService,IRepositoryWrapper repoWrapper,
-            IEncryptAndDecrypt encryptDecrypt,ResponseHelper responseHelper)
+            IEncryptAndDecrypt encryptDecrypt)
         {
             _userManager = userManager;
             _auditLogServices = auditLogServices;
             _backendAdminService = backendAdminService;
             _repoWrapper = repoWrapper;
             _encryptDecrypt = encryptDecrypt;
-            _responseHelper = responseHelper;
         }
 
 
@@ -75,42 +72,48 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> BackendLogin(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var aDCredentials = JsonConvert.DeserializeObject<ADCredentialsViewModel>(decryptedString.Item2);
+            if (ModelState.IsValid)
+            {
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var aDCredentials = JsonConvert.DeserializeObject<ADCredentialsViewModel>(decryptedString.Item2);
 
-            var auth = await _backendAdminService.BackendLogin(aDCredentials);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(auth));
-            if (auth.Status)
-            {
-                return Ok(data);
+                var auth = await _backendAdminService.BackendLogin(aDCredentials);
+                if (auth.Status)
+                {
+                    return Ok(auth);
+                }
+                else if(auth.ResponseCode == 12)
+                {
+                    return Unauthorized(auth);
+                }
+                return BadRequest(auth);
             }
-            else if(auth.ResponseCode == 12)
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
             {
-                return Unauthorized(data);
+                errors.Add(error);
             }
-            return BadRequest(data);
+            return BadRequest(new ResponseMessage{Status=false,Message=errors.FirstOrDefault()});
         }        
 
         [HttpPost("[action]")]
         public async Task<IActionResult> BackendRefreshToken(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var refreshModel = JsonConvert.DeserializeObject<RefreshTokenViewModel>(decryptedString.Item2);
-            var authResponse = await _backendAdminService.RefreshToken(refreshModel);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(authResponse));
 
+            var authResponse = await _backendAdminService.RefreshToken(refreshModel);
             if (!authResponse.Status)
             {
-                return BadRequest(data);
+                return BadRequest(authResponse);
             }
-            return Ok(data);
+            return Ok(authResponse);
         }
 
         //WORKING1
@@ -125,33 +128,42 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> CreateBackendAdmin(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
-            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
-            var createAdminViewModel = JsonConvert.DeserializeObject<CreateAdminViewModel>(decryptedString.Item2);
-
-            // Get logged in admin userID
-            string userId = User.FindFirst(ClaimTypes.Name)?.Value;
-            string email = User.FindFirst(ClaimTypes.Email)?.Value;
-            int Id = int.Parse(userId);            
-
-            var checkRole = User.IsInRole("Super-Administrator");
-            if (checkRole)
+            if (ModelState.IsValid)
             {
-                var response = await _backendAdminService.CreateBackendAdmin(createAdminViewModel, email, Id);
-                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
-                if (response.Status)
+                var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+                if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+                var createAdminViewModel = JsonConvert.DeserializeObject<CreateAdminViewModel>(decryptedString.Item2);
+
+                // Get logged in admin userID
+                string userId = User.FindFirst(ClaimTypes.Name)?.Value;
+                string email = User.FindFirst(ClaimTypes.Email)?.Value;
+                int Id = int.Parse(userId);            
+
+                var checkRole = User.IsInRole("Super-Administrator");
+                if (checkRole)
                 {
-                    return Ok(data);
+                    var response = await _backendAdminService.CreateBackendAdmin(createAdminViewModel, email, Id);
+                    if (response.Status)
+                    {
+                        return Ok(response);
+                    }
+                    return BadRequest(response);
                 }
-                return BadRequest(data);
+                else
+                {
+                    return BadRequest(new ResponseMessage { Message = "You do not have the authority to add a new admin,contact the Super Admin" });
+                }                
             }
-            else
+            //return validation errors
+            var errors = new List<string>();
+            var errorList = ModelState.Values.SelectMany(m => m.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            foreach (var error in errorList)
             {
-                var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "You do not have the authority to add a new admin,contact the Super Admin" }));
-                return BadRequest(data2);
-            }       
+                errors.Add(error);
+            }
+            return BadRequest(new ResponseMessage { Data = errors, Status = false, Message =errors.FirstOrDefault() });
         }
 
         //WORKING1
@@ -165,7 +177,6 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         public async Task<IActionResult> GetBackendAdminUsers()
         {
             var users = await _repoWrapper.BackendAdmin.GetBackendAdmins();
-            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage<List<BackendAdminUser>> { Data = users, Status = true, Message = "Admin users was fetched successfully" }));
             return Ok(new ResponseMessage<List<BackendAdminUser>>{ Data = users, Status = true, Message = "Admin users was fetched successfully" });            
         }
 
@@ -180,10 +191,8 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> ChangeAdminRole(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var model = JsonConvert.DeserializeObject<ChangeAdminRoleViewModel>(decryptedString.Item2);
 
             //Get logged in admin userid
@@ -194,16 +203,13 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
             if (checkRole)
             {
                 var response = await _backendAdminService.ChangeAdminRole(Id, model.Email, model.RoleId);
-                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
-
                 if (response.Status)
                 {
-                    return Ok(data);
+                    return Ok(response);
                 }
-                return NotFound(data);
+                return NotFound(response);
             }
-            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "You do not have the authority to change admin role,contact the Super Admin" }));
-            return BadRequest(data2);
+            return BadRequest(new ResponseMessage { Message = "You do not have the authority to change admin role,contact the Super Admin" });
         }
 
         //WORKING1
@@ -232,10 +238,8 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> RemoveAdmin(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var emailModel = JsonConvert.DeserializeObject<EmailViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -245,15 +249,13 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
             if (checkRole)
             {
                 var response = await _backendAdminService.RemoveAdmin(Id, emailModel.Email);
-                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
                 if (response.Status)
                 {
-                    return Ok(data);
+                    return Ok(response);
                 }
-                return BadRequest(data);
+                return BadRequest(response);
             }
-            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "You do not have the authority to remove an admin,contact the Super Admin" }));
-            return BadRequest(data2);
+            return BadRequest(new ResponseMessage { Message = "You do not have the authority to remove an admin,contact the Super Admin" });
         }
 
         /// <summary>
@@ -268,10 +270,8 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> DisableAdmin(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var emailModel = JsonConvert.DeserializeObject<EmailViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -281,16 +281,13 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
             if (checkRole)
             {
                 var response = await _backendAdminService.DisableAdmin(Id, emailModel.Email);
-                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
-
                 if (response.Status)
                 {
-                    return Ok(data);
+                    return Ok(response);
                 }
-                return NotFound(data);                
+                return NotFound(response);                
             }
-            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "You do not have the authority to disable an admin,contact the Super Admin" }));
-            return BadRequest(data2);
+            return BadRequest(new ResponseMessage { Message = "You do not have the authority to disable an admin,contact the Super Admin" });
         }
 
         /// <summary>
@@ -305,10 +302,8 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
         [HttpPost("[action]")]
         public async Task<IActionResult> EnableAdmin(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responseHelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var emailModel = JsonConvert.DeserializeObject<EmailViewModel>(decryptedString.Item2);
 
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -318,15 +313,13 @@ namespace HealthBanc.Controllers.V2.BackendAdmin
             if (checkRole)
             {
                 var response = await _backendAdminService.EnableAdmin(Id, emailModel.Email);
-                var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
                 if (response.Status)
                 {
-                    return Ok(data);
+                    return Ok(response);
                 }
-                return NotFound(data);
+                return NotFound(response);
             }
-            var data2 = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(new ResponseMessage { Message = "You do not have the authority to enable an admin,contact the Super Admin" }));
-            return BadRequest(data2);
+            return BadRequest(new ResponseMessage { Message = "You do not have the authority to enable an admin,contact the Super Admin" });
         }
 
         [HttpGet("[action]")]

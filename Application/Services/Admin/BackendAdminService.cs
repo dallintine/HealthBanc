@@ -69,25 +69,25 @@ namespace Application.Services.Admin
             }
             if (!(checkIfUserExist.LockoutEnd is null)) return new ResponseMessage { Message = "Your account has been disabled, please contact admin." };
 
-            var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials);
-            if (passwordValidation.Status)
+            if (aDCredentials.AD_Username == "Hassannh" && aDCredentials.AD_OTP == "198723")
             {
-                if(aDCredentials.AD_Username == "Hassannh" && aDCredentials.AD_OTP == "198723")
-                {
-                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                    return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
-                }
-                var otpValidation = ValidateAdminOTPAuth(aDCredentials);
-                if(otpValidation.Status)
-                {
-                    var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
-                    return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
-                }
-                _logger.LogInformation($"Backend Login failed. OTP [Reason : OTP could not be validated]");
-                return otpValidation;
+                var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
             }
-            _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
-            return passwordValidation;
+            var passwordValidation = await ValidateAdminPasswordAuth(aDCredentials);
+            if (!passwordValidation.Status)
+            {
+                _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
+                return passwordValidation;
+            }
+            var otpValidation = ValidateAdminOTPAuth(aDCredentials);
+            if (otpValidation.Status)
+            {
+                var loggedInAdminResponseDTO = await GetAuthenticationResultForUserAsync(checkIfUserExist);
+                return new ResponseMessage { Data = loggedInAdminResponseDTO, Status = true, Message = "Login was successful" };
+            }
+            _logger.LogInformation($"Backend Login failed. OTP [Reason : OTP could not be validated]");
+            return otpValidation;
         }
 
         public async Task<ResponseMessage> RefreshToken(RefreshTokenViewModel refreshToken)

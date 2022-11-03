@@ -1,6 +1,5 @@
 ﻿using Application.DTO;
 using Application.Interfaces;
-using Application.Services;
 using Application.Services.AuditAndReport;
 using Application.ViewModels.HealthInsured;
 using DataAccess;
@@ -25,14 +24,12 @@ namespace HealthBanc.Controllers.V2.Activity_ErrorLog
     public class ActivityLogController : ControllerBase
     {
         private readonly IEncryptAndDecrypt _encryptDecrypt;
-        private readonly ResponseHelper _responsehelper;
         private readonly Activity_ErrorLogService _activity_ErrorLogService;
 
-        public ActivityLogController(Activity_ErrorLogService activity_ErrorLogService , IEncryptAndDecrypt encryptDecrypt,ResponseHelper responsehelper)
+        public ActivityLogController(Activity_ErrorLogService activity_ErrorLogService , IEncryptAndDecrypt encryptDecrypt)
         {
             _activity_ErrorLogService = activity_ErrorLogService;
             _encryptDecrypt = encryptDecrypt;
-            _responsehelper = responsehelper;
         }
 
         /// <summary>
@@ -45,19 +42,15 @@ namespace HealthBanc.Controllers.V2.Activity_ErrorLog
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<ActivityLog>>))]
         public async Task<IActionResult> GetHealthInsuredPaginatedActivityLogByEmail(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
-
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var activityLog = JsonConvert.DeserializeObject<HealthInsuredPaginatedActivityLog>(decryptedString.Item2);
             var response = await _activity_ErrorLogService.GetHealthInsuredPaginatedActivityLogByEmail(activityLog, activityLog.Email);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
-            return BadRequest(data);
+            return BadRequest(response);
         }
 
         /// <summary>
@@ -70,22 +63,19 @@ namespace HealthBanc.Controllers.V2.Activity_ErrorLog
         [ProducesResponseType(200, Type = typeof(ResponseMessage<PagedResponse<ActivityLog>>))]
         public async Task<IActionResult> GetLoggedInUserHealthInsuredPaginatedActivityLog(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             string userId = User.FindFirst(ClaimTypes.Name)?.Value;
             int id = int.Parse(userId);
 
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var paginationQuery = JsonConvert.DeserializeObject<PaginationQuery>(decryptedString.Item2);
 
             var response = await _activity_ErrorLogService.GetLoggedInUserHealthInsuredPaginatedActivityLog(paginationQuery, id);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
-            return BadRequest(data);
+            return BadRequest(response);
         }
 
         /// <summary>
@@ -99,19 +89,16 @@ namespace HealthBanc.Controllers.V2.Activity_ErrorLog
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         public async Task<IActionResult> GetAdminActivityLogs(EncryptedModel encryptedModel)
         {
-            if (!ModelState.IsValid) return BadRequest(_responsehelper.BuildResponse(30, ModelState));
             var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
-            if (!decryptedString.Item1) return BadRequest(_encryptDecrypt.EncryptString(JsonConvert.SerializeObject(
-                new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 })));
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
             var activity = JsonConvert.DeserializeObject<GetAdminActivityLogsViewModel>(decryptedString.Item2);
 
             var response = await _activity_ErrorLogService.GetAdminActivityLogs(activity, activity.Channel);
-            var data = _encryptDecrypt.EncryptString(JsonConvert.SerializeObject(response));
             if (response.Status)
             {
-                return Ok(data);
+                return Ok(response);
             }
-            return BadRequest(data);
+            return BadRequest(response);
         }
     }
 }
