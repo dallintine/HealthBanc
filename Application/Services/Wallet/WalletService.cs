@@ -1,11 +1,13 @@
 ﻿using Application.API_RequestModel.Wallet;
 using Application.API_ResponseModel.Wallet;
+using Application.AuditAndReport.AuditLog;
 using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Helpers;
 using Application.Interfaces;
 using Application.Services.Card;
 using Application.Services.HealthInsured;
+using Application.ViewModels;
 using Application.ViewModels.HealthInsured.Wallet;
 using DataAccess;
 using Domain.Enums;
@@ -32,13 +34,14 @@ namespace Application.Services.Wallet
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly Card_SubscriptionService _cardService;
         private readonly HMOIntegrationService _hmoIntegrationService;
+        private readonly AuditLogService _auditLog;
         private readonly Helpers.Environment _environment;
         private readonly WalletSettings _walletSettings;
         private readonly SterlingOtpConfig _otpConfigAccessor;
         public WalletService(WalletConnect walletConnect , ILogger<WalletService> logger,IRepositoryWrapper repositoryWrapper, IUniqueIdentifier uniqueIdentifier,
             IWalletEncryptionsAndDecryption encryptionsAndDecryption,ISMSService smsService, IOptions<WalletSettings> WalletSettings,IEncryptAndDecrypt encryptAndDecrypt,
             Card_SubscriptionService cardService, HMOIntegrationService hmoIntegrationService,IOptions<Helpers.Environment> environment,
-            IOptions<SterlingOtpConfig> otpConfigAccessor)
+            IOptions<SterlingOtpConfig> otpConfigAccessor, AuditLogService auditLog)
         {
             _walletConnect = walletConnect;
             _logger = logger;
@@ -49,6 +52,7 @@ namespace Application.Services.Wallet
             _encryptAndDecrypt = encryptAndDecrypt;
             _cardService = cardService;
             _hmoIntegrationService = hmoIntegrationService;
+            _auditLog = auditLog;
             _environment = environment.Value;
             _walletSettings = WalletSettings.Value;
             _otpConfigAccessor = otpConfigAccessor.Value;
@@ -60,7 +64,7 @@ namespace Application.Services.Wallet
         /// <param name="userId"></param>
         /// <param name="mobileNumber"></param>
         /// <returns></returns>
-        public async Task<ResponseMessage> GenerateOTPForExistingWallet(int userId, string mobileNumber)
+        public async Task<ResponseMessage> GenerateOTPForExistingWallet(int userId, string mobileNumber,string device, string ip)
         {
             _logger.LogInformation($"Processing GenerateOTPForExistingWallet Payload [UserId :{userId} | MobileNumber : {mobileNumber}]\n");
             var walletData = new GetWalletDetails(mobileNumber);
@@ -73,12 +77,16 @@ namespace Application.Services.Wallet
             _logger.LogInformation($"Validate Wallet decrypted [UserId : {userId} | PhoneNumber :{response?.Data?.Mobile}] \n");
             if (response != null && response.Response == "00")
             {
+                await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.OTPForExistingWallet.ToString(), "OTP Sent Successfully"),
+                    ip, device);
                 return await GenerateOtp(mobileNumber, userId, OTPActions.LinkWallet.ToString());
             }
+            await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.OTPForExistingWallet.ToString(), "Failed to send OTP"),
+                   ip, device);
             return new ResponseMessage { Message = response.Message, ResponseCode = 21 };
         }
 
-        public async Task<ResponseMessage> GenerateOTPForNewWallet(int userId, string mobileNumber)
+        public async Task<ResponseMessage> GenerateOTPForNewWallet(int userId, string mobileNumber, string device, string ip)
         {
             _logger.LogInformation($"Processing Generate OTP For New Wallet Payload [UserId :{userId} | MobileNumber : {mobileNumber}]\n");
             var walletData = new GetWalletDetails(mobileNumber);
@@ -92,8 +100,12 @@ namespace Application.Services.Wallet
             if (response != null && response.Response == "00")
             {
                 _logger.LogInformation($"Generate OTP For New Wallet for Wallet terminated [Reason : Wallet exist with the mobile number]\n");
+                await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.OTPForNewWallet.ToString(), "Failed to send OTP"),
+                  ip, device);
                 return new ResponseMessage { ResponseCode = 21, Message = "Invalid Request - Wallet exist for this mobile number \n" };                
             }
+            await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.OTPForNewWallet.ToString(), "OTP Sent Successfully"),
+                  ip, device);
             return await GenerateOtp(mobileNumber, userId, OTPActions.CreateWallet.ToString());
         }
 
@@ -117,7 +129,7 @@ namespace Application.Services.Wallet
             return new ResponseMessage<WalletValidationResponse> { Message = response.Message, ResponseCode = 21 };
         }
 
-        public async Task<ResponseMessage<string>> LinkWallet(int userID, LinkWalletModel linkWallet)
+        public async Task<ResponseMessage<string>> LinkWallet(int userID, LinkWalletModel linkWallet, string device, string ip)
         {
             _logger.LogInformation($"Processing Link  Wallet Payload [UserId :{userID} | Action : {linkWallet.Action} ]\n");
             var validateOTP = await ValidateOtp(userID, linkWallet.OTP, linkWallet.Action);
@@ -174,6 +186,8 @@ namespace Application.Services.Wallet
                         await _hmoIntegrationService.SendDetailsToInsuranceProvider(profile);
                     }
 
+                    await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userID, null, "NA", AuditAction.LinkWallet.ToString(), "LInked Wallet Successfully"),ip, device);
+
                     return new ResponseMessage<string>
                     {
                         Message = "Approved or Completed Successfully",
@@ -184,10 +198,12 @@ namespace Application.Services.Wallet
                 }
                 return new ResponseMessage<string> { Message = response.Message, ResponseCode = 21 };
             }
+            await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userID, null, "NA", AuditAction.LinkWallet.ToString(), "LInk Wallet Failed"), ip, device);
+
             return new ResponseMessage<string> { Message  = validateOTP.Message, ResponseCode = validateOTP.ResponseCode , Status = validateOTP.Status};
         }
 
-        public async Task<ResponseMessage<string>> CreateWallet(int userId, CreateWalletModel walletModel)
+        public async Task<ResponseMessage<string>> CreateWallet(int userId, CreateWalletModel walletModel, string device, string ip)
         {
             _logger.LogInformation($"Processing CreateWallet [UserId :{userId} | MobileNumber : {walletModel.MobileNumber}]\n");
             var validateOTP = await ValidateOtp(userId, walletModel.Otp, walletModel.Action);
@@ -253,6 +269,7 @@ namespace Application.Services.Wallet
                         await _cardService.Process_SuccessfulInsuranceIndividualPayment_FirstTimePayment(profile);
                         await _hmoIntegrationService.SendDetailsToInsuranceProvider(profile);
                     }
+                    await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.CreateWallet.ToString(), "Create Wallet Successfully"), ip, device);
 
                     return new ResponseMessage<string>
                     {
@@ -262,8 +279,10 @@ namespace Application.Services.Wallet
                         Data = wallet.WalletId
                     };
                 }
+                await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.CreateWallet.ToString(), "Create Wallet Failed"), ip, device);
                 return new ResponseMessage<string> { Message = walletResponse.Responsedata, ResponseCode = 12 };
             }
+            await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.CreateWallet.ToString(), "Create Wallet Failed"), ip, device);
             return new ResponseMessage<string> { Message = validateOTP.Message, ResponseCode = validateOTP.ResponseCode, Status = validateOTP.Status };
         }
 
@@ -272,7 +291,7 @@ namespace Application.Services.Wallet
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public async Task<ResponseMessage> SwitchToWalletPayment(int userId)
+        public async Task<ResponseMessage> SwitchToWalletPayment(int userId, string device, string ip)
         {
             var insuranceProfile =await  _repositoryWrapper.InsuranceProfile.GetWalletByUserIdAsync( userId);
             if(insuranceProfile != null)
@@ -281,11 +300,18 @@ namespace Application.Services.Wallet
                 {
                     return new ResponseMessage { ResponseCode = 25, Message = "Wallet does not exist please create wallet" };
                 }
+                if(insuranceProfile.PaymentMethod == PaymentMethod.Wallet.ToString())
+                {
+                    await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "Wallet Payment", AuditAction.SwitchToWalletPayment.ToString(), "NA"), ip, device);
+                    return new ResponseMessage { ResponseCode = 12, Message = "You are currenlty using the wallet payment"};
+                }
                 insuranceProfile.PaymentMethod = PaymentMethod.Wallet.ToString();
                 _repositoryWrapper.InsuranceProfile.Update(insuranceProfile);
                 await _repositoryWrapper.Save();
+                await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.SwitchToWalletPayment.ToString(), "Switch Successful"), ip, device);
                 return new ResponseMessage { Message = "Payment method was switched to wallet successfully", ResponseCode = 00, Status = true };
             }
+            await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.SwitchToWalletPayment.ToString(), "Switch Failed"), ip, device);
             return new ResponseMessage { ResponseCode = 25, Message = "Profile not found" };
         }
 
