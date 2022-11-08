@@ -16,6 +16,7 @@ using Application.ViewModels.HealthInsured;
 using DataAccess;
 using Application.Services.Card;
 using Application.Services.Activation_Deactivation;
+using UAParser;
 
 namespace HealthBanc.Controllers.Insurance
 {
@@ -152,8 +153,9 @@ namespace HealthBanc.Controllers.Insurance
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
+                var device = GetDevice();
 
-                var changePrimaryCardResponse = await _cardService.ChangePrimaryCard(cardId, id);
+                var changePrimaryCardResponse = await _cardService.ChangePrimaryCard(cardId, id, device,ipAddress);
                 if (changePrimaryCardResponse.Status)
                 {
                     return Ok(changePrimaryCardResponse);
@@ -192,8 +194,9 @@ namespace HealthBanc.Controllers.Insurance
             {
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
+                var device = GetDevice();
 
-                var deleteCardResponse = await _cardService.DeleteCard(cardId, id);
+                var deleteCardResponse = await _cardService.DeleteCard(cardId, id,device,ipAddress);
                 if (deleteCardResponse.Status)
                 {
                     return Ok(deleteCardResponse);
@@ -391,6 +394,15 @@ namespace HealthBanc.Controllers.Insurance
             var response = await _cardService.SwitchToCardPayment(id);
             if (response.Status) return Ok(response);
             return BadRequest(response);
+        }
+
+        private string GetDevice()
+        {
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            return c.UA.ToString();
         }
     }
 }

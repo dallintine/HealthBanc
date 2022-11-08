@@ -13,6 +13,14 @@ namespace Domain.Enums
         PayForReferee_FullDetails,
         PayForReferee_Email,
         UpdatedInsuranceProfile,
-        RemoveReferee
+        RemoveReferee,
+        LinkWallet,
+        CreateWallet,
+        OTPForExistingWallet,
+        OTPForNewWallet,
+        SwitchToWalletPayment,
+        DeleteCard,
+        AddCard,
+        ChangePrimaryCard
     }
 }

@@ -18,6 +18,7 @@ using Application.Services.Card;
 using Application.Services.Activation_Deactivation;
 using Newtonsoft.Json;
 using Application.Interfaces;
+using UAParser;
 
 namespace HealthBanc.Controllers.V2.Insurance
 {
@@ -168,8 +169,9 @@ namespace HealthBanc.Controllers.V2.Insurance
 
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
+                var device = GetDevice();
 
-                var changePrimaryCardResponse = await _cardService.ChangePrimaryCard(model.Id, id);
+                var changePrimaryCardResponse = await _cardService.ChangePrimaryCard(model.Id, id,device,ipAddress);
                 if (changePrimaryCardResponse.Status)
                 {
                     return Ok(changePrimaryCardResponse);
@@ -212,8 +214,9 @@ namespace HealthBanc.Controllers.V2.Insurance
 
                 string userId = User.FindFirst(ClaimTypes.Name)?.Value;
                 int id = int.Parse(userId);
+                var device = GetDevice();
 
-                var deleteCardResponse = await _cardService.DeleteCard(model.Id, id);
+                var deleteCardResponse = await _cardService.DeleteCard(model.Id, id,device,ipAddress);
                 if (deleteCardResponse.Status)
                 {
                     return Ok(deleteCardResponse);
@@ -435,6 +438,15 @@ namespace HealthBanc.Controllers.V2.Insurance
             var response = await _cardService.SwitchToCardPayment(id);
             if (response.Status) return Ok(response);
             return BadRequest(response);
+        }
+
+        private string GetDevice()
+        {
+            var userAgent = agent;
+            string uaString = Convert.ToString(userAgent[0]);
+            var uaParser = Parser.GetDefault();
+            ClientInfo c = uaParser.Parse(uaString);
+            return c.UA.ToString();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Application.API_RequestModel.Paystack;
 using Application.API_ResponseModel.Paystack;
+using Application.AuditAndReport.AuditLog;
 using Application.DTO;
 using Application.HealthInsured_AxaMansard_Service.Insurance;
 using Application.Helpers;
@@ -43,12 +44,13 @@ namespace Application.Services.Card
         private readonly FamilyInsuranceService _familyInsurance;
         private readonly IEmailSender _emailSender;
         private readonly HMOIntegrationService _hmoIntegrationService;
+        private readonly AuditLogService _auditLog;
 
         private SubscriptionDuration SubscriptionAccessor { get; }
 
         public Card_SubscriptionService(IRepositoryWrapper repositoryWrapper,ILogger<Card_SubscriptionService> logger,InsuranceService insuranceService,IMapper mapper,IOptions<SubscriptionDuration> subscriptionAccessor
             , IUniqueIdentifier uniqueIdentifier,TokenizationService tokenizationService,PaystackService paystackService, FamilyInsuranceService familyInsurance,
-            IEmailSender emailSender, HMOIntegrationService hmoIntegrationService)
+            IEmailSender emailSender, HMOIntegrationService hmoIntegrationService, AuditLogService auditLog)
         {
             _repositoryWrapper = repositoryWrapper;
             _logger = logger;
@@ -60,6 +62,7 @@ namespace Application.Services.Card
             _familyInsurance = familyInsurance;
             _emailSender = emailSender;
             _hmoIntegrationService = hmoIntegrationService;
+            _auditLog = auditLog;
             SubscriptionAccessor = subscriptionAccessor.Value;
         }
 
@@ -69,7 +72,7 @@ namespace Application.Services.Card
         /// <param name="cardId"></param>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public async Task<ResponseMessage> DeleteCard(int cardId, int userId)
+        public async Task<ResponseMessage> DeleteCard(int cardId, int userId,string device, string ipAddress)
         {
             _logger.LogInformation($"Processing Deleting Card [CardId :{cardId} | UserId : {userId}]\n");
             var card = await _repositoryWrapper.Card.GetCardByIdAsync(cardId, userId);
@@ -123,11 +126,14 @@ namespace Application.Services.Card
                 _repositoryWrapper.Card.Delete(card);
                 await _repositoryWrapper.Save();
                 _logger.LogInformation($"Card was deleted successfully \n");
+                await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.DeleteCard.ToString(), "Card deleted Successfully"),ipAddress,device);
                 return new ResponseMessage { Message = "Card was deleted successfully", Status = true };
             }
             else
             {
                 _logger.LogInformation($"Card was not deleted \n");
+                await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.DeleteCard.ToString(), "Delete Card Failed"), ipAddress, device);
+
                 return new ResponseMessage
                 {
                     Message = "Kindly set a new card as " +
@@ -188,7 +194,7 @@ namespace Application.Services.Card
         /// <param name="newCardId"></param>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public async Task<ResponseMessage> ChangePrimaryCard(int newCardId, int userId)
+        public async Task<ResponseMessage> ChangePrimaryCard(int newCardId, int userId, string device, string ipAddress)
         {
             _logger.LogInformation($"Change primary card processing [newCardId : {newCardId} | UserId : {userId}]\n");
             var presentPrimaryCard = await _repositoryWrapper.Card.GetPrimaryCard(userId);
@@ -235,6 +241,8 @@ namespace Application.Services.Card
                 var activityLog = new ActivityLog(null, null, familyProfile.Id, "Change Primary Card", ServiceNames.HealthInsured.ToString());
                 _repositoryWrapper.ActivityLog.Create(activityLog);
             }
+            await _auditLog.UserCreateAuditLog(new AuditLogViewModel(userId, null, "NA", AuditAction.ChangePrimaryCard.ToString(), "Chnage Card Successfull"), ipAddress, device);
+
             _logger.LogInformation($"Change primary card was successfully \n");
             await _repositoryWrapper.Save();
             return new ResponseMessage { Message = "Primary card was changed successfully", Status = true };

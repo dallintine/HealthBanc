@@ -43,15 +43,17 @@ namespace HealthBanc.Logging
             {
                 loggerConfiguration.WriteTo.Console(level);
                 loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Hangfire", Serilog.Events.LogEventLevel.Warning);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning);
             }
 
             if (azureBlobOptions.Enabled)
             {
                 loggerConfiguration.WriteTo.AzureBlobStorage(azureBlobOptions.ConnectionString, level, azureBlobOptions.StorageContainerName, azureBlobOptions.StorageFileName
                    , azureBlobOptions.OutputTemplate, false, null, null, false, null, null, 1100000, null);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning);
                 loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning);
                 loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Query", Serilog.Events.LogEventLevel.Warning);
-                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Hangfire", Serilog.Events.LogEventLevel.Verbose);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Hangfire", Serilog.Events.LogEventLevel.Information);
             }
 
             if (applicationInsightsOptions.Enabled)
