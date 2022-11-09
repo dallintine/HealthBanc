@@ -554,7 +554,10 @@ namespace Application.Services.Card
             insuranceUserProfile.SubscriptionStatus = true;
             insuranceUserProfile.ActiveStatus = true;
             insuranceUserProfile.StartActiveStatusDate = DateTime.Now;
-            insuranceUserProfile.PaymentMethod = PaymentMethod.Card.ToString();
+            if(insuranceUserProfile.PaymentMethod == null)
+            {
+                insuranceUserProfile.PaymentMethod = PaymentMethod.Card.ToString();
+            }
 
             _repositoryWrapper.InsuranceProfile.Update(insuranceUserProfile);
 

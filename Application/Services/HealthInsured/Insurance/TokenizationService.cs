@@ -82,7 +82,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
             if (insuranceProfile?.PaymentMethod == PaymentMethod.Wallet.ToString())
             {
-                var walletpayment = await _walletPaymentService.WalletToSterling(insuranceProfile.UserId.Value, (insuranceProfile.Premium), insuranceProfile.PhoneNumber, channel);
+                if(insuranceProfile.UserWallet == null)
+                {
+                    terminateProcess = true;
+                }
+                var walletpayment = await _walletPaymentService.WalletToSterling(insuranceProfile.UserId.Value, (insuranceProfile.Premium), insuranceProfile.UserWallet.Mobile, 
+                    channel);
                 if(walletpayment.Status) paymentStatus = true;
             }
             else
