@@ -86,7 +86,7 @@ namespace HealthBanc
                     Scheme = "Bearer"
                 });
 
-                x.DocumentFilter<CustomSwaggerFilter>();
+                //x.DocumentFilter<CustomSwaggerFilter>();
 
                 x.AddSecurityRequirement(new OpenApiSecurityRequirement()
                 {

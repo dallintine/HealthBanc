@@ -42,7 +42,7 @@ namespace HealthBanc.Logging
             if (serilogOptions.ConsoleEnabled)
             {
                 loggerConfiguration.WriteTo.Console(level);
-                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Hangfire", Serilog.Events.LogEventLevel.Warning);
+                loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Hangfire", Serilog.Events.LogEventLevel.Information);
                 loggerConfiguration.MinimumLevel.Verbose().MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning);
             }
 
