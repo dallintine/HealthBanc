@@ -319,6 +319,7 @@ namespace Application.Services.Wallet
         {
             string generateOtpCode = _uniqueIdentifier.GetUniqueCode((int)_otpConfigAccessor.Length);
 
+
             string otpMessageTemplate = _otpConfigAccessor.OtpMessage;
             string otpMessage = otpMessageTemplate.Replace("{OTPCode}", generateOtpCode);
             var saveotp = new OtpValidation()
@@ -334,10 +335,10 @@ namespace Application.Services.Wallet
             _repositoryWrapper.OtpValidation.Create(saveotp);
             await _repositoryWrapper.Save();
             var smsresponse = await _smsService.SendSmsAsync(phoneNumber, otpMessage);
-            if(smsresponse is null || smsresponse.Status is false)
+            if (smsresponse is null || smsresponse.Status is false)
             {
                 _logger.LogInformation($"Generate OTP SMS feature not completed [Reason : SMS service returned not successful response]");
-                return new ResponseMessage { ResponseCode = 12, Message = "Unable to send OTP. Please try again later"};
+                return new ResponseMessage { ResponseCode = 12, Message = "Unable to send OTP. Please try again later" };
             }
             _logger.LogInformation($"Generate OTP SMS feature completed [UserId : {userId}]");
             return new ResponseMessage { ResponseCode = 00, Message = "Approved or Completed Successfully", Status = true };
