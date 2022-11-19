@@ -291,7 +291,7 @@ namespace Application.Services.HealthInsured
             checkprofileComplete.TokenizationCompleted = true;
             _repoWrapper.InsuranceCompletionProfile.Update(checkprofileComplete);
 
-            _emailSender.HealthInsuredSubscriptionMail(insuranceUserProfile.Email, "Active Free Trial", insuranceUserProfile.Surname, insuranceUserProfile.TransId,
+            await _emailSender.HealthInsuredSubscriptionMail(insuranceUserProfile.Email, "Active Free Trial", insuranceUserProfile.Surname, insuranceUserProfile.TransId,
                insuranceUserProfile.CareProviderName, insuranceUserProfile.PlanCode);
 
             insuranceUserProfile.SubscriptionStatus = true;
@@ -357,7 +357,7 @@ namespace Application.Services.HealthInsured
                 _repoWrapper.FamilyProfile.Update(familyProfile);
                 await _repoWrapper.Save();
                 await _cardService.FamilyMembersActivation(familyProfile);
-                _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
+                await _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
             }
             if (decimal.Parse(amount) <= decimal.Parse("100"))
             {

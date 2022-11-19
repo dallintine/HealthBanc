@@ -129,14 +129,14 @@ namespace Application.Services.HealthInsured.Insurance
            
         }
 
-        public void SendPaymentReminder(string email, string familyHead,string familyMember, PerformContext context)
+        public async Task SendPaymentReminder(string email, string familyHead,string familyMember, PerformContext context)
         {
-            _emailSender.SendHealthInsuredFamilyPaymentReminder(email, "HealthInsured Payment Reminder", familyHead, familyMember);
+            await _emailSender.SendHealthInsuredFamilyPaymentReminder(email, "HealthInsured Payment Reminder", familyHead, familyMember);
         }
 
-        public void FamilySubscription(string email,string subject, string username)
+        public async Task FamilySubscription(string email,string subject, string username)
         {
-            _emailSender.FamilySubscription(email, subject, username);
+            await _emailSender.FamilySubscription(email, subject, username);
         }
     }
 }

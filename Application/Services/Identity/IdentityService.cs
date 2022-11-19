@@ -43,6 +43,7 @@ namespace Application.Services.Identity
         private readonly AuditLogService _auditLog;
         private readonly IRepositoryWrapper _repoWrapper;
         private readonly ILogger<IdentityService> _logger;
+        private readonly OtpService _otpService;
         private readonly JwtSettings _jwtsettings;
         private readonly TokenValidationParameters _tokenValidationParameters;
         private readonly IPasswordHasher _passwordHasher;
@@ -53,7 +54,7 @@ namespace Application.Services.Identity
 
 
         public IdentityService(UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt, IEmailSender emailSender,ActivityLog activityLog, AuditLogService auditLog,
-             IOptions<JwtSettings> jwtsettings, IRepositoryWrapper repoWrapper, ILogger<IdentityService> logger,
+             IOptions<JwtSettings> jwtsettings, IRepositoryWrapper repoWrapper, ILogger<IdentityService> logger,OtpService otpService,
               TokenValidationParameters tokenValidationParameters,IPasswordHasher passwordHasher, IOptions<AppEndpoint> optionAccessor)
         {
             Options = optionAccessor.Value;
@@ -64,6 +65,7 @@ namespace Application.Services.Identity
             _auditLog = auditLog;
             _repoWrapper = repoWrapper;
             _logger = logger;
+            _otpService = otpService;
             _jwtsettings = jwtsettings.Value;
             _tokenValidationParameters = tokenValidationParameters;
             _passwordHasher = passwordHasher;
@@ -191,8 +193,10 @@ namespace Application.Services.Identity
             return new ResponseMessage { Message = result.Errors.FirstOrDefault().Description, Data = result.Errors };
         }
 
-        public async Task<ResponseMessage> Login2(ApplicationUser user,string browser, string ip)
+        public async Task<ResponseMessage> Login2(ApplicationUser user,string otp, string browser, string ip)
         {
+            var validateOTP = await _otpService.ValidateOtp(user.Id, otp, OTPActions.Login.ToString());
+            if (!validateOTP.Status) return new ResponseMessage { Message = validateOTP.Message, ResponseCode = validateOTP.ResponseCode };
             await _userManager.ResetAccessFailedCountAsync(user);
 
             var checkSession = await UserInSession(user.Id, ip, browser);
@@ -352,11 +356,11 @@ namespace Application.Services.Identity
                 // Email the user the verification code
                 if (app.ToLower() == HealthbancApps.HealthInsured.ToString().ToLower())
                 {                    
-                     _emailSender.SendHealthInsuredUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                     await _emailSender.SendHealthInsuredUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
                 }
                 else
                 {
-                    _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                    await _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
                 }
 
                 await _auditLog.UserCreateAuditLog(new AuditLogViewModel(user.Id, null, "NA", AuditAction.ForgotPassword.ToString(), "Forgot Password Mail sent"), ip, browser);
@@ -460,11 +464,11 @@ namespace Application.Services.Identity
                 // Email the user the verification code
                 if(app.ToLower() == HealthbancApps.HealthInsured.ToString().ToLower())
                 {
-                    _emailSender.SendHealthInsuredUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
+                    await _emailSender.SendHealthInsuredUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
                 }
                 else
                 {
-                    _emailSender.SendUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
+                    await _emailSender.SendUserVerificationMail(user.UserName, "Confirm your email address", confirmationUrl);
                 }
                
                 return new ResponseMessage { Status = true };

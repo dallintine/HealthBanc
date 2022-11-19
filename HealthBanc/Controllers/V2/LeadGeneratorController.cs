@@ -35,7 +35,7 @@ namespace HealthBanc.Controllers.V2
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public IActionResult SendHeliumNotification(EncryptedModel encryptedModel)
+        public async Task<IActionResult> SendHeliumNotification(EncryptedModel encryptedModel)
         {
             if (ModelState.IsValid)
             {
@@ -43,7 +43,7 @@ namespace HealthBanc.Controllers.V2
                 if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
                 var heliumHealth = JsonConvert.DeserializeObject<HeliumHealthCollectionViewModel>(decryptedString.Item2);
 
-                var response = _leadGenerator.SendHeliumNotification(heliumHealth);
+                var response = await _leadGenerator.SendHeliumNotification(heliumHealth);
                 return Ok(response);
                
             }

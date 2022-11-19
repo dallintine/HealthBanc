@@ -8,6 +8,7 @@ namespace Domain.Enums
     {
         CreateWallet,
         LinkWallet,
-        ConfirmCorporateEmail
+        ConfirmCorporateEmail,
+        Login
     }
 }

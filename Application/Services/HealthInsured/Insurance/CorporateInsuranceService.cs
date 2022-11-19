@@ -90,7 +90,7 @@ namespace Application.Services.HealthInsured.Insurance
             company.OTPJobId = otpJobId;
             _repoWrapper.CompanyProfile.Create(company);
             await _repoWrapper.Save();
-            _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporate Onboarding", otp);
+            await _emailSender.CorporateInsuranceOnboarding(corporateRegViewModel.Email, "Corporate Onboarding", otp);
             _logger.LogInformation($"Coporate user was created successfully\n");
             return new ResponseMessage { Status = true, Message = "OTP was sent to email successfully" };
         }
@@ -358,7 +358,7 @@ namespace Application.Services.HealthInsured.Insurance
             company.OTPJobId = otpJobId;
             _repoWrapper.CompanyProfile.Update(company);
             await _repoWrapper.Save();
-            _emailSender.CorporateInsuranceOnboarding(company.CompanyEmail, "Corporating Onboarding", otp);
+            await _emailSender.CorporateInsuranceOnboarding(company.CompanyEmail, "Corporating Onboarding", otp);
             _logger.LogInformation($"Resend OTP was successful [UserID : userId]\n");
             return new ResponseMessage { Message = "OTP was sent successfully", Status = true };
         }

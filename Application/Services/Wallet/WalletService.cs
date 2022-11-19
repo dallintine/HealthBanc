@@ -111,6 +111,8 @@ namespace Application.Services.Wallet
 
         public async Task<ResponseMessage<WalletValidationResponse>> WalletDetails(int userId)
         {
+            var user = await _repositoryWrapper.ApplicationUser.FindByIdAsync(userId);
+            if(user is null) return new ResponseMessage<WalletValidationResponse> { Message = "Wallet not found", ResponseCode = 25 };
             _logger.LogInformation($"Processing Wallet Details Payload [UserId :{userId}]\n");
             var wallet =await _repositoryWrapper.Wallet.GetByUserId(userId);
             if (wallet == null) return new ResponseMessage<WalletValidationResponse> { ResponseCode = 12, Message = "No Record Found - User Does not have a wallet" };
@@ -124,6 +126,7 @@ namespace Application.Services.Wallet
             var response = JsonConvert.DeserializeObject<ApiResponse<WalletValidationResponse>>(decryptedResponse);
             if (response != null && response.Response == "00")
             {
+                response.Data.Email = user.Email;
                 return new ResponseMessage<WalletValidationResponse> { Status = true, ResponseCode = 00, Message = "Approved or Completed Successfully", Data = response.Data };
             }
             return new ResponseMessage<WalletValidationResponse> { Message = response.Message, ResponseCode = 21 };
@@ -321,7 +324,7 @@ namespace Application.Services.Wallet
 
 
             string otpMessageTemplate = _otpConfigAccessor.OtpMessage;
-            string otpMessage = otpMessageTemplate.Replace("{OTPCode}", generateOtpCode);
+            string otpMessage = otpMessageTemplate.Replace("{OTPCode}", generateOtpCode).Replace("{Action}", action); ;
             var saveotp = new OtpValidation()
             {
                 OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode),

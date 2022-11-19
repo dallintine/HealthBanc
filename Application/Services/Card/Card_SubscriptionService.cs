@@ -548,7 +548,7 @@ namespace Application.Services.Card
             checkprofileComplete.TokenizationCompleted = true;
             _repositoryWrapper.InsuranceCompletionProfile.Update(checkprofileComplete);
 
-            _emailSender.HealthInsuredSubscriptionMail(insuranceUserProfile.Email, "Active Free Trial", insuranceUserProfile.Surname, insuranceUserProfile.TransId,
+            await _emailSender.HealthInsuredSubscriptionMail(insuranceUserProfile.Email, "Active Free Trial", insuranceUserProfile.Surname, insuranceUserProfile.TransId,
                 insuranceUserProfile.CareProviderName, insuranceUserProfile.PlanCode);
 
             insuranceUserProfile.SubscriptionStatus = true;
@@ -596,7 +596,7 @@ namespace Application.Services.Card
                     {
                         _logger.LogCritical("process insurance for family payment");
                         await FamilyMembersActivation(familyProfile);
-                        _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
+                        await _familyInsurance.FamilySubscription(familyProfile.Email, "Active Subscriptions", familyProfile.FullName);
                     }
                 }
                 var activityLog = new ActivityLog(null, null, familyProfile.Id, "Debit Card Added", ServiceNames.HealthInsured.ToString());

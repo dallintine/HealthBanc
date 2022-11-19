@@ -7,6 +7,7 @@ using System.Web;
 using Application.DTO;
 using Application.Helpers.ThirdPartyAPI;
 using Application.Interfaces;
+using Application.Services;
 using Application.Services.Identity;
 using Application.ViewModels.UserReg_Login;
 using DataAccess;
@@ -40,13 +41,14 @@ namespace HealthBanc.Controllers
         private readonly IEncryptAndDecrypt _encryptAndDecrypt;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly OtpService _otpService;
 
         private AppEndpoint Options { get; }
         public StringValues agent;
         public string IpAddress;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptAndDecrypt
-            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor)
+            ,IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper,IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor,OtpService otpService)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -55,6 +57,7 @@ namespace HealthBanc.Controllers
             _encryptAndDecrypt = encryptAndDecrypt;
             _passwordHasher = passwordHasher;
             _repoWrapper = repoWrapper;
+            _otpService = otpService;
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
         }
@@ -256,7 +259,7 @@ namespace HealthBanc.Controllers
                 //check that the user password is correct
                 if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
                 {
-                    var response = await _identityService.Login2(user,browser, deviceIp);
+                    var response = await _identityService.Login2(user,loginViewModel.OTP ,browser, deviceIp);
                     if (response.Status != true)
                     {
                         return BadRequest(response);
@@ -277,6 +280,21 @@ namespace HealthBanc.Controllers
                 errors.Add(new ResponseMessage() { Message = error, Status = false });
             }
             return BadRequest(errors);
+        }
+
+        /// <summary>
+        /// Get Login OTP
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        public async Task<IActionResult> GetLoginOTP(string email)
+        {
+            var checkUserEmail = await _userManager.FindByEmailAsync(email);
+            if (checkUserEmail is null) return NotFound(new ResponseMessage { ResponseCode = 25, Message = "Email address not found", Status = false });
+            var otp = await _otpService.GenerateOtp(null, email, checkUserEmail.Id, OTPActions.Login.ToString());
+            if (otp.Status) return Ok(otp);
+            return BadRequest(otp);
         }
 
         [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]

@@ -256,13 +256,13 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                 
                 if(insuranceUserProfile.FailedScheduledPaymentRetry is null || insuranceUserProfile.FailedScheduledPaymentRetry < 4)
                 {
-                    Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, false);
+                    await Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, false);
                     insuranceUserProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(0,insuranceUserProfile.Id, null), DateTime.Now.AddDays(SubscriptionAccessor.FailedIndividualPaymentRetryA));
                     insuranceUserProfile.FailedScheduledPaymentRetry = insuranceUserProfile.FailedScheduledPaymentRetry.HasValue ? insuranceUserProfile.FailedScheduledPaymentRetry += 1 : 1;
                 }
                 else if(insuranceUserProfile.FailedScheduledPaymentRetry > 3 && insuranceUserProfile.FailedScheduledPaymentRetry < 7)
                 {
-                    Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, false);
+                    await Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, false);
                     insuranceUserProfile.PendingJobId = BackgroundJob.Schedule(() => SchedulePaymentLogic(0, insuranceUserProfile.Id, null), DateTime.Now.AddDays(SubscriptionAccessor.FailedIndividualPaymentRetryB));
                     insuranceUserProfile.FailedScheduledPaymentRetry = insuranceUserProfile.FailedScheduledPaymentRetry.HasValue ? insuranceUserProfile.FailedScheduledPaymentRetry += 1 : 1;
                 }
@@ -271,25 +271,25 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                     insuranceUserProfile.PendingEmailJobId = null; insuranceUserProfile.ActiveStatus = false; insuranceUserProfile.SubscriptionStatus = false;
                     insuranceUserProfile.PendingJobId = null;
                     insuranceUserProfile.FailedScheduledPaymentRetry = null;
-                    Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, true);
+                    await Process_FailedInsuranceIndividualPaument_Email(insuranceUserProfile, family, payee, true);
                 }
                 _repoWrapper.InsuranceProfile.Update(insuranceUserProfile);
                 await _repoWrapper.Save();               
             }
         }
 
-        private void  Process_FailedInsuranceIndividualPaument_Email(InsuranceUserProfile insuranceProfile, FamilyProfile family, InsuranceUserProfile payee, bool deactivate)
+        private async Task  Process_FailedInsuranceIndividualPaument_Email(InsuranceUserProfile insuranceProfile, FamilyProfile family, InsuranceUserProfile payee, bool deactivate)
         {
             if (!(insuranceProfile.FamilyProfileId is null))
             {
                 if (deactivate)
                 {
-                    _emailSender.HealthInsuredDeactivationNotification(family.Email, "Deactivation Notification", family.FullName,
+                    await _emailSender.HealthInsuredDeactivationNotification(family.Email, "Deactivation Notification", family.FullName,
                         insuranceProfile.Premium.ToString(), $"{insuranceProfile.Othernames} {insuranceProfile.Surname}");
                 }
                 else
                 {
-                    _emailSender.HealthInsuredFailedDebitNotification(family.Email, "Failed Debit Notificaion", family.FullName, $"{insuranceProfile.Othernames} {insuranceProfile.Surname}", 
+                    await _emailSender.HealthInsuredFailedDebitNotification(family.Email, "Failed Debit Notificaion", family.FullName, $"{insuranceProfile.Othernames} {insuranceProfile.Surname}", 
                         insuranceProfile.Premium.ToString());
                 }
             }
@@ -297,12 +297,12 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 if (deactivate)
                 {
-                    _emailSender.HealthInsuredDeactivationNotification(payee.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}",
+                    await _emailSender.HealthInsuredDeactivationNotification(payee.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}",
                     insuranceProfile.Premium.ToString(), $"{insuranceProfile.Othernames} {insuranceProfile.Surname}");
                 }
                 else
                 {
-                    _emailSender.HealthInsuredFailedDebitNotification(payee.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", $"{insuranceProfile.Othernames} {insuranceProfile.Surname}",
+                    await _emailSender.HealthInsuredFailedDebitNotification(payee.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", $"{insuranceProfile.Othernames} {insuranceProfile.Surname}",
                     insuranceProfile.Premium.ToString());
                 }
             }
@@ -310,11 +310,11 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
             {
                 if (deactivate)
                 {
-                    _emailSender.HealthInsuredDeactivationNotification(insuranceProfile.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", insuranceProfile.Premium.ToString(), "your");
+                    await _emailSender.HealthInsuredDeactivationNotification(insuranceProfile.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", insuranceProfile.Premium.ToString(), "your");
                 }
                 else
                 {
-                    _emailSender.HealthInsuredFailedDebitNotification(insuranceProfile.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", "your", insuranceProfile.Premium.ToString());
+                    await _emailSender.HealthInsuredFailedDebitNotification(insuranceProfile.Email, "Failed Debit Notificaion", $"{insuranceProfile.Surname}", "your", insuranceProfile.Premium.ToString());
                 }
             }
         }
@@ -428,7 +428,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
                         var leftProbationHours = (48 - (companyProfile.FailedScheduledPaymentRetry * 4));
                         var probationendDate = DateTime.Now.AddHours(Double.Parse(leftProbationHours.ToString()));
 
-                        _emailSender.HealthInsuredFailedCompanyDebit(companyProfile.CompanyEmail, "Failed Transaction", companyProfile.CompanyName, premiumFee.ToString()
+                        await _emailSender.HealthInsuredFailedCompanyDebit(companyProfile.CompanyEmail, "Failed Transaction", companyProfile.CompanyName, premiumFee.ToString()
                             , probationendDate.ToLongDateString());
                     }
                     else
@@ -442,7 +442,7 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
 
                         await DeactivateAllCompanybeneficiaries(companyProfile.UserId);
 
-                        _emailSender.HealthInsuredCompanyDeactivation(companyProfile.CompanyEmail, "Deactivate Beneficiaries", companyProfile.CompanyName, premiumFee.ToString());
+                        await _emailSender.HealthInsuredCompanyDeactivation(companyProfile.CompanyEmail, "Deactivate Beneficiaries", companyProfile.CompanyName, premiumFee.ToString());
                     }
                 }
             }
@@ -555,19 +555,19 @@ namespace Application.Services.HealthInsured_AxaMansard.Insurance
         /// <param name="email"></param>
         /// <param name="userName"></param>
         /// <param name="context"></param>
-        public void SendEmailReminder(string email,string userName,string info, PerformContext context)
+        public async Task SendEmailReminder(string email,string userName,string info, PerformContext context)
         {            
-            _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName,info);
+            await _emailSender.SendHealthInsuredPaymentReminder(email,"Payment Reminder",userName,info);
         }
 
-        public void SendEmailReminder(string email, string userName,  PerformContext context)
+        public async Task SendEmailReminder(string email, string userName,  PerformContext context)
         {
-            _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName, "");
+            await _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName, "");
         }
 
-        public void SendFamilyPaymentReminder(string email, string familyHead, string familyMember, PerformContext context)
+        public async Task SendFamilyPaymentReminder(string email, string familyHead, string familyMember, PerformContext context)
         {
-            _emailSender.SendHealthInsuredFamilyPaymentReminder(email, "HealthInsured Payment Reminder", familyHead, familyMember);
+            await _emailSender.SendHealthInsuredFamilyPaymentReminder(email, "HealthInsured Payment Reminder", familyHead, familyMember);
         }
     } 
 }

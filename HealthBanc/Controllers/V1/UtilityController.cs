@@ -56,13 +56,14 @@ namespace HealthBanc.Controllers
         private readonly ILogger<UtilityController> _logger;
         private readonly IWalletEncryptionsAndDecryption _encryptionsAndDecryption;
         private readonly WalletConnect _walletConnect;
+        private readonly IEncryptAndDecrypt encryptAndDecrypt;
 
         private ConnectionStrings ConnectionStrings { get; }
 
         public UtilityController(InsuranceService insuranceService,TokenizationService tokenizationService, IBSIntegrationService iBSIntegrationService,UtilityService utilityService,
             IRepositoryWrapper repoWrapper,HMOIntegrationService integrationService,IMapper mapper, IOptions<ConnectionStrings> connectionString, ISMSService smsService,
             AuditLogService auditLogServices,ImageService imageService,ILogger<UtilityController> logger, IWalletEncryptionsAndDecryption encryptionsAndDecryption,
-            WalletConnect walletConnect)
+            WalletConnect walletConnect,IEncryptAndDecrypt encryptAndDecrypt)
         {
             _insuranceService = insuranceService;
             _tokenizationService = tokenizationService;
@@ -78,6 +79,7 @@ namespace HealthBanc.Controllers
             _logger = logger;
             _encryptionsAndDecryption = encryptionsAndDecryption;
             _walletConnect = walletConnect;
+            this.encryptAndDecrypt = encryptAndDecrypt;
             ConnectionStrings = connectionString.Value;
         }
 
@@ -160,19 +162,6 @@ namespace HealthBanc.Controllers
             return BadRequest(new ResponseMessage { Message = "Wrong passcode" });
         }
 
-        /// <summary>
-        /// Fix card errors
-        /// </summary>
-        /// <param name="email"></param>
-        /// <returns></returns>
-        [HttpGet("[action]")]
-        [Authorize(Roles = "Super-Administrator")]
-        [ProducesResponseType(200, Type = typeof(OkObjectResult))]
-        public async Task<IActionResult> FixCardsError(string email)
-        {
-            await _utilityService.FixCardsError(email);
-            return Ok();
-        }
 
         /// <summary>
         /// Get HMO invoice details
@@ -187,13 +176,6 @@ namespace HealthBanc.Controllers
             return Ok(response);
         }
 
-        [Authorize(Roles = "Super-Administrator")]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> FixPaymentError(string reference, string amount)
-        {
-            await _utilityService.FitPaymentError(reference, amount);
-            return Ok();
-        }
 
         /// <summary>
         /// Perform sterling intra bank transfer
@@ -212,14 +194,6 @@ namespace HealthBanc.Controllers
             return Ok(res);
         }
 
-        [Authorize(Roles = "Super-Administrator")]
-        [ProducesResponseType(200, Type = typeof(ResponseMessage))]
-        [HttpGet("[action]")]
-        public async Task<IActionResult> ProcessFailedHMOPayment(int Id)
-        {
-            await _utilityService.ProcessFailedHMOPayment(Id);
-            return Ok();
-        }
 
         [Authorize(Roles = "Super-Administrator")]
         [HttpPost("[action]")]
@@ -624,6 +598,13 @@ namespace HealthBanc.Controllers
         {
             var data = _repoWrapper.UserAuditLog.GetLastFive();
             return Ok(data);
+        }
+
+        [HttpGet("[action]")]
+        public IActionResult Encrypt(string data)
+        {
+            var data2 = this.encryptAndDecrypt.EncryptString(data);
+            return Ok(data2);
         }
     }
 }
