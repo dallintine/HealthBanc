@@ -12,5 +12,7 @@ namespace Application.ViewModels.UserReg_Login
         public string EmailAddress { get; set; }
         [Required, DataType(DataType.Password)]
         public string Password { get; set; }
+        [Required]
+        public string OTP { get; set; }
     }
 }

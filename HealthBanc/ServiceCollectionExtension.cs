@@ -149,6 +149,7 @@ namespace HealthBanc
             services.AddScoped<WalletService>();
             services.AddScoped<OTPService>();
             services.AddScoped<RestrictionService>();
+            services.AddScoped<OtpService>();
             services.AddScoped<WalletPaymentService>();
         }
     }

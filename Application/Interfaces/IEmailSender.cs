@@ -9,24 +9,24 @@ namespace Application.Interfaces
 {
     public interface IEmailSender
     {
-        void CorporateInsuranceOnboarding(string email, string subject, string otp);
-        void CustomMail(string email, string subject, string content);
-        void FamilySubscription(string email, string subject, string userName);
-        void HealthInsuredCompanyDeactivation(string email, string subject, string userName, string premium);
-        void HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium, string stopDate);
-        void HealthInsuredDeactivationNotification(string email, string subject, string userName, string premium,string info);
-        void HealthInsuredFailedDebitNotification(string email, string subject, string userName, string info, string premium);
-        void HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider,string plan);
-        void RefreeInvitation(string email, string subject, string payee);
-        void RefreeInvitationFullDetail(string email, string subject, string payee, string userName, string enroleeNumber, string healthCareProvider, string plan);
-        void SendHealthFinanceNotification(string subject, HealthFinanceCollectionViewModel healthFinance, List<string> toEmails);
-        void SendHealthFinanceSubmissionNotification(string subject, HealthFinanceCollectionViewModel healthFinance, string toEmails);
-        void SendHealthInsuredFamilyPaymentReminder(string email, string subject, string familyHead, string familyMember);
-        void SendHealthInsuredPaymentReminder(string email, string subject, string userName,string info);
-        void SendHeliumNotification(string subject, string healthProvider, string providerType, string phonenumber, string providerEmail);
-        void SendUserResetPasswordMail(string email, string subject, string resetUrl);
-        void SendUserVerificationMail(string email, string subject, string verificationUrl);
-        void SendHealthInsuredUserVerificationMail(string email, string subject, string verificationUrl);
-        void SendHealthInsuredUserResetPasswordMail(string email, string subject, string resetUrl);
+        Task CorporateInsuranceOnboarding(string email, string subject, string otp);
+        Task<bool> CustomMail(string email, string subject, string content);
+        Task FamilySubscription(string email, string subject, string userName);
+        Task HealthInsuredCompanyDeactivation(string email, string subject, string userName, string premium);
+        Task HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium, string stopDate);
+        Task HealthInsuredDeactivationNotification(string email, string subject, string userName, string premium,string info);
+        Task HealthInsuredFailedDebitNotification(string email, string subject, string userName, string info, string premium);
+        Task HealthInsuredSubscriptionMail(string email, string subject, string userName, string enroleeNumber, string healthCareProvider,string plan);
+        Task RefreeInvitation(string email, string subject, string payee);
+        Task RefreeInvitationFullDetail(string email, string subject, string payee, string userName, string enroleeNumber, string healthCareProvider, string plan);
+        Task SendHealthFinanceNotification(string subject, HealthFinanceCollectionViewModel healthFinance, List<string> toEmails);
+        Task SendHealthFinanceSubmissionNotification(string subject, HealthFinanceCollectionViewModel healthFinance, string toEmails);
+        Task SendHealthInsuredFamilyPaymentReminder(string email, string subject, string familyHead, string familyMember);
+        Task SendHealthInsuredPaymentReminder(string email, string subject, string userName,string info);
+        Task SendHeliumNotification(string subject, string healthProvider, string providerType, string phonenumber, string providerEmail);
+        Task SendUserResetPasswordMail(string email, string subject, string resetUrl);
+        Task SendUserVerificationMail(string email, string subject, string verificationUrl);
+        Task SendHealthInsuredUserVerificationMail(string email, string subject, string verificationUrl);
+        Task SendHealthInsuredUserResetPasswordMail(string email, string subject, string resetUrl);
     }
 }

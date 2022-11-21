@@ -43,8 +43,8 @@ namespace Application.Services
                 _repoWrapper.HealthFinance.Create(financeData);
                 await _repoWrapper.Save();
 
-                _emailSender.SendHealthFinanceNotification("HealthFinance Notification", healthFinance, emails);
-                _emailSender.SendHealthFinanceSubmissionNotification("HealthFinance Notification", healthFinance, healthFinance.Email);
+                await _emailSender.SendHealthFinanceNotification("HealthFinance Notification", healthFinance, emails);
+                await _emailSender.SendHealthFinanceSubmissionNotification("HealthFinance Notification", healthFinance, healthFinance.Email);
 
                 return new ResponseMessage { Status = true, Message = "Thank you! We will reach out to you soon" };
             }
@@ -52,9 +52,9 @@ namespace Application.Services
             
         }
         
-        public ResponseMessage SendHeliumNotification(HeliumHealthCollectionViewModel heliumHealth)
+        public async Task<ResponseMessage> SendHeliumNotification(HeliumHealthCollectionViewModel heliumHealth)
         {
-            _emailSender.SendHeliumNotification("Helium Notification", heliumHealth.HealthServiceProviderName, heliumHealth.HealthServiveProviderType, heliumHealth.PhoneNumber,
+            await _emailSender.SendHeliumNotification("Helium Notification", heliumHealth.HealthServiceProviderName, heliumHealth.HealthServiveProviderType, heliumHealth.PhoneNumber,
                    heliumHealth.EmailAddress);
             return new ResponseMessage { Status = true, Message = "Notification was sent successfully" };
 

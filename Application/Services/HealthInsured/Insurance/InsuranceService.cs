@@ -215,7 +215,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     _repoWrapper.InsuranceProfile.Create(insuranceProfile);
                     await _repoWrapper.Save();
                     await Process_SuccessfulReferee_FirstTimePayment(insuranceProfile);
-                    _emailSender.RefreeInvitationFullDetail(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}",
+                    await _emailSender.RefreeInvitationFullDetail(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}",
                         insuranceProfile.Surname, insuranceProfile.TransId, insuranceProfile.CareProviderName, insuranceProfile.PlanCode);
                     _logger.LogInformation($"Pay for referee with full details was successfully\n");
 
@@ -679,7 +679,7 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
                     insuranceProfile.InsurancePayeeId = insuranceProfileOfUserPaying.Id;                  
                     _repoWrapper.InsuranceProfile.Create(insuranceProfile);
                     await _repoWrapper.Save();
-                    _emailSender.RefreeInvitation(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}");
+                    await _emailSender.RefreeInvitation(insuranceProfile.Email, "HealthInsured Gift", $"{insuranceProfileOfUserPaying.Othernames} {insuranceProfileOfUserPaying.Surname}");
                    
                     var auditViewModel = new AuditLogViewModel(userId, null, "NA", AuditAction.PayForReferee_Email.ToString(), "pay for referee with email");
                     await _auditLogServices.UserCreateAuditLog(auditViewModel, ipAddress, device);
@@ -720,13 +720,13 @@ namespace Application.HealthInsured_AxaMansard_Service.Insurance
             }
         }
 
-        public void SendEmailReminder(string email, string userName,string info, PerformContext context)
+        public async Task SendEmailReminder(string email, string userName,string info, PerformContext context)
         {
-            _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName,info);
+            await _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName,info);
         }
-        public void SendEmailReminder(string email, string userName, PerformContext context)
+        public async Task SendEmailReminder(string email, string userName, PerformContext context)
         {
-            _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName, "");
+            await _emailSender.SendHealthInsuredPaymentReminder(email, "Payment Reminder", userName, "");
         }
     }    
 }

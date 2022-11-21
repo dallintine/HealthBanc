@@ -1,9 +1,11 @@
 ﻿using Application.DTO;
 using Application.Helpers.ThirdPartyAPI;
 using Application.Interfaces;
+using Application.Services;
 using Application.Services.Identity;
 using Application.ViewModels.UserReg_Login;
 using DataAccess;
+using Domain.Enums;
 using Domain.Models;
 using Domain.Models.ReportAndLogs;
 using HealthBanc.DTO.AuthenticationDTOs;
@@ -35,13 +37,14 @@ namespace HealthBanc.Controllers.V2
         private readonly IEncryptAndDecrypt _encryptDecrypt;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRepositoryWrapper _repoWrapper;
+        private readonly OtpService _otpService;
 
         private AppEndpoint Options { get; }
         public StringValues agent;
         public string IpAddress;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptDecrypt
-            , IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper, IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor)
+            , IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper, IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor,OtpService otpService)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -50,6 +53,7 @@ namespace HealthBanc.Controllers.V2
             _encryptDecrypt = encryptDecrypt;
             _passwordHasher = passwordHasher;
             _repoWrapper = repoWrapper;
+            _otpService = otpService;
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
         }
@@ -169,7 +173,6 @@ namespace HealthBanc.Controllers.V2
         {
             if (ModelState.IsValid)
             {
-
                 var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
                 if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
                 var loginViewModel = JsonConvert.DeserializeObject<LoginViewModel>(decryptedString.Item2);
@@ -201,7 +204,7 @@ namespace HealthBanc.Controllers.V2
                 //check that the user password is correct
                 if (await _userManager.CheckPasswordAsync(user, loginViewModel.Password))
                 {
-                    var response = await _identityService.Login2(user, browser, deviceIp);
+                    var response = await _identityService.Login2(user,loginViewModel.OTP, browser, deviceIp);
                     if (response.Status != true)
                     {
                         return BadRequest(response);
@@ -222,6 +225,24 @@ namespace HealthBanc.Controllers.V2
                 errors.Add(new ResponseMessage() { Message = error, Status = false });
             }
             return BadRequest(errors);
+        }
+
+        /// <summary>
+        /// Get Login OTP
+        /// </summary>
+        /// <param name="encryptedModel"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        public async Task<IActionResult> GetLoginOTP([FromBody] EncryptedModel encryptedModel)
+        {
+            var decryptedString = _encryptDecrypt.DecryptString(encryptedModel.Data);
+            if (!decryptedString.Item1) return BadRequest(new ResponseMessage { ResponseCode = 12, Message = decryptedString.Item2 });
+            var otpViewModel = JsonConvert.DeserializeObject<GetOTPViewModel>(decryptedString.Item2);
+            var checkUserEmail = await _userManager.FindByEmailAsync(otpViewModel.Email);
+            if(checkUserEmail is null) return NotFound(new ResponseMessage { ResponseCode=25,Message="Email address not found", Status = false});
+            var otp = await _otpService.GenerateOtp(null, otpViewModel.Email, checkUserEmail.Id, OTPActions.Login.ToString());
+            if (otp.Status) return Ok(otp);
+            return BadRequest(otp);
         }
 
         [ProducesResponseType(200, Type = typeof(ResponseMessage<LoggedInResponseDTO>))]

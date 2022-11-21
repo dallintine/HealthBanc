@@ -32,11 +32,11 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(ResponseMessage))]
         [ProducesResponseType(400, Type = typeof(ResponseMessage))]
         [HttpPost("[action]")]
-        public IActionResult SendHeliumNotification(HeliumHealthCollectionViewModel heliumHealth)
+        public async Task<IActionResult> SendHeliumNotification(HeliumHealthCollectionViewModel heliumHealth)
         {
             if (ModelState.IsValid)
             {
-                var response = _leadGenerator.SendHeliumNotification(heliumHealth);
+                var response = await _leadGenerator.SendHeliumNotification(heliumHealth);
                 return Ok(response);
                
             }
