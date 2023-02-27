@@ -9,5 +9,6 @@ namespace Application.ViewModels.UserReg_Login
     {
         [Required]
         public string Email { get; set; }
+        public string App { get; set; }
     }
 }

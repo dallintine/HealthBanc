@@ -10,7 +10,6 @@ namespace Application.Interfaces
     public interface IEmailSender
     {
         Task CorporateInsuranceOnboarding(string email, string subject, string otp);
-        Task<bool> CustomMail(string email, string subject, string content);
         Task FamilySubscription(string email, string subject, string userName);
         Task HealthInsuredCompanyDeactivation(string email, string subject, string userName, string premium);
         Task HealthInsuredFailedCompanyDebit(string email, string subject, string userName, string premium, string stopDate);
@@ -28,5 +27,8 @@ namespace Application.Interfaces
         Task SendUserVerificationMail(string email, string subject, string verificationUrl);
         Task SendHealthInsuredUserVerificationMail(string email, string subject, string verificationUrl);
         Task SendHealthInsuredUserResetPasswordMail(string email, string subject, string resetUrl);
+        Task CustomOneDrugStoreMail(string email, string subject, string content);
+        Task CustomHealthInsuredMail(string email, string subject, string content);
+        Task SendOneDrugStoreUserResetPasswordMail(string email, string subject, string resetUrl);
     }
 }

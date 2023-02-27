@@ -27,7 +27,6 @@ namespace Infrastructure.Mail
         private readonly IWebHostEnvironment _environment;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly AppEndpoint _appEndpoint;
-
         public Application.Helpers.Environment EnvironmentAccessor { get; }
         private EmailAuth EmailAccessor { get; }
         public EmailSender(IOptions<Application.Helpers.Environment>environmentAccessor,ILogger<EmailSender> logger
@@ -76,6 +75,16 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             await EmailRequest(emailRequest);
         }
+
+        public async Task SendOneDrugStoreUserResetPasswordMail(string email, string subject, string resetUrl)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\OneDrugStore") + "\\onedrugstorePassword_reset.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("token", resetUrl).Replace("BaseUrl", _appEndpoint.APIUri.OneDrugStoreFrontendBase);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "onedrugstore@sterling.ng");
+            await EmailRequest(emailRequest);
+        }
+
 
         public async Task FamilySubscription(string email, string subject, string userName)
         {
@@ -224,15 +233,23 @@ namespace Infrastructure.Mail
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
             await EmailRequest(emailRequest);
         }
-        public Task<bool> CustomMail(string email,string subject, string content)
+        public async Task CustomHealthInsuredMail(string email,string subject, string content)
         {
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\custom.html";
             string html = System.IO.File.ReadAllText(path);
             var newHtml = html.Replace("{{CustomMessage}}", content).Replace("BaseUrl", _appEndpoint.APIUri.HealthInsuredFrontendBase);
             var emailRequest = new EmailRequest(email, newHtml, subject, "healthInsured@sterling.ng");
-            return EmailRequest(emailRequest);
+            await EmailRequest(emailRequest);
         }
 
+        public async Task CustomOneDrugStoreMail(string email, string subject, string content)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates\\OneDrugStore") + "\\custom.html";
+            string html = System.IO.File.ReadAllText(path);
+            var newHtml = html.Replace("{{CustomMessage}}", content).Replace("BaseUrl", _appEndpoint.APIUri.OneDrugStoreFrontendBase);
+            var emailRequest = new EmailRequest(email, newHtml, subject, "onedrugstore@sterling.ng");
+            await EmailRequest(emailRequest);
+        }
         public async Task<bool> EmailRequest(EmailRequest emailRequest)
         {
             _logger.LogInformation($"Email Request [ Subject :  {emailRequest.subject} | Email : {emailRequest.email}]\n");

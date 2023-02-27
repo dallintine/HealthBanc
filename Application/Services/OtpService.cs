@@ -2,6 +2,7 @@
 using Application.Helpers;
 using Application.Interfaces;
 using DataAccess;
+using Domain.Enums;
 using Domain.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -34,13 +35,13 @@ namespace Application.Services
             _emailSender = emailSender;
         }
 
-        public async Task<ResponseMessage> GenerateOtp(string phoneNumber,string email, int userId, string action)
+        public async Task<ResponseMessage> GenerateOtp(string phoneNumber,string email, int userId, string action, string app)
         {
             string generateOtpCode = _uniqueIdentifier.GetUniqueCode((int)_otpConfigAccessor.Length);
 
 
             string otpMessageTemplate = _otpConfigAccessor.OtpMessage;
-            string otpMessage = otpMessageTemplate.Replace("{OTPCode}", generateOtpCode).Replace("{Action}",action);
+            string otpMessage = otpMessageTemplate.Replace("{OTPCode}", generateOtpCode).Replace("{Action}",action).Replace("{App}", app);
             var saveotp = new OtpValidation()
             {
                 OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode),
@@ -54,23 +55,17 @@ namespace Application.Services
             };
             _repositoryWrapper.OtpValidation.Create(saveotp);
             await _repositoryWrapper.Save();
-            if(phoneNumber != null)
+
+            // Email the user the verification code
+            if ( app is null || app.ToLower() == HealthbancApps.HealthInsured.ToString().ToLower())
             {
-                var smsresponse = await _smsService.SendSmsAsync(phoneNumber, otpMessage);
-                if (smsresponse is null || smsresponse.Status is false)
-                {
-                    _logger.LogInformation($"Generate OTP SMS feature not completed [Reason : SMS service returned not successful response]");
-                    return new ResponseMessage { ResponseCode = 12, Message = "Unable to send OTP. Please try again later" };
-                }
+                await _smsService.SendSmsAsync(phoneNumber, otpMessage);
+                await _emailSender.CustomHealthInsuredMail(email, "OTP Code", otpMessage);
             }
-            if(email != null)
+            else
             {
-                var emailResponse = await _emailSender.CustomMail(email, "OTP Code", otpMessage);
-                if (emailResponse is false)
-                {
-                    _logger.LogInformation($"Generate OTP SMS feature not completed [Reason : Email service returned not successful response]");
-                    return new ResponseMessage { ResponseCode = 12, Message = "Unable to send OTP. Please try again later" };
-                }
+                await _smsService.SendSmsAsync(phoneNumber, otpMessage);
+                await _emailSender.CustomHealthInsuredMail(email, "OTP Code", otpMessage);
             }
            
             _logger.LogInformation($"Generate OTP SMS feature completed [UserId : {userId}]");

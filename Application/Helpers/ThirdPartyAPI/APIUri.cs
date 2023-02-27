@@ -19,6 +19,7 @@ namespace Application.Helpers.ThirdPartyAPI
         public string HealthBancResendEmail { get; set; }
         public string HealthBancForgotPassword { get; set; }
         public string HealthBancApiBase { get; set; }
+        public string OneDrugStoreFrontendBase { get; set; }
         public string FiorianoBaseAddress { get; set; }
         public string FiorianoADAuthentication { get; set; }
         public string Salt { get; set; }
