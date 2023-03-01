@@ -288,11 +288,11 @@ namespace HealthBanc.Controllers
         /// <param name="email"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        public async Task<IActionResult> GetLoginOTP(string email)
+        public async Task<IActionResult> GetLoginOTP(string email, string app)
         {
             var checkUserEmail = await _userManager.FindByEmailAsync(email);
             if (checkUserEmail is null) return NotFound(new ResponseMessage { ResponseCode = 25, Message = "Email address not found", Status = false });
-            var otp = await _otpService.GenerateOtp(null, email, checkUserEmail.Id, OTPActions.Login.ToString());
+            var otp = await _otpService.GenerateOtp(null, email, checkUserEmail.Id, OTPActions.Login.ToString(), app);
             if (otp.Status) return Ok(otp);
             return BadRequest(otp);
         }

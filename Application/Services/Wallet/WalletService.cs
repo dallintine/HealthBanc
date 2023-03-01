@@ -324,7 +324,7 @@ namespace Application.Services.Wallet
 
 
             string otpMessageTemplate = _otpConfigAccessor.OtpMessage;
-            string otpMessage = otpMessageTemplate.Replace("{OTPCode}", generateOtpCode).Replace("{Action}", action); ;
+            string otpMessage = otpMessageTemplate.Replace("{OTPCode}", generateOtpCode).Replace("{Action}", action).Replace("{App}","HealthInsured");
             var saveotp = new OtpValidation()
             {
                 OTP = _encryptAndDecrypt.Sha512Hash(generateOtpCode),

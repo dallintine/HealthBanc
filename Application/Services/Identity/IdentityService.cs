@@ -139,7 +139,7 @@ namespace Application.Services.Identity
                 {
                     await _userManager.UpdateAsync(user);
                     await _userManager.AddToRoleAsync(user, "SuperAdmin");                    
-                    await SendUserEmailVerificationAsync(user,app);
+                    //await SendUserEmailVerificationAsync(user,app);
                     var password = _passwordHasher.Hash(registrationViewModel.Password);
                     user.HashedPasswordHistory = $"{password},";
                     await _userManager.UpdateAsync(user);
@@ -358,6 +358,10 @@ namespace Application.Services.Identity
                 {                    
                      await _emailSender.SendHealthInsuredUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
                 }
+                else if(app.ToLower() == HealthbancApps.OneDrugStore.ToString().ToLower())
+                {
+                    await _emailSender.SendOneDrugStoreUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
+                }
                 else
                 {
                     await _emailSender.SendUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
@@ -446,6 +450,7 @@ namespace Application.Services.Identity
             }
         }      
 
+        // Business decide not to make email verification compulsory
         public async Task<ResponseMessage> SendUserEmailVerificationAsync(ApplicationUser user, string app)
         {
             // Get the user details

@@ -240,7 +240,7 @@ namespace HealthBanc.Controllers.V2
             var otpViewModel = JsonConvert.DeserializeObject<GetOTPViewModel>(decryptedString.Item2);
             var checkUserEmail = await _userManager.FindByEmailAsync(otpViewModel.Email);
             if(checkUserEmail is null) return NotFound(new ResponseMessage { ResponseCode=25,Message="Email address not found", Status = false});
-            var otp = await _otpService.GenerateOtp(null, otpViewModel.Email, checkUserEmail.Id, OTPActions.Login.ToString());
+            var otp = await _otpService.GenerateOtp(null, otpViewModel.Email, checkUserEmail.Id, OTPActions.Login.ToString(), otpViewModel.App);
             if (otp.Status) return Ok(otp);
             return BadRequest(otp);
         }
