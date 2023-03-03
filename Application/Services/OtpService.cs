@@ -65,7 +65,7 @@ namespace Application.Services
             else
             {
                 await _smsService.SendSmsAsync(phoneNumber, otpMessage);
-                await _emailSender.CustomHealthInsuredMail(email, "OTP Code", otpMessage);
+                await _emailSender.CustomOneDrugStoreMail(email, "OTP Code", otpMessage);
             }
            
             _logger.LogInformation($"Generate OTP SMS feature completed [UserId : {userId}]");
