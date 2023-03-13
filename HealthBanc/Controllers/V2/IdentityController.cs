@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -31,6 +32,7 @@ namespace HealthBanc.Controllers.V2
     [ApiVersion("2.0")]
     public class IdentityController : ControllerBase
     {
+        private readonly IConfiguration _configuration;
         private readonly ILogger<IdentityController> _logger;
         private readonly IdentityService _identityService;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -44,7 +46,7 @@ namespace HealthBanc.Controllers.V2
         public string IpAddress;
 
         public IdentityController(ILogger<IdentityController> logger, IdentityService identityService, UserManager<ApplicationUser> userManager, IEncryptAndDecrypt encryptDecrypt
-            , IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper, IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor,OtpService otpService)
+            , IPasswordHasher passwordHasher, IRepositoryWrapper repoWrapper, IOptions<AppEndpoint> optionAccessor, IHttpContextAccessor accessor,OtpService otpService, IConfiguration configuration)
         {
             Options = optionAccessor.Value;
             _logger = logger;
@@ -56,6 +58,7 @@ namespace HealthBanc.Controllers.V2
             _otpService = otpService;
             agent = accessor.HttpContext.Request.Headers["User-Agent"];
             IpAddress = accessor.HttpContext.Connection.RemoteIpAddress.ToString();
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -213,7 +216,17 @@ namespace HealthBanc.Controllers.V2
                 }
                 //increase access failed count
                 await _userManager.AccessFailedAsync(user);
-                return Unauthorized(new ResponseMessage { Message = "User detail is invalid, please try again with correct details.", Status = false });
+                if (user.LockoutEnd != null && user.AccessFailedCount == 0)
+                    return Unauthorized(new ResponseMessage { Message = "Your account has been locked, you exceeded the maximum failed password attempt. Kindly unlock your account by resetting your password", Status = false });
+                //return Unauthorized(new ResponseMessage { Message = "User detail is invalid, please try again with correct details.", Status = false });
+
+                return Unauthorized(new ResponseMessage
+                {
+                    Message = $"Invalid Login Details, You have " +
+                    $"{_configuration.GetValue<int>("MaxFailedAccessAttempts") - (user.AccessFailedCount)} " +
+                    $"attempt before lock out",
+                    Status = false
+                });
             }
             //return validation errors
             var errors = new List<ResponseMessage>();
