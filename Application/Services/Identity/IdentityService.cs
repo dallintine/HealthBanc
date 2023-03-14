@@ -347,6 +347,11 @@ namespace Application.Services.Identity
                     passwordResetLink = $"{Options.APIUri.HealthInsuredForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}" +
                     $"&app={HttpUtility.UrlEncode(app)}";
                 }
+                else if(app == HealthbancApps.OneDrugStore.ToString())
+                {
+                    passwordResetLink = $"{Options.APIUri.OneDrugStoreFrontendBase}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}" +
+                    $"&app={HttpUtility.UrlEncode(app)}";
+                }
                 else
                 {
                     passwordResetLink = $"{Options.APIUri.HealthBancForgotPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}" +
