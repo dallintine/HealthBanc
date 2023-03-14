@@ -219,7 +219,7 @@ namespace HealthBanc.Controllers.V2
                 if (user.LockoutEnd != null && user.AccessFailedCount == 0)
                     return Unauthorized(new ResponseMessage { Message = "Your account has been locked, you exceeded the maximum failed password attempt. Kindly unlock your account by resetting your password", Status = false });
                 //return Unauthorized(new ResponseMessage { Message = "User detail is invalid, please try again with correct details.", Status = false });
-
+                //return lock attempt
                 return Unauthorized(new ResponseMessage
                 {
                     Message = $"Invalid Login Details, You have " +
