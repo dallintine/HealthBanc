@@ -7,19 +7,14 @@ using System.Threading.Tasks;
 
 namespace Domain.Models
 {
-    public class ApplicationUser : IdentityUser<int>
+    public class ApplicationUser : IdentityUser
     {
-        [Required]
         public string FirstName { get; set; }
-        [Required]
         public string LastName { get; set; }
         public string HashedPasswordHistory { get; set; }
-        [Required]
-        public DateTime DateOfRegistration { get; set; }
+        public DateTime DateCreated { get; set; } = DateTime.Now;
         public bool IsDeleted { get; set; }
         public DateTime LastLoginDate { get; set; }
-        public string ServiceUsed { get; set; }
-        public string UniqueUsername { get; set; }
         public string RefreshToken { get; set; }
         public DateTime RefreshTokenExpiryTime { get; set; }
     }

@@ -4,9 +4,8 @@ using System.Text;
 
 namespace Domain.Models
 {
-    public class UserSession
+    public class UserSession : BaseEntity
     {
-        public long Id { get; set; }
         public DateTime SessionExpireDate { get; set; }
         public string Browser { get; set; }
         public int UserId { get; set; }
