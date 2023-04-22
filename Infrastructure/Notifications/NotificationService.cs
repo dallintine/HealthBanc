@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Notifications
 {
-    public class NotificationService
+    public class NotificationService : INotificationService
     {
         private readonly DevApiSettings _devApiConfig;
         private readonly EmailSettings _emailSettings;

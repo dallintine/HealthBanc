@@ -1,5 +1,7 @@
 ﻿using Application.CommonDTO;
+using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
@@ -41,12 +43,17 @@ namespace Application.Identity
             private readonly ILogger<Handler> _logger;
             private readonly UserManager<ApplicationUser> _userManager;
             private readonly IWebHostEnvironment _environment;
+            private readonly IOTPService _otpService;
+            private readonly INotificationService _notificationService;
 
-            public Handler(ILogger<Handler> logger,UserManager<ApplicationUser> userManager, IWebHostEnvironment environment)
+            public Handler(ILogger<Handler> logger,UserManager<ApplicationUser> userManager, IWebHostEnvironment environment,IOTPService otpService
+                , INotificationService notificationService)
             {
                 _logger = logger;
                 _userManager = userManager;
                 _environment = environment;
+                _otpService = otpService;
+                _notificationService = notificationService;
             }
             public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)
             {

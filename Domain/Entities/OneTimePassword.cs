@@ -9,9 +9,10 @@ namespace Domain.Entities
 {
     public class OneTimePassword : BaseEntity
     {
+        public long ApplicationUserId { get; set; }
         public string Otp { get; set; }
         public DateTime ExpiresAt { get; set; }
         public string Action { get; set; }
-        public bool IsActive { get; set; }
+        public bool Status { get; set; }
     }
 }
