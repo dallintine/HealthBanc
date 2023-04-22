@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Persistence", "Persistence\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HealthBanc", "HealthBanc\HealthBanc.csproj", "{AC409410-0D97-41E4-9AF6-462AA2608D43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{6DD70A53-732A-490E-A6B3-FA7BAB44F234}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{6DD70A53-732A-490E-A6B3-FA7BAB44F234}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccess", "DataAccess\DataAccess.csproj", "{CE1A71C9-77A8-43D7-B937-14E5A1ADD477}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{6DD70A53-732A-490E-A6B3-FA7BAB44F234}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6DD70A53-732A-490E-A6B3-FA7BAB44F234}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6DD70A53-732A-490E-A6B3-FA7BAB44F234}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE1A71C9-77A8-43D7-B937-14E5A1ADD477}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE1A71C9-77A8-43D7-B937-14E5A1ADD477}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE1A71C9-77A8-43D7-B937-14E5A1ADD477}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE1A71C9-77A8-43D7-B937-14E5A1ADD477}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

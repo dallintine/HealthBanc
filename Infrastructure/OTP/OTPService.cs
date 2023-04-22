@@ -1,6 +1,7 @@
 ﻿using Application.CommonDTO;
 using Application.Core.ConfigSettings;
 using Application.Interfaces;
+using DataAccess;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.Extensions.Logging;
@@ -43,7 +44,7 @@ namespace Infrastructure.OTP
             return BaseResponse<string>.Success(otpCode);
         }
 
-        public async Task<BaseResponse> ValidateOTP(string userId, string encryptedOTP, string action)
+        public async Task<BaseResponse> ValidateOTP(long userId, string encryptedOTP, string action)
         {
             var decryptOTP = _encryptionService.DecryptString(encryptedOTP);
             if (!decryptOTP.Item1)
@@ -61,7 +62,7 @@ namespace Infrastructure.OTP
                 {
                     if (!otp.Status)
                     {
-                        if (otp.OTP == hashedOTP)
+                        if (otp.Otp == hashedOTP)
                         {
                             otp.Status = true;
                             _repositoryWrapper.OneTimePassword.Update(otp);

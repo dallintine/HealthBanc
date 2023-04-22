@@ -44,16 +44,16 @@ namespace Application.Identity
             private readonly UserManager<ApplicationUser> _userManager;
             private readonly IWebHostEnvironment _environment;
             private readonly IOTPService _otpService;
-            private readonly IEmailService _notificationService;
+            private readonly IEmailService _emailService;
 
             public Handler(ILogger<Handler> logger,UserManager<ApplicationUser> userManager, IWebHostEnvironment environment,IOTPService otpService
-                , IEmailService notificationService)
+                , IEmailService emailService)
             {
                 _logger = logger;
                 _userManager = userManager;
                 _environment = environment;
                 _otpService = otpService;
-                _notificationService = notificationService;
+                _emailService = emailService;
             }
             public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)
             {
@@ -82,11 +82,11 @@ namespace Application.Identity
                         var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\genericTemplate.html";
                         var htmlTemplate = File.ReadAllText(path);
                         var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{Content}}", message);
-                        await _notificationService.Email(new EmailNotificationModel
+                        await _emailService.EmailRequest(new EmailRequest
                         {
-                            Subject = "Confirm SMECollect Account",
-                            Body = emailTemplate,
-                            To = new List<string> { user.Email }
+                            Subject = "Confirm HealtBanc Account",
+                            Message = emailTemplate,
+                            Email = user.Email
                         });
                         return BaseResponse.Success();
                     }

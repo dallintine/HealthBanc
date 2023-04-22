@@ -10,6 +10,6 @@ namespace Application.Interfaces
     public interface IOTPService
     {
         Task<BaseResponse<string>> CreateOTP(long userId, string action);
-        Task<BaseResponse> ValidateOTP(string userId, string encryptedOTP, string action);
+        Task<BaseResponse> ValidateOTP(long userId, string encryptedOTP, string action);
     }
 }
