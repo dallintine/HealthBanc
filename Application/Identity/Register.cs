@@ -44,10 +44,10 @@ namespace Application.Identity
             private readonly UserManager<ApplicationUser> _userManager;
             private readonly IWebHostEnvironment _environment;
             private readonly IOTPService _otpService;
-            private readonly INotificationService _notificationService;
+            private readonly IEmailService _notificationService;
 
             public Handler(ILogger<Handler> logger,UserManager<ApplicationUser> userManager, IWebHostEnvironment environment,IOTPService otpService
-                , INotificationService notificationService)
+                , IEmailService notificationService)
             {
                 _logger = logger;
                 _userManager = userManager;
