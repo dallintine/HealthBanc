@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{5B786EF9-EE8D-436C-B3CF-DC189B4BB028}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Application", "Application\Application.csproj", "{5B786EF9-EE8D-436C-B3CF-DC189B4BB028}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{93089927-0C98-490D-B747-B5ACAC96A5C5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Domain", "Domain\Domain.csproj", "{93089927-0C98-490D-B747-B5ACAC96A5C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Persistence", "Persistence\Persistence.csproj", "{901EE716-C41E-4AA5-BE71-9F1C2BB8AA24}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Persistence", "Persistence\Persistence.csproj", "{901EE716-C41E-4AA5-BE71-9F1C2BB8AA24}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HealthBanc", "HealthBanc\HealthBanc.csproj", "{AC409410-0D97-41E4-9AF6-462AA2608D43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HealthBanc", "HealthBanc\HealthBanc.csproj", "{AC409410-0D97-41E4-9AF6-462AA2608D43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{6DD70A53-732A-490E-A6B3-FA7BAB44F234}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{AC409410-0D97-41E4-9AF6-462AA2608D43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC409410-0D97-41E4-9AF6-462AA2608D43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC409410-0D97-41E4-9AF6-462AA2608D43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DD70A53-732A-490E-A6B3-FA7BAB44F234}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DD70A53-732A-490E-A6B3-FA7BAB44F234}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DD70A53-732A-490E-A6B3-FA7BAB44F234}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DD70A53-732A-490E-A6B3-FA7BAB44F234}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
