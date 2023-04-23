@@ -13,6 +13,7 @@ namespace DataAccess
         IPlanRepository Plan { get; }
         IApplicationUserRepository ApplicationUser { get; }
         IOneTimePasswordRepository OneTimePassword { get; }
+        IUserSessionRepository UserSession { get; }
 
         Task<int> Save();
     }

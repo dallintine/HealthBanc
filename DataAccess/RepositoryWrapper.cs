@@ -16,6 +16,7 @@ namespace DataAccess
         private IProductRepository _product;
         private IPlanRepository _plan;
         private IOneTimePasswordRepository _oneTimePassword;
+        private IUserSessionRepository _userSession;
 
         public RepositoryWrapper(ApplicationDbContext context)
         {
@@ -24,6 +25,18 @@ namespace DataAccess
         public async Task<int> Save()
         {
             return await _context.SaveChangesAsync();
+        }
+
+        public IUserSessionRepository UserSession
+        {
+            get
+            {
+                if (_userSession == null)
+                {
+                    _userSession = new UserSessionRepository(_context);
+                }
+                return _userSession;
+            }
         }
 
         public IOneTimePasswordRepository OneTimePassword

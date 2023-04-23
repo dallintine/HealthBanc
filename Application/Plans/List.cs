@@ -10,11 +10,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Products
+namespace Application.Plans
 {
     public class List
     {
-        public class Query : IRequest<BaseResponse<List<ProductDTO>>> { }
+        public class Query : IRequest<BaseResponse<List<PlanDTO>>> { }
 
         public class Handler : IRequestHandler<Query, BaseResponse>
         {
@@ -29,9 +29,9 @@ namespace Application.Products
 
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
             {
-                var products = await _repositoryWrapper.Product.Query(x => !x.IsDeleted).ToListAsync();
-                var productDTOs = _mapper.Map<List<Product>, List<ProductDTO>>(products);
-                return BaseResponse<List<ProductDTO>>.Success(productDTOs);
+                var plans = await _repositoryWrapper.Plan.Query(x => !x.IsDeleted).ToListAsync();
+                var planDTOs = _mapper.Map<List<Plan>, List<PlanDTO>>(plans);
+                return BaseResponse<List<PlanDTO>>.Success(planDTOs);
             }
         }
     }

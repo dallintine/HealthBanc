@@ -21,5 +21,6 @@ namespace DataAccess.Interfaces
         void UpdateRange(List<T> entity);
         IQueryable<T> Query(Func<T, bool> predicate);
         IQueryable<T> QueryAll();
+        Task<List<T>> FetchAll();
     }
 }

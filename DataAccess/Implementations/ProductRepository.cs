@@ -15,6 +15,5 @@ namespace DataAccess.Implementations
         public ProductRepository(ApplicationDbContext context) : base(context)
         {
         }
-
     }
 }

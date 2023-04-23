@@ -26,6 +26,7 @@ namespace HealthBanc
             services.AddValidatorsFromAssemblyContaining<List>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
+            services.AddAutoMapper(typeof(MappingProfile));
 
 
             //---------------------------- CORS setting---------------------------------------------------------//
