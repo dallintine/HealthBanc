@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <title>HealthBanc</title>
+    <style>
+        @media only screen {
+            #table {
+                margin: 0 auto !important;
+                margin-top: 2% !important;
+                padding: 2% 3%;
+                width: 45% !important;
+            }
+
+            #fist_bump {
+                background-image: url("https://pharmhallstracct.blob.core.windows.net/email/gift.PNG");
+                height: 150px;
+                background-position: center;
+                background-size: contain;
+                background-repeat: no-repeat;
+                width: 100%;
+            }
+
+            #terms {
+                margin: 0 auto !important;
+                padding: 2% 3%;
+                width: 45% !important;
+            }
+
+            tr {
+                font-size: 18px !important;
+            }
+        }
+
+        @media only screen and (max-width: 1023px) {
+            #table {
+                margin: 0 auto !important;
+                margin-top: 2% !important;
+                padding: 2% 3%;
+                width: 50% !important;
+            }
+
+            #fist_bump {
+                background-image: url("https://pharmhallstracct.blob.core.windows.net/email/gift.PNG");
+                height: 150px;
+                background-position: center;
+                background-size: contain;
+                background-repeat: no-repeat;
+                width: 100%;
+            }
+
+            #terms {
+                margin: 0 auto !important;
+                padding: 2% 3%;
+                width: 50% !important;
+            }
+        }
+
+        @media only screen and (max-width: 767px) {
+            #table {
+                margin: 0 auto !important;
+                margin-top: 2% !important;
+                padding: 2% 3%;
+                width: 70% !important;
+            }
+
+            #terms {
+                margin: 0 auto !important;
+                padding: 2% 3%;
+                width: 70% !important;
+            }
+
+            tr {
+                font-size: 16px !important;
+            }
+        }
+
+        @media only screen and (max-width: 481px) {
+            #table {
+                margin: 0 auto !important;
+                margin-top: 2% !important;
+                padding: 2% 3%;
+                width: 95% !important;
+            }
+
+            #fist_bump {
+                background-image: url("https://pharmhallstracct.blob.core.windows.net/email/gift.PNG");
+                height: 100px !important;
+                background-position: center;
+                background-size: contain !important;
+                background-repeat: no-repeat;
+                width: 100%;
+            }
+
+            #terms {
+                margin: 0 auto !important;
+                padding: 2% 3%;
+                width: 95% !important;
+            }
+        }
+    </style>
+</head>
+<body style="
+      margin: 0;
+      border: 0;
+      font-family: Helvetica, 'Helvetica Neue', arial, verdana, sans-serif;
+    ">
+    <table id="table"
+           style="border-radius: 10px; border: 2px solid #ecf1fa"
+           cellpadding="0"
+           cellspacing="0">
+        <tr style="text-align: left">
+            <td style="padding: 2%">
+                <span style="
+              font-size: 25px;
+              font-weight: bold;
+              font-stretch: normal;
+              font-style: normal;
+              line-height: normal;
+              letter-spacing: 0.25px;
+              color: rgb(215, 30, 27);
+            ">Health</span><span style="
+              font-size: 25px;
+              font-weight: bold;
+              font-stretch: normal;
+              font-style: normal;
+              line-height: normal;
+              letter-spacing: 0.25px;
+              color: rgb(115, 116, 118);
+            ">Banc</span>
+            </td>
+        </tr>
+        <tr style="text-align: center; background-color: #ecf1fa">
+            <td style="padding: 2%">
+                <span style="
+              font-size: 20px;
+              font-weight: bold;
+              font-stretch: normal;
+              font-style: normal;
+              line-height: normal;
+              letter-spacing: 0.25px;
+              color: black;
+            ">HealthBanc</span>
+            </td>
+        </tr>
+        <tr id="fist_bump">
+            <td></td>
+        </tr>
+        <tr id="welcome_header" style="text-align: justify">
+            <td>
+                <h3>Hello from the HealthBanc! community.</h3>
+            </td>
+        </tr>
+        <tr style="text-align: justify; line-height: 1.6; letter-spacing: normal">
+            <td>
+                <p style="color: black">
+                    Hello {{Name}}
+                </p>
+            </td>
+            <td>
+                <p style="color: black">
+                    {{Content}}
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td style="
+            display: block;
+            margin: 1% auto;
+            width: 45%;
+            padding: 2% 2%;
+            text-align: center;
+            border-radius: 5px;
+            box-shadow: 0 17px 25px 0 rgba(0, 0, 0, 0.09);
+            border: solid 1px #068dd0;
+            font-weight: 900;
+            letter-spacing: normal;
+            color: #033364;
+          ">
+                <a style="text-decoration: none" href="BaseUrl/signup">Sign Up</a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p style="color: black">
+                    If you didn’t request this email, there’s nothing to worry about — you can safely ignore it
+                </p>
+            </td>
+        </tr>
+        <tr style="text-align: center; background-color: #ecf1fa">
+            <td>
+                <p>© 2023 HealthBanc. All Rights Reserved</p>
+            </td>
+        </tr>
+    </table>
+    <table id="terms" cellpadding="0" cellspacing="0">
+        <tr align="center"
+            style="
+          font-weight: normal;
+          font-style: normal;
+          letter-spacing: normal;
+          color: #545f7d;
+        ">
+            <td>
+                <a href="{{BaseUrl}}/terms" style="text-decoration: none">Help</a>
+            </td>
+            <td>
+                <a href="{{BaseUrl}}/privacyPolicy"
+                   style="text-decoration: none">Privacy</a>
+            </td>
+            <td>
+                <a href="{{BaseUrl}}/terms" style="text-decoration: none">Terms</a>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
