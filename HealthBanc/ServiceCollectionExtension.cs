@@ -126,6 +126,17 @@ namespace HealthBanc
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+            var paystackSettings = configuration.GetSection("PaystackSettings");
+            services.Configure<PaystackSettings>(paystackSettings);
+            var paystackSettingsValues = paystackSettings.Get<PaystackSettings>();
+
+            services.AddHttpClient("PaystackClientClient", client =>
+            {
+                client.BaseAddress = new Uri(paystackSettingsValues.BaseUrl);
+            })
+             .AddTransientHttpErrorPolicy(x =>
+             x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
             //----------------------------------------  Configuration Settings -------------------------------------------------//
 
             services.Configure<AppEndpointSettings>(configuration.GetSection("AppEndpointSettings"));
