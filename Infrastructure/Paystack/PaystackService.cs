@@ -36,7 +36,7 @@ namespace Infrastructure.Paystack
         public async Task<InitializePaymentResponse> InitlilizePayment(InitializePaymentRequest initializePayment)
         {
             initializePayment.Email = Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
-            initializePayment.Callback_url = $"{_appEndpointSettings}{_paystackSettings.CallbackUrl}";
+            initializePayment.Callback_url = $"{_appEndpointSettings.ApiBaseUrl}{_paystackSettings.CallbackUrl}";
             var payload = JsonConvert.SerializeObject(initializePayment);
             _logger.LogInformation($"Initilizing Paystack Payment [Payload : {payload} ] \n");
             using var request = new HttpRequestMessage(new HttpMethod("POST"), _paystackSettings.InitializePayment);

@@ -50,7 +50,7 @@ namespace Application.Payment
                     var subscription = await _repositoryWrapper.Subscription.Find(x => x.Id == item.SubscriptionId);
                     if(subscription != null)
                     {
-                        subscription.IsSuccessfully = true;
+                        subscription.IsSuccessful = true;
                     }
                     subList.Add(subscription);
                 }

@@ -17,6 +17,6 @@ namespace Domain.Entities
         public long PlanId { get; set; }
         public string Status { get; set; }
         public decimal Amount { get; set; }
-        public bool IsSuccessfully { get; set; }
+        public bool IsSuccessful { get; set; }
     }
 }

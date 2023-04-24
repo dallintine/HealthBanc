@@ -72,19 +72,20 @@ namespace Application.Payment
                 var totalAmount = planList.Sum(x => (x.Price - x.Discount));
 
                 var subscriptionList = new List<Subscription>();
-                foreach (var item in subscriptionList)
+                foreach (var item in planList)
                 {
                     subscriptionList.Add(new Subscription
                     {
-                        ApplicationUserId = 2,
-                        PlanId = item.PlanId,
+                        ApplicationUserId = long.Parse(_tokenService.GetClaims().FirstOrDefault(x => x.Type == "UserId")?.Value),
+                        PlanId = item.Id,
                         ProductId = item.ProductId,
-                        IsSuccessfully = false,
-                        Amount = item.Amount,
+                        IsSuccessful = false,
+                        Amount = item.Price,
                         Status = SubscriptionStatus.Pending.ToString()
                     });
                 };
                 _repositoryWrapper.Subscription.CreateRange(subscriptionList);
+                await _repositoryWrapper.Save();
 
                 var paymentResponse = new InitializePaymentResponse();
                 var initializePaymentrequest = new InitializePaymentRequest
@@ -99,11 +100,8 @@ namespace Application.Payment
                 paymentResponse = await _paystackService.InitlilizePayment(initializePaymentrequest);
                 if (!paymentResponse.Status)
                 {
-                    await _repositoryWrapper.Save();
                     return BaseResponse.Failure("06", "Could not initialise subscription process");
                 }
-                subscriptionList.ForEach(x => x.IsSuccessfully = true);
-                await _repositoryWrapper.Save();
                 return BaseResponse<InitializePaymentResponse>.Success(paymentResponse);               
             }
         }
