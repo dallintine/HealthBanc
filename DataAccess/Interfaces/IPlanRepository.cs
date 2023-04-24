@@ -9,5 +9,6 @@ namespace DataAccess.Interfaces
 {
     public interface IPlanRepository : IBaseRepository<Plan>
     {
+        Task<List<Plan>> FetchPlans(long productId);
     }
 }

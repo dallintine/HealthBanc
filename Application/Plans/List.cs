@@ -2,6 +2,7 @@
 using AutoMapper;
 using DataAccess;
 using Domain.Entities;
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,7 +15,18 @@ namespace Application.Plans
 {
     public class List
     {
-        public class Query : IRequest<BaseResponse<List<PlanDTO>>> { }
+        public class Query : IRequest<BaseResponse>
+        {
+            public long ProductId { get; set; }
+        }
+
+        public class QueryValidator : AbstractValidator<Query>
+        {
+            public QueryValidator()
+            {
+                RuleFor(x => x.ProductId).NotEmpty().NotNull().Must(x => x > 0).WithMessage("Invalid ProductId");
+            }
+        }
 
         public class Handler : IRequestHandler<Query, BaseResponse>
         {
@@ -29,7 +41,7 @@ namespace Application.Plans
 
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
             {
-                var plans = await _repositoryWrapper.Plan.Query(x => !x.IsDeleted).ToListAsync();
+                var plans = await _repositoryWrapper.Plan.FetchPlans(request.ProductId);
                 var planDTOs = _mapper.Map<List<Plan>, List<PlanDTO>>(plans);
                 return BaseResponse<List<PlanDTO>>.Success(planDTOs);
             }

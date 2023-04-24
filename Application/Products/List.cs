@@ -2,6 +2,7 @@
 using AutoMapper;
 using DataAccess;
 using Domain.Entities;
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,8 +15,7 @@ namespace Application.Products
 {
     public class List
     {
-        public class Query : IRequest<BaseResponse<List<ProductDTO>>> { }
-
+        public class Query : IRequest<BaseResponse> { }
         public class Handler : IRequestHandler<Query, BaseResponse>
         {
             private readonly IRepositoryWrapper _repositoryWrapper;
@@ -29,7 +29,7 @@ namespace Application.Products
 
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
             {
-                var products = await _repositoryWrapper.Product.Query(x => !x.IsDeleted).ToListAsync();
+                var products = await _repositoryWrapper.Product.FetchProducts();
                 var productDTOs = _mapper.Map<List<Product>, List<ProductDTO>>(products);
                 return BaseResponse<List<ProductDTO>>.Success(productDTOs);
             }

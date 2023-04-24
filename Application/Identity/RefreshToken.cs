@@ -15,7 +15,7 @@ namespace Application.Identity
 {
     public class RefreshToken
     {
-        public class Query : IRequest<BaseResponse<LoginResponse>>
+        public class Query : IRequest<BaseResponse>
         {
             public string Token { get; set; }
             public string RefreshToken { get; set; }

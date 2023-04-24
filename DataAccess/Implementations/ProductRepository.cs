@@ -15,5 +15,10 @@ namespace DataAccess.Implementations
         public ProductRepository(ApplicationDbContext context) : base(context)
         {
         }
+
+        public async Task<List<Product>> FetchProducts()
+        {
+            return await _context.Products.Where(x => !x.IsDeleted).ToListAsync();
+        }
     }
 }

@@ -8,6 +8,6 @@ namespace Application.Interfaces
 {
     public interface IHttpConnection
     {
-        Task<T> DevAPIRequest<T>(HttpRequestMessage request, HttpContent content, string client) where T : new();
+        Task<T> DevAPIRequest<T>(HttpRequestMessage request, HttpContent content, string client, Dictionary<string, string> headers = null) where T : new();
     }
 }

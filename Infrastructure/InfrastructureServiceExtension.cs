@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces;
 using Infrastructure.Notifications;
 using Infrastructure.OTP;
+using Infrastructure.Paystack;
 using Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -21,6 +22,8 @@ namespace Infrastructure
             services.AddScoped<ISMSService, SMSService>();
             services.AddScoped<IOTPService, OTPService>();
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IPaystackService, PaystackService>();
+
             return services;
         }
     }

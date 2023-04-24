@@ -1,6 +1,9 @@
 ﻿using Application.CommonDTO;
+using Application.Interfaces;
+using AutoMapper;
 using DataAccess;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -15,36 +18,44 @@ namespace Application.Payment
 {
     public class Initialize
     {
-        public class Query : IRequest<BaseResponse>
+        public class Command : IRequest<BaseResponse>
         {
             public List<long> PlanIds { get; set; }
         }
 
-        public class QueryValidator : AbstractValidator<Query>
+        public class CommandValidator : AbstractValidator<Command>
         {
-            public QueryValidator()
+            public CommandValidator()
             {
                 RuleFor(x => x.PlanIds).NotNull().NotEmpty();
             }
         }
 
-        public class Handler : IRequestHandler<Query, BaseResponse>
+        public class Handler : IRequestHandler<Command, BaseResponse>
         {
             private readonly ILogger<Handler> _logger;
             private readonly UserManager<ApplicationUser> _userManager;
             private readonly IRepositoryWrapper _repositoryWrapper;
+            private readonly IPaystackService _paystackService;
+            private readonly IMapper _mapper;
+            private readonly ITokenService _tokenService;
 
-            public Handler(ILogger<Handler> logger, UserManager<ApplicationUser> userManager,IRepositoryWrapper repositoryWrapper)
+            public Handler(ILogger<Handler> logger, UserManager<ApplicationUser> userManager,IRepositoryWrapper repositoryWrapper, IPaystackService paystackService,
+                IMapper mapper,ITokenService tokenService)
             {
                 _logger = logger;
                 _userManager = userManager;
                 _repositoryWrapper = repositoryWrapper;
+                _paystackService = paystackService;
+                _mapper = mapper;
+                _tokenService = tokenService;
             }
-            public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
+
+            public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)
             {
                 var planList = new List<Plan>();
 
-                // Chek that planm id is correct
+                // Chek that plan id is correct
                 foreach (var item in request.PlanIds)
                 {
                     var plan = await _repositoryWrapper.Plan.Find(x => x.Id == item);
@@ -59,6 +70,41 @@ namespace Application.Payment
                 }
                 // calculate total sum
                 var totalAmount = planList.Sum(x => (x.Price - x.Discount));
+
+                var subscriptionList = new List<Subscription>();
+                foreach (var item in subscriptionList)
+                {
+                    subscriptionList.Add(new Subscription
+                    {
+                        ApplicationUserId = 2,
+                        PlanId = item.PlanId,
+                        ProductId = item.ProductId,
+                        IsSuccessfully = false,
+                        Amount = item.Amount,
+                        Status = SubscriptionStatus.Pending.ToString()
+                    });
+                };
+                _repositoryWrapper.Subscription.CreateRange(subscriptionList);
+
+                var paymentResponse = new InitializePaymentResponse();
+                var initializePaymentrequest = new InitializePaymentRequest
+                {
+                    Amount = (totalAmount * 100).ToString(),
+                    Reference = Guid.NewGuid().ToString(),
+                    Metadata = new Metadata
+                    {
+                        Custom_fields = subscriptionList.Select(x => new CustomField { SubscriptionId = x.Id}).ToList()
+                    }
+                };
+                paymentResponse = await _paystackService.InitlilizePayment(initializePaymentrequest);
+                if (!paymentResponse.Status)
+                {
+                    await _repositoryWrapper.Save();
+                    return BaseResponse.Failure("06", "Could not initialise subscription process");
+                }
+                subscriptionList.ForEach(x => x.IsSuccessfully = true);
+                await _repositoryWrapper.Save();
+                return BaseResponse<InitializePaymentResponse>.Success(paymentResponse);               
             }
         }
     }

@@ -242,22 +242,39 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Subscription", b =>
                 {
-                    b.Property<long>("ApplicationUserId")
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    b.Property<long>("ProductId")
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"), 1L, 1);
+
+                    b.Property<long>("ApplicationUserId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSuccessfully")
+                        .HasColumnType("bit");
+
                     b.Property<long>("PlanId")
                         .HasColumnType("bigint");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("ApplicationUserId", "ProductId");
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("PlanId");
 
@@ -423,7 +440,7 @@ namespace Persistence.Migrations
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.Plan", "Plan")
-                        .WithMany()
+                        .WithMany("Subscriptions")
                         .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -493,6 +510,11 @@ namespace Persistence.Migrations
                 });
 
             modelBuilder.Entity("Domain.Entities.ApplicationUser", b =>
+                {
+                    b.Navigation("Subscriptions");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Plan", b =>
                 {
                     b.Navigation("Subscriptions");
                 });

@@ -19,7 +19,7 @@ namespace Infrastructure
             _logger = logger;
         }
 
-        public async Task<T> DevAPIRequest<T>(HttpRequestMessage request, HttpContent content, string client) where T : new()
+        public async Task<T> DevAPIRequest<T>(HttpRequestMessage request, HttpContent content, string client, Dictionary<string, string> headers = null) where T : new()
         {
             var httpClient = _httpClientFactory.CreateClient(client);
             request.Content = content;

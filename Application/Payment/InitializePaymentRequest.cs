@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Application.Payment
 {
-    public class InitializePaystackPayment
+    public class InitializePaymentRequest
     {
         [JsonProperty("email")]
         public string Email { get; set; }
@@ -18,12 +18,18 @@ namespace Application.Payment
         [JsonProperty("callback_url")]
         public string Callback_url { get; set; }
         [JsonProperty("metadata")]
-        public Metadata Metadata { get; set; } = new Metadata();
+        public Metadata Metadata { get; set; }
     }
 
     public class Metadata
     {
         [JsonProperty("custom_fields")]
-        public List<object> Custom_fields { get; set; }
+        public List<CustomField> Custom_fields { get; set; }
+    }
+
+    public class CustomField
+    {
+        [JsonProperty("SubscriptionId")]
+        public long SubscriptionId { get; set; }
     }
 }

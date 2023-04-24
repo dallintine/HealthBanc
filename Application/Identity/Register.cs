@@ -72,7 +72,7 @@ namespace Application.Identity
                     var result = await _userManager.CreateAsync(user, request.Password);
                     if (result.Succeeded)
                     {
-                        await _userManager.AddToRoleAsync(user, "role");
+                        await _userManager.AddToRoleAsync(user, Roles.User.ToString());
                         await _userManager.UpdateAsync(user);
 
                         var createOTP = await _otpService.CreateOTP(user.Id, OTPActions.ConfirmAccount.ToString());

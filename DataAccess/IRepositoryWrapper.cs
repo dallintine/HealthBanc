@@ -14,6 +14,7 @@ namespace DataAccess
         IApplicationUserRepository ApplicationUser { get; }
         IOneTimePasswordRepository OneTimePassword { get; }
         IUserSessionRepository UserSession { get; }
+        ISubscriptionRepository Subscription { get; }
 
         Task<int> Save();
     }

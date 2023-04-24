@@ -12,6 +12,7 @@ namespace Application.Core.ConfigSettings
         public string InitializePayment { get; set; }
         public string VerifyPayment { get; set; }
         public string SecretKey { get; set; }
+        public string CallbackUrl { get; set; }
 
     }
 }

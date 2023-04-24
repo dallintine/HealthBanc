@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace Application.Products
     {
         public MappingProfile()
         {
-            CreateMap<ProductDTO,ProductDTO>();
+            CreateMap<Product,ProductDTO>();
         }
     }
 }

@@ -46,15 +46,7 @@ namespace Infrastructure.OTP
 
         public async Task<BaseResponse> ValidateOTP(long userId, string encryptedOTP, string action)
         {
-            var decryptOTP = _encryptionService.DecryptString(encryptedOTP);
-            if (!decryptOTP.Item1)
-            {
-                _logger.LogInformation($"Validate OTP terminated  [Reason : OTP not valid] \n");
-                return BaseResponse.Failure("30",decryptOTP.Item2);
-            }
-
-            var decryptedOTP = decryptOTP.Item2;
-            var hashedOTP = _encryptionService.SHA512(decryptedOTP);
+            var hashedOTP = _encryptionService.SHA512(encryptedOTP);
             var otp = await _repositoryWrapper.OneTimePassword.GetUserLastOTP(userId, action);
             if (otp != null)
             {

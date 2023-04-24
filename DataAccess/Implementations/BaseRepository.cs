@@ -23,11 +23,6 @@ namespace DataAccess.Implementations
             return _context.Set<T>();
         }
 
-        public async Task<List<T>> FetchAll()
-        {
-            return await _context.Set<T>().ToListAsync();
-        }
-
         public async Task<int> Save()
         {
             return await _context.SaveChangesAsync();

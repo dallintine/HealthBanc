@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
-    public class Subscription
+    public class Subscription : BaseEntity
     {
         public ApplicationUser ApplicationUser { get; set; }
         public long ApplicationUserId { get; set; }
@@ -15,8 +15,8 @@ namespace Domain.Entities
         public long ProductId { get; set; }
         public Plan Plan { get; set; }
         public long PlanId { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-
+        public string Status { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsSuccessfully { get; set; }
     }
 }

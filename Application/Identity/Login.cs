@@ -15,7 +15,7 @@ namespace Application.Identity
 {
     public class Login
     {
-        public class Query : IRequest<BaseResponse<LoginResponse>>
+        public class Query : IRequest<BaseResponse>
         {
             public string Email { get; set; }
             public string Password { get; set; }

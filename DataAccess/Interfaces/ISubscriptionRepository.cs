@@ -7,8 +7,7 @@ using System.Threading.Tasks;
 
 namespace DataAccess.Interfaces
 {
-    public interface IProductRepository : IBaseRepository<Product>
+    public interface ISubscriptionRepository : IBaseRepository<Subscription>
     {
-        Task<List<Product>> FetchProducts();
     }
 }

@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Payment
+namespace Domain.Enums
 {
-    public class InitalizePaymentDTO
+    public enum Roles
     {
-        public List<long> PlanIds { get; set; }
+        Admin,
+        User
     }
 }

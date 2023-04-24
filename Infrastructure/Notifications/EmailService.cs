@@ -28,7 +28,7 @@ namespace Infrastructure.Notifications
         public async Task<bool> EmailRequest(EmailRequest emailRequest)
         {
             _logger.LogInformation($"Email Request [ Subject :  {emailRequest.Subject} | Email : {emailRequest.Email}]\n");
-            var httpClient = _httpClientFactory.CreateClient("EmailSender");
+            var httpClient = _httpClientFactory.CreateClient("EmailClient");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(emailRequest), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{_emailSettings.EmailNotificationNotify}", content);
             var apiResponse = await response.Content.ReadAsStringAsync();

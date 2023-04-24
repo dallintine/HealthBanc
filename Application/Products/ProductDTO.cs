@@ -9,6 +9,6 @@ namespace Application.Products
     public class ProductDTO
     {
         public long Id { get; set; }
-        public long Name { get; set; }        
+        public string Name { get; set; }        
     }
 }

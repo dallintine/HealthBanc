@@ -1,5 +1,6 @@
 ﻿using Application.CommonDTO;
 using Application.Interfaces;
+using DataAccess;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -36,12 +37,14 @@ namespace Application.Identity
             private readonly ILogger<Handler> _logger;
             private readonly UserManager<ApplicationUser> _userManager;
             private readonly ITokenService _tokenService;
+            private readonly IRepositoryWrapper _repositoryWrapper;
 
-            public Handler(ILogger<Handler> logger, UserManager<ApplicationUser> userManager,ITokenService tokenService)
+            public Handler(ILogger<Handler> logger, UserManager<ApplicationUser> userManager,ITokenService tokenService, IRepositoryWrapper repositoryWrapper)
             {
                 _logger = logger;
                 _userManager = userManager;
                 _tokenService = tokenService;
+                _repositoryWrapper = repositoryWrapper;
             }
 
             public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)
@@ -52,7 +55,7 @@ namespace Application.Identity
                 }
                 var userId = _tokenService.GetClaims().FirstOrDefault(x => x.Type == "UserId")?.Value;
                 _logger.LogInformation($"Change Password [UserID :{userId}]\n");
-                var user = await _userManager.FindByIdAsync(userId);
+                var user = await _repositoryWrapper.ApplicationUser.Find(x => x.Id == long.Parse(userId));
                 var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
                 if (result.Succeeded)
                 {

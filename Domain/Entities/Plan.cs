@@ -19,5 +19,6 @@ namespace Domain.Entities
         [ForeignKey("Product")]
         public long ProductId { get; set; }
         public Product Product { get; set; }
+        public List<Subscription> Subscriptions { get; set; }
     }
 }

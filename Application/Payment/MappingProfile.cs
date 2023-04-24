@@ -6,13 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Plans
+namespace Application.Payment
 {
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
-            CreateMap<Plan, PlanDTO>();
+            CreateMap<Plan, CustomField>();
         }
     }
 }

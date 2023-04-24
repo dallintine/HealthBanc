@@ -1,6 +1,7 @@
 ﻿using Application.CommonDTO;
 using Application.Identity;
 using Infrastructure.Helpers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthBanc.Controllers
@@ -17,76 +18,91 @@ namespace HealthBanc.Controllers
         /// <summary>
         /// Register User
         /// </summary>
-        /// <param name="command"></param>
+        /// <param name="registerUserCommand"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> RegisterUser(Register.Command command)
+        public async Task<IActionResult> RegisterUser(Register.Command registerUserCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
-            return HandleResult(await Mediator.Send(command));
+            return HandleResult(await Mediator.Send(registerUserCommand));
         }
 
         /// <summary>
         /// Signin User
         /// </summary>
-        /// <param name="query"></param>
+        /// <param name="loginQuery"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
-        public async Task<IActionResult> Login(Login.Query query)
+        public async Task<IActionResult> Login(Login.Query loginQuery)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
-            return HandleResult(await Mediator.Send(query));
+            return HandleResult(await Mediator.Send(loginQuery));
+        }
+
+        /// <summary>
+        /// SignOut User
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(404, Type = typeof(BaseResponse))]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
+        public async Task<IActionResult> Logout()
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(new Logout.Query()));
         }
 
         /// <summary>
         /// Change Password
         /// </summary>
-        /// <param name="command"></param>
+        /// <param name="changePasswordCommand"></param>
         /// <returns></returns>
         [HttpPatch("[action]")]
+        [Authorize]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ChangePassword(ChangePassword.Command command)
+        public async Task<IActionResult> ChangePassword(ChangePassword.Command changePasswordCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
-            return HandleResult(await Mediator.Send(command));
+            return HandleResult(await Mediator.Send(changePasswordCommand));
         }
 
         /// <summary>
         /// Confirm Account
         /// </summary>
-        /// <param name="command"></param>
+        /// <param name="confirmAccountCommand"></param>
         /// <returns></returns>
         [HttpPatch("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ConfirmAccount(ConfirmEmail.Command command)
+        public async Task<IActionResult> ConfirmAccount(ConfirmEmail.Command confirmAccountCommand)
         {
             _logger.LogInformation($"Confirm Account Request \n");
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
-            return HandleResult(await Mediator.Send(command));
+            return HandleResult(await Mediator.Send(confirmAccountCommand));
         }
 
         /// <summary>
         /// Refresh Token
         /// </summary>
-        /// <param name="query"></param>
+        /// <param name="refreshTokenQuery"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
-        public async Task<IActionResult> RefreshToken(RefreshToken.Query query)
+        public async Task<IActionResult> RefreshToken(RefreshToken.Query refreshTokenQuery)
         {
             _logger.LogInformation($"Refresh Token Request \n");
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
-            return HandleResult(await Mediator.Send(query));
+            return HandleResult(await Mediator.Send(refreshTokenQuery));
         }
     }
 }
