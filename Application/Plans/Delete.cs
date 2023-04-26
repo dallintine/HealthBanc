@@ -1,6 +1,5 @@
 ﻿using Application.CommonDTO;
 using DataAccess;
-using Domain.Entities;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -10,22 +9,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Products
+namespace Application.Plans
 {
-    public class Create
+    public class Delete
     {
         public class Command : IRequest<BaseResponse>
         {
-            public string Name { get; set; }
-            public string SettlementAccount { get; set; }
+            public long Id { get; set; }
         }
 
         public class CommandValidator : AbstractValidator<Command>
         {
             public CommandValidator()
             {
-                RuleFor(x => x.Name).NotEmpty().NotNull();
-                RuleFor(x => x.SettlementAccount).NotEmpty().NotNull().Length(10,10).Must(x => long.TryParse(x, out var val)).WithMessage("Invalid Settlement Account.");
+                RuleFor(x => x.Id).NotEmpty().NotNull();
             }
         }
 
@@ -39,16 +36,14 @@ namespace Application.Products
                 _logger = logger;
                 _repositoryWrapper = repositoryWrapper;
             }
+
             public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)
             {
-                var product = await _repositoryWrapper.Product.Find(x => x.Name.ToLower() == request.Name.ToLower() && !x.IsDeleted);
-                if (product != null) return BaseResponse.Failure("26", "Duplicate Record - Product with this name exist");
-                product = new Product
-                {
-                    Name = request.Name,
-                    SettlementAccount = request.SettlementAccount,
-                };
-                _repositoryWrapper.Product.Create(product);
+                _logger.LogInformation($"Delete Plan request processing [PlanId : {request.Id}]");
+                var plan = await _repositoryWrapper.Plan.Find(x => x.Id == request.Id && !x.IsDeleted);
+                if (plan is null) return BaseResponse.Failure("25", "No record found");
+                plan.IsDeleted = true;
+                _repositoryWrapper.Plan.Update(plan);
                 await _repositoryWrapper.Save();
                 return BaseResponse.Success();
             }

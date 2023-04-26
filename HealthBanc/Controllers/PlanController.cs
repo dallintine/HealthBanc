@@ -39,5 +39,36 @@ namespace HealthBanc.Controllers
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(createCommand));
         }
+
+        /// <summary>
+        /// Edit Plan
+        /// </summary>
+        /// <param name="editCommand"></param>
+        /// <returns></returns>
+        [HttpPatch("[action]")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(404, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> Edit(Edit.Command editCommand)
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(editCommand));
+        }
+
+
+        /// <summary>
+        /// Edit Plan
+        /// </summary>
+        /// <param name="deleteCommand"></param>
+        /// <returns></returns>
+        [HttpDelete("[action]")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(404, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> Delete([FromQuery] Delete.Command deleteCommand)
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(deleteCommand));
+        }
     }
 }

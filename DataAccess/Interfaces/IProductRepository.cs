@@ -10,5 +10,6 @@ namespace DataAccess.Interfaces
     public interface IProductRepository : IBaseRepository<Product>
     {
         Task<List<Product>> FetchProducts();
+        Task<Product> GetProductPlans(long productId);
     }
 }

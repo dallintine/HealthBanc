@@ -1,6 +1,7 @@
 using Domain.Entities;
 using HealthBanc;
 using Infrastructure;
+using Infrastructure.Middlewares;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
 using Persistence.Data;
@@ -65,6 +66,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.ConfigureExceptionHandler(app.Logger);
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("Server", "none");
+    context.Response.Headers.Add("X-Powered-By", "none");
+    context.Response.Headers.Add("Cache-control", "no-store");
+    context.Response.Headers.Add("Pragma", "no-cache");
+    context.Response.Headers.Add("Referrer-Policy", "no-referrer-when-downgrade");
+    context.Response.Headers.Add("X-Permitted-Cross-Domain-Policies", "none");
+    context.Response.Headers.Add("Content-Security-Policy", "unsafe-inline 'self'");
+    context.Response.Headers.Add("Feature-Policy", "accelerometer 'none'; camera 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none';");
+    await next();
+});
 
 app.UseHttpsRedirection();
 

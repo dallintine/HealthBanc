@@ -20,5 +20,10 @@ namespace DataAccess.Implementations
         {
             return await _context.Products.Where(x => !x.IsDeleted).ToListAsync();
         }
+
+        public async Task<Product> GetProductPlans( long productId)
+        {
+            return await _context.Products.Include(x => x.Plans).Where(x => x.Id == productId).SingleOrDefaultAsync();
+        }
     }
 }

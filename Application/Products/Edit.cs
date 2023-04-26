@@ -1,35 +1,33 @@
 ﻿using Application.CommonDTO;
 using DataAccess;
-using Domain.Entities;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Plans
+namespace Application.Products
 {
-    public class Create
+    public class Edit
     {
         public class Command : IRequest<BaseResponse>
         {
-            public long ProductId { get; set; }
+            public long Id { get; set; }
             public string Name { get; set; }
-            public decimal Price { get; set; }
-            public decimal Discount { get; set; }
-            public double MarkUpRate { get; set; }
+            public string SettlementAccount { get; set; }
         }
 
         public class CommandValidator : AbstractValidator<Command>
         {
             public CommandValidator()
             {
+                RuleFor(x => x.Id).NotEmpty().NotNull();
                 RuleFor(x => x.Name).NotEmpty().NotNull();
-                RuleFor(x => x.ProductId).NotEmpty().NotNull().Must(x => x > 0).WithMessage("Product Id cannot be zero");
-                RuleFor(x => x.Price).NotEmpty().NotNull().Must(x => x > 0).WithMessage("Price has to be greater than zero.");
+                RuleFor(x => x.SettlementAccount).NotEmpty().NotNull().Length(10, 10).Must(x => long.TryParse(x, out var val)).WithMessage("Invalid Settlement Account.");
             }
         }
 
@@ -43,19 +41,15 @@ namespace Application.Plans
                 _logger = logger;
                 _repositoryWrapper = repositoryWrapper;
             }
+
             public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)
             {
-                var plan = await _repositoryWrapper.Plan.Find(x => x.Name.ToLower() == request.Name.ToLower() && x.ProductId == request.ProductId && !x.IsDeleted);
-                if (plan != null) return BaseResponse.Failure("26", "Duplicate Record - Plan with this name exist");
-                plan = new Plan
-                {
-                    ProductId = request.ProductId,
-                    Name = request.Name,
-                    Discount = request.Discount,
-                    MarkUpRate = request.MarkUpRate,
-                    Price = request.Price,  
-                };
-                _repositoryWrapper.Plan.Create(plan);
+                _logger.LogInformation($"Edit Product request processing [Payload : {JsonConvert.SerializeObject(request)}]");
+                var product = await _repositoryWrapper.Product.Find(x => x.Id == request.Id);
+                if (product is null) return BaseResponse.Failure("25", "No record found");
+                product.Name = request.Name;
+                product.SettlementAccount = request.SettlementAccount;
+                _repositoryWrapper.Product.Update(product);
                 await _repositoryWrapper.Save();
                 return BaseResponse.Success();
             }

@@ -18,7 +18,7 @@ namespace Persistence.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Plan> Plans { get; set; }
         public DbSet<OneTimePassword> OneTimePasswords { get; set; }
-        //public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<ErrorLog> ErrorLogs { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
 
