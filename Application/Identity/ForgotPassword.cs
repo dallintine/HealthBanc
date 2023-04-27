@@ -38,15 +38,17 @@ namespace Application.Identity
             private readonly ILogger<Handler> _logger;
             private readonly ITokenService _tokenService;
             private readonly IWebHostEnvironment _environment;
+            private readonly IEmailService _emailService;
             private readonly AppEndpointSettings _appEndpointSettings;
 
             public Handler(UserManager<ApplicationUser> userManager, ILogger<Handler> logger, ITokenService tokenService, IOptions<AppEndpointSettings> appEndpointSettings,
-                IWebHostEnvironment environment)
+                IWebHostEnvironment environment,IEmailService emailService)
             {
                 _userManager = userManager;
                 _logger = logger;
                 _tokenService = tokenService;
                 _environment = environment;
+                _emailService = emailService;
                 _appEndpointSettings = appEndpointSettings.Value;
             }
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
@@ -57,9 +59,16 @@ namespace Application.Identity
                     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                     var email = user.UserName;
                     string passwordResetLink = $"{_appEndpointSettings.FrontendBaseUrl}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}";
-
-                    //await _emailSender.SendOneDrugStoreUserResetPasswordMail(forgotPassword.Username, "Reset your password", passwordResetLink);
-
+                    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\resetPassword.html";
+                    var htmlTemplate = File.ReadAllText(path);
+                    var resetPasswordTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl)
+                        .Replace("{{ResetLink}}", passwordResetLink);
+                    await _emailService.EmailRequest(new EmailRequest
+                    {
+                        Subject = "Forgot Password",
+                        Message = resetPasswordTemplate,
+                        Email = user.Email
+                    });
                     return BaseResponse.Success();
                 }
                 return BaseResponse.Failure("25", "Username Does Not Exist");

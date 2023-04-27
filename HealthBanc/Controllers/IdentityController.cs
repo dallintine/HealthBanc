@@ -3,6 +3,7 @@ using Application.Identity;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace HealthBanc.Controllers
 {
@@ -71,6 +72,34 @@ namespace HealthBanc.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(changePasswordCommand));
+        }
+
+        /// <summary>
+        /// Reset Password
+        /// </summary>
+        /// <param name="resetPassword"></param>
+        /// <returns></returns>
+        [HttpPatch("[action]")]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> ResetPassword([Required] string email, [Required] string emailToken , ResetPasswordRequest  resetPassword)
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(new ResetPassword.Command { Email = email, EmailToken = emailToken, Password = resetPassword.Password}));
+        }
+
+        /// <summary>
+        /// Reset Password
+        /// </summary>
+        /// <param name="forgotPasswordQuery"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> ForgetPassword(ForgotPassword.Query forgotPasswordQuery)
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(forgotPasswordQuery));
         }
 
         /// <summary>
