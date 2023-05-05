@@ -78,10 +78,9 @@ namespace Application.Payment
                     {
                         ApplicationUserId = long.Parse(_tokenService.GetClaims().FirstOrDefault(x => x.Type == "UserId")?.Value),
                         PlanId = item.Id,
-                        ProductId = item.ProductId,
                         IsSuccessful = false,
                         Amount = item.Price,
-                        Status = SubscriptionStatus.Pending.ToString()
+                        Status = SubscriptionStatus.Terminated.ToString()
                     });
                 };
                 _repositoryWrapper.Subscription.CreateRange(subscriptionList);

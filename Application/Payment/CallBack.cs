@@ -2,6 +2,7 @@
 using Application.Interfaces;
 using DataAccess;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -50,6 +51,7 @@ namespace Application.Payment
                     var subscription = await _repositoryWrapper.Subscription.Find(x => x.Id == item.SubscriptionId);
                     if(subscription != null)
                     {
+                        subscription.Status = SubscriptionStatus.Pending.ToString();
                         subscription.IsSuccessful = true;
                     }
                     subList.Add(subscription);

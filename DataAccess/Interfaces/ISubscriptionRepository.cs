@@ -9,5 +9,6 @@ namespace DataAccess.Interfaces
 {
     public interface ISubscriptionRepository : IBaseRepository<Subscription>
     {
+        IQueryable<Subscription> QuerySubscriptions_Plans();
     }
 }

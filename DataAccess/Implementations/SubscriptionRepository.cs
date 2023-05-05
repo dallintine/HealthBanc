@@ -1,5 +1,6 @@
 ﻿using DataAccess.Interfaces;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Persistence.Data;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,11 @@ namespace DataAccess.Implementations
     {
         public SubscriptionRepository(ApplicationDbContext context) : base(context)
         {
+        }
+
+        public IQueryable<Subscription> QuerySubscriptions_Plans()
+        {
+            return _context.Subscriptions.Include(x => x.ApplicationUser).Include(x => x.Product).Include(x => x.Plan).AsQueryable();
         }
     }
 }
