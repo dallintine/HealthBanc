@@ -12,7 +12,7 @@ namespace Application.Interfaces
 {
     public interface ITokenService
     {
-        Task<BaseResponse> ClearSession(long userId);
+        Task<BaseResponse> ClearSession();
         Task<BaseResponse> GetAuthenticationResultForUserAsync(ApplicationUser user);
         List<Claim> GetClaims();
         ClaimsPrincipal GetPrincipalFromExpiredToken(string token);

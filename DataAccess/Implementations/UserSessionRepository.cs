@@ -20,5 +20,10 @@ namespace DataAccess.Implementations
         {
             return await _context.UserSessions.Where(x => x.UserId == userId && x.DeviceIp == ip).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
         }
+
+        public async Task<UserSession> GetByIp_Device(string ip, string device)
+        {
+            return await _context.UserSessions.Where(x => x.DeviceIp == ip && x.Browser == device).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
+        }
     }
 }

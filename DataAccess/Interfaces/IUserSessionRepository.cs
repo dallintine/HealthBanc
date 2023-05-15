@@ -9,6 +9,7 @@ namespace DataAccess.Interfaces
 {
     public interface IUserSessionRepository : IBaseRepository<UserSession>
     {
+        Task<UserSession> GetByIp_Device(string ip, string device);
         Task<UserSession> GetByUserId_Device(long userId, string ip);
     }
 }

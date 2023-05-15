@@ -26,8 +26,7 @@ namespace Application.Identity
             }
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
             {
-                var userId = _tokenService.GetClaims().FirstOrDefault(x => x.Type == "UserId")?.Value;
-                await _tokenService.ClearSession(long.Parse(userId));
+                await _tokenService.ClearSession();
                 return BaseResponse.Success();
             }
         }

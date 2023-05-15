@@ -98,9 +98,9 @@ namespace Infrastructure.Security
             await SaveSession(Device, IpAddress, user.Id, logInResponse.ExpiryTime);
             return BaseResponse<LoginResponse>.Success(logInResponse);
         }
-        public async Task<BaseResponse> ClearSession(long userId)
+        public async Task<BaseResponse> ClearSession()
         {
-            var session = await _repositoryWrapper.UserSession.GetByUserId_Device(userId, IpAddress);
+            var session = await _repositoryWrapper.UserSession.GetByIp_Device(IpAddress, Device);
             if (session != null)
             {
                 _repositoryWrapper.UserSession.Delete(session);

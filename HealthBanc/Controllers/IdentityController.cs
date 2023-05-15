@@ -49,7 +49,7 @@ namespace HealthBanc.Controllers
         /// SignOut User
         /// </summary>
         /// <returns></returns>
-        [HttpPost("[action]")]
+        [HttpGet("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
@@ -82,7 +82,7 @@ namespace HealthBanc.Controllers
         [HttpPatch("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ResetPassword([Required] string email, [Required] string emailToken , ResetPasswordRequest  resetPassword)
+        public async Task<IActionResult> ResetPassword([Required] string email, [Required] string emailToken ,[FromBody] ResetPasswordRequest  resetPassword)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(new ResetPassword.Command { Email = email, EmailToken = emailToken, Password = resetPassword.Password}));
@@ -93,10 +93,10 @@ namespace HealthBanc.Controllers
         /// </summary>
         /// <param name="forgotPasswordQuery"></param>
         /// <returns></returns>
-        [HttpGet("[action]")]
+        [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ForgetPassword(ForgotPassword.Query forgotPasswordQuery)
+        public async Task<IActionResult> ForgotPassword(ForgotPassword.Query forgotPasswordQuery)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(forgotPasswordQuery));
