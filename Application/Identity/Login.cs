@@ -50,19 +50,23 @@ namespace Application.Identity
                 if (user is null)
                 {
                     _logger.LogInformation($"Login Terminated [Reason : Email not found | Email :  {request.Email}]");
-                    return BaseResponse.Failure("12", "Login failed - Email or password do not match for an existing user");
+                    return BaseResponse.Failure("12", "Email or password do not match for an existing user");
                 }
                 var passwordCheck = await _signInManager.PasswordSignInAsync(user, request.Password, false, true);
                 if (passwordCheck.IsLockedOut)
                 {
                     _logger.LogInformation($"Login terminated [Reason : USer is locked out | Email : {request.Email}] \n");
-                    return BaseResponse.Failure("12", "Login failed - Your account is locked please try again with correct email and/or password in 60 minutes");
+                    return BaseResponse.Failure("12", " Your account is locked please try again with correct email and/or password in 60 minutes");
                 }
                 if (!passwordCheck.Succeeded)
                 {
                     _logger.LogInformation($"Login terminated [Reason : Password Check Failed | Email : {request.Email}] \n");
-                    return BaseResponse.Failure("12", "Login failed - Email or password do not match for an existing user");
-                }              
+                    return BaseResponse.Failure("12", "Email or password do not match for an existing user");
+                }
+                if (!user.EmailConfirmed)
+                {
+                    return BaseResponse.Failure("06", "Kindly enter OTP");
+                }
 
                 return await _tokenService.GetAuthenticationResultForUserAsync(user);
             }

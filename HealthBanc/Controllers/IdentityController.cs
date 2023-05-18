@@ -103,6 +103,20 @@ namespace HealthBanc.Controllers
         }
 
         /// <summary>
+        /// Resend Confirmation Email
+        /// </summary>
+        /// <param name="resendConfirmationOTP"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> ResendConfirmationEmail(ResendConfirmationOTP.Query resendConfirmationOTP)
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(resendConfirmationOTP));
+        }
+
+        /// <summary>
         /// Confirm Account
         /// </summary>
         /// <param name="confirmAccountCommand"></param>

@@ -43,7 +43,7 @@ namespace Application.Products
             {
                 var product = await _repositoryWrapper.Product.Find(x => x.Name.ToLower() == request.Name.ToLower() && !x.IsDeleted);
                 if (product != null) return BaseResponse.Failure("26", "Duplicate Record - Product with this name exist");
-                product = new Product
+                product = new Vendor
                 {
                     Name = request.Name,
                     SettlementAccount = request.SettlementAccount,

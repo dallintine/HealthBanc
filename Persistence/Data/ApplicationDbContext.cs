@@ -14,14 +14,14 @@ namespace Persistence.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
         }
-
-        public DbSet<Product> Products { get; set; }
+        public DbSet<Service> Services { get; set; }
+        public DbSet<Vendor> Vendors { get; set; }
         public DbSet<Plan> Plans { get; set; }
         public DbSet<OneTimePassword> OneTimePasswords { get; set; }
         public DbSet<ErrorLog> ErrorLogs { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
-
+        public DbSet<PlanDescription> PlanDescriptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

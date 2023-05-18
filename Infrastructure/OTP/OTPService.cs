@@ -31,7 +31,7 @@ namespace Infrastructure.OTP
 
         public async Task<BaseResponse<string>> CreateOTP(long userId, string action)
         {
-            var otpCode = new Random().Next(1000, 9999).ToString();
+            var otpCode = new Random().Next(100000, 999999).ToString();
             var userOTP = new OneTimePassword
             {
                 Action = action,

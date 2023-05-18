@@ -30,7 +30,7 @@ namespace Application.Products
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
             {
                 var products = await _repositoryWrapper.Product.FetchProducts();
-                var productDTOs = _mapper.Map<List<Product>, List<ProductDTO>>(products);
+                var productDTOs = _mapper.Map<List<Vendor>, List<ProductDTO>>(products);
                 return BaseResponse<List<ProductDTO>>.Success(productDTOs);
             }
         }

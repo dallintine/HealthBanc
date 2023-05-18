@@ -17,8 +17,11 @@ namespace Domain.Entities
         public decimal Discount { get; set; }
         public double MarkUpRate { get; set; }
         [ForeignKey("Product")]
-        public long ProductId { get; set; }
-        public Product Product { get; set; }
+        public long VendorId { get; set; }
+        public Vendor Vendor { get; set; }
+        public string ImageURL { get; set; }
+        public string Tag { get; set; }
         public List<Subscription> Subscriptions { get; set; }
+        public List<PlanDescription> PlanDescriptions { get; set; }
     }
 }

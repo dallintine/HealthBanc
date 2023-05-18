@@ -18,6 +18,9 @@ namespace DataAccess
         private IOneTimePasswordRepository _oneTimePassword;
         private IUserSessionRepository _userSession;
         private ISubscriptionRepository _subscription;
+        private IServiceRepository _service;
+        private IPlanDescriptionRepository _planDescription;
+
 
         public RepositoryWrapper(ApplicationDbContext context)
         {
@@ -26,6 +29,30 @@ namespace DataAccess
         public async Task<int> Save()
         {
             return await _context.SaveChangesAsync();
+        }
+
+        public IPlanDescriptionRepository PlanDescription
+        {
+            get
+            {
+                if (_planDescription == null)
+                {
+                    _planDescription = new PlanDescriptionRepository(_context);
+                }
+                return _planDescription;
+            }
+        }
+
+        public IServiceRepository Service
+        {
+            get
+            {
+                if (_service == null)
+                {
+                    _service = new ServiceRepository(_context);
+                }
+                return _service;
+            }
         }
 
         public ISubscriptionRepository Subscription
@@ -82,7 +109,7 @@ namespace DataAccess
             {
                 if (_product == null)
                 {
-                    _product = new ProductRepository(_context);
+                    _product = new VendorRepository(_context);
                 }
                 return _product;
             }

@@ -12,7 +12,7 @@ namespace Application.Products
     {
         public MappingProfile()
         {
-            CreateMap<Product,ProductDTO>();
+            CreateMap<Vendor,ProductDTO>();
         }
     }
 }

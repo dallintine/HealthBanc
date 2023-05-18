@@ -69,7 +69,7 @@ namespace Application.Identity
                 user.PhoneNumberConfirmed = true;
                 await _userManager.UpdateAsync(user);
                 await _repositoryWrapper.Save();
-                return await _tokenService.GetAuthenticationResultForUserAsync(user);
+                return BaseResponse.Success("Account successfully created. Login to continue");
             }
         }
     }

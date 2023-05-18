@@ -2,6 +2,7 @@
 using Application.Core.ConfigSettings;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
@@ -13,11 +14,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace Application.Identity
 {
-    public class ForgotPassword
+    public class ResendConfirmationOTP
     {
         public class Query : IRequest<BaseResponse>
         {
@@ -36,40 +36,42 @@ namespace Application.Identity
         {
             private readonly UserManager<ApplicationUser> _userManager;
             private readonly ILogger<Handler> _logger;
-            private readonly ITokenService _tokenService;
             private readonly IWebHostEnvironment _environment;
             private readonly IEmailService _emailService;
-            private readonly AppEndpointSettings _appEndpointSettings;
+            private readonly IOTPService _otpService;
 
-            public Handler(UserManager<ApplicationUser> userManager, ILogger<Handler> logger, ITokenService tokenService, IOptions<AppEndpointSettings> appEndpointSettings,
-                IWebHostEnvironment environment,IEmailService emailService)
+            public Handler(UserManager<ApplicationUser> userManager, ILogger<Handler> logger,
+                IWebHostEnvironment environment, IEmailService emailService, IOTPService otpService)
             {
                 _userManager = userManager;
                 _logger = logger;
-                _tokenService = tokenService;
                 _environment = environment;
                 _emailService = emailService;
-                _appEndpointSettings = appEndpointSettings.Value;
+                _otpService = otpService;
             }
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
             {
                 var user = await _userManager.FindByNameAsync(request.Email);
                 if (user != null)
                 {
-                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                    var email = user.UserName;
-                    string passwordResetLink = $"{_appEndpointSettings.FrontendBaseUrl}{_appEndpointSettings.ResetPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}";
-                    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\resetPassword.html";
+                    if (user.EmailConfirmed)
+                    {
+                        return BaseResponse.Success("Account successfully created. Login to continue");
+                    }
+                    var createOTP = await _otpService.CreateOTP(user.Id, OTPActions.ConfirmAccount.ToString());
+                    var otpCode = createOTP.Data;
+
+                    var message = $"This is your OTP number {otpCode}. Use it to confirm your account";
+                    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\genericTemplate.html";
                     var htmlTemplate = File.ReadAllText(path);
-                    var resetPasswordTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl)
-                        .Replace("{{ResetLink}}", passwordResetLink);
+                    var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{Content}}", message);
                     await _emailService.EmailRequest(new EmailRequest
                     {
-                        Subject = "Forgot Password",
-                        Message = resetPasswordTemplate,
+                        Subject = "Confirm HealtBanc Account",
+                        Message = emailTemplate,
                         Email = user.Email
                     });
-                    return BaseResponse.Success();
+                    return BaseResponse.Success("OTP sent successfully");
                 }
                 return BaseResponse.Failure("25", "Username Does Not Exist");
             }

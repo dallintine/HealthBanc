@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 
 namespace DataAccess.Interfaces
 {
-    public interface IProductRepository : IBaseRepository<Vendor>
+    public interface IPlanDescriptionRepository : IBaseRepository<PlanDescription>
     {
-        Task<List<Vendor>> FetchProducts();
-        Task<Vendor> GetProductPlans(long productId);
     }
 }

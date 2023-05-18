@@ -11,10 +11,10 @@ namespace Domain.Entities
     {
         public ApplicationUser ApplicationUser { get; set; }
         public long ApplicationUserId { get; set; }
-        public Product Product { get; set; }
-        public long ProductId { get; set; }
         public Plan Plan { get; set; }
         public long PlanId { get; set; }
+        //public Vendor Vendor { get; set; }
+        //public long VendorId { get; set; }
         public string Status { get; set; }
         public decimal Amount { get; set; }
         public bool IsSuccessful { get; set; }
