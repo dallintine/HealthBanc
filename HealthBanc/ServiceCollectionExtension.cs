@@ -141,6 +141,7 @@ namespace HealthBanc
 
             services.Configure<AppEndpointSettings>(configuration.GetSection("AppEndpointSettings"));
             services.Configure<SMSSettings>(configuration.GetSection("SMSSettings"));
+            services.Configure<AzureBlobStorageSettings>(configuration.GetSection("AzureBlobStorageSettings"));
 
         }
     }

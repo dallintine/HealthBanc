@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Application.CommonDTO;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,5 +9,7 @@ namespace Application.Interfaces
 {
     public interface IImageService
     {
+        Task<BaseResponse> UploadPics(UploadImageDTO image);
+        BaseResponse VerifyImage(UploadImageDTO image);
     }
 }
