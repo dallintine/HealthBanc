@@ -14,6 +14,8 @@ namespace Persistence.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
         }
+
+        public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<Plan> Plans { get; set; }

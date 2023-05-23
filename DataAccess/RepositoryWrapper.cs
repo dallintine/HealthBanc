@@ -20,6 +20,7 @@ namespace DataAccess
         private ISubscriptionRepository _subscription;
         private IServiceRepository _service;
         private IPlanDescriptionRepository _planDescription;
+        private ITransactionRepository _transaction;
 
 
         public RepositoryWrapper(ApplicationDbContext context)
@@ -29,6 +30,18 @@ namespace DataAccess
         public async Task<int> Save()
         {
             return await _context.SaveChangesAsync();
+        }
+
+        public ITransactionRepository Transaction
+        {
+            get
+            {
+                if (_transaction == null)
+                {
+                    _transaction = new TransactionRepository(_context);
+                }
+                return _transaction;
+            }
         }
 
         public IPlanDescriptionRepository PlanDescription

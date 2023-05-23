@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Persistence.Migrations
 {
-    public partial class InitialDB : Migration
+    public partial class InitalModel : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -61,6 +61,27 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ErrorLogs",
+                schema: "HealthBanc",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ErrorCode = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ErrorMessage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StackTrace = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Path = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Source = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ErrorLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OneTimePasswords",
                 schema: "HealthBanc",
                 columns: table => new
@@ -73,7 +94,7 @@ namespace Persistence.Migrations
                     Action = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Status = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -82,21 +103,45 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Products",
+                name: "Services",
                 schema: "HealthBanc",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SettlementAccount = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Tag = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ServiceDetailURL = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    BackgroundColor = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ActiveColor = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.PrimaryKey("PK_Services", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Transactions",
+                schema: "HealthBanc",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApplicationUserId = table.Column<long>(type: "bigint", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Transactions", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -111,7 +156,7 @@ namespace Persistence.Migrations
                     UserId = table.Column<long>(type: "bigint", nullable: false),
                     DeviceIp = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -237,6 +282,32 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Vendors",
+                schema: "HealthBanc",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SettlementAccount = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ServiceId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Vendors", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Vendors_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalSchema: "HealthBanc",
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Plans",
                 schema: "HealthBanc",
                 columns: table => new
@@ -247,19 +318,50 @@ namespace Persistence.Migrations
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Discount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     MarkUpRate = table.Column<double>(type: "float", nullable: false),
-                    ProductId = table.Column<long>(type: "bigint", nullable: false),
+                    VendorId = table.Column<long>(type: "bigint", nullable: false),
+                    ServiceId = table.Column<long>(type: "bigint", nullable: false),
+                    ImageURL = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Tag = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExternalLinkName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExternalLinkURL = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    OptionalFee = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Plans", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Plans_Products_ProductId",
-                        column: x => x.ProductId,
+                        name: "FK_Plans_Vendors_VendorId",
+                        column: x => x.VendorId,
                         principalSchema: "HealthBanc",
-                        principalTable: "Products",
+                        principalTable: "Vendors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PlanDescriptions",
+                schema: "HealthBanc",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PlanId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlanDescriptions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PlanDescriptions_Plans_PlanId",
+                        column: x => x.PlanId,
+                        principalSchema: "HealthBanc",
+                        principalTable: "Plans",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -272,13 +374,17 @@ namespace Persistence.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ApplicationUserId = table.Column<long>(type: "bigint", nullable: false),
-                    ProductId = table.Column<long>(type: "bigint", nullable: false),
                     PlanId = table.Column<long>(type: "bigint", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    VendorId = table.Column<long>(type: "bigint", nullable: false),
+                    ServiceId = table.Column<long>(type: "bigint", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    IsSuccessfully = table.Column<bool>(type: "bit", nullable: false),
+                    OptionalFee = table.Column<bool>(type: "bit", nullable: false),
+                    TransactionId = table.Column<long>(type: "bigint", nullable: false),
+                    IsSuccessful = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -299,12 +405,12 @@ namespace Persistence.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Subscriptions_Products_ProductId",
-                        column: x => x.ProductId,
+                        name: "FK_Subscriptions_Transactions_TransactionId",
+                        column: x => x.TransactionId,
                         principalSchema: "HealthBanc",
-                        principalTable: "Products",
+                        principalTable: "Transactions",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -354,10 +460,16 @@ namespace Persistence.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Plans_ProductId",
+                name: "IX_PlanDescriptions_PlanId",
+                schema: "HealthBanc",
+                table: "PlanDescriptions",
+                column: "PlanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Plans_VendorId",
                 schema: "HealthBanc",
                 table: "Plans",
-                column: "ProductId");
+                column: "VendorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Subscriptions_ApplicationUserId",
@@ -372,10 +484,16 @@ namespace Persistence.Migrations
                 column: "PlanId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Subscriptions_ProductId",
+                name: "IX_Subscriptions_TransactionId",
                 schema: "HealthBanc",
                 table: "Subscriptions",
-                column: "ProductId");
+                column: "TransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Vendors_ServiceId",
+                schema: "HealthBanc",
+                table: "Vendors",
+                column: "ServiceId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -401,7 +519,15 @@ namespace Persistence.Migrations
                 schema: "HealthBanc");
 
             migrationBuilder.DropTable(
+                name: "ErrorLogs",
+                schema: "HealthBanc");
+
+            migrationBuilder.DropTable(
                 name: "OneTimePasswords",
+                schema: "HealthBanc");
+
+            migrationBuilder.DropTable(
+                name: "PlanDescriptions",
                 schema: "HealthBanc");
 
             migrationBuilder.DropTable(
@@ -425,7 +551,15 @@ namespace Persistence.Migrations
                 schema: "HealthBanc");
 
             migrationBuilder.DropTable(
-                name: "Products",
+                name: "Transactions",
+                schema: "HealthBanc");
+
+            migrationBuilder.DropTable(
+                name: "Vendors",
+                schema: "HealthBanc");
+
+            migrationBuilder.DropTable(
+                name: "Services",
                 schema: "HealthBanc");
         }
     }

@@ -37,11 +37,12 @@ namespace HealthBanc.Controllers
         /// </summary>
         /// <param name="callbackCommand"></param>
         /// <returns></returns>
-        [HttpGet("[action]")]
+        [HttpPatch("[action]")]
+        [Authorize]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> CallBack([FromQuery]CallBack.Command callbackCommand)
+        public async Task<IActionResult> CallBack(CallBack.Command callbackCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(callbackCommand));

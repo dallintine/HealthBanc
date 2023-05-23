@@ -20,8 +20,6 @@ namespace Application.Payment
     {
         public class Command : IRequest<BaseResponse>
         {
-            [JsonProperty("trxref")]
-            public string Trxref { get; set; }
             [JsonProperty("reference")]
             public string Reference { get; set; }
         }
@@ -45,20 +43,22 @@ namespace Application.Payment
             {
                 var validatePayment = await _paystackService.VerifyPayment(request.Reference);
                 if (!validatePayment.Status) return BaseResponse.Failure("06", validatePayment.Message);
-                var subList = new List<Subscription>();
-                foreach(var item in validatePayment.Data.Metadata.Custom_fields)
+
+                var transaction = await _repositoryWrapper.Transaction.FindByReference(request.Reference);
+                if(transaction != null)
                 {
-                    var subscription = await _repositoryWrapper.Subscription.Find(x => x.Id == item.SubscriptionId);
-                    if(subscription != null)
+                    transaction.IsCompleted = true;
+                    foreach (var subscription in transaction.Subscriptions)
                     {
                         subscription.Status = SubscriptionStatus.Pending.ToString();
                         subscription.IsSuccessful = true;
+                        subscription.UpdatedAt = DateTime.Now;
                     }
-                    subList.Add(subscription);
+                    _repositoryWrapper.Transaction.Update(transaction);
+                    await _repositoryWrapper.Save();
+                    return BaseResponse.Success();
                 }
-                _repositoryWrapper.Subscription.UpdateRange(subList);
-                await _repositoryWrapper.Save();
-                return BaseResponse<VerifyPaymentResponse>.Success(validatePayment);
+                return BaseResponse.Failure("25", "Transaction was not found");
             }
         }
     }

@@ -17,14 +17,14 @@ namespace Application.Plans
     {
         public class Query : IRequest<BaseResponse>
         {
-            public long ProductId { get; set; }
+            public long ServiceId { get; set; }
         }
 
         public class QueryValidator : AbstractValidator<Query>
         {
             public QueryValidator()
             {
-                RuleFor(x => x.ProductId).NotEmpty().NotNull().Must(x => x > 0).WithMessage("Invalid ProductId");
+                RuleFor(x => x.ServiceId).NotEmpty().NotNull().Must(x => x > 0).WithMessage("Invalid ProductId");
             }
         }
 
@@ -41,8 +41,21 @@ namespace Application.Plans
 
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
             {
-                var plans = await _repositoryWrapper.Plan.FetchPlans(request.ProductId);
-                var planDTOs = _mapper.Map<List<Plan>, List<PlanDTO>>(plans);
+                var plans =  _repositoryWrapper.Plan.QueryPlans(request.ServiceId);
+                var planDTOs = await plans.Select(x => new PlanDTO
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Price = x.Price,
+                    Discount = x.Discount,
+                    VendorName = x.Vendor.Name,
+                    ImageURL = x.ImageURL,
+                    Tag = x.Tag,
+                    ExternalLinkName = x.ExternalLinkName,
+                    ExternalLinkURL = x.ExternalLinkURL,
+                    OptionalFee = x.OptionalFee,
+                    PlanDescriptionDTOs = x.PlanDescriptions.Where(x => x.IsDeleted == false).Select(y => new PlanDescriptionDTO { Id = y.Id, Name = y.Name }).ToList()
+                }).ToListAsync(cancellationToken: cancellationToken);
                 return BaseResponse<List<PlanDTO>>.Success(planDTOs);
             }
         }

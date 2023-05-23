@@ -17,6 +17,7 @@ namespace DataAccess
         ISubscriptionRepository Subscription { get; }
         IServiceRepository Service { get; }
         IPlanDescriptionRepository PlanDescription { get; }
+        ITransactionRepository Transaction { get; }
 
         Task<int> Save();
     }

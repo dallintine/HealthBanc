@@ -9,5 +9,6 @@ namespace DataAccess.Interfaces
 {
     public interface IServiceRepository : IBaseRepository<Service>
     {
+        Task<List<Service>> FetchServices();
     }
 }

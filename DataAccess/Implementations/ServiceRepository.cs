@@ -1,5 +1,6 @@
 ﻿using DataAccess.Interfaces;
 using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Persistence.Data;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,11 @@ namespace DataAccess.Implementations
     {
         public ServiceRepository(ApplicationDbContext context) : base(context)
         {
+        }
+
+        public async Task<List<Service>> FetchServices()
+        {
+            return await _context.Services.Where(x => !x.IsDeleted).ToListAsync();
         }
     }
 }

@@ -21,7 +21,7 @@ namespace HealthBanc.Controllers
         /// <returns></returns>
         [HttpGet("[action]")]
         [ProducesResponseType(200, Type = typeof(BaseResponse<List<PlanDTO>>))]
-        public async Task<IActionResult> List([FromQuery]List.Query queryList)
+        public async Task<IActionResult> UserPlanList([FromQuery]List.Query queryList)
         {
             return HandleResult(await Mediator.Send(queryList));
         }

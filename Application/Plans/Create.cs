@@ -16,7 +16,8 @@ namespace Application.Plans
     {
         public class Command : IRequest<BaseResponse>
         {
-            public long ProductId { get; set; }
+            public long ServiceId { get; set; }
+            public long VendorId { get; set; }
             public string Name { get; set; }
             public decimal Price { get; set; }
             public decimal Discount { get; set; }
@@ -28,7 +29,7 @@ namespace Application.Plans
             public CommandValidator()
             {
                 RuleFor(x => x.Name).NotEmpty().NotNull();
-                RuleFor(x => x.ProductId).NotEmpty().NotNull().Must(x => x > 0).WithMessage("Product Id cannot be zero");
+                RuleFor(x => x.VendorId).NotEmpty().NotNull().Must(x => x > 0).WithMessage("Product Id cannot be zero");
                 RuleFor(x => x.Price).NotEmpty().NotNull().Must(x => x > 0).WithMessage("Price has to be greater than zero.");
             }
         }
@@ -45,15 +46,16 @@ namespace Application.Plans
             }
             public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)
             {
-                var plan = await _repositoryWrapper.Plan.Find(x => x.Name.ToLower() == request.Name.ToLower() && x.ProductId == request.ProductId && !x.IsDeleted);
+                var plan = await _repositoryWrapper.Plan.Find(x => x.Name.ToLower() == request.Name.ToLower() && x.ServiceId == request.ServiceId && !x.IsDeleted);
                 if (plan != null) return BaseResponse.Failure("26", "Duplicate Record - Plan with this name exist");
                 plan = new Plan
                 {
-                    ProductId = request.ProductId,
+                    VendorId = request.VendorId,
                     Name = request.Name,
                     Discount = request.Discount,
                     MarkUpRate = request.MarkUpRate,
                     Price = request.Price,  
+                    ServiceId = request.ServiceId,
                 };
                 _repositoryWrapper.Plan.Create(plan);
                 await _repositoryWrapper.Save();

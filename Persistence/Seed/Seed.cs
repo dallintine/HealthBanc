@@ -35,7 +35,10 @@ namespace Persistence.Seed
                 {
                     Name = "Gym Services",
                     Tag = "Get a one-time discount on your Gym Registration Fee, Pay ₦9,681.25 instead of ₦19,950",
-                    ImageUrl = ""
+                    ImageUrl = "https://pharmhallstracct.blob.core.windows.net/revampimages/7f1e7013-99b6-4937-9342-550decfb9aae_dumbell.png",
+                    ServiceDetailURL = "https://pharmhallstracct.blob.core.windows.net/revampimages/f5ba27e0-9642-4cc1-bb97-4524ec5476e7_gymproductdetail.png",
+                    BackgroundColor = "#FFF7ED",
+                    ActiveColor = "#ecb13b"
                 };
                 context.Services.Add(service);
                 await context.SaveChangesAsync();
@@ -61,6 +64,7 @@ namespace Persistence.Seed
                         MarkUpRate = 0.05,
                         VendorId = vendor.Id,
                         Name = "Monthly Fitness Package",
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/a30e23f4-1cda-4d10-9c7f-689533182cd0_monthlygym.png",
                         PlanDescriptions = new List<PlanDescription>
                         {
                             new PlanDescription
@@ -79,7 +83,8 @@ namespace Persistence.Seed
                             {
                                 Name = "NO Freeze Subscription Request."
                             }
-                        }
+                        },
+                        ServiceId= service.Id
 
                     },
                     new Plan
@@ -89,6 +94,7 @@ namespace Persistence.Seed
                         MarkUpRate = 0.05,
                         VendorId = vendor.Id,
                         Name = "Quarterly Fitness Package",
+                          ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/c351e468-eda3-461b-87b7-47fb43483d16_quarterlygym.png",
                          PlanDescriptions = new List<PlanDescription>
                         {
                             new PlanDescription
@@ -107,7 +113,8 @@ namespace Persistence.Seed
                             {
                                 Name = "10 Days Per Annum Freeze Subscription Request."
                             }
-                        }
+                        },
+                        ServiceId= service.Id
                     },
                     new Plan
                     {
@@ -116,6 +123,7 @@ namespace Persistence.Seed
                         MarkUpRate = 0.05,
                         VendorId = vendor.Id,
                         Name = "Annual Fitness Package",
+                          ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/42f53767-5478-48a7-9d40-cddea933f0a0_yearlygym.png",
                         PlanDescriptions = new List<PlanDescription>
                         {
                             new PlanDescription
@@ -134,14 +142,24 @@ namespace Persistence.Seed
                             {
                                 Name = "20 Days Per Annum Freeze Subscription Request."
                             }
-                        }
+                        },
+                        ServiceId= service.Id
                     },
                     new Plan
                     {
                         Name = "Registration Fee",
                         Price = 8342.25M,
                         MarkUpRate = 0.05,
-                        VendorId = vendor.Id
+                        VendorId = vendor.Id,
+                        ServiceId= service.Id,
+                        OptionalFee = true,
+                          PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "I am new to this Gym - Add Registration Fee  8,342.25 is one of fee"
+                            }
+                        },
                     }
                 };
                     context.Plans.AddRange(plans);
@@ -156,7 +174,10 @@ namespace Persistence.Seed
                 {
                     Name = "Healthy Meal Service",
                     Tag = "Customers of Healthbanc will receive discounts on individual purchases of healthy food as well as monthly meal plan packages.",
-                    ImageUrl = ""
+                    ImageUrl = "https://pharmhallstracct.blob.core.windows.net/revampimages/a7365e84-d66e-4497-8f22-830d4bebc6ed_bibimap.png",
+                    ServiceDetailURL = "https://pharmhallstracct.blob.core.windows.net/revampimages/e2ac630e-8ec2-43da-93dc-6de30263be8d_mealproductdetail.png",
+                    BackgroundColor = "#EDFFFC",
+                    ActiveColor = "#08321A"
                 };
                 context.Services.Add(secondService);
                 await context.SaveChangesAsync();
@@ -180,28 +201,60 @@ namespace Persistence.Seed
                         Name = "Fresh Start",
                         Price = 45465.00M,
                         MarkUpRate = 0.05,
-                        VendorId = secondVendor.Id
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/12901956-9153-4c24-86fc-02aa2effac1e_freshstart.png",
+                        VendorId = secondVendor.Id,
+                        ExternalLinkName = "View Meal Plan",
+                        ServiceId= secondService.Id,
+                         PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Amount includes delivery fee for 20 days; Please, click on link to see meal plan"
+                            }
+                        },
                     },
                     new Plan
                     {
                         Name = "Yummy Feast",
                         Price = 91654.50M,
                         MarkUpRate = 0.05,
-                        VendorId = secondVendor.Id
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/c54a0dbb-1981-4c04-a2fb-f6da0da8c620_yummyfeast.png",
+                        VendorId = secondVendor.Id,
+                        ExternalLinkName = "View Meal Plan",
+                        ServiceId= secondService.Id, 
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Amount includes delivery fee for 20 days; Please, click on link to see meal plan"
+                            }
+                        },
                     },
                     new Plan
                     {
                         Name = "Exotic Bliss",
                         Price = 102648.00M,
                         MarkUpRate = 0.05,
-                        VendorId = secondVendor.Id
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/0708e25b-5033-477d-984e-800e4a24bbab_exoticbliss.png",
+                        VendorId = secondVendor.Id,
+                        ExternalLinkName = "View Meal Plan",
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Amount includes delivery fee for 20 days; Please, click on link to see meal plan"
+                            }
+                        },
                     },
                     new Plan
                     {
                         Name = "Average Meal",
                         Price = 5250.00M,
                         MarkUpRate = 0.05,
-                        VendorId = secondVendor.Id
+                        VendorId = secondVendor.Id,
+                        ExternalLinkName = "View Meal Plan",
+                        ServiceId= secondService.Id
                     }
                 };
                     context.Plans.AddRange(plans2);
@@ -216,7 +269,9 @@ namespace Persistence.Seed
                 {
                     Name = "Diagnostics Service",
                     Tag = "Enjoy a discount on all services, starting with a full body medical checkup and sexually transmitted disease test.",
-                    ImageUrl = ""
+                    ImageUrl = "https://pharmhallstracct.blob.core.windows.net/revampimages/7fe26149-b122-4ebf-8f15-e90cc31e16e0_diagnostic.png",
+                    BackgroundColor = "#FFEDED",
+                    ActiveColor = "#D71E1B"
                 };
                 context.Services.Add(thirdService);
                 await context.SaveChangesAsync();
@@ -227,7 +282,8 @@ namespace Persistence.Seed
                     thirdVendor = new Vendor
                     {
                         Name = "Healthtracka",
-                        SettlementAccount = "0076525143"
+                        SettlementAccount = "0076525143",
+                        ServiceId = thirdService.Id
                     };
                     context.Vendors.Add(thirdVendor);
                     await context.SaveChangesAsync();
@@ -239,42 +295,91 @@ namespace Persistence.Seed
                             Name = "Bronze Package",
                             Price = 21000.00M,
                             MarkUpRate = 0.05,
-                            VendorId = thirdVendor.Id
+                            VendorId = thirdVendor.Id,
+                            ServiceId=thirdService.Id,
+                            PlanDescriptions = new List<PlanDescription>
+                            {
+                                new PlanDescription
+                                {
+                                    Name = "Fasting Blood Sugar, Total Cholesterol, Full Blood Count,Urinalysis, Liver Function Test, Kidney function Test and Logistics fee"
+                                }
+                            }
                         },
                         new Plan
                         {
                             Name = "Silver Package",
                             Price = 49350.00M,
                             MarkUpRate = 0.05,
-                            VendorId = thirdVendor.Id
+                            VendorId = thirdVendor.Id,
+                            ServiceId=thirdService.Id,
+                            PlanDescriptions = new List<PlanDescription>
+                            {
+                                new PlanDescription
+                                {
+                                    Name = "All Bronze and Silver Test included +HbA1C, Inorganic Phosphate, Calcium, C-reactive Protein, Hepatitis B Surface Antigen Rapid, HIV I & II Rapid, Hepatitis C virus AP rapid, and Stool Occult Blood"
+                                }
+                            }
+
                         },
                         new Plan
                         {
                             Name = "Gold Package",
                             Price = 96600.00M,
                             MarkUpRate = 0.05,
-                            VendorId = thirdVendor.Id
+                            VendorId = thirdVendor.Id,
+                            ServiceId=thirdService.Id,
+                            PlanDescriptions = new List<PlanDescription>
+                            {
+                                new PlanDescription
+                                {
+                                    Name = "  All Bronze and Silver Test included +HbA1C, Inorganic Phosphate, Calcium, C-reactive Protein, Hepatitis B Surface Antigen Rapid, HIV I & II Rapid, Hepatitis C virus AP rapid, and Stool Occult Blood"
+                                }
+                            }                           
                         },
                         new Plan
                         {
                             Name = "STD Lemon",
                             Price = 21000.00M,
                             MarkUpRate = 0.05,
-                            VendorId = thirdVendor.Id
+                            VendorId = thirdVendor.Id,
+                            ServiceId=thirdService.Id,
+                             PlanDescriptions = new List<PlanDescription>
+                            {
+                                new PlanDescription
+                                {
+                                    Name = " Hepatitis B Surface Antigen Rapid, HIV I & II Rapid, Syphilis Screening, Urinalysis, Neisseria Gonorrhoea Rapid and logistics Fee"
+                                }
+                            }                           
                         },
                         new Plan
                         {
                             Name = "STD Lemononade",
                             Price = 39900.00M,
                             MarkUpRate = 0.05,
-                            VendorId = thirdVendor.Id
+                            VendorId = thirdVendor.Id,
+                            ServiceId=thirdService.Id,
+                             PlanDescriptions = new List<PlanDescription>
+                            {
+                                new PlanDescription
+                                {
+                                    Name = " All lemon test included + Hepatitis C Virus Rapid, Urine Microscopy, culture & sensitivity and Chlamydia Trachoma's Rapid"
+                                }
+                            }
                         },
                         new Plan
                         {
                             Name = "STD Lemmonade Plus",
                             Price = 77700.00M,
                             MarkUpRate = 0.05,
-                            VendorId = thirdVendor.Id
+                            VendorId = thirdVendor.Id,
+                            ServiceId=thirdService.Id,
+                            PlanDescriptions = new List<PlanDescription>
+                            {
+                                new PlanDescription
+                                {
+                                    Name = "All lemon and Lemonade test included + Chlamydia IgM AB and Herpes Simplex I and II"
+                                }
+                            }
                         }
                     };
                     context.Plans.AddRange(plans3);

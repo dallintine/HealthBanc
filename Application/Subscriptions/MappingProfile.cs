@@ -18,7 +18,7 @@ namespace Application.Subscriptions
                 ForMember(dest => dest.Email, opt => opt.MapFrom(x => x.ApplicationUser.Email)).
                 ForMember(dest => dest.UserId, opt => opt.MapFrom(x => x.ApplicationUser.Id)).
                 ForMember(dest => dest.Plan, opt => opt.MapFrom(x => x.Plan.Name)).
-                ForMember(dest => dest.Product, opt => opt.MapFrom(x => x.Product.Name));
+                ForMember(dest => dest.Vendor, opt => opt.MapFrom(x => x.Plan.Vendor.Name));
         }
     }
 }

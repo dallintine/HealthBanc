@@ -1,25 +1,25 @@
 ﻿using Application.CommonDTO;
-using Application.Products;
+using Application.Vendors;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthBanc.Controllers
 {
-    public class ProductController : BaseApiController
+    public class VendorController : BaseApiController
     {
-        private readonly ILogger<ProductController> _logger;
+        private readonly ILogger<VendorController> _logger;
 
-        public ProductController(ILogger<ProductController> logger)
+        public VendorController(ILogger<VendorController> logger)
         {
             _logger = logger;
         }
 
         /// <summary>
-        /// Product List
+        /// Vendor List
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
-        [ProducesResponseType(200, Type = typeof(BaseResponse<List<ProductDTO>>))]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<List<VendorDTO>>))]
         public async Task<IActionResult> List()
         {
             return HandleResult(await Mediator.Send(new List.Query()));

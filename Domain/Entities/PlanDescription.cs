@@ -10,6 +10,6 @@ namespace Domain.Entities
     public class PlanDescription : BaseEntity
     {
         public string Name { get; set; }
-        public string PlanId { get; set; }
+        public long PlanId { get; set; }
     }
 }

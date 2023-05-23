@@ -17,7 +17,7 @@ namespace Application.Subscriptions
         public DateTime CreatedAt { get; set; }
         public string Status { get; set; }
         public bool IsSuccessful { get; set; }
-        public string Product { get; set; }
+        public string Vendor { get; set; }
         public string Plan { get; set; }
     }
 }

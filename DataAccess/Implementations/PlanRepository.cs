@@ -16,9 +16,14 @@ namespace DataAccess.Implementations
         {
         }
 
-        public async Task<List<Plan>> FetchPlans(long productId)
+        public async Task<List<Plan>> FetchPlans(long serviceId)
         {
-            return await _context.Plans.Where(x => x.ProductId == productId && !x.IsDeleted).ToListAsync();
+            return await _context.Plans.Where(x => x.ServiceId == serviceId && !x.IsDeleted).ToListAsync();
+        }
+
+        public IQueryable<Plan> QueryPlans(long serviceId)
+        {
+            return _context.Plans.Include(x => x.Vendor).Include(x => x.PlanDescriptions).Where(x => x.ServiceId == serviceId && !x.IsDeleted).AsQueryable();
         }
     }
 }

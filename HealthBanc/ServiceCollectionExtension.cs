@@ -1,6 +1,6 @@
 ﻿using Application.CommonDTO;
 using Application.Core.ConfigSettings;
-using Application.Products;
+using Application.Plans;
 using DataAccess;
 using Domain.Entities;
 using FluentValidation;

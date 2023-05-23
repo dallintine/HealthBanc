@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Products
+namespace Application.Plans
 {
-    public class ProductDTO
+    public class PlanDescriptionDTO
     {
         public long Id { get; set; }
-        public string Name { get; set; }        
+        public string Name { get; set; }
     }
 }

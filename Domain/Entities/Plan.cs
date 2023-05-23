@@ -19,8 +19,12 @@ namespace Domain.Entities
         [ForeignKey("Product")]
         public long VendorId { get; set; }
         public Vendor Vendor { get; set; }
+        public long ServiceId { get; set; }
         public string ImageURL { get; set; }
         public string Tag { get; set; }
+        public string ExternalLinkName { get; set; }
+        public string ExternalLinkURL { get; set; }
+        public bool OptionalFee { get; set; }
         public List<Subscription> Subscriptions { get; set; }
         public List<PlanDescription> PlanDescriptions { get; set; }
     }

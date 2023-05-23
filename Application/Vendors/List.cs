@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Products
+namespace Application.Vendors
 {
     public class List
     {
@@ -30,8 +30,8 @@ namespace Application.Products
             public async Task<BaseResponse> Handle(Query request, CancellationToken cancellationToken)
             {
                 var products = await _repositoryWrapper.Product.FetchProducts();
-                var productDTOs = _mapper.Map<List<Vendor>, List<ProductDTO>>(products);
-                return BaseResponse<List<ProductDTO>>.Success(productDTOs);
+                var productDTOs = _mapper.Map<List<Vendor>, List<VendorDTO>>(products);
+                return BaseResponse<List<VendorDTO>>.Success(productDTOs);
             }
         }
     }

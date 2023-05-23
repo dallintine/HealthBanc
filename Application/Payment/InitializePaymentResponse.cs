@@ -29,5 +29,9 @@ namespace Application.Payment
 
         [JsonProperty("reference")]
         public string Reference { get; set; }
+        [JsonProperty("email")]
+        public string Email { get; set; }
+        [JsonProperty("amount")]
+        public string Amount { get; set; }
     }
 }

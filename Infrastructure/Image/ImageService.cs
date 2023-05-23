@@ -58,9 +58,9 @@ namespace Infrastructure.Image
             return BaseResponse.Success();
         }
 
-        public async Task<BaseResponse> UploadPics(UploadImageDTO image)
+        public async Task<BaseResponse<ImagesURLDTO>> UploadPics(UploadImageDTO image)
         {
-            var container = new BlobContainerClient(_blobSettings.AzureConnectionString, "healthbancrevamp_images");
+            var container = new BlobContainerClient(_blobSettings.AzureConnectionString, "revampimages");
             if (await container.ExistsAsync() == false)
             {
                 await container.CreateIfNotExistsAsync();

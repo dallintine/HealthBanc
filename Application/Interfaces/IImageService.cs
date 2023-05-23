@@ -9,7 +9,7 @@ namespace Application.Interfaces
 {
     public interface IImageService
     {
-        Task<BaseResponse> UploadPics(UploadImageDTO image);
+        Task<BaseResponse<ImagesURLDTO>> UploadPics(UploadImageDTO image);
         BaseResponse VerifyImage(UploadImageDTO image);
     }
 }

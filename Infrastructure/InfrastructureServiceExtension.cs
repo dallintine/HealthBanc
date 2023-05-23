@@ -1,4 +1,5 @@
 ﻿using Application.Interfaces;
+using Infrastructure.Image;
 using Infrastructure.Notifications;
 using Infrastructure.OTP;
 using Infrastructure.Paystack;
@@ -23,6 +24,7 @@ namespace Infrastructure
             services.AddScoped<IOTPService, OTPService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IPaystackService, PaystackService>();
+            services.AddScoped<IImageService, ImageService>();
 
             return services;
         }

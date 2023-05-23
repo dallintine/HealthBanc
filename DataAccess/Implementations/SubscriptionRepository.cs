@@ -18,7 +18,7 @@ namespace DataAccess.Implementations
 
         public IQueryable<Subscription> QuerySubscriptions_Plans()
         {
-            return _context.Subscriptions.Include(x => x.ApplicationUser).Include(x => x.Product).Include(x => x.Plan).AsQueryable();
+            return _context.Subscriptions.Include(x => x.ApplicationUser).Include(x => x.Plan).Include(x => x.Plan.Vendor).AsQueryable();
         }
     }
 }

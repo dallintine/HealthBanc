@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Persistence.Data;
 using System.Net;
 
@@ -45,10 +46,25 @@ namespace Infrastructure.Middlewares
                         }
 
                         logger.LogError($"Something went wrong: {contextFeature.Error}");
-                        await context.Response.WriteAsync(BaseResponse.Failure("99", "This on us, an error occurred while trying to process your request.Please try again later").ToString());
+                        await context.Response.WriteAsync(new ResponseMessage()
+                        {
+                            Code = "99",
+                            Description = "This on us, an error occurred while trying to process your request.Please try again later"
+                        }.ToString());
                     }
                 });
             });
+        }
+    }
+
+    public class ResponseMessage
+    {
+        public string Code { get; set; }
+        public string Description { get; set; }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this).ToLower();
         }
     }
 }
