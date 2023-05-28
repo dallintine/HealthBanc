@@ -15,15 +15,13 @@ using System.Threading.Tasks;
 
 namespace Application.Identity
 {
-    public class Register
+    public class GoggleAuth
     {
         public class Command : IRequest<BaseResponse>
         {
             public string Email { get; set; }
             public string FirstName { get; set; }
             public string LastName { get; set; }
-            public string Password { get; set; }
-            public string PhoneNumber { get; set; }
         }
 
         public class CommandValidator : AbstractValidator<Command>
@@ -31,10 +29,6 @@ namespace Application.Identity
             public CommandValidator()
             {
                 RuleFor(x => x.Email).NotEmpty().NotNull().EmailAddress();
-                RuleFor(x => x.FirstName).NotEmpty().NotNull();
-                RuleFor(x => x.LastName).NotEmpty().NotNull();
-                RuleFor(x => x.Password).NotEmpty().NotNull();
-                RuleFor(x => x.PhoneNumber).NotEmpty().NotNull();
             }
         }
 
@@ -43,63 +37,46 @@ namespace Application.Identity
             private readonly ILogger<Handler> _logger;
             private readonly UserManager<ApplicationUser> _userManager;
             private readonly IWebHostEnvironment _environment;
-            private readonly IOTPService _otpService;
             private readonly IEmailService _emailService;
+            private readonly ITokenService _tokenService;
 
-            public Handler(ILogger<Handler> logger,UserManager<ApplicationUser> userManager, IWebHostEnvironment environment,IOTPService otpService
-                , IEmailService emailService)
+            public Handler(ILogger<Handler> logger, UserManager<ApplicationUser> userManager, IWebHostEnvironment environment
+                , IEmailService emailService,ITokenService tokenService)
             {
                 _logger = logger;
                 _userManager = userManager;
                 _environment = environment;
-                _otpService = otpService;
                 _emailService = emailService;
+                _tokenService = tokenService;
             }
             public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)
             {
-                var email = await _userManager.FindByEmailAsync(request.Email);
-                if (email is null)
+                var user = await _userManager.FindByEmailAsync(request.Email);
+                if ( user is null)
                 {
-                    var user = new ApplicationUser
+                    user = new ApplicationUser
                     {
                         UserName = request.Email,
                         Email = request.Email,
                         FirstName = request.FirstName,
                         LastName = request.LastName,
-                        PhoneNumber = request.PhoneNumber,
-                        OAuthSubject = OAuthSubject.HealthBanc.ToString()
+                        OAuthSubject = OAuthSubject.Goggle.ToString()
                     };
 
-                    var result = await _userManager.CreateAsync(user, request.Password);
+                    var result = await _userManager.CreateAsync(user);
                     if (result.Succeeded)
                     {
                         await _userManager.AddToRoleAsync(user, Roles.User.ToString());
                         await _userManager.UpdateAsync(user);
-
-                        var createOTP = await _otpService.CreateOTP(user.Id, OTPActions.ConfirmAccount.ToString());
-                        var otpCode = createOTP.Data;
-
-                        var message = $"This is your OTP number {otpCode}. Use it to confirm your account";
-                        var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\genericTemplate.html";
-                        var htmlTemplate = File.ReadAllText(path);
-                        var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{Content}}", message);
-                        await _emailService.EmailRequest(new EmailRequest
-                        {
-                            Subject = "Confirm HealtBanc Account",
-                            Message = emailTemplate,
-                            Email = user.Email
-                        });
-                        return BaseResponse.Success();
                     }
                     else
                     {
                         string error = result.Errors.FirstOrDefault().Description;
                         _logger.LogInformation($"Register user terminated [Reason : Creating user failed | Error : {error}]\n");
-                        return BaseResponse.Failure("06",error);
+                        return BaseResponse.Failure("06", error);
                     }
                 }
-                _logger.LogInformation($"Register user terminated [Reason : Email/Phonnumber is not unique]\n");
-                return BaseResponse.Failure("26","Email already exist");
+                return await _tokenService.GetAuthenticationResultForUserAsync(user);
             }
         }
     }

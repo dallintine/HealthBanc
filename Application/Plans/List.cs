@@ -47,6 +47,7 @@ namespace Application.Plans
                     Id = x.Id,
                     Name = x.Name,
                     Price = x.Price,
+                    ServiceId = x.ServiceId,
                     Discount = x.Discount,
                     VendorName = x.Vendor.Name,
                     ImageURL = x.ImageURL,

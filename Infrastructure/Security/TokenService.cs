@@ -128,7 +128,6 @@ namespace Infrastructure.Security
             rng.GetBytes(randomNumber);
             return Convert.ToBase64String(randomNumber);
         }
-
         private async Task<BaseResponse> UserInSession(long userId, string deviceIp, string browser, bool isAdmin)
         {
             var session = await _repositoryWrapper.UserSession.GetByUserId_Device(userId, deviceIp);

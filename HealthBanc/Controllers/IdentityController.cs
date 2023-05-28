@@ -1,5 +1,6 @@
 ﻿using Application.CommonDTO;
 using Application.Identity;
+using Google.Apis.Auth;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -146,6 +147,22 @@ namespace HealthBanc.Controllers
             _logger.LogInformation($"Refresh Token Request \n");
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(refreshTokenQuery));
+        }
+
+        /// <summary>
+        /// Goggle Auth Signin/Signup
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        [HttpPost("[action]")]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(404, Type = typeof(BaseResponse))]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
+        public async Task<IActionResult> GoogleAuth(GoggleAuth.Command command)
+        {
+            _logger.LogInformation($"Goggle Auth Request \n");
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(command));
         }
     }
 }

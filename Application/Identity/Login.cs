@@ -1,6 +1,7 @@
 ﻿using Application.CommonDTO;
 using Application.Interfaces;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -51,6 +52,10 @@ namespace Application.Identity
                 {
                     _logger.LogInformation($"Login Terminated [Reason : Email not found | Email :  {request.Email}]");
                     return BaseResponse.Failure("12", "Email or password do not match for an existing user");
+                }
+                if(user.OAuthSubject != OAuthSubject.HealthBanc.ToString())
+                {
+                    return BaseResponse.Failure("07", "Kindly Sigin with original auth method");
                 }
                 var passwordCheck = await _signInManager.PasswordSignInAsync(user, request.Password, false, true);
                 if (passwordCheck.IsLockedOut)

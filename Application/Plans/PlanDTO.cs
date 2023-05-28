@@ -15,6 +15,7 @@ namespace Application.Plans
         public string VendorName { get; set; }
         public string ImageURL { get; set; }
         public string Tag { get; set; }
+        public long ServiceId { get; set; }
         public string ExternalLinkName { get; set; }
         public string ExternalLinkURL { get; set; }
         public bool OptionalFee { get; set; }

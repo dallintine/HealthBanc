@@ -11,6 +11,7 @@ namespace Domain.Entities
     {
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public string OAuthSubject { get; set; }
         public DateTime LastLoginDate {get;set;}
         public DateTime RefreshTokenExpiryTime { get; set; }
         public string RefreshToken { get; set; }
