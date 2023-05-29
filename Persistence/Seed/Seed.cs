@@ -204,6 +204,7 @@ namespace Persistence.Seed
                         ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/12901956-9153-4c24-86fc-02aa2effac1e_freshstart.png",
                         VendorId = secondVendor.Id,
                         ExternalLinkName = "View Meal Plan",
+                        ExternalLinkURL = "https://drive.google.com/file/d/1FGvmw3xVTnS25VGMf3wS7C54flQM2UaZ/view",
                         ServiceId= secondService.Id,
                          PlanDescriptions = new List<PlanDescription>
                         {
@@ -221,6 +222,7 @@ namespace Persistence.Seed
                         ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/c54a0dbb-1981-4c04-a2fb-f6da0da8c620_yummyfeast.png",
                         VendorId = secondVendor.Id,
                         ExternalLinkName = "View Meal Plan",
+                        ExternalLinkURL = "https://drive.google.com/file/d/1GEF54enGXotwfFGC7ovZ-Z92p25M7JPq/view",
                         ServiceId= secondService.Id, 
                         PlanDescriptions = new List<PlanDescription>
                         {
@@ -238,6 +240,7 @@ namespace Persistence.Seed
                         ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/0708e25b-5033-477d-984e-800e4a24bbab_exoticbliss.png",
                         VendorId = secondVendor.Id,
                         ExternalLinkName = "View Meal Plan",
+                        ExternalLinkURL = "https://drive.google.com/file/d/1ywGmFZiGDBbM4iOiSjLaahBft5NKmoOo/view",
                         ServiceId= secondService.Id,
                         PlanDescriptions = new List<PlanDescription>
                         {

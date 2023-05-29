@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,6 +27,11 @@ namespace Application.CommonDTO
                 Code = code ?? "99",
                 Description = message ?? "Sorry, an error occurred while processing your request.Please try again later."
             };
+        }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this).ToLower();
         }
     }
 
