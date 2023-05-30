@@ -60,7 +60,7 @@ namespace Infrastructure.Image
 
         public async Task<BaseResponse<ImagesURLDTO>> UploadPics(UploadImageDTO image)
         {
-            var container = new BlobContainerClient(_blobSettings.AzureConnectionString, "revampimages");
+            var container = new BlobContainerClient(_blobSettings.AzureConnectionString, "logfolder");
             if (await container.ExistsAsync() == false)
             {
                 await container.CreateIfNotExistsAsync();
