@@ -65,7 +65,7 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
     var context = services.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    //context.Database.Migrate();
     await Seed.SeedData(context, userManager, roleManager);
 }
 
