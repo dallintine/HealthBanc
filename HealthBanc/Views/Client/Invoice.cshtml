@@ -1,0 +1,201 @@
+﻿@using System.Globalization
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+@model InvoicePDFTemplateDTO
+
+@{
+   Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <title>HealthBanc</title>
+    <style>
+        @@media only screen {
+            #table {
+                margin: 0 auto !important;
+                margin-top: 2% !important;
+                padding: 2% 3%;
+                width: 70% !important;
+            }
+
+            #terms {
+                margin: 0 auto !important;
+                padding: 2% 3%;
+                width: 70% !important;
+            }
+
+            tr {
+                font-size: 18px !important;
+            }
+        }
+
+        @@media only screen and (max-width: 1023px) {
+            #table {
+                margin: 0 auto !important;
+                margin-top: 2% !important;
+                padding: 2% 3%;
+                width: 70% !important;
+            }
+
+            #fist_bump {
+                background-image: url("https://pharmhallstracct.blob.core.windows.net/email/gift.PNG");
+                height: 150px;
+                background-position: center;
+                background-size: contain;
+                background-repeat: no-repeat;
+                width: 100%;
+            }
+
+            #terms {
+                margin: 0 auto !important;
+                padding: 2% 3%;
+                width: 50% !important;
+            }
+        }
+
+        @@media only screen and (max-width: 767px) {
+            #table {
+                margin: 0 auto !important;
+                margin-top: 2% !important;
+                padding: 2% 3%;
+                width: 70% !important;
+            }
+
+            #terms {
+                margin: 0 auto !important;
+                padding: 2% 3%;
+                width: 70% !important;
+            }
+
+            tr {
+                font-size: 16px !important;
+            }
+        }
+
+        @@media only screen and (max-width: 481px) {
+            #table {
+                margin: 0 auto !important;
+                margin-top: 2% !important;
+                padding: 2% 3%;
+                width: 95% !important;
+            }
+
+            #fist_bump {
+                background-image: url("https://pharmhallstracct.blob.core.windows.net/email/gift.PNG");
+                height: 100px !important;
+                background-position: center;
+                background-size: contain !important;
+                background-repeat: no-repeat;
+                width: 100%;
+            }
+
+            #terms {
+                margin: 0 auto !important;
+                padding: 2% 3%;
+                width: 95% !important;
+            }
+        }
+    </style>
+</head>
+<body style="
+      margin: 0;
+      border: 0;
+      font-family: Helvetica, 'Helvetica Neue', arial, verdana, sans-serif;
+    ">
+    <table id="table"
+           style="border-radius: 10px; border: 2px solid #ecf1fa;"
+           cellpadding="0"
+           cellspacing="0">
+        <tr style="text-align: left;width: 100%;">
+            <td style="padding: 2%">
+                <span style="
+              font-size: 25px;
+              font-weight: bold;
+              font-stretch: normal;
+              font-style: normal;
+              line-height: normal;
+              letter-spacing: 0.25px;
+              color: rgb(215, 30, 27);
+            ">Health</span><span style="
+              font-size: 25px;
+              font-weight: bold;
+              font-stretch: normal;
+              font-style: normal;
+              line-height: normal;
+              letter-spacing: 0.25px;
+              color: rgb(115, 116, 118);
+            ">Banc</span>
+            </td>
+        </tr>
+        <tr style="text-align: center; background-color: #ecf1fa;width: 100%">
+            <td colspan="3" style="padding: 2%;width: 100%">
+                <span style="
+                width: 100%;
+              font-size: 20px;
+              font-weight: bold;
+              font-stretch: normal;
+              font-style: normal;
+              line-height: normal;
+              letter-spacing: 0.25px;
+              color: black;
+            ">HealthBanc</span>
+            </td>
+        </tr>
+        <tr style="text-align: justify;width: 100%">
+            <td colspan="3" style="text-align: justify; font-weight: bolder;width: 100%">
+                <h3>Order Confirmation</h3>
+            </td>
+        </tr>
+        <tr style="text-align: center;width: 100%">
+            <td colspan="3" style="text-align: center;font-size: 13px;width: 100%">
+                <span>  Hello @Model.Name</span>
+                <p>Thank you for shopping with HealthBanc, we received your order and it is currently being processed by our team.</p>
+            </td>
+        </tr>
+        <tr id="welcome_header" style="text-align: justify;width: 100%">
+            <td colspan="3">
+                <h4>Order Summary</h4>
+            </td>
+        </tr>
+        @{
+            foreach (var item in @Model.InvoiceItems)
+            {
+                    <tr style="width: 100%;margin-top: 3em;clear: both;">
+                    <td style="width: 55%;margin: 0% 1%;font-size: 14px">@item.ServiceName<br/>@item.PlanName</td>
+                    <td style="width: 5%;margin: 0% 1%;font-size: 14px">&nbsp;@item.Quantity&nbsp;</td>
+                    <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:right">&nbsp;@string.Format(new CultureInfo("en-NG", false), "{0:c0}", item.Price)&#8358;</td>
+                    </tr>
+                    <tr>&nbsp;</tr>
+            }
+        }
+         <tr style="width: 100%;margin-top: 3em; ">
+            <td style="width: 35%;margin: 0% 1%;font-size: 16px">SubTotal</td>
+            <td  style="width: 2%;margin: 0% 1%;"></td>
+            <td style="width: 60%;margin: 0% 1%;font-size: 16px;text-align:right">&nbsp;@string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.SubTotal) &nbsp;&#8358;</td>
+         </tr>
+        <tr>
+            <td colspan="3" style="font-size: 13px;text-align: center;">
+                <p>Once your payment has been confirmed, we will process your order and we will send you a notification email.</p>
+                <p style="color: black">
+                    For any inquiry, please reach out to us on any of our official channels.
+                </p>
+            </td>
+        </tr>
+        <tr  style="text-align: center; background-color: #ecf1fa">
+            <td colspan="3">
+                <p>© 2023 HealthBanc. All Rights Reserved</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+

@@ -21,6 +21,8 @@ namespace HealthBanc
     {
         public static void AddServices(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddControllersWithViews();
+
             services.AddMediatR(typeof(List));
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssemblyContaining<List>();

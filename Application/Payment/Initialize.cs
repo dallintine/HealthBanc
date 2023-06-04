@@ -75,6 +75,7 @@ namespace Application.Payment
                         IsSuccessful = false,
                         Amount = ((plan.Price - plan.Discount) * item.Quantity),
                         OptionalFee = plan.OptionalFee,
+                        Quantity = item.Quantity,
                         Status = SubscriptionStatus.Terminated.ToString()
                     });
                 };

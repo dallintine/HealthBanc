@@ -11,6 +11,7 @@ namespace Domain.Entities
     {
         public string Reference { get; set; }
         public long ApplicationUserId { get; set; }
+        public ApplicationUser ApplicationUser { get; set; }
         public string Email { get; set; }
         public decimal Amount { get; set; }
         public bool IsCompleted { get; set; }

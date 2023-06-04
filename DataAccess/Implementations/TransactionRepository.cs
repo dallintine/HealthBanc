@@ -18,7 +18,8 @@ namespace DataAccess.Implementations
 
         public async Task<Domain.Entities.Transaction> FindByReference( string reference)
         {
-            return await _context.Transactions.Include(x => x.Subscriptions).SingleOrDefaultAsync(x => x.Reference == reference);
+            return await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions)
+                .ThenInclude(x => x.Plan).ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == reference);
         }
     }
 }

@@ -4,6 +4,7 @@ using Infrastructure.Notifications;
 using Infrastructure.OTP;
 using Infrastructure.Paystack;
 using Infrastructure.Security;
+using Infrastructure.TemplateService;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,7 @@ namespace Infrastructure
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IPaystackService, PaystackService>();
             services.AddScoped<IImageService, ImageService>();
+            services.AddScoped<ITemplateService , RazorViewsTemplateService>();
 
             return services;
         }
