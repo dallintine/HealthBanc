@@ -1,4 +1,6 @@
+using Application.Vendors.Validators;
 using Domain.Entities;
+using FluentValidation.AspNetCore;
 using HealthBanc;
 using Infrastructure;
 using Infrastructure.Middlewares;
@@ -20,6 +22,10 @@ builder.Host.UseSerilog();
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+//builder.Services.AddControllers().AddFluentValidation(fv => {
+//    fv.RegisterValidatorsFromAssemblyContaining(typeof(CreateVendorCommandValidator));
+//});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(x =>
@@ -65,7 +71,7 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
     var context = services.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    //context.Database.Migrate();
     await Seed.SeedData(context, userManager, roleManager);
 }
 

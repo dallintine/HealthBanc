@@ -1,7 +1,7 @@
-﻿using Application.CommonDTO;
-using Application.Core.ConfigSettings;
+﻿using Application.Common.DTO;
+using Application.Common.ConfigSettings;
 using Application.Identity;
-using Application.Interfaces;
+using Application.Common.Interfaces;
 using DataAccess;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;

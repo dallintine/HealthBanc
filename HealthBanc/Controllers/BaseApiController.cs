@@ -1,4 +1,4 @@
-﻿using Application.CommonDTO;
+﻿using Application.Common.DTO;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

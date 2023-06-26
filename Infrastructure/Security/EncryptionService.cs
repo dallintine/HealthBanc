@@ -1,5 +1,5 @@
-﻿using Application.Core.ConfigSettings;
-using Application.Interfaces;
+﻿using Application.Common.ConfigSettings;
+using Application.Common.Interfaces;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;

@@ -1,5 +1,7 @@
-﻿using Application.CommonDTO;
-using Application.Vendors;
+﻿using Application.Common.DTO;
+using Application.Vendors.Commands;
+using Application.Vendors.DTO;
+using Application.Vendors.Queries;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,7 +24,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(BaseResponse<List<VendorDTO>>))]
         public async Task<IActionResult> List()
         {
-            return HandleResult(await Mediator.Send(new List.Query()));
+            return HandleResult(await Mediator.Send(new GetVendorListQuery()));
         }
 
         /// <summary>
@@ -33,7 +35,7 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> Create(Create.Command createCommand)
+        public async Task<IActionResult> Create(CreateVendorCommand createCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(createCommand));
@@ -48,7 +50,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> Edit(Edit.Command editCommand)
+        public async Task<IActionResult> Edit(UpdateVendorCommand editCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(editCommand));
@@ -64,7 +66,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> Delete([FromQuery]Delete.Command deleteCommand)
+        public async Task<IActionResult> Delete([FromQuery]DeleteVendorCommand deleteCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(deleteCommand));

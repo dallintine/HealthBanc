@@ -1,6 +1,6 @@
 ﻿using Application.CommonDTO;
-using Application.Core.ConfigSettings;
-using Application.Interfaces;
+using Application.Common.ConfigSettings;
+using Application.Common.Interfaces;
 using Application.Payment;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
