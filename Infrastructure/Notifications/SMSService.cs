@@ -1,6 +1,6 @@
-﻿using Application.CommonDTO;
-using Application.Core.ConfigSettings;
-using Application.Interfaces;
+﻿using Application.Common.DTO;
+using Application.Common.ConfigSettings;
+using Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;

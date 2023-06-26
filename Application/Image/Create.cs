@@ -1,5 +1,6 @@
 ﻿using Application.CommonDTO;
-using Application.Interfaces;
+using Application.Common.DTO;
+using Application.Common.Interfaces;
 using DataAccess;
 using FluentValidation;
 using MediatR;

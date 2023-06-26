@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+﻿using Application.Common.Interfaces;
 using Infrastructure.Image;
 using Infrastructure.Notifications;
 using Infrastructure.OTP;

@@ -1,5 +1,8 @@
-﻿using Application.CommonDTO;
+﻿using Application.Common.DTO;
 using Application.Plans;
+using Application.Plans.Commands;
+using Application.Plans.DTO;
+using Application.Plans.Queries;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,7 +24,7 @@ namespace HealthBanc.Controllers
         /// <returns></returns>
         [HttpGet("[action]")]
         [ProducesResponseType(200, Type = typeof(BaseResponse<List<PlanDTO>>))]
-        public async Task<IActionResult> UserPlanList([FromQuery]List.Query queryList)
+        public async Task<IActionResult> UserPlanList([FromQuery] GetPlanListQuery queryList)
         {
             return HandleResult(await Mediator.Send(queryList));
         }
@@ -34,7 +37,7 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> Create(Create.Command createCommand)
+        public async Task<IActionResult> Create(CreatePlanCommand createCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(createCommand));
@@ -49,7 +52,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> Edit(Edit.Command editCommand)
+        public async Task<IActionResult> Edit(UpdatePlanCommand editCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(editCommand));
@@ -65,7 +68,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> Delete([FromQuery] Delete.Command deleteCommand)
+        public async Task<IActionResult> Delete([FromQuery] DeletePlanCommand deleteCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(deleteCommand));

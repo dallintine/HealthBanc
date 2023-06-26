@@ -1,4 +1,4 @@
-﻿using Application.CommonDTO;
+﻿using Application.Common.DTO;
 using Application.Image;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Mvc;

@@ -1,4 +1,4 @@
-﻿using Application.CommonDTO;
+﻿using Application.Common.DTO;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
 using System.Collections.Generic;

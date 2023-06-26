@@ -1,5 +1,5 @@
-﻿using Application.CommonDTO;
-using Application.Core.ConfigSettings;
+﻿using Application.Common.DTO;
+using Application.Common.ConfigSettings;
 using Application.Plans;
 using DataAccess;
 using Domain.Entities;
@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Persistence.Data;
 using Polly;
 using System.Text;
+using Application.Image;
 
 namespace HealthBanc
 {
@@ -22,10 +23,9 @@ namespace HealthBanc
         public static void AddServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddControllersWithViews();
-
-            services.AddMediatR(typeof(List));
-            services.AddFluentValidationAutoValidation();
-            services.AddValidatorsFromAssemblyContaining<List>();
+            services.AddMediatR(typeof(Create));
+            services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
+            services.AddValidatorsFromAssemblyContaining<Create>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddAutoMapper(typeof(MappingProfile));

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Application.Subscriptions.DTO;
+using AutoMapper;
 using System;
 using System.Collections.Generic;
 using System.Linq;

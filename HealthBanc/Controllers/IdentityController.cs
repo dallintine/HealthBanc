@@ -1,4 +1,4 @@
-﻿using Application.CommonDTO;
+﻿using Application.Common.DTO;
 using Application.Identity;
 using Google.Apis.Auth;
 using Infrastructure.Helpers;

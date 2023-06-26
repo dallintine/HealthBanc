@@ -1,4 +1,4 @@
-﻿using Application.CommonDTO;
+﻿using Application.Common.DTO;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
