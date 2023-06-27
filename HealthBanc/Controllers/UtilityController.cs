@@ -37,6 +37,7 @@ namespace HealthBanc.Controllers
             return Ok();
         }
 
+        [HttpGet("[action]")]
         public async Task SeedData()
         {
             var email = _configuration["DefaultAdmin:Email"];
