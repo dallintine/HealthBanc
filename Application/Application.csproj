@@ -18,6 +18,7 @@
   </ItemGroup>
 	
   <ItemGroup>
+    <Folder Include="AdminAuth\DTO\" />
     <Folder Include="Customer\Validators\" />
     <Folder Include="Dashboard\Validators\" />
   </ItemGroup>

@@ -87,7 +87,7 @@ namespace Infrastructure.Security
             var logInResponse = new LoginResponse
             {
                 Token = tokenHandler.WriteToken(token),
-                Username = user.Email,
+                Username = user.UserName,
                 FullName = $"{user.FirstName} {user.LastName}",
                 Roles = roles,
                 ExpiryTime = expiryTime.LocalDateTime,

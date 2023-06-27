@@ -33,15 +33,15 @@ public class DashboardQueryHandler : IRequestHandler<GetDashboardSummaryQuery, B
         {
             request.StartDate = new DateTime();
         }
-        var subQuery = _context.Subscriptions.Include(x => x.Plan).Where(x => !x.IsDeleted && request.StartDate.Value.Date >= x.CreatedAt.Date);
-        var customerQuery = _context.Users.Where(x => request.StartDate.Value.Date >= x.CreatedAt.Date && !x.IsDeleted);
-        var vendorQuery = _context.Vendors.Where(x => request.StartDate.Value.Date >= x.CreatedAt.Date && !x.IsDeleted);
+        var subQuery = _context.Subscriptions.Include(x => x.Plan).Where(x => !x.IsDeleted && x.CreatedAt.Date >= request.StartDate.Value.Date);
+        var customerQuery = _context.Users.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date && !x.IsDeleted);
+        var vendorQuery = _context.Vendors.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date && !x.IsDeleted);
 
         if (request.EndDate != null)
         {
-            subQuery = subQuery.Where(x => request.EndDate.Value.Date <= x.CreatedAt.Date);
-            customerQuery = customerQuery.Where(x => request.EndDate.Value.Date <= x.CreatedAt.Date);
-            vendorQuery = vendorQuery.Where(x => request.EndDate.Value.Date <= x.CreatedAt.Date);
+            subQuery = subQuery.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
+            customerQuery = customerQuery.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
+            vendorQuery = vendorQuery.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
         }
 
         var dashboardDTO = new DashboardSummaryQuery

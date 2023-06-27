@@ -66,7 +66,7 @@ namespace HealthBanc.Controllers
         /// <param name="changePasswordCommand"></param>
         /// <returns></returns>
         [HttpPatch("[action]")]
-        [Authorize]
+        [Authorize(Roles = "User")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         public async Task<IActionResult> ChangePassword(ChangePassword.Command changePasswordCommand)

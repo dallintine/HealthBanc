@@ -2,14 +2,38 @@
 using Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Persistence.Data;
 
 namespace Persistence.Seed
 {
     public class Seed
     {
-        public static async Task SeedData(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
+        public static async Task SeedData(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager
+            ,IConfiguration configuration)
         {
+            var email = configuration["DefaultAdmin:Email"];
+            var user = await userManager.FindByEmailAsync($"{email}.admin");
+            if (user is null)
+            {               
+                user = new ApplicationUser()
+                {
+                    UserName = email,
+                    Email = $"{email}.admin",
+                    FirstName = configuration["DefaultAdmin:FirstName"],
+                    LastName = configuration["DefaultAdmin:LastName"],
+                    EmailConfirmed = true
+                };
+
+                var result = userManager.CreateAsync(user).Result;
+
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(user,Roles.Admin.ToString());
+                    await context.SaveChangesAsync();
+                }
+            }
+            
             var roles = Enum.GetValues(typeof(Roles))
                             .Cast<Roles>()
                             .ToList();
