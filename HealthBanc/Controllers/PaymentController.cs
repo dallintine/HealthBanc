@@ -22,7 +22,7 @@ namespace HealthBanc.Controllers
         /// <param name="initializeCommand"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
-        [Authorize]
+        [Authorize(Roles = "User")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
@@ -38,7 +38,7 @@ namespace HealthBanc.Controllers
         /// <param name="callbackCommand"></param>
         /// <returns></returns>
         [HttpPatch("[action]")]
-        [Authorize]
+        [Authorize(Roles = "User")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]

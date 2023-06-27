@@ -12,7 +12,8 @@ using System.Threading.Tasks;
 
 namespace Application.Customer
 {
-    public class CustomerQueryHandler : IRequestHandler<GetCustomerListQuery, PageBaseResponse<List<CustomerDTO>>>
+    public class CustomerQueryHandler : IRequestHandler<GetCustomerListQuery, PageBaseResponse<List<CustomerDTO>>> , 
+        IRequestHandler<ExportCustomerListQuery , BaseResponse>
     {
         private readonly ApplicationDbContext _context;
 
@@ -30,10 +31,10 @@ namespace Application.Customer
             }
             var customers = _context.Users.Where(x =>  !x.Email.Contains(".admin")).OrderByDescending(x => x.CreatedAt).AsQueryable();
 
-            customers = customers.Where(x => request.EndDate.Value.Date >= x.CreatedAt.Date);
+            customers = customers.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date);
             if(request.EndDate != null)
             {
-                customers = customers.Where(x => request.EndDate.Value.Date <= x.CreatedAt.Date);
+                customers = customers.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
             }
             if (!String.IsNullOrEmpty(request.SearchText))
             {
@@ -42,8 +43,8 @@ namespace Application.Customer
             }
             var skip = (request.PageNumber - 1) * request.PageSize;
 
-            var filteredQueryable = customers.Skip(skip).Take(request.PageSize).AsQueryable();
-            var recordCount = await customers.CountAsync(cancellationToken: cancellationToken);
+            var filteredQueryable = customers.Skip(skip).Take(request.PageSize);
+            var recordCount = await customers.CountAsync();
             paginatedResponse.RecordCount = recordCount;
             paginatedResponse.PageCount = Convert.ToInt32(Math.Ceiling((double)recordCount / (double)request.PageSize));
             paginatedResponse.PageNumber = request.PageNumber >= 1 ? request.PageNumber : (int?)null;
@@ -61,6 +62,23 @@ namespace Application.Customer
             }).ToListAsync(cancellationToken: cancellationToken);
             paginatedResponse.Data = customersData;
             return paginatedResponse;
+        }
+
+        public async Task<BaseResponse> Handle(ExportCustomerListQuery request, CancellationToken cancellationToken)
+        {
+            var customers = _context.Users.Where(x => !x.Email.Contains(".admin")).OrderByDescending(x => x.CreatedAt).AsQueryable();
+
+            if (request.StartDate is null)
+            {
+                request.StartDate = new DateTime();
+            }
+
+            customers = customers.Where(x => x.CreatedAt.Date >= request.EndDate.Value.Date);
+            if (request.EndDate != null)
+            {
+                customers = customers.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
+            }
+            return BaseResponse.Success("Customer data would be processed and sent to your email address");
         }
     }
 }

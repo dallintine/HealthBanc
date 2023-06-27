@@ -15,7 +15,8 @@ using System.Threading.Tasks;
 namespace Application.Subscriptions
 {
     public class DashboardQueryHandler : IRequestHandler<GetSubscriptionListQuery, PageBaseResponse<List<SubscriptionDTO>>>,
-        IRequestHandler<GetPaymentSummaryQuery, BaseResponse<PaymentSummaryDTO>>
+        IRequestHandler<GetPaymentSummaryQuery, BaseResponse<PaymentSummaryDTO>> , 
+        IRequestHandler<ExportPaymentList , BaseResponse>
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
@@ -36,10 +37,10 @@ namespace Application.Subscriptions
                   (string.IsNullOrEmpty(request.Status) || x.Status.ToLower() == request.Status.ToLower());
             var querySubscriptions = _context.Subscriptions.Include(x => x.ApplicationUser).Include(x => x.Plan).Include(x => x.Plan.Vendor).Where(query);
 
-            querySubscriptions = querySubscriptions.Where(x => request.StartDate.Value.Date >= x.CreatedAt.Date);
+            querySubscriptions = querySubscriptions.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date);
             if (request.EndDate != null)
             {
-                querySubscriptions = querySubscriptions.Where(x => request.EndDate.Value.Date <= x.CreatedAt.Date);
+                querySubscriptions = querySubscriptions.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
             }
 
             if (!String.IsNullOrEmpty(request.SearchText))
@@ -73,6 +74,24 @@ namespace Application.Subscriptions
 
             return BaseResponse<PaymentSummaryDTO>.Success(summaryDTO);
 
+        }
+
+        public async Task<BaseResponse> Handle(ExportPaymentList request, CancellationToken cancellationToken)
+        {
+            if (request.StartDate is null)
+            {
+                request.StartDate = new DateTime();
+            }
+            Func<Subscription, bool> query = x =>
+                  (string.IsNullOrEmpty(request.Status) || x.Status.ToLower() == request.Status.ToLower());
+            var querySubscriptions = _context.Subscriptions.Include(x => x.ApplicationUser).Include(x => x.Plan).Include(x => x.Plan.Vendor).Where(query);
+
+            querySubscriptions = querySubscriptions.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date);
+            if (request.EndDate != null)
+            {
+                querySubscriptions = querySubscriptions.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
+            }
+            return BaseResponse.Success("Payment data would be processed and sent to your email address");
         }
     }
 }

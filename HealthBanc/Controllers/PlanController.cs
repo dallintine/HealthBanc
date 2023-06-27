@@ -4,6 +4,7 @@ using Application.Plans.Commands;
 using Application.Plans.DTO;
 using Application.Plans.Queries;
 using Infrastructure.Helpers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthBanc.Controllers
@@ -35,6 +36,7 @@ namespace HealthBanc.Controllers
         /// <param name="createCommand"></param>
         /// <returns></returns>
         [HttpPost("[action]")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         public async Task<IActionResult> Create(CreatePlanCommand createCommand)
@@ -49,6 +51,7 @@ namespace HealthBanc.Controllers
         /// <param name="editCommand"></param>
         /// <returns></returns>
         [HttpPatch("[action]")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
@@ -65,6 +68,7 @@ namespace HealthBanc.Controllers
         /// <param name="deleteCommand"></param>
         /// <returns></returns>
         [HttpDelete("[action]")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]

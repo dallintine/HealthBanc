@@ -1,6 +1,7 @@
 ﻿using Application.Common.DTO;
 using Application.Subscriptions.DTO;
 using Application.Subscriptions.Queries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthBanc.Controllers
@@ -20,6 +21,7 @@ namespace HealthBanc.Controllers
         /// <param name="queryList"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(PageBaseResponse<List<SubscriptionDTO>>))]
         public async Task<IActionResult> List([FromQuery] GetSubscriptionListQuery queryList)
         {
@@ -33,8 +35,22 @@ namespace HealthBanc.Controllers
         /// <param name="query"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(BaseResponse<PaymentSummaryDTO>))]
         public async Task<IActionResult> PaymentSummary([FromQuery] GetPaymentSummaryQuery query)
+        {
+            return HandleResult(await Mediator.Send(query));
+        }
+
+        /// <summary>
+        /// Export List
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> ExportList([FromQuery] ExportPaymentList query)
         {
             return HandleResult(await Mediator.Send(query));
         }

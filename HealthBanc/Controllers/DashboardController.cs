@@ -1,6 +1,7 @@
 ﻿using Application.Common.DTO;
 using Application.Dashboard.DTO;
 using Application.Dashboard.Queries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HealthBanc.Controllers
@@ -17,6 +18,7 @@ namespace HealthBanc.Controllers
         /// <param name="query"></param>
         /// <returns></returns>
         [HttpGet("[action]")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(BaseResponse<DashboardSummaryQuery>))]
         public async Task<IActionResult> Summary([FromQuery] GetDashboardSummaryQuery query)
         {
