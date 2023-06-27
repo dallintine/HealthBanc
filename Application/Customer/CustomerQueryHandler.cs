@@ -29,13 +29,15 @@ namespace Application.Customer
             {
                 request.StartDate = new DateTime();
             }
-            var customers = _context.Users.Where(x =>  !x.Email.Contains(".admin")).OrderByDescending(x => x.CreatedAt).AsQueryable();
+            //var customers = _context.Users.Where(x =>  !x.Email.Contains(".admin")).OrderByDescending(x => x.CreatedAt).AsQueryable();
+            var customers = _context.Users.Where(x => !x.Email.Contains(".admin")).AsQueryable();
 
-            customers = customers.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date);
-            if(request.EndDate != null)
-            {
-                customers = customers.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
-            }
+
+            //customers = customers.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date);
+            //if(request.EndDate != null)
+            //{
+            //    customers = customers.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
+            //}
             if (!String.IsNullOrEmpty(request.SearchText))
             {
                 customers = customers.Where(x => x.Email.ToLower().Contains(request.SearchText.ToLower()) || x.FirstName.ToLower().Contains(request.SearchText.ToLower())
@@ -56,28 +58,34 @@ namespace Application.Customer
                 Email = x.Email,
                 PhoneNumber = x.PhoneNumber,
                 LastLoginDate = x.LastLoginDate,
-                Address = x.Address,
-                CreatedAt = x.CreatedAt,
+                //Address = x.Address,
+                //CreatedAt = x.CreatedAt,
+                Address = "test",
+                CreatedAt = DateTime.Now,
                 CustomerID = "3"
             }).ToListAsync(cancellationToken: cancellationToken);
             paginatedResponse.Data = customersData;
+            paginatedResponse.Code = "00";
+            paginatedResponse.Description = "Approved or Completed Successfully";
             return paginatedResponse;
         }
 
         public async Task<BaseResponse> Handle(ExportCustomerListQuery request, CancellationToken cancellationToken)
         {
-            var customers = _context.Users.Where(x => !x.Email.Contains(".admin")).OrderByDescending(x => x.CreatedAt).AsQueryable();
+            //var customers = _context.Users.Where(x => !x.Email.Contains(".admin")).OrderByDescending(x => x.CreatedAt).AsQueryable();
+            var customers = _context.Users.Where(x => !x.Email.Contains(".admin")).AsQueryable();
+
 
             if (request.StartDate is null)
             {
                 request.StartDate = new DateTime();
             }
 
-            customers = customers.Where(x => x.CreatedAt.Date >= request.EndDate.Value.Date);
-            if (request.EndDate != null)
-            {
-                customers = customers.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
-            }
+            //customers = customers.Where(x => x.CreatedAt.Date >= request.EndDate.Value.Date);
+            //if (request.EndDate != null)
+            //{
+            //    customers = customers.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
+            //}
             return BaseResponse.Success("Customer data would be processed and sent to your email address");
         }
     }

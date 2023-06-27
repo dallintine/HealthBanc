@@ -34,13 +34,14 @@ public class DashboardQueryHandler : IRequestHandler<GetDashboardSummaryQuery, B
             request.StartDate = new DateTime();
         }
         var subQuery = _context.Subscriptions.Include(x => x.Plan).Where(x => !x.IsDeleted && x.CreatedAt.Date >= request.StartDate.Value.Date);
-        var customerQuery = _context.Users.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date && !x.IsDeleted);
+        //var customerQuery = _context.Users.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date && !x.IsDeleted);
+        var customerQuery = _context.Users.AsQueryable();
         var vendorQuery = _context.Vendors.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date && !x.IsDeleted);
 
         if (request.EndDate != null)
         {
             subQuery = subQuery.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
-            customerQuery = customerQuery.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
+            //customerQuery = customerQuery.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
             vendorQuery = vendorQuery.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
         }
 
@@ -49,7 +50,8 @@ public class DashboardQueryHandler : IRequestHandler<GetDashboardSummaryQuery, B
             TotalRevenue = await subQuery.SumAsync(x => x.Amount, cancellationToken),
             TransactionCount = await subQuery.CountAsync(cancellationToken),
             TotalIncome = await subQuery.SumAsync(x => (x.Amount * Convert.ToDecimal(x.Plan.MarkUpRate)), cancellationToken),
-            CustomersCount = await customerQuery.CountAsync(x => !x.Email.Contains(".admin") && !x.IsDeleted,cancellationToken),
+            //CustomersCount = await customerQuery.CountAsync(x => !x.Email.Contains(".admin") && !x.IsDeleted,cancellationToken),
+            CustomersCount = await customerQuery.CountAsync(x => !x.Email.Contains(".admin"), cancellationToken),
             VendorsCount = await vendorQuery.CountAsync(x => !x.IsDeleted,cancellationToken)
         };
 
