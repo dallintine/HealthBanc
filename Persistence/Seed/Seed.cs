@@ -19,6 +19,7 @@ namespace Persistence.Seed
                 user = new ApplicationUser()
                 {
                     UserName = email,
+                    UniqueUsername = configuration["DefaultAdmin:UniqueUsername"],
                     Email = $"{email}.admin",
                     FirstName = configuration["DefaultAdmin:FirstName"],
                     LastName = configuration["DefaultAdmin:LastName"],
