@@ -76,7 +76,14 @@ namespace Application.Identity
                         return BaseResponse.Failure("06", error);
                     }
                 }
-                return await _tokenService.GetAuthenticationResultForUserAsync(user);
+                if(user.OAuthSubject == OAuthSubject.Goggle.ToString())
+                {
+                    return await _tokenService.GetAuthenticationResultForUserAsync(user);
+                }
+                else
+                {
+                    return BaseResponse.Failure("07", "Kindly Sigin with original auth method");
+                }
             }
         }
     }

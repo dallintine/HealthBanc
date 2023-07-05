@@ -17,6 +17,9 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Application.AdminAuth.DTO;
+using Infrastructure.Services;
 
 namespace Infrastructure.Security
 {
@@ -26,15 +29,19 @@ namespace Infrastructure.Security
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly TokenValidationParameters _tokenValidation;
         private readonly IRepositoryWrapper _repositoryWrapper;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly AppEndpointSettings _appSettings;
         private readonly JwtSettings _jwtSettings;
 
         public TokenService(ILogger<TokenService> logger, UserManager<ApplicationUser> userManager, IOptions<JwtSettings> jwtSettings, TokenValidationParameters tokenValidation,
-            IRepositoryWrapper repositoryWrapper, IHttpContextAccessor accessor) : base(accessor)
+            IRepositoryWrapper repositoryWrapper, IHttpClientFactory httpClientFactory, IOptions<AppEndpointSettings> appSettings , IHttpContextAccessor accessor) : base(accessor)
         {
             _logger = logger;
             _userManager = userManager;
             _tokenValidation = tokenValidation;
             _repositoryWrapper = repositoryWrapper;
+            _httpClientFactory = httpClientFactory;
+            _appSettings = appSettings.Value;
             _jwtSettings = jwtSettings.Value;
         }
 
@@ -149,7 +156,6 @@ namespace Infrastructure.Security
                 return BaseResponse.Success();
             }
         }
-
         private async Task SaveSession(string browser, string deviceIp, long userId, DateTime expiryTime)
         {
             var session = await _repositoryWrapper.UserSession.GetByUserId_Device(userId, deviceIp);
@@ -171,6 +177,32 @@ namespace Infrastructure.Security
                 _repositoryWrapper.UserSession.Update(session);
             }
             await _repositoryWrapper.Save();
+        }
+
+        public async Task<BaseResponse> ValidateAdminPasswordAuth(string username , string password)
+        {
+            var httpClient = _httpClientFactory.CreateClient("Fiorano");
+            var loginCredentials = new ADCredentialsRoot
+            {
+                AD_Credentials = new ADCredentials()
+            };
+            loginCredentials.AD_Credentials.AD_Username = username;
+            loginCredentials.AD_Credentials.AD_Password = password;
+            HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
+
+            var authentication = await httpClient.PostAsync(_appSettings.FiorianoADAuthentication, content);
+            string apiResponse = await authentication.Content.ReadAsStringAsync();
+            if (authentication.IsSuccessStatusCode)
+            {
+                var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
+                if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
+                {
+                    return BaseResponse.Success();
+                }
+                return BaseResponse.Failure( "12" ,"Login detail is invalid, please try again with correct credentials");
+            }
+            _logger.LogInformation("Could not connnect with ADCredentials password sevice");
+            return BaseResponse.Failure("06" , "Could not connect to Password ADService");
         }
     }
 }

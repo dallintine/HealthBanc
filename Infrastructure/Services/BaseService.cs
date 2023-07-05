@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UAParser;
 
-namespace Infrastructure
+namespace Infrastructure.Services
 {
     public class BaseService
     {

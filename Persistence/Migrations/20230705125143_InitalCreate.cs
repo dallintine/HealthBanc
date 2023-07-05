@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Persistence.Migrations
 {
-    public partial class init : Migration
+    public partial class InitalCreate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -36,11 +36,16 @@ namespace Persistence.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UniqueUsername = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     OAuthSubject = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastLoginDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RefreshTokenExpiryTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RefreshToken = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -123,27 +128,6 @@ namespace Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Services", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Transactions",
-                schema: "HealthBanc",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ApplicationUserId = table.Column<long>(type: "bigint", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Transactions", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -284,6 +268,34 @@ namespace Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Transactions",
+                schema: "HealthBanc",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Reference = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApplicationUserId = table.Column<long>(type: "bigint", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Transactions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Transactions_AspNetUsers_ApplicationUserId",
+                        column: x => x.ApplicationUserId,
+                        principalSchema: "HealthBanc",
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Vendors",
                 schema: "HealthBanc",
                 columns: table => new
@@ -335,12 +347,19 @@ namespace Persistence.Migrations
                 {
                     table.PrimaryKey("PK_Plans", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Plans_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalSchema: "HealthBanc",
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_Plans_Vendors_VendorId",
                         column: x => x.VendorId,
                         principalSchema: "HealthBanc",
                         principalTable: "Vendors",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateTable(
@@ -412,7 +431,7 @@ namespace Persistence.Migrations
                         principalSchema: "HealthBanc",
                         principalTable: "Transactions",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateIndex(
@@ -468,6 +487,12 @@ namespace Persistence.Migrations
                 column: "PlanId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Plans_ServiceId",
+                schema: "HealthBanc",
+                table: "Plans",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Plans_VendorId",
                 schema: "HealthBanc",
                 table: "Plans",
@@ -490,6 +515,12 @@ namespace Persistence.Migrations
                 schema: "HealthBanc",
                 table: "Subscriptions",
                 column: "TransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Transactions_ApplicationUserId",
+                schema: "HealthBanc",
+                table: "Transactions",
+                column: "ApplicationUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Vendors_ServiceId",
@@ -545,10 +576,6 @@ namespace Persistence.Migrations
                 schema: "HealthBanc");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers",
-                schema: "HealthBanc");
-
-            migrationBuilder.DropTable(
                 name: "Plans",
                 schema: "HealthBanc");
 
@@ -558,6 +585,10 @@ namespace Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Vendors",
+                schema: "HealthBanc");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers",
                 schema: "HealthBanc");
 
             migrationBuilder.DropTable(

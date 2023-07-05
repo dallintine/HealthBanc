@@ -13,6 +13,8 @@ namespace Application.Common.ConfigSettings
         public string ApiBaseUrl { get; set; }
         public string Login { get; set; }
         public string Environment { get; set; }
+        public string FiorianoBaseAddress { get; set; }
+        public string FiorianoADAuthentication { get; set; }
         public string Salt { get; set; }
         public string VectorKey { get; set; }
     }

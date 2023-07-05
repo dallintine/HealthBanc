@@ -114,6 +114,19 @@ namespace HealthBanc
                 };
             });
 
+            //------------------------Fioriano------------------------------------------------//
+
+            var baseUrl = configuration.GetSection("AppEndpointSettings");
+            services.Configure<AppEndpointSettings>(baseUrl);
+            var baseUrlValues = baseUrl.Get<AppEndpointSettings>();
+
+            services.AddHttpClient("Fiorano", client =>
+            {
+                client.BaseAddress = new Uri(baseUrlValues.FiorianoBaseAddress);
+            })
+                .AddTransientHttpErrorPolicy(x =>
+                x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
+
 
             // ----------------------------------------Email Config--------------------------------------------//
 
@@ -144,6 +157,7 @@ namespace HealthBanc
             services.Configure<AppEndpointSettings>(configuration.GetSection("AppEndpointSettings"));
             services.Configure<SMSSettings>(configuration.GetSection("SMSSettings"));
             services.Configure<AzureBlobStorageSettings>(configuration.GetSection("AzureBlobStorageSettings"));
+            services.Configure<SterlingOtpSettings>(configuration.GetSection("SterlingOtpSettings"));
             services.Configure<DefaultAdmin>(configuration.GetSection("DefaultAdmin")); 
         }
     }

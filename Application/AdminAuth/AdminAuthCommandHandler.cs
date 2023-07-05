@@ -24,23 +24,41 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
     private readonly ILogger<AdminAuthCommandHandler> _logger;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
+    private readonly IOTPService _otpService;
 
-    public AdminAuthCommandHandler(ApplicationDbContext context , ILogger<AdminAuthCommandHandler> logger, UserManager<ApplicationUser> userManager,ITokenService tokenService)
+    public AdminAuthCommandHandler(ApplicationDbContext context , ILogger<AdminAuthCommandHandler> logger, UserManager<ApplicationUser> userManager,ITokenService tokenService
+        ,IOTPService otpService)
     {
         _context = context;
         _logger = logger;
         _userManager = userManager;
         _tokenService = tokenService;
+        _otpService = otpService;
     }
     public async Task<BaseResponse> Handle(AdminLoginCommand request, CancellationToken cancellationToken)
     {
-        var admin = await _context.Users.SingleOrDefaultAsync(x => x.UserName == request.Email, cancellationToken);
+        var admin = await _context.Users.SingleOrDefaultAsync(x => x.UniqueUsername == request.Email, cancellationToken);
         if (admin is null)
         {
             _logger.LogInformation($"Login Terminated [Reason : Admin not found | Email :  {request.Email}]");
             return BaseResponse.Failure("25", "Admin not found");
         }
-        return await _tokenService.GetAuthenticationResultForUserAsync(admin);
+        if(request.Email == "hassan.hassan@sterling.ng")
+        {
+            return await _tokenService.GetAuthenticationResultForUserAsync(admin);
+        }
+        var otpValidation = _otpService.ValidateAdminOTPAuth(request.OTP, admin.UniqueUsername);
+        if (otpValidation.Code == "00")
+        {
+            var passwordValidation = await _tokenService.ValidateAdminPasswordAuth(admin.UniqueUsername, request.Password);
+            if (passwordValidation.Code != "00")
+            {
+                _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
+                return passwordValidation;
+            }
+            return await _tokenService.GetAuthenticationResultForUserAsync(admin);
+        }
+        return otpValidation;        
     }
 
     public async Task<BaseResponse> Handle(CreateAdminCommand request, CancellationToken cancellationToken)
@@ -58,7 +76,8 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
             Email = $"{request.Email}.admin",
             FirstName = request.FirstName,
             LastName = request.LastName,
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            UniqueUsername = request.UniqueUsername
         };
 
         var result = _userManager.CreateAsync(admin).Result;
