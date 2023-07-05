@@ -37,7 +37,7 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
     }
     public async Task<BaseResponse> Handle(AdminLoginCommand request, CancellationToken cancellationToken)
     {
-        var admin = await _context.Users.SingleOrDefaultAsync(x => x.UniqueUsername == request.Email, cancellationToken);
+        var admin = await _context.Users.SingleOrDefaultAsync(x => x.UserName == request.Email, cancellationToken);
         if (admin is null)
         {
             _logger.LogInformation($"Login Terminated [Reason : Admin not found | Email :  {request.Email}]");
