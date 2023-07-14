@@ -45,6 +45,8 @@ namespace HealthBanc
                 , options => options.EnableRetryOnFailure(
                   maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
+            services.AddDbContext<LogDbContext>(options => options.UseMySQL(configuration.GetConnectionString("LogConnection")));
+
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
                 options.SignIn.RequireConfirmedEmail = false;

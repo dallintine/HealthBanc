@@ -109,6 +109,8 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
+app.UseMiddleware<RequestResponseLoggerMiddleware>(app);
+
 app.MapControllers();
 
 app.Run();
