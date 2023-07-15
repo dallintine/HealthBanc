@@ -2,7 +2,6 @@
 using Application.Common.ConfigSettings;
 using Application.Identity;
 using Application.Common.Interfaces;
-using DataAccess;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -21,6 +20,8 @@ using Newtonsoft.Json;
 using Application.AdminAuth.DTO;
 using Infrastructure.Services;
 using Application.Identity.DTO;
+using Persistence.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Security
 {
@@ -30,16 +31,18 @@ namespace Infrastructure.Security
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly TokenValidationParameters _tokenValidation;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ApplicationDbContext _context;
         private readonly AppEndpointSettings _appSettings;
         private readonly JwtSettings _jwtSettings;
 
         public TokenService(ILogger<TokenService> logger, UserManager<ApplicationUser> userManager, IOptions<JwtSettings> jwtSettings, TokenValidationParameters tokenValidation,
-             IHttpClientFactory httpClientFactory, IOptions<AppEndpointSettings> appSettings , IHttpContextAccessor accessor) : base(accessor)
+             IHttpClientFactory httpClientFactory, IOptions<AppEndpointSettings> appSettings , IHttpContextAccessor accessor,ApplicationDbContext context) : base(accessor)
         {
             _logger = logger;
             _userManager = userManager;
             _tokenValidation = tokenValidation;
             _httpClientFactory = httpClientFactory;
+            _context = context;
             _appSettings = appSettings.Value;
             _jwtSettings = jwtSettings.Value;
         }
@@ -106,11 +109,11 @@ namespace Infrastructure.Security
         }
         public async Task<BaseResponse> ClearSession()
         {
-            var session = await _repositoryWrapper.UserSession.GetByIp_Device(IpAddress, Device);
+            var session = await _context.UserSessions.Where(x => x.DeviceIp == IpAddress && x.Browser == Device).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
             if (session != null)
             {
-                _repositoryWrapper.UserSession.Delete(session);
-                await _repositoryWrapper.Save();
+                _context.UserSessions.Remove(session);
+                await _context.SaveChangesAsync();
             }
             return BaseResponse.Success();
         }
@@ -136,7 +139,7 @@ namespace Infrastructure.Security
         }
         private async Task<BaseResponse> UserInSession(long userId, string deviceIp, string browser, bool isAdmin)
         {
-            var session = await _repositoryWrapper.UserSession.GetByUserId_Device(userId, deviceIp);
+            var session = await _context.UserSessions.Where(x => x.UserId == userId && x.DeviceIp == IpAddress).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
             if (session is null)
             {
                 return BaseResponse.Success();
@@ -157,7 +160,7 @@ namespace Infrastructure.Security
         }
         private async Task SaveSession(string browser, string deviceIp, long userId, DateTime expiryTime)
         {
-            var session = await _repositoryWrapper.UserSession.GetByUserId_Device(userId, deviceIp);
+            var session = await _context.UserSessions.Where(x => x.UserId == userId && x.DeviceIp == IpAddress).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
             if (session is null)
             {
 
@@ -166,16 +169,16 @@ namespace Infrastructure.Security
                 newSession.DeviceIp = deviceIp;
                 newSession.UserId = userId;
                 newSession.ExpiryDate = expiryTime;
-                _repositoryWrapper.UserSession.Create(newSession);
+                _context.UserSessions.Add(newSession);
             }
             else
             {
                 session.Browser = browser;
                 session.DeviceIp = deviceIp;
                 session.ExpiryDate = expiryTime;
-                _repositoryWrapper.UserSession.Update(session);
+                _context.UserSessions.Update(session);
             }
-            await _repositoryWrapper.Save();
+            await _context.SaveChangesAsync();
         }
 
         public async Task<BaseResponse> ValidateAdminPasswordAuth(string username , string password)

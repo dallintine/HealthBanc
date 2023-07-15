@@ -1,7 +1,6 @@
 ﻿using Application.CommonDTO;
 using Application.Common.ConfigSettings;
 using Application.Common.Interfaces;
-using Application.Payment;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -14,6 +13,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Infrastructure.Services;
+using Application.Payment.DTO;
 
 namespace Infrastructure.Paystack
 {

@@ -1,4 +1,5 @@
 ﻿using Application.AdminAuth.Commands;
+using Application.Common.ConfigSettings;
 using Application.Common.DTO;
 using Application.Common.Interfaces;
 using Domain.Entities;
@@ -7,6 +8,7 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Persistence.Data;
 using System;
@@ -25,15 +27,17 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
     private readonly IOTPService _otpService;
+    private readonly DefaultAdmin _defaultAdminSettings;
 
     public AdminAuthCommandHandler(ApplicationDbContext context , ILogger<AdminAuthCommandHandler> logger, UserManager<ApplicationUser> userManager,ITokenService tokenService
-        ,IOTPService otpService)
+        ,IOTPService otpService, IOptions<DefaultAdmin> defaultAdminSettings)
     {
         _context = context;
         _logger = logger;
         _userManager = userManager;
         _tokenService = tokenService;
         _otpService = otpService;
+        _defaultAdminSettings = defaultAdminSettings.Value;
     }
     public async Task<BaseResponse> Handle(AdminLoginCommand request, CancellationToken cancellationToken)
     {
@@ -43,7 +47,7 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
             _logger.LogInformation($"Login Terminated [Reason : Admin not found | Email :  {request.Email}]");
             return BaseResponse.Failure("25", "Admin not found");
         }
-        if(request.Email == "hassan.hassan@sterling.ng")
+        if(request.Email == _defaultAdminSettings.Email)
         {
             return await _tokenService.GetAuthenticationResultForUserAsync(admin);
         }

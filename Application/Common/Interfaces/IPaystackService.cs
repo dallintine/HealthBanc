@@ -1,4 +1,4 @@
-﻿using Application.Payment;
+﻿using Application.Payment.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,7 +1,6 @@
 ﻿using Application.Common.DTO;
 using Application.Common.ConfigSettings;
 using Application.Common.Interfaces;
-using DataAccess;
 using Domain.Entities;
 using Domain.Enums;
 using Microsoft.Extensions.Logging;
@@ -15,23 +14,25 @@ using System.Net;
 using System.Xml;
 using Newtonsoft.Json;
 using Application.AdminAuth.Commands;
+using Persistence.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.OTP
 {
     public class OTPService : IOTPService
     {
-        private readonly IRepositoryWrapper _repositoryWrapper;
         private readonly ILogger<OTPService> _logger;
         private readonly IEncryptionService _encryptionService;
+        private readonly ApplicationDbContext _context;
         private readonly SterlingOtpSettings _otpSettings;
         private readonly AppEndpointSettings _appEndpoint;
 
-        public OTPService(IRepositoryWrapper repositoryWrapper, ILogger<OTPService> logger, IEncryptionService encryptionService, IOptions<AppEndpointSettings> appEndpoint,
+        public OTPService(ILogger<OTPService> logger, IEncryptionService encryptionService, IOptions<AppEndpointSettings> appEndpoint,ApplicationDbContext context ,
             IOptions<SterlingOtpSettings>  otpSettings)
         {
-            _repositoryWrapper = repositoryWrapper;
             _logger = logger;
             _encryptionService = encryptionService;
+            _context = context;
             _otpSettings = otpSettings.Value;
             _appEndpoint = appEndpoint.Value;
         }
@@ -46,15 +47,16 @@ namespace Infrastructure.OTP
                 ExpiresAt = DateTime.Now.AddMinutes(7),
                 Otp = _encryptionService.SHA512(otpCode)
             };
-            _repositoryWrapper.OneTimePassword.Create(userOTP);
-            await _repositoryWrapper.Save();
+            _context.OneTimePasswords.Add(userOTP);
+            await _context.SaveChangesAsync();
             return BaseResponse<string>.Success(otpCode);
         }
 
         public async Task<BaseResponse> ValidateOTP(long userId, string encryptedOTP, string action)
         {
             var hashedOTP = _encryptionService.SHA512(encryptedOTP);
-            var otp = await _repositoryWrapper.OneTimePassword.GetUserLastOTP(userId, action);
+            var otp = await _context.OneTimePasswords.Where(x => x.ApplicationUserId == userId && x.Action.ToLower() == action.ToLower() && x.Status == false)
+               .OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
             if (otp != null)
             {
                 if (otp.ExpiresAt > DateTimeOffset.Now)
@@ -64,8 +66,8 @@ namespace Infrastructure.OTP
                         if (otp.Otp == hashedOTP)
                         {
                             otp.Status = true;
-                            _repositoryWrapper.OneTimePassword.Update(otp);
-                            await _repositoryWrapper.Save();
+                            _context.OneTimePasswords.Update(otp);
+                            await _context.SaveChangesAsync();
                             return BaseResponse.Success();
                         }
                         _logger.LogInformation($"Validate OTP Terminated [Reason : OTP is old | UserId : {userId} | Action : {action} ]\n");

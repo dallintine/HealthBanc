@@ -2,7 +2,6 @@
 using Application.Service.DTO;
 using Application.Service.Queries;
 using AutoMapper;
-using DataAccess;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Data;

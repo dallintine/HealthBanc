@@ -1,7 +1,6 @@
 ﻿using Application.Common.DTO;
 using Application.Common.ConfigSettings;
 using Application.Plans;
-using DataAccess;
 using Domain.Entities;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -27,7 +26,6 @@ namespace HealthBanc
             services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
             services.AddValidatorsFromAssemblyContaining<Create>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            services.AddScoped<IRepositoryWrapper, RepositoryWrapper>();
             services.AddAutoMapper(typeof(MappingProfile));
 
 

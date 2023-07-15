@@ -1,5 +1,6 @@
 ﻿using Application.Common.DTO;
 using Application.Payment;
+using Application.Payment.Commands;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> Initialize(Initialize.Command initializeCommand)
+        public async Task<IActionResult> Initialize(InitializeCommand initializeCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(initializeCommand));
@@ -42,7 +43,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> CallBack(CallBack.Command callbackCommand)
+        public async Task<IActionResult> CallBack(CallbackCommand callbackCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(callbackCommand));

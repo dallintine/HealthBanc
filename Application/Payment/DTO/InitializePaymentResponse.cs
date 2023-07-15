@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Payment
+namespace Application.Payment.DTO
 {
     public class InitializePaymentResponse
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Payment
+namespace Application.Payment.DTO
 {
     public class VerifyPaymentResponse
     {
@@ -69,5 +69,5 @@ namespace Application.Payment
         [JsonProperty("transaction_date")]
         public DateTime TransactionDate { get; set; }
     }
-  
+
 }
