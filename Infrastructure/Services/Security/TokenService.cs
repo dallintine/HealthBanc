@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Application.AdminAuth.DTO;
 using Infrastructure.Services;
+using Application.Identity.DTO;
 
 namespace Infrastructure.Security
 {
@@ -28,18 +29,16 @@ namespace Infrastructure.Security
         private readonly ILogger<TokenService> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly TokenValidationParameters _tokenValidation;
-        private readonly IRepositoryWrapper _repositoryWrapper;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly AppEndpointSettings _appSettings;
         private readonly JwtSettings _jwtSettings;
 
         public TokenService(ILogger<TokenService> logger, UserManager<ApplicationUser> userManager, IOptions<JwtSettings> jwtSettings, TokenValidationParameters tokenValidation,
-            IRepositoryWrapper repositoryWrapper, IHttpClientFactory httpClientFactory, IOptions<AppEndpointSettings> appSettings , IHttpContextAccessor accessor) : base(accessor)
+             IHttpClientFactory httpClientFactory, IOptions<AppEndpointSettings> appSettings , IHttpContextAccessor accessor) : base(accessor)
         {
             _logger = logger;
             _userManager = userManager;
             _tokenValidation = tokenValidation;
-            _repositoryWrapper = repositoryWrapper;
             _httpClientFactory = httpClientFactory;
             _appSettings = appSettings.Value;
             _jwtSettings = jwtSettings.Value;
@@ -91,7 +90,7 @@ namespace Infrastructure.Security
             user.LastLoginDate = DateTime.Now;
             await _userManager.UpdateAsync(user);
 
-            var logInResponse = new LoginResponse
+            var logInResponse = new LoginResponseDTO
             {
                 Token = tokenHandler.WriteToken(token),
                 Username = user.UserName,
@@ -103,7 +102,7 @@ namespace Infrastructure.Security
 
             await _userManager.ResetAccessFailedCountAsync(user);
             await SaveSession(Device, IpAddress, user.Id, logInResponse.ExpiryTime);
-            return BaseResponse<LoginResponse>.Success(logInResponse);
+            return BaseResponse<LoginResponseDTO>.Success(logInResponse);
         }
         public async Task<BaseResponse> ClearSession()
         {

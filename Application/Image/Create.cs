@@ -1,7 +1,6 @@
 ﻿using Application.CommonDTO;
 using Application.Common.DTO;
 using Application.Common.Interfaces;
-using DataAccess;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -33,13 +32,11 @@ namespace Application.Image
         public class Handler : IRequestHandler<Command, BaseResponse>
         {
             private readonly ILogger<Handler> _logger;
-            private readonly IRepositoryWrapper _repositoryWrapper;
             private readonly IImageService _imageService;
 
-            public Handler(ILogger<Handler> logger, IRepositoryWrapper repositoryWrapper, IImageService imageService)
+            public Handler(ILogger<Handler> logger, IImageService imageService)
             {
                 _logger = logger;
-                _repositoryWrapper = repositoryWrapper;
                 _imageService = imageService;
             }
             public async Task<BaseResponse> Handle(Command request, CancellationToken cancellationToken)

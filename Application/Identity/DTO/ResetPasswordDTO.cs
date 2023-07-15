@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Identity
+namespace Application.Identity.DTO
 {
-    public class ResetPasswordRequest
+    public class ResetPasswordDTO
     {
         [Required]
         public string Password { get; set; }

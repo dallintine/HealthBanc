@@ -1,6 +1,7 @@
 ﻿using Application.AdminAuth.Commands;
 using Application.Common.DTO;
 using Application.Identity;
+using Application.Identity.DTO;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,7 +40,7 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponseDTO>))]
         public async Task<IActionResult> Login(AdminLoginCommand command)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));

@@ -16,13 +16,12 @@
   </ItemGroup>
 	
   <ItemGroup>
-    <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
+    <Folder Include="Customer\Validators\" />
+    <Folder Include="Dashboard\Validators\" />
   </ItemGroup>
 	
   <ItemGroup>
-    <Folder Include="Customer\Validators\" />
-    <Folder Include="Dashboard\Validators\" />
-    <Folder Include="Identity\DTO\" />
+    <ProjectReference Include="..\Persistence\Persistence.csproj" />
   </ItemGroup>
 
 </Project>

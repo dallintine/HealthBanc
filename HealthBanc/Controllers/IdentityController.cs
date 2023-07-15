@@ -1,5 +1,8 @@
 ﻿using Application.Common.DTO;
 using Application.Identity;
+using Application.Identity.Commands;
+using Application.Identity.DTO;
+using Application.Identity.Queries;
 using Google.Apis.Auth;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authorization;
@@ -25,7 +28,7 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> RegisterUser(Register.Command registerUserCommand)
+        public async Task<IActionResult> RegisterUser(RegisterCommand registerUserCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(registerUserCommand));
@@ -39,8 +42,8 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
-        public async Task<IActionResult> Login(Login.Query loginQuery)
+        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponseDTO>))]
+        public async Task<IActionResult> Login(LoginQuery loginQuery)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(loginQuery));
@@ -53,11 +56,11 @@ namespace HealthBanc.Controllers
         [HttpGet("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponseDTO>))]
         public async Task<IActionResult> Logout()
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
-            return HandleResult(await Mediator.Send(new Logout.Query()));
+            return HandleResult(await Mediator.Send(new LogOutQuery()));
         }
 
         /// <summary>
@@ -69,7 +72,7 @@ namespace HealthBanc.Controllers
         [Authorize(Roles = "User")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ChangePassword(ChangePassword.Command changePasswordCommand)
+        public async Task<IActionResult> ChangePassword(ChangePasswordCommand changePasswordCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(changePasswordCommand));
@@ -83,10 +86,10 @@ namespace HealthBanc.Controllers
         [HttpPatch("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ResetPassword([Required] string email, [Required] string emailToken ,[FromBody] ResetPasswordRequest  resetPassword)
+        public async Task<IActionResult> ResetPassword([Required] string email, [Required] string emailToken ,[FromBody] ResetPasswordDTO  resetPassword)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
-            return HandleResult(await Mediator.Send(new ResetPassword.Command { Email = email, EmailToken = emailToken, Password = resetPassword.Password}));
+            return HandleResult(await Mediator.Send(new ResetPasswordCommand { Email = email, EmailToken = emailToken, Password = resetPassword.Password}));
         }
 
         /// <summary>
@@ -97,10 +100,10 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ForgotPassword(ForgotPassword.Query forgotPasswordQuery)
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordCommand forgotPasswordCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
-            return HandleResult(await Mediator.Send(forgotPasswordQuery));
+            return HandleResult(await Mediator.Send(forgotPasswordCommand));
         }
 
         /// <summary>
@@ -111,7 +114,7 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ResendConfirmationEmail(ResendConfirmationOTP.Query resendConfirmationOTP)
+        public async Task<IActionResult> ResendConfirmationEmail(ResendConfirmationOTPQuery resendConfirmationOTP)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(resendConfirmationOTP));
@@ -126,7 +129,7 @@ namespace HealthBanc.Controllers
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> ConfirmAccount(ConfirmEmail.Command confirmAccountCommand)
+        public async Task<IActionResult> ConfirmAccount(ConfirmEmailCommand confirmAccountCommand)
         {
             _logger.LogInformation($"Confirm Account Request \n");
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
@@ -141,8 +144,8 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
-        public async Task<IActionResult> RefreshToken(RefreshToken.Query refreshTokenQuery)
+        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponseDTO>))]
+        public async Task<IActionResult> RefreshToken(RefreshTokenQuery refreshTokenQuery)
         {
             _logger.LogInformation($"Refresh Token Request \n");
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
@@ -157,8 +160,8 @@ namespace HealthBanc.Controllers
         [HttpPost("[action]")]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
         [ProducesResponseType(404, Type = typeof(BaseResponse))]
-        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponse>))]
-        public async Task<IActionResult> GoogleAuth(GoggleAuth.Command command)
+        [ProducesResponseType(200, Type = typeof(BaseResponse<LoginResponseDTO>))]
+        public async Task<IActionResult> GoogleAuth(GoggleAuthCommand command)
         {
             _logger.LogInformation($"Goggle Auth Request \n");
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
