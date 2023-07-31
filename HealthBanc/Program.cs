@@ -10,6 +10,7 @@ using Microsoft.OpenApi.Models;
 using Persistence.Data;
 using Persistence.Seed;
 using Serilog;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +86,12 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 app.ConfigureExceptionHandler(app.Logger);
+
+ServicePointManager.ServerCertificateValidationCallback +=
+              (sender, certificate, chain, errors) =>
+              {
+                  return true;
+              };
 
 app.Use(async (context, next) =>
 {
