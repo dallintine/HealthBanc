@@ -19,5 +19,6 @@ namespace Application.Subscriptions.DTO
         public bool IsSuccessful { get; set; }
         public string Vendor { get; set; }
         public string Plan { get; set; }
+        public string PaymentReference { get; set; }
     }
 }

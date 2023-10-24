@@ -13,6 +13,7 @@ namespace Application.Common.ConfigSettings
         public string VerifyPayment { get; set; }
         public string SecretKey { get; set; }
         public string CallbackUrl { get; set; }
+        public decimal Charges { get; set; }
 
     }
 }

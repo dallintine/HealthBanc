@@ -1,5 +1,4 @@
-﻿using Application.CommonDTO;
-using Application.Common.DTO;
+﻿using Application.Common.DTO;
 using Application.Common.ConfigSettings;
 using Application.Common.Interfaces;
 using Azure.Storage.Blobs;
@@ -10,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Application.Image.DTO;
 
 namespace Infrastructure.Image
 {

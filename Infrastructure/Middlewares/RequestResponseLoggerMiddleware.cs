@@ -1,9 +1,9 @@
-﻿using Application.CommonDTO;
-using Domain.Entities.Common;
+﻿using Domain.Entities.Common;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Persistence.Data;
 using System;
@@ -18,24 +18,28 @@ namespace Infrastructure.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly IApplicationBuilder _app;
+        private readonly ILogger _logger;
 
-        public RequestResponseLoggerMiddleware(RequestDelegate next, IApplicationBuilder app)
+        public RequestResponseLoggerMiddleware(RequestDelegate next, IApplicationBuilder app, ILogger logger)
         {
             _next = next;
             _app = app;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext httpContext)
         {
-            var log = new LogResponse();
-            HttpRequest request = httpContext.Request;
+            try
+            {
+                var log = new LogResponse();
+                HttpRequest request = httpContext?.Request;
 
             log.RequestId = httpContext.TraceIdentifier;
             var ip = request.HttpContext.Connection.RemoteIpAddress;
             log.ServiceName = "HealthBanc";
             log.UserId = request.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "UserId")?.Value;
             log.Port = request.Host.Port.ToString();
-            log.ActionName = httpContext.Request.HttpContext.GetEndpoint().DisplayName;
+            log.ActionName = httpContext.Request.HttpContext.GetEndpoint()?.DisplayName;
             /*request*/
             log.RequestMethod = request.Method;
             log.Route = request.Path;
@@ -45,34 +49,40 @@ namespace Infrastructure.Middlewares
             log.HostName = request.Host.ToString();
             log.ContentType = request.ContentType;
 
-            // Temporarily replace the HttpResponseStream, which is a write-only stream, with a MemoryStream to capture it's value in-flight.
-            HttpResponse response = httpContext.Response;
-            var originalResponseBody = response.Body;
-            using var newResponseBody = new MemoryStream();
-            response.Body = newResponseBody;
+                // Temporarily replace the HttpResponseStream, which is a write-only stream, with a MemoryStream to capture it's value in-flight.
+                HttpResponse response = httpContext.Response;
+                var originalResponseBody = response?.Body;
+                using var newResponseBody = new MemoryStream();
+                response.Body = newResponseBody;
 
-            await _next(httpContext);
+                await _next(httpContext);
 
-            newResponseBody.Seek(0, SeekOrigin.Begin);
-            var responseBodyText = await new StreamReader(response.Body).ReadToEndAsync();
+                newResponseBody.Seek(0, SeekOrigin.Begin);
+                var responseBodyText = await new StreamReader(response.Body).ReadToEndAsync();
 
-            newResponseBody.Seek(0, SeekOrigin.Begin);
-            await newResponseBody.CopyToAsync(originalResponseBody);
+                newResponseBody.Seek(0, SeekOrigin.Begin);
+                await newResponseBody.CopyToAsync(originalResponseBody);
 
-            /*response*/
-            log.StatusCode = response.StatusCode.ToString();
-            log.RequestHeader = JsonConvert.SerializeObject(FormatHeaders(response.Headers));
-            log.ResponseDetails = responseBodyText;
-            log.DateLogged = DateTime.Now.AddDays(-1);
+                /*response*/
+                log.StatusCode = response?.StatusCode.ToString();
+                log.RequestHeader = JsonConvert.SerializeObject(FormatHeaders(response.Headers));
+                log.ResponseDetails = responseBodyText;
+                log.DateLogged = DateTime.Now.AddDays(-1);
 
 
-            var jsonString = JsonConvert.SerializeObject(log);
-            var w = log;
+                var jsonString = JsonConvert.SerializeObject(log);
+                var w = log;
 
-            using var scope = _app.ApplicationServices.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<LogDbContext>();
-            dbContext.LogResponses.Add(log);
-            await dbContext.SaveChangesAsync();
+                using var scope = _app.ApplicationServices.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<LogDbContext>();
+                dbContext.LogResponses.Add(log);
+                await dbContext.SaveChangesAsync();
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError($"Error occured while trying to log Audit [Exception : {ex.ToString()}]");
+                await _next(httpContext);
+            }           
         }
 
 

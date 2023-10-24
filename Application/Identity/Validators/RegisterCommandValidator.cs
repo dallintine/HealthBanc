@@ -12,9 +12,10 @@ namespace Application.Identity.Validators
     {
         public RegisterCommandValidator()
         {
-            RuleFor(x => x.Email).NotEmpty().NotNull().EmailAddress();
+            RuleFor(x => x.Email).NotEmpty().NotNull();
             RuleFor(x => x.FirstName).NotEmpty().NotNull();
             RuleFor(x => x.LastName).NotEmpty().NotNull();
+            RuleFor(x => x.Address).NotEmpty().NotNull();
             RuleFor(x => x.Password).NotEmpty().NotNull();
             RuleFor(x => x.PhoneNumber).NotEmpty().NotNull();
         }

@@ -16,7 +16,10 @@ namespace Application.Plans;
 
 public class PlanCommandHandler : IRequestHandler<CreatePlanCommand, BaseResponse>,
     IRequestHandler<UpdatePlanCommand, BaseResponse>,
-    IRequestHandler<DeletePlanCommand, BaseResponse>
+    IRequestHandler<DeletePlanCommand, BaseResponse>,
+    IRequestHandler<CreatePlanDescriptionCommand, BaseResponse>,
+    IRequestHandler<DeletePlanDescriptionCommand, BaseResponse>,
+    IRequestHandler<UpdatePlanDescriptionCommand, BaseResponse>
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PlanCommandHandler> _logger;
@@ -53,6 +56,8 @@ public class PlanCommandHandler : IRequestHandler<CreatePlanCommand, BaseRespons
         plan.MarkUpRate = request.MarkUpRate;
         plan.Price = request.Price;
         plan.Name = request.Name;
+        plan.ImageURL = request.ImageURL;
+        plan.Tag = request.Tag;
         _context.Plans.Update(plan);
         await _context.SaveChangesAsync(cancellationToken);
         return BaseResponse.Success();
@@ -65,6 +70,47 @@ public class PlanCommandHandler : IRequestHandler<CreatePlanCommand, BaseRespons
         if (plan is null) return BaseResponse.Failure("25", "No record found");
         plan.IsDeleted = true;
         _context.Plans.Update(plan);
+        await _context.SaveChangesAsync(cancellationToken);
+        return BaseResponse.Success();
+    }
+
+    public async Task<BaseResponse> Handle(CreatePlanDescriptionCommand request, CancellationToken cancellationToken)
+    {
+        var plan = await _context.Plans.FindAsync(request.PlanId);
+        if(plan is null|| plan.IsDeleted) return BaseResponse.Failure("25", "No Record Found - Plan not found");
+        var planDescription = await _context.PlanDescriptions.FirstOrDefaultAsync(x => x.Name.ToLower() == request.Name.ToLower() && x.PlanId == request.PlanId && !x.IsDeleted, cancellationToken);
+        if (planDescription != null) return BaseResponse.Failure("26", "Duplicate Record - Plan Description with this name exist");
+        planDescription = new PlanDescription
+        {
+            Name = request.Name,
+            PlanId = request.PlanId,
+        };
+        _context.PlanDescriptions.Add(planDescription);
+        await _context.SaveChangesAsync(cancellationToken);
+        return BaseResponse.Success();
+    }
+
+    public async Task<BaseResponse> Handle(DeletePlanDescriptionCommand request, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation($"Delete Plan Description request processing [PlanId : {request.Id}]");
+        var planDescription = await _context.PlanDescriptions.SingleOrDefaultAsync(x => x.Id == request.Id && !x.IsDeleted, cancellationToken);
+        if (planDescription is null) return BaseResponse.Failure("25", "No record found");
+        planDescription.IsDeleted = true;
+        _context.PlanDescriptions.Update(planDescription);
+        await _context.SaveChangesAsync(cancellationToken);
+        return BaseResponse.Success();
+    }
+
+    public async Task<BaseResponse> Handle(UpdatePlanDescriptionCommand request, CancellationToken cancellationToken)
+    {
+        var plan = await _context.Plans.FindAsync(request.PlanId);
+        if (plan is null || plan.IsDeleted) return BaseResponse.Failure("25", "No Record Found - Plan not found");
+        _logger.LogInformation($"Edit Plan description request processing [Payload : {JsonConvert.SerializeObject(request)}] \n");
+        var planDescription = await _context.PlanDescriptions.SingleOrDefaultAsync(x => x.Id == request.Id && !x.IsDeleted, cancellationToken);
+        if (planDescription is null) return BaseResponse.Failure("25", "No record Found");
+        planDescription.Name = request.Name;
+        planDescription.PlanId = request.PlanId;
+        _context.PlanDescriptions.Update(planDescription);
         await _context.SaveChangesAsync(cancellationToken);
         return BaseResponse.Success();
     }

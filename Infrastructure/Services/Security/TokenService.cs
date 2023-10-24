@@ -121,6 +121,11 @@ namespace Infrastructure.Security
         {
             return Claims;
         }
+
+        public string GetIP()
+        {
+            return IpAddress;
+        }
         public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -139,22 +144,26 @@ namespace Infrastructure.Security
         }
         private async Task<BaseResponse> UserInSession(long userId, string deviceIp, string browser, bool isAdmin)
         {
-            var session = await _context.UserSessions.Where(x => x.UserId == userId && x.DeviceIp == IpAddress).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
+            //var session = await _context.UserSessions.Where(x => x.UserId == userId && x.DeviceIp == IpAddress).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
+            var session = await _context.UserSessions.Where(x => x.UserId == userId).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
             if (session is null)
             {
                 return BaseResponse.Success();
             }
             else
             {
-                if (isAdmin && DateTime.Now < session.ExpiryDate && session.DeviceIp == deviceIp)
+                //if (isAdmin && DateTime.Now < session.ExpiryDate && session.DeviceIp == deviceIp)
+                //{
+                //    return BaseResponse.Failure("12","You have an active session in another device. Sign out of it to Sign in here.");
+                //}
+                //else if (!isAdmin && DateTime.Now < session.ExpiryDate && session.DeviceIp == deviceIp && session.Browser.ToLower() == browser.ToLower())
+                //{
+                //    return BaseResponse.Failure("12",  "You have an active session in one of your browser!. Sign out of it to Sign in here." );
+                //}
+                if (DateTime.Now < session.ExpiryDate && session.DeviceIp == deviceIp && session.Browser.ToLower() == browser.ToLower())
                 {
-                    return BaseResponse.Failure("12","You have an active session in another device. Sign out of it to Sign in here.");
+                    return BaseResponse.Failure("12", "You have an active session in one of your browser tab. Sign out of it to Sign in here.");
                 }
-                else if (!isAdmin && DateTime.Now < session.ExpiryDate && session.DeviceIp == deviceIp && session.Browser.ToLower() == browser.ToLower())
-                {
-                    return BaseResponse.Failure("12",  "You have an active session in one of your browser!. Sign out of it to Sign in here." );
-                }
-
                 return BaseResponse.Success();
             }
         }

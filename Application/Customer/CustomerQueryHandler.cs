@@ -1,4 +1,5 @@
 ﻿using Application.Common.DTO;
+using Application.Common.Interfaces;
 using Application.Customer.DTO;
 using Application.Customer.Queries;
 using MediatR;
@@ -13,13 +14,15 @@ using System.Threading.Tasks;
 namespace Application.Customer
 {
     public class CustomerQueryHandler : IRequestHandler<GetCustomerListQuery, PageBaseResponse<List<CustomerDTO>>> , 
-        IRequestHandler<ExportCustomerListQuery , BaseResponse>
+        IRequestHandler<ExportCustomerListQuery , BaseResponse<byte[]>>
     {
         private readonly ApplicationDbContext _context;
+        private readonly IFileService _fileService;
 
-        public CustomerQueryHandler(ApplicationDbContext context)
+        public CustomerQueryHandler(ApplicationDbContext context, IFileService fileService)
         {
             _context = context;
+            _fileService = fileService;
         }
 
         public  async Task<PageBaseResponse<List<CustomerDTO>>> Handle(GetCustomerListQuery request, CancellationToken cancellationToken)
@@ -59,7 +62,7 @@ namespace Application.Customer
                 LastLoginDate = x.LastLoginDate,
                 Address = x.Address,
                 CreatedAt = x.CreatedAt,
-                CustomerID = "3"
+                CustomerID = x.Id.ToString().PadLeft(6, '0')
             }).ToListAsync(cancellationToken: cancellationToken);
             paginatedResponse.Data = customersData;
             paginatedResponse.Code = "00";
@@ -67,7 +70,7 @@ namespace Application.Customer
             return paginatedResponse;
         }
 
-        public async Task<BaseResponse> Handle(ExportCustomerListQuery request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<byte[]>> Handle(ExportCustomerListQuery request, CancellationToken cancellationToken)
         {
             var customers = _context.Users.Where(x => !x.Email.Contains(".admin")).OrderByDescending(x => x.CreatedAt).AsQueryable();
 
@@ -76,12 +79,27 @@ namespace Application.Customer
                 request.StartDate = new DateTime();
             }
 
-            customers = customers.Where(x => x.CreatedAt.Date >= request.EndDate.Value.Date);
+            customers = customers.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date);
+
             if (request.EndDate != null)
             {
                 customers = customers.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
             }
-            return BaseResponse.Success("Customer data would be processed and sent to your email address");
+            var count = await customers.CountAsync();
+
+            var customersData = customers.Select(x => new CustomerExportDTO
+            {
+                FirstName = x.FirstName,
+                LastName = x.LastName,
+                Email = x.Email,
+                PhoneNumber = x.PhoneNumber,
+                LastLoginDate = x.LastLoginDate.ToShortDateString(),
+                Address = x.Address,
+                CreatedAt = x.CreatedAt.ToShortDateString(),
+                CustomerId = x.Id != 0 ? x.Id.ToString().PadLeft(6, '0') : null
+            }).ToList();
+            var fileData = _fileService.GenerateGenericExcelFile(customersData, $"customerdata-{Guid.NewGuid().ToString()}");
+            return BaseResponse<byte[]>.Success(fileData,"00" ,"Customer data would be processed and sent to your email address");
         }
     }
 }

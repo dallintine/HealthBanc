@@ -4,8 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HealthBanc.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
+
+    [Route("v{version:apiVersion}/api/[controller]")]
+    [ApiController]   
     public class BaseApiController : ControllerBase
     {
         private IMediator _mediator;

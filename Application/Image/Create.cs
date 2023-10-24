@@ -1,5 +1,4 @@
-﻿using Application.CommonDTO;
-using Application.Common.DTO;
+﻿using Application.Common.DTO;
 using Application.Common.Interfaces;
 using FluentValidation;
 using MediatR;
@@ -9,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Application.Image.DTO;
 
 namespace Application.Image
 {

@@ -46,9 +46,10 @@ public class DashboardQueryHandler : IRequestHandler<GetDashboardSummaryQuery, B
 
         var dashboardDTO = new DashboardSummaryQuery
         {
-            TotalRevenue = await subQuery.SumAsync(x => x.Amount, cancellationToken),
+            TotalRevenue = await subQuery.Where(x => x.IsSuccessful).SumAsync(x => x.Amount, cancellationToken),
             TransactionCount = await subQuery.CountAsync(cancellationToken),
-            TotalIncome = await subQuery.SumAsync(x => (x.Amount * Convert.ToDecimal(x.Plan.MarkUpRate)), cancellationToken),
+            SuccessfulTransactionCount = await subQuery.Where(x => x.IsSuccessful).CountAsync(cancellationToken),
+            TotalIncome = await subQuery.Where(x => x.IsSuccessful).SumAsync(x => (x.Amount * Convert.ToDecimal(x.Plan.MarkUpRate)), cancellationToken),
             CustomersCount = await customerQuery.CountAsync(x => !x.Email.Contains(".admin") && !x.IsDeleted, cancellationToken),
             VendorsCount = await vendorQuery.CountAsync(x => !x.IsDeleted,cancellationToken)
         };

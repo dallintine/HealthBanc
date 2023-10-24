@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Application.Subscriptions.Queries
 {
-    public class ExportPaymentList : IRequest<BaseResponse>
+    public class ExportPaymentList : IRequest<BaseResponse<byte[]>>
     {
         public string Status { get; set; }
         public DateTime? StartDate { get; set; }

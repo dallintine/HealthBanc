@@ -14,6 +14,11 @@ using Persistence.Data;
 using Polly;
 using System.Text;
 using Application.Image;
+using OfficeOpenXml;
+using Infrastructure.Middlewares;
+using Application.Common.Interfaces;
+using Hangfire;
+using Hangfire.MySql;
 
 namespace HealthBanc
 {
@@ -28,6 +33,30 @@ namespace HealthBanc
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddAutoMapper(typeof(MappingProfile));
 
+            string hangfireConnectionString = configuration.GetConnectionString("BackgroundDB");
+            services.AddHangfire(configuration => configuration
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseStorage(
+                    new MySqlStorage(
+                        hangfireConnectionString,
+                        new MySqlStorageOptions
+                        {
+                            QueuePollInterval = TimeSpan.FromSeconds(10),
+                            JobExpirationCheckInterval = TimeSpan.FromHours(1),
+                            CountersAggregateInterval = TimeSpan.FromMinutes(5),
+                            PrepareSchemaIfNecessary = true,
+                            DashboardJobListLimit = 25000,
+                            TransactionTimeout = TimeSpan.FromMinutes(1),
+                            TablesPrefix = "Hangfire",
+                        }
+                    )
+                ));
+
+            // Add the processing server as IHostedService
+            services.AddHangfireServer(options => options.WorkerCount = 1);
+
 
             //---------------------------- CORS setting---------------------------------------------------------//
             services.AddCors(options =>
@@ -39,17 +68,17 @@ namespace HealthBanc
                         .AllowAnyMethod());
             });
 
-            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")
-                , options => options.EnableRetryOnFailure(
-                  maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
+            services.AddDbContext<ApplicationDbContext>(options => options.UseMySql(configuration.GetConnectionString("DefaultConnection"),
+               new MySqlServerVersion(new Version())));
 
-            services.AddDbContext<LogDbContext>(options => options.UseMySQL(configuration.GetConnectionString("LogConnection")));
+            services.AddDbContext<LogDbContext>(options => options.UseMySql(configuration.GetConnectionString("LogConnection"),
+               new MySqlServerVersion(new Version())));
 
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
                 options.SignIn.RequireConfirmedEmail = false;
                 options.Lockout.AllowedForNewUsers = true;
-                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.MaxFailedAccessAttempts = 3;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(60);
                 options.User.RequireUniqueEmail = true;
                 options.Password.RequireDigit = true;
@@ -158,7 +187,14 @@ namespace HealthBanc
             services.Configure<SMSSettings>(configuration.GetSection("SMSSettings"));
             services.Configure<AzureBlobStorageSettings>(configuration.GetSection("AzureBlobStorageSettings"));
             services.Configure<SterlingOtpSettings>(configuration.GetSection("SterlingOtpSettings"));
-            services.Configure<DefaultAdmin>(configuration.GetSection("DefaultAdmin")); 
+            services.Configure<DefaultAdmin>(configuration.GetSection("DefaultAdmin"));
+
+            var CacheSettings = new CacheSettings();
+            configuration.GetSection(nameof(CacheSettings)).Bind(CacheSettings);
+            services.AddSingleton(CacheSettings);
+            services.AddSingleton<IResponseCacheService, ResponseCacheService>();
+
+            services.AddScoped<ExcelPackage>();
         }
     }
 }

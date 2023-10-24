@@ -12,6 +12,25 @@ namespace Persistence.Seed
         public static async Task SeedData(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager
             ,IConfiguration configuration)
         {
+
+            var roles = Enum.GetValues(typeof(Roles))
+                          .Cast<Roles>()
+                          .ToList();
+
+            foreach (var item in roles)
+            {
+                var roleExist = await roleManager.RoleExistsAsync(item.ToString());
+                if (!roleExist)
+                {
+                    var role = new ApplicationRole
+                    {
+                        Name = item.ToString(),
+                        NormalizedName = item.ToString().ToUpper()
+                    };
+                    await roleManager.CreateAsync(role);
+                }
+            }
+
             var email = configuration["DefaultAdmin:Email"];
             var user = await userManager.FindByEmailAsync($"{email}.admin");
             if (user is null)
@@ -34,32 +53,14 @@ namespace Persistence.Seed
                     await context.SaveChangesAsync();
                 }
             }
-            
-            var roles = Enum.GetValues(typeof(Roles))
-                            .Cast<Roles>()
-                            .ToList();
 
-            foreach (var item in roles)
-            {
-                var roleExist = await roleManager.RoleExistsAsync(item.ToString());
-                if (!roleExist)
-                {
-                    var role = new ApplicationRole
-                    {
-                        Name = item.ToString(),
-                        NormalizedName = item.ToString().ToUpper()
-                    };
-                    await roleManager.CreateAsync(role);
-                }
-            }
-
-            var service = await context.Services.SingleOrDefaultAsync(x => x.Name == "Gym Services");
+            var service = await context.Services.SingleOrDefaultAsync(x => x.Name == "Physicals");
             if (service == null)
             {
                 service = new Service
                 {
-                    Name = "Gym Services",
-                    Tag = "Get a one-time discount on your Gym Registration Fee, Pay ₦9,681.25 instead of ₦19,950",
+                    Name = "Physicals",
+                    Tag = "Receive discounts on both your gym registration fee and package prices.",
                     ImageUrl = "https://pharmhallstracct.blob.core.windows.net/revampimages/7f1e7013-99b6-4937-9342-550decfb9aae_dumbell.png",
                     ServiceDetailURL = "https://pharmhallstracct.blob.core.windows.net/revampimages/f5ba27e0-9642-4cc1-bb97-4524ec5476e7_gymproductdetail.png",
                     BackgroundColor = "#FFF7ED",
@@ -143,7 +144,7 @@ namespace Persistence.Seed
                     },
                     new Plan
                     {
-                        Tag = "Annually Plan",
+                        Tag = "Annual Plan",
                         Price = 134865.15M,
                         MarkUpRate = 0.05,
                         VendorId = vendor.Id,
@@ -178,7 +179,7 @@ namespace Persistence.Seed
                         VendorId = vendor.Id,
                         ServiceId= service.Id,
                         OptionalFee = true,
-                          PlanDescriptions = new List<PlanDescription>
+                        PlanDescriptions = new List<PlanDescription>
                         {
                             new PlanDescription
                             {
@@ -192,12 +193,12 @@ namespace Persistence.Seed
                 }
             }
 
-            var secondService = await context.Services.SingleOrDefaultAsync(x => x.Name == "Healthy Meal Service");
+            var secondService = await context.Services.SingleOrDefaultAsync(x => x.Name == "Heathly Meal");
             if (secondService == null)
             {
                 secondService = new Service
                 {
-                    Name = "Healthy Meal Service",
+                    Name = "Heathly Meal",
                     Tag = "Customers of Healthbanc will receive discounts on individual purchases of healthy food as well as monthly meal plan packages.",
                     ImageUrl = "https://pharmhallstracct.blob.core.windows.net/revampimages/a7365e84-d66e-4497-8f22-830d4bebc6ed_bibimap.png",
                     ServiceDetailURL = "https://pharmhallstracct.blob.core.windows.net/revampimages/e2ac630e-8ec2-43da-93dc-6de30263be8d_mealproductdetail.png",
@@ -235,14 +236,14 @@ namespace Persistence.Seed
                         {
                             new PlanDescription
                             {
-                                Name = "Amount includes delivery fee for 20 days; Please, click on link to see meal plan"
+                                Name = "Amount includes delivery fee for 12 days; Please, click on link to see meal plan"
                             }
                         },
                     },
                     new Plan
                     {
                         Name = "Yummy Feast",
-                        Price = 91654.50M,
+                        Price = 84525.00M,
                         MarkUpRate = 0.05,
                         ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/c54a0dbb-1981-4c04-a2fb-f6da0da8c620_yummyfeast.png",
                         VendorId = secondVendor.Id,
@@ -260,7 +261,7 @@ namespace Persistence.Seed
                     new Plan
                     {
                         Name = "Exotic Bliss",
-                        Price = 102648.00M,
+                        Price = 94631.25M,
                         MarkUpRate = 0.05,
                         ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/0708e25b-5033-477d-984e-800e4a24bbab_exoticbliss.png",
                         VendorId = secondVendor.Id,
@@ -277,12 +278,99 @@ namespace Persistence.Seed
                     },
                     new Plan
                     {
-                        Name = "Average Meal",
-                        Price = 5250.00M,
+                        Name = "Salad Combo",
+                        Price =  6903.38M,
                         MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/ffc1abe0-4f82-44c8-ac3d-e2f9d141613e_saladcombo.png",
                         VendorId = secondVendor.Id,
-                        ExternalLinkName = "View Meal Plan",
-                        ServiceId= secondService.Id
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Salad + Parfait + Juice (25cl)"
+                            }
+                        },
+                    },
+                     new Plan
+                    {
+                        Name = "Sandwich Combo",
+                        Price =    6239.69M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/d1412a9a-6a27-4500-9bd5-de1ce3b1fa4d_sandwhichcombo.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Sandwich + Parfait + Juice (50cl)"
+                            }
+                        },
+                    },
+                      new Plan
+                    {
+                        Name = "Apple Chicken Salad",
+                        Price =    4059.00M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/ac979ddb-414e-467b-8c55-e19ac3a09447_applechickensalad.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Herbed Chicken, Apple, Sweetcorn, Cucumber, Bell Pepper, Boiled Eggs, Carrot, Cabbage and Lettuce"
+                            }
+                        },
+                    },
+                     new Plan
+                    {
+                        Name = "Grilled Catfish Salad",
+                        Price =    4059.00M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/53a9ac58-3971-495f-b961-c6a22322e4d9_grilledcatfishsalad.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Grilled Catfish + Kidney Beans, Radish, Tomatoes, Sweetcorn, Cucumber, Carrot, Cabbage, and Lettuce"
+                            }
+                        },
+                    },
+                      new Plan
+                    {
+                        Name = "Fresh Fiesta Chicken",
+                        Price =    3395.31M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/2f81d241-41f7-4863-bee6-0bcc27a42d15_freshfiestachicken.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Chicken, Carrot, Lettuce, Cabbage, Potatoes & Fiesta dressing"
+                            }
+                        },
+                    },
+                        new Plan
+                    {
+                        Name = "Fresh Fiesta beef",
+                        Price =    3395.31M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/7ae243af-dbea-491c-93b6-685fd123c41e_freshfiestabeef.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Beef, Carrot, Lettuce, Cabbage, Potatoes & Fiesta dressing"
+                            }
+                        },
                     }
                 };
                     context.Plans.AddRange(plans2);
@@ -290,12 +378,12 @@ namespace Persistence.Seed
                 }
             }
 
-            var thirdService = await context.Services.SingleOrDefaultAsync(x => x.Name == "Diagnostics Service");
+            var thirdService = await context.Services.SingleOrDefaultAsync(x => x.Name == "Diagnostics");
             if (thirdService == null)
             {
                 thirdService = new Service
                 {
-                    Name = "Diagnostics Service",
+                    Name = "Diagnostics",
                     Tag = "Enjoy a discount on all services, starting with a full body medical checkup and sexually transmitted disease test.",
                     ImageUrl = "https://pharmhallstracct.blob.core.windows.net/revampimages/7fe26149-b122-4ebf-8f15-e90cc31e16e0_diagnostic.png",
                     BackgroundColor = "#FFEDED",
@@ -320,11 +408,12 @@ namespace Persistence.Seed
                     {
                         new Plan
                         {
-                            Name = "Bronze Package",
+                            Name = "Full Body Checkup Bronze Package",
                             Price = 21000.00M,
                             MarkUpRate = 0.05,
                             VendorId = thirdVendor.Id,
                             ServiceId=thirdService.Id,
+                            ImageURL = "https://pharmhallstracct.blob.core.windows.net/logfolder/99b9f329-51c9-4cda-b1b0-fce61d54ccd9_bronze.png",
                             PlanDescriptions = new List<PlanDescription>
                             {
                                 new PlanDescription
@@ -335,11 +424,12 @@ namespace Persistence.Seed
                         },
                         new Plan
                         {
-                            Name = "Silver Package",
+                            Name = "Full Body Checkup Silver Package",
                             Price = 49350.00M,
                             MarkUpRate = 0.05,
                             VendorId = thirdVendor.Id,
                             ServiceId=thirdService.Id,
+                            ImageURL = "https://pharmhallstracct.blob.core.windows.net/logfolder/67c5e16d-359c-4222-bdea-2b6a8fb169dd_silver.png",
                             PlanDescriptions = new List<PlanDescription>
                             {
                                 new PlanDescription
@@ -351,11 +441,12 @@ namespace Persistence.Seed
                         },
                         new Plan
                         {
-                            Name = "Gold Package",
+                            Name = "Full Body Checkup Gold Package",
                             Price = 96600.00M,
                             MarkUpRate = 0.05,
                             VendorId = thirdVendor.Id,
                             ServiceId=thirdService.Id,
+                            ImageURL = "https://pharmhallstracct.blob.core.windows.net/logfolder/3611c7c8-d7bd-44ca-a27e-aa62aba09482_gold.png",
                             PlanDescriptions = new List<PlanDescription>
                             {
                                 new PlanDescription
@@ -371,6 +462,7 @@ namespace Persistence.Seed
                             MarkUpRate = 0.05,
                             VendorId = thirdVendor.Id,
                             ServiceId=thirdService.Id,
+                            ImageURL = "https://pharmhallstracct.blob.core.windows.net/logfolder/ea940d84-091c-444b-95b0-2c267a58c1c0_lemon2.png",
                              PlanDescriptions = new List<PlanDescription>
                             {
                                 new PlanDescription
@@ -381,11 +473,12 @@ namespace Persistence.Seed
                         },
                         new Plan
                         {
-                            Name = "STD Lemononade",
+                            Name = "STD Lemonade",
                             Price = 39900.00M,
                             MarkUpRate = 0.05,
                             VendorId = thirdVendor.Id,
                             ServiceId=thirdService.Id,
+                            ImageURL = "https://pharmhallstracct.blob.core.windows.net/logfolder/181e4a08-f40c-4e0c-b225-f6847f0368cf_lemonade3.png",
                              PlanDescriptions = new List<PlanDescription>
                             {
                                 new PlanDescription
@@ -396,11 +489,12 @@ namespace Persistence.Seed
                         },
                         new Plan
                         {
-                            Name = "STD Lemmonade Plus",
+                            Name = "STD Lemonade Plus",
                             Price = 77700.00M,
                             MarkUpRate = 0.05,
                             VendorId = thirdVendor.Id,
                             ServiceId=thirdService.Id,
+                            ImageURL = "https://pharmhallstracct.blob.core.windows.net/logfolder/e07b5218-4e77-4993-91cd-99c314d709fc_lemondaePlus2.png",
                             PlanDescriptions = new List<PlanDescription>
                             {
                                 new PlanDescription
@@ -413,8 +507,7 @@ namespace Persistence.Seed
                     context.Plans.AddRange(plans3);
                     await context.SaveChangesAsync();
                 }
-            }          
-
+            }
         }
     }
 }

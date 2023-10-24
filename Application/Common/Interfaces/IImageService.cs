@@ -1,5 +1,5 @@
 ﻿using Application.Common.DTO;
-using Application.CommonDTO;
+using Application.Image.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;

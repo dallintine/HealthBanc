@@ -1,4 +1,5 @@
 ﻿using Application.Common.DTO;
+using Application.Common.Interfaces;
 using ClosedXML.Excel;
 using Microsoft.Extensions.Logging;
 using OfficeOpenXml;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services.FileProcessor
 {
-    public class FileService
+    public class FileService : IFileService
     {
         private readonly ExcelPackage _excelPackage;
         private readonly ILogger<FileService> _logger;

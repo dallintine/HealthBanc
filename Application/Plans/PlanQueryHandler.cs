@@ -12,7 +12,8 @@ using System.Threading.Tasks;
 
 namespace Application.Plans
 {
-    public class PlanQueryHandler : IRequestHandler<GetPlanListQuery, PageBaseResponse<List<PlanDTO>>>
+    public class PlanQueryHandler : IRequestHandler<GetPlanListQuery, PageBaseResponse<List<PlanDTO>>>,
+        IRequestHandler<GetPlanDescriptionsListQuery, PageBaseResponse<List<PlanDescriptionDTO>>>
     {
         private readonly ApplicationDbContext _context;
 
@@ -39,6 +40,17 @@ namespace Application.Plans
                 PlanDescriptionDTOs = x.PlanDescriptions.Where(x => x.IsDeleted == false).Select(y => new PlanDescriptionDTO { Id = y.Id, Name = y.Name }).ToList()
             }).ToListAsync(cancellationToken: cancellationToken);
             return PageBaseResponse<List<PlanDTO>>.Success(planDTOs, 1, request.PageSize, 1, planDTOs.Count);
+        }
+
+        public async Task<PageBaseResponse<List<PlanDescriptionDTO>>> Handle(GetPlanDescriptionsListQuery request, CancellationToken cancellationToken)
+        {
+            var planDescriptions = _context.PlanDescriptions.Where(x => x.PlanId == request.PlanId && !x.IsDeleted).AsQueryable();
+            var planDescriptionsDTOs = await planDescriptions.Select(x => new PlanDescriptionDTO
+            {
+                Id = x.Id,
+                Name = x.Name
+            }).ToListAsync(cancellationToken: cancellationToken);
+            return PageBaseResponse<List<PlanDescriptionDTO>>.Success(planDescriptionsDTOs, 1, request.PageSize, 1, planDescriptionsDTOs.Count);
         }
     }
 }

@@ -17,15 +17,6 @@ namespace Persistence.Data
         public DbSet<LogResponse> LogResponses { get; set; }
 
 
-
-        //protected override void OnConfiguring(DbContextOptionsBuilder options)
-        //{
-        //    // connect to mysql with connection string from app settings
-        //    var connectionString = Configuration.GetConnectionString("LogConnection");
-        //    options.UseMySQL(connectionString);
-        //}
-
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

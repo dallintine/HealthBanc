@@ -1,4 +1,5 @@
 ﻿using Application.Common.DTO;
+using Application.Common.Interfaces;
 using Application.Subscriptions.DTO;
 using Application.Subscriptions.Queries;
 using AutoMapper;
@@ -16,15 +17,17 @@ namespace Application.Subscriptions
 {
     public class DashboardQueryHandler : IRequestHandler<GetSubscriptionListQuery, PageBaseResponse<List<SubscriptionDTO>>>,
         IRequestHandler<GetPaymentSummaryQuery, BaseResponse<PaymentSummaryDTO>> , 
-        IRequestHandler<ExportPaymentList , BaseResponse>
+        IRequestHandler<ExportPaymentList , BaseResponse<byte[]>>
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IFileService _fileService;
 
-        public DashboardQueryHandler(ApplicationDbContext context, IMapper mapper)
+        public DashboardQueryHandler(ApplicationDbContext context, IMapper mapper,IFileService fileService)
         {
             _context = context;
             _mapper = mapper;
+            _fileService = fileService;
         }
 
         public async Task<PageBaseResponse<List<SubscriptionDTO>>> Handle(GetSubscriptionListQuery request, CancellationToken cancellationToken)
@@ -42,6 +45,8 @@ namespace Application.Subscriptions
             {
                 querySubscriptions = querySubscriptions.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
             }
+
+            querySubscriptions = querySubscriptions.OrderByDescending(x => x.CreatedAt);
 
             if (!String.IsNullOrEmpty(request.SearchText))
             {
@@ -67,16 +72,17 @@ namespace Application.Subscriptions
             var subQuery = _context.Subscriptions.Include(x => x.Plan).Where(x => !x.IsDeleted);
             var summaryDTO = new PaymentSummaryDTO
             {
-                TotalRevenue = await subQuery.SumAsync(x => x.Amount, cancellationToken),
+                TotalRevenue = await subQuery.Where(x => x.IsSuccessful).SumAsync(x => x.Amount, cancellationToken),
                 TransactionCount = await subQuery.CountAsync(cancellationToken),
-                TotalIncome = await subQuery.SumAsync(x => (x.Amount * Convert.ToDecimal(x.Plan.MarkUpRate)), cancellationToken),
+                SuccessfulTransactionCount = await subQuery.Where(x => x.IsSuccessful).CountAsync(cancellationToken),
+                TotalIncome = await subQuery.Where(x => x.IsSuccessful).SumAsync(x => (x.Amount * Convert.ToDecimal(x.Plan.MarkUpRate)), cancellationToken),
             };
 
             return BaseResponse<PaymentSummaryDTO>.Success(summaryDTO);
 
         }
 
-        public async Task<BaseResponse> Handle(ExportPaymentList request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<byte[]>> Handle(ExportPaymentList request, CancellationToken cancellationToken)
         {
             if (request.StartDate is null)
             {
@@ -91,7 +97,24 @@ namespace Application.Subscriptions
             {
                 querySubscriptions = querySubscriptions.Where(x => x.CreatedAt.Date <= request.EndDate.Value.Date);
             }
-            return BaseResponse.Success("Payment data would be processed and sent to your email address");
+
+            var customersData = querySubscriptions.Select(x => new ExportSubscriptionDTO
+            {
+                UserId = x.ApplicationUser.Id != 0 ? x.Id.ToString().PadLeft(6, '0') : null,
+                FirstName = x.ApplicationUser.FirstName,
+                LastName = x.ApplicationUser.LastName,
+                Email = x.ApplicationUser.Email,
+                PhoneNumber = x.ApplicationUser.PhoneNumber,
+                CreatedAt = x.CreatedAt.ToShortDateString(),
+                Amount = x.Amount.ToString(),
+                Status = x.Status,
+                PaymentReference = x.PaymentReference,
+                Plan = x.Plan.Name,
+                Vendor = x.Plan.Vendor.Name,
+                IsSuccessful = x.IsSuccessful
+            }).ToList();
+            var fileData = _fileService.GenerateGenericExcelFile(customersData, $"customerdata-{Guid.NewGuid().ToString()}");
+            return BaseResponse<byte[]>.Success(fileData, "00", "Data would be processed and sent to your email address");
         }
     }
 }

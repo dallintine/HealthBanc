@@ -27,34 +27,47 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
     private readonly IOTPService _otpService;
+    private readonly IEncryptionService _encryption;
     private readonly DefaultAdmin _defaultAdminSettings;
 
     public AdminAuthCommandHandler(ApplicationDbContext context , ILogger<AdminAuthCommandHandler> logger, UserManager<ApplicationUser> userManager,ITokenService tokenService
-        ,IOTPService otpService, IOptions<DefaultAdmin> defaultAdminSettings)
+        ,IOTPService otpService, IOptions<DefaultAdmin> defaultAdminSettings,IEncryptionService encryption)
     {
         _context = context;
         _logger = logger;
         _userManager = userManager;
         _tokenService = tokenService;
         _otpService = otpService;
+        _encryption = encryption;
         _defaultAdminSettings = defaultAdminSettings.Value;
     }
     public async Task<BaseResponse> Handle(AdminLoginCommand request, CancellationToken cancellationToken)
     {
-        var admin = await _context.Users.SingleOrDefaultAsync(x => x.UserName == request.Email, cancellationToken);
+        var decryptedEmail = _encryption.DecryptString(request.Email);
+        if (!decryptedEmail.Item1)
+        {
+            return BaseResponse.Failure("30", "Email is not encrypted");
+        }
+        var decryptedPassword = _encryption.DecryptString(request.Password);
+        if (!decryptedPassword.Item1)
+        {
+            return BaseResponse.Failure("30", "Password is not encrypted");
+        }
+
+        var admin = await _context.Users.SingleOrDefaultAsync(x => x.UserName == decryptedEmail.Item2, cancellationToken);
         if (admin is null)
         {
-            _logger.LogInformation($"Login Terminated [Reason : Admin not found | Email :  {request.Email}]");
+            _logger.LogInformation($"Login Terminated [Reason : Admin not found | Email :  {decryptedEmail.Item2}]");
             return BaseResponse.Failure("25", "Admin not found");
         }
-        if(request.Email == _defaultAdminSettings.Email)
+        if (decryptedEmail.Item2 == _defaultAdminSettings.Email)
         {
             return await _tokenService.GetAuthenticationResultForUserAsync(admin);
         }
         var otpValidation = _otpService.ValidateAdminOTPAuth(request.OTP, admin.UniqueUsername);
         if (otpValidation.Code == "00")
         {
-            var passwordValidation = await _tokenService.ValidateAdminPasswordAuth(admin.UniqueUsername, request.Password);
+            var passwordValidation = await _tokenService.ValidateAdminPasswordAuth(admin.UniqueUsername, decryptedPassword.Item2);
             if (passwordValidation.Code != "00")
             {
                 _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
@@ -89,6 +102,7 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
         if (result.Succeeded)
         {
             await _userManager.AddToRoleAsync(admin, Roles.Admin.ToString());
+            _context.Users.Update(admin);
             await _context.SaveChangesAsync(cancellationToken);
         }
 

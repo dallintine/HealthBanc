@@ -1,6 +1,5 @@
 ﻿using Application.Common.DTO;
 using Application.Common.Interfaces;
-using Application.CommonDTO;
 using Application.Identity.Queries;
 using Domain.Entities;
 using Domain.Enums;
@@ -29,9 +28,10 @@ namespace Application.Identity
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailService _emailService;
         private readonly IOTPService _otpService;
+        private readonly IEncryptionService _encryption;
 
         public IdentityQueryHandler(UserManager<ApplicationUser> userManager, ILogger<IdentityQueryHandler> logger, SignInManager<ApplicationUser> signInManager
-            , ITokenService tokenService, IWebHostEnvironment environment, IEmailService emailService, IOTPService otpService)
+            , ITokenService tokenService, IWebHostEnvironment environment, IEmailService emailService, IOTPService otpService,IEncryptionService encryption)
         {
             _userManager = userManager;
             _logger = logger;
@@ -40,29 +40,40 @@ namespace Application.Identity
             _environment = environment;
             _emailService = emailService;
             _otpService = otpService;
+            _encryption = encryption;
         }
 
         public async Task<BaseResponse> Handle(LoginQuery request, CancellationToken cancellationToken)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
+            var decryptedEmail = _encryption.DecryptString(request.Email);
+            if (!decryptedEmail.Item1)
+            {
+                return BaseResponse.Failure("30", "Email is not encrypted");
+            }
+            var decryptedPassword = _encryption.DecryptString(request.Password);
+            if (!decryptedPassword.Item1)
+            {
+                return BaseResponse.Failure("30", "Password is not encrypted");
+            }
+            var user = await _userManager.FindByEmailAsync(decryptedEmail.Item2);
             if (user is null)
             {
-                _logger.LogInformation($"Login Terminated [Reason : Email not found | Email :  {request.Email}]");
+                _logger.LogInformation($"Login Terminated [Reason : Email not found | Email :  {decryptedEmail.Item2}]");
                 return BaseResponse.Failure("12", "Email or password do not match for an existing user");
             }
             if (user.OAuthSubject != OAuthSubject.HealthBanc.ToString())
             {
                 return BaseResponse.Failure("07", "Kindly Sigin with original auth method");
             }
-            var passwordCheck = await _signInManager.PasswordSignInAsync(user, request.Password, false, true);
+            var passwordCheck = await _signInManager.PasswordSignInAsync(user, decryptedPassword.Item2, false, true);
             if (passwordCheck.IsLockedOut)
             {
-                _logger.LogInformation($"Login terminated [Reason : USer is locked out | Email : {request.Email}] \n");
+                _logger.LogInformation($"Login terminated [Reason : USer is locked out | Email : {decryptedEmail.Item2}] \n");
                 return BaseResponse.Failure("12", " Your account is locked please try again with correct email and/or password in 60 minutes");
             }
             if (!passwordCheck.Succeeded)
             {
-                _logger.LogInformation($"Login terminated [Reason : Password Check Failed | Email : {request.Email}] \n");
+                _logger.LogInformation($"Login terminated [Reason : Password Check Failed | Email : {decryptedEmail.Item2}] \n");
                 return BaseResponse.Failure("12", "Email or password do not match for an existing user");
             }
             if (!user.EmailConfirmed)

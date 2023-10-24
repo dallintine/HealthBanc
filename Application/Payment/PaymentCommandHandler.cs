@@ -1,15 +1,17 @@
-﻿using Application.Common.DTO;
+﻿using Application.Common.ConfigSettings;
+using Application.Common.DTO;
 using Application.Common.Interfaces;
-using Application.CommonDTO;
 using Application.Payment.Commands;
 using Application.Payment.DTO;
 using Domain.Entities;
 using Domain.Enums;
+using Hangfire;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Persistence.Data;
 using System;
@@ -22,7 +24,9 @@ using System.Threading.Tasks;
 namespace Application.Payment
 {
     public class PaymentCommandHandler : IRequestHandler<CallbackCommand, BaseResponse>,
-        IRequestHandler<InitializeCommand, BaseResponse>
+        IRequestHandler<InitializeCommand, BaseResponse>,
+        IRequestHandler<PaystackWebHookCommand,BaseResponse>
+
     {
         private readonly ILogger<PaymentCommandHandler> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -32,9 +36,10 @@ namespace Application.Payment
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailService _emailService;
         private readonly ITokenService _tokenService;
+        private readonly PaystackSettings _paystackSettings;
 
         public PaymentCommandHandler(ILogger<PaymentCommandHandler> logger, UserManager<ApplicationUser> userManager, IPaystackService paystackService, ApplicationDbContext context,
-            ITemplateService templateService, IWebHostEnvironment environment, IEmailService emailService, ITokenService tokenService)
+            ITemplateService templateService, IWebHostEnvironment environment, IEmailService emailService, ITokenService tokenService,IOptions<PaystackSettings> paystackSettings)
         {
             _logger = logger;
             _userManager = userManager;
@@ -44,14 +49,80 @@ namespace Application.Payment
             _environment = environment;
             _emailService = emailService;
             _tokenService = tokenService;
+            _paystackSettings = paystackSettings.Value;
         }
+
+        public async Task<BaseResponse> Handle(PaystackWebHookCommand request, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var paystackIpaddress = new List<string>()
+                {
+                    "52.49.173.169","52.214.14.220","52.31.139.75"
+                };
+                var ipAddress = _tokenService.GetIP();
+                if (paystackIpaddress.Contains(ipAddress))
+                {
+
+                    _logger.LogInformation($"WebbHokk Command Request [Reference : {request.Data.Reference} ]");
+                    var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Data.Reference);
+                    if (transaction != null)
+                    {
+                        transaction.IsCompleted = true;
+                        foreach (var subscription in transaction.Subscriptions)
+                        {
+                            subscription.Status = SubscriptionStatus.Pending.ToString();
+                            subscription.IsSuccessful = true;
+                            subscription.UpdatedAt = DateTime.Now;
+                        }
+                        _context.Transactions.Update(transaction);
+                        await _context.SaveChangesAsync();
+
+                        var invoiceItems = transaction.Subscriptions.Select(x => new InvoiceItem
+                        {
+                            ServiceName = x.Plan.Service.Name,
+                            PlanName = x.Plan.Name,
+                            Price = x.Amount,
+                            Quantity = x.Quantity,
+                            TotalPrice = (x.Amount * x.Quantity)
+                        }).ToList();
+
+                        var name = $"{transaction.ApplicationUser.FirstName} {transaction.ApplicationUser.LastName}";
+
+                        BackgroundJob.Schedule(() => _emailService.PaymentConfirmationEmail(name, transaction.ApplicationUser.Email), DateTimeOffset.Now.AddMinutes(1));
+
+                        if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("gym")))
+                        {
+                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Gym.ToString()), DateTimeOffset.Now.AddMinutes(3));
+                        }
+
+                        if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("meal")))
+                        {
+                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Meal.ToString()), DateTimeOffset.Now.AddMinutes(3));
+                        }
+
+                        if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("diagnostic")))
+                        {
+                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Diagnostic.ToString()), DateTimeOffset.Now.AddMinutes(3));
+                        }
+                    }
+                }
+                return BaseResponse.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error occured while sending Webhook Exception : ${ex.ToString()}");
+                return BaseResponse.Success();
+            }       
+        }
+
         public async Task<BaseResponse> Handle(CallbackCommand request, CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Callback Command Request [Reference : {request.Reference} ]");
             var validatePayment = await _paystackService.VerifyPayment(request.Reference);
             if (!validatePayment.Status) return BaseResponse.Failure("06", validatePayment.Message);
 
-            var transaction = await _context.Transactions.Include(x => x.Subscriptions).SingleOrDefaultAsync(x => x.Reference == request.Reference);
+            var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Reference);
             if (transaction != null)
             {
                 transaction.IsCompleted = true;
@@ -73,14 +144,20 @@ namespace Application.Payment
                     TotalPrice = (x.Amount * x.Quantity)
                 }).ToList();
 
+                var subTotal = invoiceItems.Sum(x => x.TotalPrice);
+                var transactionCharge = (_paystackSettings.Charges * subTotal);
+                var name = $"{transaction.ApplicationUser.FirstName} {transaction.ApplicationUser.LastName}";
+
                 var pdfHTMLTemplate = await _templateService.RenderAsync("Client/Invoice", new InvoicePDFTemplateDTO
                 {
-                    Name = $"{transaction.ApplicationUser.FirstName} {transaction.ApplicationUser.LastName}",
+                    Name = name,
                     InvoiceItems = invoiceItems,
-                    SubTotal = invoiceItems.Sum(x => x.TotalPrice)
+                    SubTotal = subTotal,
+                    TransactionCharge = transactionCharge,
+                    Total = subTotal + transactionCharge
                 });
 
-                var pdfFile = _templateService.GeneratePDF_ParseXhtml(pdfHTMLTemplate);
+                //var pdfFile = _templateService.GeneratePDF_ParseXhtml(pdfHTMLTemplate);
 
                 await _emailService.EmailRequest(new EmailRequest
                 {
@@ -88,6 +165,24 @@ namespace Application.Payment
                     Message = pdfHTMLTemplate,
                     Email = transaction.ApplicationUser.Email
                 });
+
+                //BackgroundJob.Schedule(() => _emailService.PaymentConfirmationEmail(name, transaction.ApplicationUser.Email), DateTimeOffset.Now.AddMinutes(1));
+
+                //if(invoiceItems.Any(x => x.ServiceName.ToLower().Contains("gym")))
+                //{
+                //    BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Gym.ToString()), DateTimeOffset.Now.AddMinutes(3));
+                //}
+
+                //if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("meal")))
+                //{
+                //    BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Meal.ToString()), DateTimeOffset.Now.AddMinutes(4));
+                //}
+
+                //if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("diagnostic")))
+                //{
+                //    BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Diagnostic.ToString()), DateTimeOffset.Now.AddMinutes(5));
+                //}
+
 
                 return BaseResponse.Success();
             }
@@ -121,7 +216,8 @@ namespace Application.Payment
                     Amount = ((plan.Price - plan.Discount) * item.Quantity),
                     OptionalFee = plan.OptionalFee,
                     Quantity = item.Quantity,
-                    Status = SubscriptionStatus.Terminated.ToString()
+                    Status = SubscriptionStatus.Terminated.ToString(),
+                    PaymentReference = transaction.Reference
                 });
             };
 
@@ -133,6 +229,8 @@ namespace Application.Payment
             }
             // calculate total sum
             var totalAmount = subscriptionList.Sum(x => (x.Amount));
+            totalAmount += ( _paystackSettings.Charges * totalAmount);
+            totalAmount = Math.Round(totalAmount, 2);
             transaction.Amount = totalAmount;
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
@@ -151,6 +249,7 @@ namespace Application.Payment
                     Custom_fields = subscriptionList.Select(x => new CustomField { SubscriptionId = x.Id }).ToList()
                 }
             };
+
             paymentResponse = await _paystackService.InitlilizePayment(initializePaymentrequest);
             if (!paymentResponse.Status)
             {

@@ -116,7 +116,7 @@
            cellpadding="0"
            cellspacing="0">
         <tr style="text-align: left;width: 100%;">
-            <td style="padding: 2%">
+           @* <td style="padding: 2%">
                 <span style="
               font-size: 25px;
               font-weight: bold;
@@ -133,7 +133,10 @@
               line-height: normal;
               letter-spacing: 0.25px;
               color: rgb(115, 116, 118);
-            ">Banc</span>
+            ">banc</span>
+            </td>*@
+            <td style="padding: 2%">
+                <img src="https://pharmhallstracct.blob.core.windows.net/logfolder/6ce3f63d-de14-4115-afa1-5f02a3a9db05_healthbanclogo2.png" alt="Healthbanc logo"/>
             </td>
         </tr>
         <tr style="text-align: center; background-color: #ecf1fa;width: 100%">
@@ -147,7 +150,7 @@
               line-height: normal;
               letter-spacing: 0.25px;
               color: black;
-            ">HealthBanc</span>
+            ">Healthbanc</span>
             </td>
         </tr>
         <tr style="text-align: justify;width: 100%">
@@ -158,7 +161,7 @@
         <tr style="text-align: center;width: 100%">
             <td colspan="3" style="text-align: center;font-size: 13px;width: 100%">
                 <span>  Hello @Model.Name</span>
-                <p>Thank you for shopping with HealthBanc, we received your order and it is currently being processed by our team.</p>
+                <p>Thank you for shopping with Healthbanc, we received your order and it is currently being processed by our team.</p>
             </td>
         </tr>
         <tr id="welcome_header" style="text-align: justify;width: 100%">
@@ -172,16 +175,28 @@
                     <tr style="width: 100%;margin-top: 3em;clear: both;">
                     <td style="width: 55%;margin: 0% 1%;font-size: 14px">@item.ServiceName<br/>@item.PlanName</td>
                     <td style="width: 5%;margin: 0% 1%;font-size: 14px">&nbsp;@item.Quantity&nbsp;</td>
-                    <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:right">&nbsp;@string.Format(new CultureInfo("en-NG", false), "{0:c0}", item.Price)&#8358;</td>
+                    <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:right">&nbsp;@string.Format(new CultureInfo("en-NG", false), "{0:c0}", item.Price)</td>
                     </tr>
-                    <tr>&nbsp;</tr>
+                <tr>&nbsp;</tr>
             }
         }
+          <tr style="width: 100%;margin-top: 3em; ">
+            <td style="width: 55%;margin: 0% 1%;font-size: 14px">Transaction Fee</td>
+            <td  style="width: 5%;margin: 0% 1%;"></td>
+            <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:right">&nbsp; &nbsp; @string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.TransactionCharge)</td>
+         </tr><tr>&nbsp;</tr>
+        
          <tr style="width: 100%;margin-top: 3em; ">
             <td style="width: 35%;margin: 0% 1%;font-size: 16px">SubTotal</td>
             <td  style="width: 2%;margin: 0% 1%;"></td>
-            <td style="width: 60%;margin: 0% 1%;font-size: 16px;text-align:right">&nbsp;@string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.SubTotal) &nbsp;&#8358;</td>
+            <td style="width: 60%;margin: 0% 1%;font-size: 16px;text-align:right">&nbsp; &nbsp; @string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.SubTotal)</td>
          </tr>
+          <tr style="width: 100%;margin-top: 3em; ">
+            <td style="width: 35%;margin: 0% 1%;font-size: 16px">Total</td>
+            <td  style="width: 2%;margin: 0% 1%;"></td>
+            <td style="width: 60%;margin: 0% 1%;font-size: 16px;text-align:right">&nbsp; &nbsp; @string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.Total)</td>
+         </tr>
+                  
         <tr>
             <td colspan="3" style="font-size: 13px;text-align: center;">
                 <p>Once your payment has been confirmed, we will process your order and we will send you a notification email.</p>
@@ -192,7 +207,7 @@
         </tr>
         <tr  style="text-align: center; background-color: #ecf1fa">
             <td colspan="3">
-                <p>© 2023 HealthBanc. All Rights Reserved</p>
+                <p>© 2023 Healthbanc. All Rights Reserved</p>
             </td>
         </tr>
     </table>

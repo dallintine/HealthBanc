@@ -1,5 +1,4 @@
-﻿using Application.CommonDTO;
-using Application.Common.ConfigSettings;
+﻿using Application.Common.ConfigSettings;
 using Application.Common.Interfaces;
 using Domain.Entities;
 using Microsoft.AspNetCore.Http;

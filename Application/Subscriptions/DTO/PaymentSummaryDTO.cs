@@ -11,5 +11,6 @@ namespace Application.Subscriptions.DTO
         public decimal TotalRevenue { get; set; }
         public decimal TotalIncome { get; set; }
         public long TransactionCount { get; set; }
+        public long SuccessfulTransactionCount { get; set; }
     }
 }

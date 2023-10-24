@@ -12,7 +12,7 @@ namespace Application.Identity.Validators
     {
         public LoginQueryValidator()
         {
-            RuleFor(x => x.Email).NotEmpty().NotNull().EmailAddress();
+            RuleFor(x => x.Email).NotEmpty().NotNull();
             RuleFor(x => x.Password).NotEmpty().NotNull();
         }
     }

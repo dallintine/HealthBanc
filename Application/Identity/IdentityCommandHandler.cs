@@ -1,7 +1,6 @@
 ﻿using Application.Common.ConfigSettings;
 using Application.Common.DTO;
 using Application.Common.Interfaces;
-using Application.CommonDTO;
 using Application.Identity.Commands;
 using Domain.Entities;
 using Domain.Enums;
@@ -34,10 +33,11 @@ namespace Application.Identity
         private readonly IEmailService _emailService;
         private readonly ApplicationDbContext _context;
         private readonly IOTPService _otpService;
+        private readonly IEncryptionService _encryption;
         private readonly AppEndpointSettings _appEndpointSettings;
 
         public IdentityCommandHandler(UserManager<ApplicationUser> userManager, ILogger<IdentityCommandHandler> logger, ITokenService tokenService, IOptions<AppEndpointSettings> appEndpointSettings,
-            IWebHostEnvironment environment, IEmailService emailService, ApplicationDbContext context,IOTPService otpService)
+            IWebHostEnvironment environment, IEmailService emailService, ApplicationDbContext context,IOTPService otpService,IEncryptionService encryption)
         {
             _userManager = userManager;
             _logger = logger;
@@ -46,6 +46,7 @@ namespace Application.Identity
             _emailService = emailService;
             _context = context;
             _otpService = otpService;
+            _encryption = encryption;
             _appEndpointSettings = appEndpointSettings.Value;
         }
 
@@ -69,7 +70,7 @@ namespace Application.Identity
                 });
                 return BaseResponse.Success();
             }
-            return BaseResponse.Failure("25", "Username Does Not Exist");
+            return BaseResponse.Failure("25", "A password reset email would be sent to the email address if it exist");
         }
 
         public async Task<BaseResponse> Handle(ConfirmEmailCommand request, CancellationToken cancellationToken)
@@ -89,7 +90,7 @@ namespace Application.Identity
             _logger.LogInformation($"User was confirmed successfully [Email :{request.Email}] \n");
             user.EmailConfirmed = true;
             user.PhoneNumberConfirmed = true;
-            await _userManager.UpdateAsync(user);
+            _context.Users.Update(user);
             await _context.SaveChangesAsync();
             return BaseResponse.Success("Account successfully created. Login to continue");
         }
@@ -114,24 +115,37 @@ namespace Application.Identity
 
         public async Task<BaseResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
-            var email = await _userManager.FindByEmailAsync(request.Email);
+            var decryptedEmail = _encryption.DecryptString(request.Email);
+            if (!decryptedEmail.Item1)
+            {
+                return BaseResponse.Failure("30", "Email is not encrypted");
+            }
+            var decryptedPassword = _encryption.DecryptString(request.Password);
+            if (!decryptedPassword.Item1)
+            {
+                return BaseResponse.Failure("30", "Password is not encrypted");
+            }
+            var email = await _userManager.FindByEmailAsync(decryptedEmail.Item2);
             if (email is null)
             {
                 var user = new ApplicationUser
                 {
-                    UserName = request.Email,
-                    Email = request.Email,
+                    UserName = decryptedEmail.Item2,
+                    Email = decryptedEmail.Item2,
                     FirstName = request.FirstName,
+                    Address = request.Address,
                     LastName = request.LastName,
                     PhoneNumber = request.PhoneNumber,
                     OAuthSubject = OAuthSubject.HealthBanc.ToString()
                 };
 
-                var result = await _userManager.CreateAsync(user, request.Password);
+                var result = await _userManager.CreateAsync(user, decryptedPassword.Item2);
                 if (result.Succeeded)
                 {
                     await _userManager.AddToRoleAsync(user, Roles.User.ToString());
                     await _userManager.UpdateAsync(user);
+                    _context.Update(user);
+                    await _context.SaveChangesAsync();
 
                     var createOTP = await _otpService.CreateOTP(user.Id, OTPActions.ConfirmAccount.ToString());
                     var otpCode = createOTP.Data;
@@ -175,14 +189,14 @@ namespace Application.Identity
                 user.EmailConfirmed = true;
                 user.LockoutEnd = null;
                 await _userManager.ResetAccessFailedCountAsync(user);
-                await _userManager.UpdateAsync(user);
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
                 return BaseResponse.Success();
             }
             else if (!userPassword.Succeeded && userPassword.Errors.Any(x => x.Code == "InvalidToken"))
             {
                 _logger.LogInformation($"Reset Password terminated [ Reason :Invalid Token | Email : {request.Email}] \n");
                 return BaseResponse.Failure("12", "Invalid Token");
-
             }
             return BaseResponse.Failure("12", userPassword.Errors.FirstOrDefault().Description);
         }

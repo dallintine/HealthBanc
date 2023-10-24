@@ -68,18 +68,6 @@ namespace Infrastructure.Middlewares
             return decryptedStream;
         }
 
-        private static string DecryptString(string cipherText)
-        {
-            Aes aes = GetEncryptionAlgorithm();
-            byte[] buffer = Convert.FromBase64String(cipherText);
-
-            using MemoryStream memoryStream = new MemoryStream(buffer);
-            using ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-            using CryptoStream cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read);
-            using StreamReader streamReader = new StreamReader(cryptoStream);
-            return streamReader.ReadToEnd();
-        }
-
         private static Aes GetEncryptionAlgorithm()
         {
             var salt = "1da4f77a96e54490";

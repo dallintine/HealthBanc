@@ -12,6 +12,7 @@ namespace Application.Dashboard.DTO
         public decimal TotalRevenue { get; set; }
         public decimal TotalIncome { get; set; }
         public long TransactionCount { get; set; }
+        public long SuccessfulTransactionCount { get; set; }
         public long VendorsCount { get; set; }
     }
 }

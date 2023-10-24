@@ -12,7 +12,7 @@ namespace Application.AdminAuth.Validators
     {
         public AdminLoginCommandValidator()
         {
-            RuleFor(x => x.Email).NotEmpty().NotNull().EmailAddress();
+            RuleFor(x => x.Email).NotEmpty().NotNull();
             RuleFor(x => x.OTP).NotEmpty().NotNull().Length(6, 6).WithMessage("OTP must be 6 characters").Must(x => long.TryParse(x, out var val)).WithMessage("OTP must be numeric characters."); ;
             RuleFor(x => x.Password).NotEmpty().NotNull();
         }

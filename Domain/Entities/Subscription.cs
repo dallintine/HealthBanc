@@ -20,6 +20,7 @@ namespace Domain.Entities
         public decimal Amount { get; set; }
         public bool OptionalFee { get; set; }
         public long TransactionId { get; set; }
+        public string PaymentReference { get; set; }
         public bool IsSuccessful { get; set; }
     }
 }

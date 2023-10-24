@@ -15,6 +15,7 @@ namespace Application.Common.Interfaces
         Task<BaseResponse> ClearSession();
         Task<BaseResponse> GetAuthenticationResultForUserAsync(ApplicationUser user);
         List<Claim> GetClaims();
+        string GetIP();
         ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
         Task<BaseResponse> ValidateAdminPasswordAuth(string username, string password);
     }
