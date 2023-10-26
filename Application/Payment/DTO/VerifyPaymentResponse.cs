@@ -43,10 +43,10 @@ namespace Application.Payment.DTO
         public string GatewayResponse { get; set; }
 
         [JsonProperty("paid_at")]
-        public DateTime PaidAt { get; set; }
+        public DateTime? PaidAt { get; set; }
 
         [JsonProperty("created_at")]
-        public DateTime CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
 
         [JsonProperty("channel")]
         public string Channel { get; set; }
