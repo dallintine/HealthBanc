@@ -107,13 +107,26 @@ namespace Infrastructure.Security
             await SaveSession(Device, IpAddress, user.Id, logInResponse.ExpiryTime);
             return BaseResponse<LoginResponseDTO>.Success(logInResponse);
         }
+
         public async Task<BaseResponse> ClearSession()
         {
-            var session = await _context.UserSessions.Where(x => x.DeviceIp == IpAddress && x.Browser == Device).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
+            var session = await _context.UserSessions.Where(x => x.DeviceIp == IpAddress || x.Browser == Device).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
             if (session != null)
             {
                 _context.UserSessions.Remove(session);
                 await _context.SaveChangesAsync();
+            }
+            var claims = GetClaims();
+            string userId = claims?.FirstOrDefault(x => x.Type == "UserId")?.Value;
+            if(userId != null)
+            {
+                long id = long.Parse(userId);
+                var session2 = await _context.UserSessions.Where(x => x.UserId == id).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
+                if (session2 != null)
+                {
+                    _context.UserSessions.Remove(session);
+                    await _context.SaveChangesAsync();
+                }
             }
             return BaseResponse.Success();
         }
