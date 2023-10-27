@@ -60,10 +60,10 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
             _logger.LogInformation($"Login Terminated [Reason : Admin not found | Email :  {decryptedEmail.Item2}]");
             return BaseResponse.Failure("25", "Admin not found");
         }
-        if (decryptedEmail.Item2 == _defaultAdminSettings.Email)
-        {
-            return await _tokenService.GetAuthenticationResultForUserAsync(admin);
-        }
+        //if (decryptedEmail.Item2 == _defaultAdminSettings.Email)
+        //{
+        //    return await _tokenService.GetAuthenticationResultForUserAsync(admin);
+        //}
         var otpValidation = _otpService.ValidateAdminOTPAuth(request.OTP, admin.UniqueUsername);
         if (otpValidation.Code == "00")
         {

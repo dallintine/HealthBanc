@@ -108,7 +108,7 @@ namespace Infrastructure.OTP
                 _logger.LogInformation($"Validate Admin OTP soap request processing [username : {username} | OTP : {otp}]");
                 XmlDocument soapEnvelopeXml = CreateSoapEnvelope(otp, username);
                 HttpWebRequest webRequest = CreateWebRequest(url, action);
-                //webRequest.Host = "az-cpibap2-serv";
+                webRequest.Host = "az-cpibap2-serv";
 
                 using Stream stream = webRequest.GetRequestStream();
                 soapEnvelopeXml.Save(stream);
