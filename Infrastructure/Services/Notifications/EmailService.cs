@@ -57,7 +57,7 @@ namespace Infrastructure.Notifications
             var emailTemplate = htmlTemplate.Replace("{{Name}}", userName);
             await EmailRequest(new EmailRequest
             {
-                Subject = "Healtbanc Payment Confirmation",
+                Subject = "Healthbanc Payment Confirmation",
                 Message = emailTemplate,
                 Email = email
             });
@@ -83,7 +83,7 @@ namespace Infrastructure.Notifications
             var emailTemplate = htmlTemplate.Replace("{{Name}}", userName);
             await EmailRequest(new EmailRequest
             {
-                Subject = "Healtbanc Payment Confirmation",
+                Subject = "Healthbanc Payment Confirmation",
                 Message = emailTemplate,
                 Email = email
             });
