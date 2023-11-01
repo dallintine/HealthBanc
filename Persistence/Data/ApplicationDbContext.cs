@@ -90,19 +90,6 @@ namespace Persistence.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
-            //builder.Entity<Subscription>()
-            // .HasKey(bc => new { bc.ApplicationUserId, bc.ProductId });
-
-            //builder.Entity<Subscription>()
-            //    .HasOne(bc => bc.ApplicationUser)
-            //    .WithMany(b => b.Subscriptions)
-            //    .HasForeignKey(bc => bc.ApplicationUserId);
-
-            //builder.Entity<Subscription>()
-            //    .HasOne(bc => bc.Product)
-            //    .WithMany(c => c.Subscriptions)
-            //    .HasForeignKey(bc => bc.ProductId);
         }
     }
 }
