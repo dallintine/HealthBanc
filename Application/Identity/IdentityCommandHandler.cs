@@ -136,6 +136,7 @@ namespace Application.Identity
                     Address = request.Address,
                     LastName = request.LastName,
                     PhoneNumber = request.PhoneNumber,
+                    LastLoginDate = DateTime.Now,
                     OAuthSubject = OAuthSubject.HealthBanc.ToString()
                 };
 
