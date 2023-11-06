@@ -4,15 +4,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Persistence.Migrations.LogDb
+namespace Persistence.Migrations
 {
-    public partial class InitalModel : Migration
+    public partial class addedlogTables : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterDatabase()
-                .Annotation("MySql:CharSet", "utf8mb4");
-
             migrationBuilder.CreateTable(
                 name: "LogResponses",
                 columns: table => new
