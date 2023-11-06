@@ -33,7 +33,7 @@ namespace HealthBanc
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddAutoMapper(typeof(MappingProfile));
 
-            string hangfireConnectionString = configuration.GetConnectionString("BackgroundDB");
+            string hangfireConnectionString = configuration.GetConnectionString("DefaultConnection");
             services.AddHangfire(configuration => configuration
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
                 .UseSimpleAssemblyNameTypeSerializer()
@@ -69,9 +69,6 @@ namespace HealthBanc
             });
 
             services.AddDbContext<ApplicationDbContext>(options => options.UseMySql(configuration.GetConnectionString("DefaultConnection"),
-               new MySqlServerVersion(new Version())));
-
-            services.AddDbContext<LogDbContext>(options => options.UseMySql(configuration.GetConnectionString("LogConnection"),
                new MySqlServerVersion(new Version())));
 
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>

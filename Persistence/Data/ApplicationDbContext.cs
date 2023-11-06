@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Entities.Common;
 using Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -20,6 +21,7 @@ namespace Persistence.Data
             this.accessor = accessor;
         }
 
+        public DbSet<LogResponse> LogResponses { get; set; }
         public DbSet<Audit> Audits { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Service> Services { get; set; }
