@@ -52,7 +52,7 @@ namespace Infrastructure.Notifications
         [AutomaticRetry(Attempts = 0)]
         public async Task PaymentConfirmationEmail(string userName,string email)
         {
-            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\paymentConfirmation.html";
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/paymentConfirmation.html";
             var htmlTemplate = File.ReadAllText(path);
             var emailTemplate = htmlTemplate.Replace("{{Name}}", userName);
             await EmailRequest(new EmailRequest
@@ -69,15 +69,15 @@ namespace Infrastructure.Notifications
             string path;
             if(service == ServicesEnum.Gym.ToString())
             {
-                path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\gym.html";
+                path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/gym.html";
             }
             else if (service == ServicesEnum.Meal.ToString())
             {
-                path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\healthMeal.html";
+                path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/healthMeal.html";
             }
             else
             {
-                path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\diagnostics.html";
+                path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/diagnostics.html";
             }
             var htmlTemplate = File.ReadAllText(path);
             var emailTemplate = htmlTemplate.Replace("{{Name}}", userName);
