@@ -58,7 +58,7 @@ namespace Application.Identity
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var email = user.UserName;
                 string passwordResetLink = $"{_appEndpointSettings.FrontendBaseUrl}{_appEndpointSettings.ResetPassword}?email={HttpUtility.UrlEncode(email)}&emailToken={HttpUtility.UrlEncode(token)}";
-                var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\resetPassword.html";
+                var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/resetPassword.html";
                 var htmlTemplate = File.ReadAllText(path);
                 var resetPasswordTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl)
                     .Replace("{{ResetLink}}", passwordResetLink);
@@ -152,7 +152,7 @@ namespace Application.Identity
                     var otpCode = createOTP.Data;
 
                     var message = $"This is your OTP number {otpCode}. Use it to confirm your account";
-                    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "\\genericTemplate.html";
+                    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/genericTemplate.html";
                     var htmlTemplate = File.ReadAllText(path);
                     var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{Content}}", message);
                     await _emailService.EmailRequest(new EmailRequest
