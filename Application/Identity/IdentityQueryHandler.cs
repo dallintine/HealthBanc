@@ -108,7 +108,7 @@ namespace Application.Identity
                 var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{Content}}", message);
                 await _emailService.EmailRequest(new EmailRequest
                 {
-                    Subject = "Confirm HealtBanc Account",
+                    Subject = "Confirm HealthBanc Account",
                     Message = emailTemplate,
                     Email = user.Email
                 });
