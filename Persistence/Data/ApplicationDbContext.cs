@@ -21,7 +21,6 @@ namespace Persistence.Data
             this.accessor = accessor;
         }
 
-        public DbSet<LogResponse> LogResponses { get; set; }
         public DbSet<Audit> Audits { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Service> Services { get; set; }

@@ -60,12 +60,26 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
             _logger.LogInformation($"Login Terminated [Reason : Admin not found | Email :  {decryptedEmail.Item2}]");
             return BaseResponse.Failure("25", "Admin not found");
         }
-        if (decryptedEmail.Item2 == _defaultAdminSettings.Email)
+        //if (decryptedEmail.Item2 == _defaultAdminSettings.Email)
+        //{
+        //    return await _tokenService.GetAuthenticationResultForUserAsync(admin);
+        //}
+        if (_defaultAdminSettings.OTPValidation)
         {
-            return await _tokenService.GetAuthenticationResultForUserAsync(admin);
+            var otpValidation = _otpService.ValidateAdminOTPAuth(request.OTP, admin.UniqueUsername);
+            if (otpValidation.Code == "00")
+            {
+                var passwordValidation = await _tokenService.ValidateAdminPasswordAuth(admin.UniqueUsername, decryptedPassword.Item2);
+                if (passwordValidation.Code != "00")
+                {
+                    _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
+                    return passwordValidation;
+                }
+                return await _tokenService.GetAuthenticationResultForUserAsync(admin);
+            }
+            return otpValidation;
         }
-        var otpValidation = _otpService.ValidateAdminOTPAuth(request.OTP, admin.UniqueUsername);
-        if (otpValidation.Code == "00")
+        else
         {
             var passwordValidation = await _tokenService.ValidateAdminPasswordAuth(admin.UniqueUsername, decryptedPassword.Item2);
             if (passwordValidation.Code != "00")
@@ -75,7 +89,6 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
             }
             return await _tokenService.GetAuthenticationResultForUserAsync(admin);
         }
-        return otpValidation;        
     }
 
     public async Task<BaseResponse> Handle(CreateAdminCommand request, CancellationToken cancellationToken)
