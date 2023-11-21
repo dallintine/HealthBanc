@@ -74,7 +74,7 @@ namespace Infrastructure.Middlewares
                 var w = log;
 
                 using var scope = _app.ApplicationServices.CreateScope();
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<LogDbContext>();
                 dbContext.LogResponses.Add(log);
                 await dbContext.SaveChangesAsync();
             }

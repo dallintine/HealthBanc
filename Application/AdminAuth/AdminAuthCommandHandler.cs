@@ -64,8 +64,22 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
         //{
         //    return await _tokenService.GetAuthenticationResultForUserAsync(admin);
         //}
-        var otpValidation = _otpService.ValidateAdminOTPAuth(request.OTP, admin.UniqueUsername);
-        if (otpValidation.Code == "00")
+        if (_defaultAdminSettings.OTPValidation)
+        {
+            var otpValidation = _otpService.ValidateAdminOTPAuth(request.OTP, admin.UniqueUsername);
+            if (otpValidation.Code == "00")
+            {
+                var passwordValidation = await _tokenService.ValidateAdminPasswordAuth(admin.UniqueUsername, decryptedPassword.Item2);
+                if (passwordValidation.Code != "00")
+                {
+                    _logger.LogInformation($"Backend Login failed. Password [Reason : Password could not be validated]");
+                    return passwordValidation;
+                }
+                return await _tokenService.GetAuthenticationResultForUserAsync(admin);
+            }
+            return otpValidation;
+        }
+        else
         {
             var passwordValidation = await _tokenService.ValidateAdminPasswordAuth(admin.UniqueUsername, decryptedPassword.Item2);
             if (passwordValidation.Code != "00")
@@ -75,7 +89,6 @@ IRequestHandler<CreateAdminCommand, BaseResponse>
             }
             return await _tokenService.GetAuthenticationResultForUserAsync(admin);
         }
-        return otpValidation;        
     }
 
     public async Task<BaseResponse> Handle(CreateAdminCommand request, CancellationToken cancellationToken)

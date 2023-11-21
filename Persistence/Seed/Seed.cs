@@ -183,7 +183,7 @@ namespace Persistence.Seed
                         {
                             new PlanDescription
                             {
-                                Name = "I am new to this Gym - Add Registration Fee  8,342.25 is one of fee"
+                                Name = "I am new to this Gym - Add Registration Fee  8,342.25 is one-off fee"
                             }
                         },
                     }
