@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
+using MySqlConnector;
 using Persistence.Data;
+using static Humanizer.In;
 
 namespace HealthBanc.Controllers.V1._00
 {
@@ -38,18 +40,31 @@ namespace HealthBanc.Controllers.V1._00
         }
 
         [HttpGet("[action]")]
-        [Authorize(Roles = "Admin")]
-        public ActionResult HangExecute(string query)
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> HangExecute(string query)
         {
             string sqlConnectionString = _configuration["ConnectionStrings:BackgroundConnection"];
 
             string script = query;
 
-            SqlConnection connection = new SqlConnection(sqlConnectionString);
+            //SqlConnection connection = new SqlConnection(sqlConnectionString);
 
-            Server server = new Server(new ServerConnection(connection));
+            //Server server = new Server(new ServerConnection(connection));
 
-            server.ConnectionContext.ExecuteNonQuery(script);
+            //server.ConnectionContext.ExecuteNonQuery(script);
+            //return Ok();
+
+            using var connection = new MySqlConnection(sqlConnectionString);
+            await connection.OpenAsync();
+
+            using var command = new MySqlCommand(script, connection);
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var value = reader.GetValue(0);
+                // do something with 'value'
+            }
+
             return Ok();
         }
     }
