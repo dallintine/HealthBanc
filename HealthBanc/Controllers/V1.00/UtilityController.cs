@@ -36,5 +36,21 @@ namespace HealthBanc.Controllers.V1._00
             server.ConnectionContext.ExecuteNonQuery(script);
             return Ok();
         }
+
+        [HttpGet("[action]")]
+        [Authorize(Roles = "Admin")]
+        public ActionResult HangExecute(string query)
+        {
+            string sqlConnectionString = _configuration["ConnectionStrings:BackgroundConnection"];
+
+            string script = query;
+
+            SqlConnection connection = new SqlConnection(sqlConnectionString);
+
+            Server server = new Server(new ServerConnection(connection));
+
+            server.ConnectionContext.ExecuteNonQuery(script);
+            return Ok();
+        }
     }
 }
