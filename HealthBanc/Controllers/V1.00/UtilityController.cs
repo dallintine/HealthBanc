@@ -6,9 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.SqlServer.Management.Common;
 using Microsoft.SqlServer.Management.Smo;
-using MySqlConnector;
 using Persistence.Data;
-using static Humanizer.In;
 
 namespace HealthBanc.Controllers.V1._00
 {
