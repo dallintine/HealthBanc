@@ -35,6 +35,6 @@ namespace HealthBanc.Controllers.V1._00
 
             server.ConnectionContext.ExecuteNonQuery(script);
             return Ok();
-        }        
+        }
     }
 }
