@@ -386,8 +386,8 @@ namespace Persistence.Seed
                     Name = "Diagnostics",
                     Tag = "Enjoy a discount on all services, starting with a full body medical checkup and sexually transmitted disease test.",
                     ImageUrl = "https://pharmhallstracct.blob.core.windows.net/revampimages/7fe26149-b122-4ebf-8f15-e90cc31e16e0_diagnostic.png",
-                    BackgroundColor = "#FFEDED",
-                    ActiveColor = "#D71E1B"
+                    BackgroundColor = "#EDF6FF",
+                    ActiveColor = "#9affed"
                 };
                 context.Services.Add(thirdService);
                 await context.SaveChangesAsync();
