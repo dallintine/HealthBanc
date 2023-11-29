@@ -173,10 +173,10 @@ namespace Infrastructure.Security
                 //{
                 //    return BaseResponse.Failure("12",  "You have an active session in one of your browser!. Sign out of it to Sign in here." );
                 //}
-                if (DateTime.Now < session.ExpiryDate && session.DeviceIp == deviceIp && session.Browser.ToLower() == browser.ToLower())
-                {
-                    return BaseResponse.Failure("12", "You have an active session in one of your browser tab. Sign out of it to Sign in here.");
-                }
+                //if (DateTime.Now < session.ExpiryDate && session.DeviceIp == deviceIp && session.Browser.ToLower() == browser.ToLower())
+                //{
+                //    return BaseResponse.Failure("12", "You have an active session in one of your browser tab. Sign out of it to Sign in here.");
+                //}
                 return BaseResponse.Success();
             }
         }
