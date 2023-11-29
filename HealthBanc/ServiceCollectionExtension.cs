@@ -68,11 +68,15 @@ namespace HealthBanc
                         .AllowAnyMethod());
             });
 
-            services.AddDbContext<ApplicationDbContext>(options => options.UseMySql(configuration.GetConnectionString("DefaultConnection"),
-               new MySqlServerVersion(new Version())));
+            services.AddDbContext<ApplicationDbContext>(options => options.UseMySql(configuration.GetConnectionString("DefaultConnection")
+               , new MySqlServerVersion(new Version())
+               , options => options.EnableRetryOnFailure(
+                   maxRetryCount: 4, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
-            services.AddDbContext<LogDbContext>(options => options.UseMySql(configuration.GetConnectionString("BackgroundConnection"),
-                new MySqlServerVersion(new Version())));
+            services.AddDbContext<LogDbContext>(options => options.UseMySql(configuration.GetConnectionString("BackgroundConnection")
+              , new MySqlServerVersion(new Version())
+              , options => options.EnableRetryOnFailure(
+                  maxRetryCount: 4, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
