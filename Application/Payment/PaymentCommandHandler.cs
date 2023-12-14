@@ -68,7 +68,8 @@ namespace Application.Payment
                 {
 
                     _logger.LogInformation($"WebbHokk Command Request [Reference : {request.Data.Reference} ]");
-                    var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Data.Reference);
+                    var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Vendor)
+                        .ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Data.Reference);
                     if (transaction != null)
                     {
                         transaction.IsCompleted = true;
@@ -138,7 +139,8 @@ namespace Application.Payment
             var validatePayment = await _paystackService.VerifyPayment(request.Reference);
             if (!validatePayment.Status) return BaseResponse.Failure("06", validatePayment.Message);
 
-            var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Reference);
+            var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Vendor)
+                .ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Reference);
             if (transaction != null)
             {
                 transaction.IsCompleted = true;

@@ -15,6 +15,8 @@ namespace Domain.Entities
         public long PlanId { get; set; }
         public int Quantity { get; set; }
         public long VendorId { get; set; }
+
+        public Vendor vendor { get; set; }
         public long ServiceId { get; set; }
         public string Status { get; set; }
         public decimal Amount { get; set; }
