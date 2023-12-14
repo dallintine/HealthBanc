@@ -36,7 +36,9 @@ namespace Infrastructure.Notifications
         public async Task<bool> EmailRequest(EmailRequest emailRequest)
         {
             _logger.LogInformation($"Email Request [ Subject :  {emailRequest.Subject} | Email : {emailRequest.Email}]\n");
-            emailRequest.Message = emailRequest.Message.Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl).Replace("{{Year}}", DateTime.Now.Year.ToString());
+            emailRequest.Message = emailRequest.Message.Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl).Replace("{{Year}}", DateTime.Now.Year.ToString())
+                .Replace("{{SupportEmail}}",_emailSettings.SupportEmail).Replace("{{SupportPhonenumber}}",_emailSettings.SupportPhonenumber);
+
             var httpClient = _httpClientFactory.CreateClient("EmailClient");
             HttpContent content = new StringContent(JsonConvert.SerializeObject(emailRequest), Encoding.UTF8, "application/json");
             var response = await httpClient.PostAsync($"{_emailSettings.EmailNotificationNotify}", content);
@@ -64,29 +66,52 @@ namespace Infrastructure.Notifications
         }
 
         [AutomaticRetry(Attempts = 0)]
-        public async Task PlanStepsEmail(string userName, string email,string service)
+        public async Task PlanStepsEmail(string userName, string email, string service, string vendorName , string productName)
         {
-            string path;
-            if(service == ServicesEnum.Gym.ToString())
+            string path = null;
+            if (service == ServicesEnum.Physicals.ToString())
             {
+                _logger.LogInformation("Sending physical plan steps");
                 path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/gym.html";
             }
-            else if (service == ServicesEnum.Meal.ToString())
+            else if (service == ServicesEnum.HeathlyMeal.ToString())
             {
+                _logger.LogInformation("Sending healthy meal plan steps");
                 path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/healthMeal.html";
+            }
+            else if (service == ServicesEnum.Diagnostics.ToString())
+            {
+                _logger.LogInformation("Sending diagnostics plan steps");
+                path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/diagnostics.html";
+            }
+            if (path != null)
+            {
+                string subject;
+                if(service ==  ServicesEnum.Diagnostics.ToString())
+                {
+                    subject = $"Your Access to {vendorName} is Now Active! ";
+                }
+                else if (service == ServicesEnum.Diagnostics.ToString())
+                {
+                    subject = $"Next Steps For Your {service} Plan with Healthbanc\r\n";
+                }
+                else
+                {
+                    subject = $"Next Steps for Your {productName} Purchase on Healthbanc";
+                }
+                var htmlTemplate = File.ReadAllText(path);
+                var emailTemplate = htmlTemplate.Replace("{{Name}}", userName).Replace("{{ProductName}}",productName).Replace("{{VendorName}}",vendorName);
+                await EmailRequest(new EmailRequest
+                {
+                    Subject = subject,
+                    Message = emailTemplate,
+                    Email = email
+                });
             }
             else
             {
-                path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/diagnostics.html";
+                _logger.LogInformation("Plan step Path is null");
             }
-            var htmlTemplate = File.ReadAllText(path);
-            var emailTemplate = htmlTemplate.Replace("{{Name}}", userName);
-            await EmailRequest(new EmailRequest
-            {
-                Subject = "Healthbanc Payment Confirmation",
-                Message = emailTemplate,
-                Email = email
-            });
         }
     }
 }

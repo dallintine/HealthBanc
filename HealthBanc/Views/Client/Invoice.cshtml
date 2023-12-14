@@ -116,25 +116,6 @@
            cellpadding="0"
            cellspacing="0">
         <tr style="text-align: left;width: 100%;">
-           @* <td style="padding: 2%">
-                <span style="
-              font-size: 25px;
-              font-weight: bold;
-              font-stretch: normal;
-              font-style: normal;
-              line-height: normal;
-              letter-spacing: 0.25px;
-              color: rgb(215, 30, 27);
-            ">Health</span><span style="
-              font-size: 25px;
-              font-weight: bold;
-              font-stretch: normal;
-              font-style: normal;
-              line-height: normal;
-              letter-spacing: 0.25px;
-              color: rgb(115, 116, 118);
-            ">banc</span>
-            </td>*@
             <td style="padding: 2%">
                 <img src="https://pharmhallstracct.blob.core.windows.net/logfolder/4c3255b2-03fd-49df-a37d-693bcd5f7882_healthlog.png" alt="Healthbanc logo" />
             </td>
@@ -155,13 +136,13 @@
         </tr>
         <tr style="text-align: justify;width: 100%">
             <td colspan="3" style="text-align: justify; font-weight: bolder;width: 100%">
-                <h3>Order Confirmation</h3>
+                <h3>Healthbanc: Purchase Receipt</h3>
             </td>
         </tr>
         <tr style="text-align: center;width: 100%">
             <td colspan="3" style="text-align: center;font-size: 13px;width: 100%">
-                <span>  Hello @Model.Name</span>
-                <p>Thank you for shopping with Healthbanc, we received your order and it is currently being processed by our team.</p>
+                <span>  Hi @Model.Name</span>
+                <p>Great news! Your recent purchase on Healthbanc was successful. Here are the details:</p>
             </td>
         </tr>
         <tr id="welcome_header" style="text-align: justify;width: 100%">
@@ -169,11 +150,18 @@
                 <h4>Order Summary</h4>
             </td>
         </tr>
+        <tr style="width: 100%;margin-top: 3em;clear: both;">
+            <td style="width: 55%;margin: 0% 1%;font-size: 14px">&nbsp;Product Name&nbsp;</td>
+            <td style="width: 55%;margin: 0% 1%;font-size: 14px">&nbsp;Vendor Name&nbsp;</td>
+            <td style="width: 5%;margin: 0% 1%;font-size: 14px">&nbsp;Quantity&nbsp;</td>
+            <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:right">&nbsp;Price</td>
+        </tr>
         @{
             foreach (var item in @Model.InvoiceItems)
             {
-                    <tr style="width: 100%;margin-top: 3em;clear: both;">
-                    <td style="width: 55%;margin: 0% 1%;font-size: 14px">@item.ServiceName<br/>@item.PlanName</td>
+                    <tr style="width: 100%;margin-top: 0.5em;clear: both;">
+                    <td style="width: 55%;margin: 0% 1%;font-size: 14px">&nbsp;@item.ProductName&nbsp;</td>
+                    <td style="width: 55%;margin: 0% 1%;font-size: 14px">&nbsp;@item.VendorName&nbsp;</td>
                     <td style="width: 5%;margin: 0% 1%;font-size: 14px">&nbsp;@item.Quantity&nbsp;</td>
                     <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:right">&nbsp;@string.Format(new CultureInfo("en-NG", false), "{0:c0}", item.Price)</td>
                     </tr>
@@ -196,12 +184,22 @@
             <td  style="width: 2%;margin: 0% 1%;"></td>
             <td style="width: 60%;margin: 0% 1%;font-size: 16px;text-align:right">&nbsp; &nbsp; @string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.Total)</td>
          </tr>
+         <tr>
+             <td>
+                 <p>Transaction Id : @Model.InvoiceItems.FirstOrDefault().TransactionId</p>
+                <p>Transaction Date : @Model.InvoiceItems.FirstOrDefault().TransactionDate</p>
+             </td>
+         </tr>
                   
         <tr>
             <td colspan="3" style="font-size: 13px;text-align: center;">
-                <p>Once your payment has been confirmed, we will process your order and we will send you a notification email.</p>
+                <p>Got questions, feedback, or just want to chat? Shoot us an email at healthbancng@sterling.ng or give us a call at +234-905-386-5787.</p>
                 <p style="color: black">
-                    For any inquiry, please reach out to us on any of our official channels.
+                    Thank you for choosing Healthbanc. Cheers to a healthier, happier you!
+                </p>
+                <p style="color: black">
+                    Best Regards,<br/>
+                    The Healthbanc Team
                 </p>
             </td>
         </tr>

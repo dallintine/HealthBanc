@@ -36,10 +36,12 @@ namespace Application.Payment
         private readonly IWebHostEnvironment _environment;
         private readonly IEmailService _emailService;
         private readonly ITokenService _tokenService;
+        private readonly EmailSettings _emailSettings;
         private readonly PaystackSettings _paystackSettings;
 
         public PaymentCommandHandler(ILogger<PaymentCommandHandler> logger, UserManager<ApplicationUser> userManager, IPaystackService paystackService, ApplicationDbContext context,
-            ITemplateService templateService, IWebHostEnvironment environment, IEmailService emailService, ITokenService tokenService,IOptions<PaystackSettings> paystackSettings)
+            ITemplateService templateService, IWebHostEnvironment environment, IEmailService emailService, ITokenService tokenService,IOptions<PaystackSettings> paystackSettings,
+            IOptions<EmailSettings> emailSettings)
         {
             _logger = logger;
             _userManager = userManager;
@@ -49,6 +51,7 @@ namespace Application.Payment
             _environment = environment;
             _emailService = emailService;
             _tokenService = tokenService;
+            _emailSettings = emailSettings.Value;
             _paystackSettings = paystackSettings.Value;
         }
 
@@ -84,26 +87,39 @@ namespace Application.Payment
                             PlanName = x.Plan.Name,
                             Price = x.Amount,
                             Quantity = x.Quantity,
-                            TotalPrice = (x.Amount * x.Quantity)
+                            ProductName = x.Plan.Name,
+                            VendorName = x.Plan.Vendor.Name,
+                            TotalPrice = (x.Amount * x.Quantity),
+                            TransactionDate = x.CreatedAt.ToLocalTime().ToString(),
+                            TransactionId = x.PaymentReference
                         }).ToList();
 
                         var name = $"{transaction.ApplicationUser.FirstName} {transaction.ApplicationUser.LastName}";
 
                         BackgroundJob.Schedule(() => _emailService.PaymentConfirmationEmail(name, transaction.ApplicationUser.Email), DateTimeOffset.Now.AddMinutes(1));
 
-                        if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("gym")))
+                        var gymInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ","") == ServicesEnum.Physicals.ToString().ToLower()).FirstOrDefault();
+                        if (gymInvoiceItem != null)
                         {
-                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Gym.ToString()), DateTimeOffset.Now.AddMinutes(3));
+                            await SendPartnerEmail(gymInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name, _emailSettings.IFitnessEmail);
+                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Physicals.ToString(),
+                                gymInvoiceItem.VendorName,gymInvoiceItem.ProductName), DateTimeOffset.Now.AddMinutes(3));
                         }
 
-                        if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("meal")))
+                        var mealInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.HeathlyMeal.ToString().ToLower()).FirstOrDefault();
+                        if (mealInvoiceItem != null)
                         {
-                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Meal.ToString()), DateTimeOffset.Now.AddMinutes(3));
+                            await SendPartnerEmail(mealInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name,_emailSettings.SoFreshEmail);
+                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.HeathlyMeal.ToString(),
+                                mealInvoiceItem.VendorName, mealInvoiceItem.ProductName), DateTimeOffset.Now.AddMinutes(3));
                         }
 
-                        if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("diagnostic")))
+                        var diagniosticInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.Diagnostics.ToString().ToLower()).FirstOrDefault();
+                        if (diagniosticInvoiceItem != null)
                         {
-                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Diagnostic.ToString()), DateTimeOffset.Now.AddMinutes(3));
+                            await SendPartnerEmail(diagniosticInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name,_emailSettings.HealthtrackerEmail);
+                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Diagnostics.ToString(),
+                                diagniosticInvoiceItem.VendorName , diagniosticInvoiceItem.ProductName), DateTimeOffset.Now.AddMinutes(3));
                         }
                     }
                 }
@@ -141,7 +157,11 @@ namespace Application.Payment
                     PlanName = x.Plan.Name,
                     Price = x.Amount,
                     Quantity = x.Quantity,
-                    TotalPrice = (x.Amount * x.Quantity)
+                    TotalPrice = (x.Amount * x.Quantity),
+                    ProductName = x.Plan.Name,
+                    VendorName = x.Plan.Vendor.Name,
+                    TransactionDate = x.CreatedAt.ToLocalTime().ToString(),
+                    TransactionId = x.PaymentReference
                 }).ToList();
 
                 var subTotal = invoiceItems.Sum(x => x.TotalPrice);
@@ -161,28 +181,10 @@ namespace Application.Payment
 
                 await _emailService.EmailRequest(new EmailRequest
                 {
-                    Subject = "Healthbanc Invoice",
+                    Subject = "Payment Success! Your Healthbanc Purchase Details",
                     Message = pdfHTMLTemplate,
                     Email = transaction.ApplicationUser.Email
                 });
-
-                //BackgroundJob.Schedule(() => _emailService.PaymentConfirmationEmail(name, transaction.ApplicationUser.Email), DateTimeOffset.Now.AddMinutes(1));
-
-                //if(invoiceItems.Any(x => x.ServiceName.ToLower().Contains("gym")))
-                //{
-                //    BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Gym.ToString()), DateTimeOffset.Now.AddMinutes(3));
-                //}
-
-                //if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("meal")))
-                //{
-                //    BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Meal.ToString()), DateTimeOffset.Now.AddMinutes(4));
-                //}
-
-                //if (invoiceItems.Any(x => x.ServiceName.ToLower().Contains("diagnostic")))
-                //{
-                //    BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Diagnostic.ToString()), DateTimeOffset.Now.AddMinutes(5));
-                //}
-
 
                 return BaseResponse.Success();
             }
@@ -258,6 +260,22 @@ namespace Application.Payment
             paymentResponse.Data.Amount = initializePaymentrequest.Amount;
             paymentResponse.Data.Email = _tokenService.GetClaims().FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
             return BaseResponse<InitializePaymentResponse>.Success(paymentResponse);
+        }
+
+        public async Task SendPartnerEmail(InvoiceItem invoiceItem,string email, string phonenumber, string name, string deliveryEmail)
+        {
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/partnerTemplate.html";
+            var htmlTemplate = File.ReadAllText(path);
+            var emailTemplate = htmlTemplate.Replace("{{VendorName}}", invoiceItem.VendorName).Replace("{{Name}}", name)
+                .Replace("{{Email}}", email).Replace("{{Phonenumber}}", phonenumber).Replace("{{ProductName}}", invoiceItem.ProductName)
+                .Replace("{{Date}}", invoiceItem.TransactionDate).Replace("{{TransactionId}}", invoiceItem.TransactionId);
+
+            await _emailService.EmailRequest(new EmailRequest
+            {
+                Subject = "Healthbanc: New Purchase Notification",
+                Message = emailTemplate,
+                Email = deliveryEmail
+            });
         }
     }
 }

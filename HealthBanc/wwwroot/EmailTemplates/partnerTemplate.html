@@ -129,46 +129,51 @@
             ">Healthbanc</span>
             </td>
         </tr>
+        <tr id="fist_bump">
+            <td></td>
+        </tr>
         <tr id="welcome_header" style="text-align: justify">
             <td>
-                <h3>Payment Confirmation Email.</h3>
+                <h3>Healthbanc: New Purchase Notification</h3>
             </td>
         </tr>
         <tr style="text-align: justify; line-height: 1.6; letter-spacing: normal">
             <td>
                 <p style="color: black">
-                    Dear  {{Name}},
+                    Hi {{VendorName}}
                 </p>
                 <p style="color: black">
-                    This is to inform you that we have received your payment and in the next email, we will provide you with details of the necessary next steps for the service purchased.
-                </p>
-                <p>
-                    Got questions, feedback, or just want to chat? Shoot us an email at {{SupportEmail}} or give us a call at {{SupportPhonenumber}}.
+                    A new purchase was made through Healthbanc. Here are the details:
                 </p>
                 <p style="color: black">
-                    Thank you for choosing Healthbanc. Cheers to a healthier, happier you!
+                    User name: {{Name}}
                 </p>
                 <p style="color: black">
-                    Best Regards,<br />
-                    The Healthbanc Team
+                    User email: {{Email}}
+                </p>
+                <p style="color: black">
+                    Phone number: {{PhoneNumber}}
+                </p>
+                <p style="color: black">
+                    Product Name: {{ProductName}}
+                </p>
+                <p style="color: black">
+                    Date & Time: {{Date}}
+                </p>
+                <p style="color: black">
+                    Transaction ID: {{TransactionId}}
                 </p>
             </td>
         </tr>
         <tr>
-            <td style="
-            display: block;
-            margin: 1% auto;
-            width: 45%;
-            padding: 2% 2%;
-            text-align: center;
-            border-radius: 5px;
-            box-shadow: 0 17px 25px 0 rgba(0, 0, 0, 0.09);
-            border: solid 1px #068dd0;
-            font-weight: 900;
-            letter-spacing: normal;
-            color: #033364;
-          ">
-                <a style="text-decoration: none" href="{{BaseUrl}}">Sign In</a>
+            <td>
+                <p>
+                    Thank you for partnering with Healthbanc.
+                </p>
+                <p>
+                    Best Regards,<br/>
+                    The Healthbanc Team
+                </p>
             </td>
         </tr>
         <tr>
@@ -181,26 +186,6 @@
         <tr style="text-align: center; background-color: #ecf1fa">
             <td>
                 <p>© {{Year}} Healthbanc. All Rights Reserved</p>
-            </td>
-        </tr>
-    </table>
-    <table id="terms" cellpadding="0" cellspacing="0">
-        <tr align="center"
-            style="
-          font-weight: normal;
-          font-style: normal;
-          letter-spacing: normal;
-          color: #545f7d;
-        ">
-            <td>
-                <a href="{{BaseUrl}}#section3" style="text-decoration: none">Help</a>
-            </td>
-            <td>
-                <a href="{{BaseUrl}}#section2"
-                   style="text-decoration: none">Services</a>
-            </td>
-            <td>
-                <a href="{{BaseUrl}}#section1" style="text-decoration: none">Why Healthbanc</a>
             </td>
         </tr>
     </table>

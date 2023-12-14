@@ -22,5 +22,9 @@ namespace Application.Common.DTO
         public int Quantity { get; set; }
         public decimal Price { get; set; }
         public decimal TotalPrice { get; set; }
+        public string VendorName { get; set; }
+        public string ProductName { get; set; }
+        public string TransactionId { get; set; }
+        public string TransactionDate { get; set; }
     }
 }

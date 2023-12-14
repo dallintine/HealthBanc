@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <_ContentIncludedByDefault Remove="wwwroot\EmailTemplates\resetPassword.html" />
+    <_ContentIncludedByDefault Remove="wwwroot\partnerTemplate.html" />
   </ItemGroup>
 
   <ItemGroup>

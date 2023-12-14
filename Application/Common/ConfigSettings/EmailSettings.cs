@@ -10,5 +10,10 @@ namespace Application.Common.ConfigSettings
     {
         public string EmailNotificationBaseUrl { get; set; }
         public string EmailNotificationNotify { get; set; }
+        public string SupportEmail { get; set; }
+        public string SupportPhonenumber { get; set; }  
+        public string IFitnessEmail { get; set; }  
+        public string SoFreshEmail { get; set; }  
+        public string HealthtrackerEmail { get; set; }
     }
 }

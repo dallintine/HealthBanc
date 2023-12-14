@@ -93,6 +93,17 @@ namespace Application.Identity
             user.PhoneNumberConfirmed = true;
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
+
+            var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/welcomeTemplate.html";
+            var htmlTemplate = File.ReadAllText(path);
+            var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName);
+            await _emailService.EmailRequest(new EmailRequest
+            {
+                Subject = "Welcome to Healthbanc! Your Wellness Journey Starts Now",
+                Message = emailTemplate,
+                Email = user.Email
+            });
+
             return BaseResponse.Success("Account successfully created. Login to continue");
         }
 
@@ -152,13 +163,12 @@ namespace Application.Identity
                     var createOTP = await _otpService.CreateOTP(user.Id, OTPActions.ConfirmAccount.ToString());
                     var otpCode = createOTP.Data;
 
-                    var message = $"This is your OTP number {otpCode}. Use it to confirm your account";
-                    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/genericTemplate.html";
+                    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/otpTemplate.html";
                     var htmlTemplate = File.ReadAllText(path);
-                    var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{Content}}", message);
+                    var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{OTP}}", otpCode);
                     await _emailService.EmailRequest(new EmailRequest
                     {
-                        Subject = "Confirm HealthBanc Account",
+                        Subject = "Activate Your Healbanc Account",
                         Message = emailTemplate,
                         Email = user.Email
                     });
@@ -232,6 +242,16 @@ namespace Application.Identity
             }
             if (user.OAuthSubject == OAuthSubject.Goggle.ToString())
             {
+                var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/welcomeTemplate.html";
+                var htmlTemplate = File.ReadAllText(path);
+                var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName);
+                await _emailService.EmailRequest(new EmailRequest
+                {
+                    Subject = "Welcome to Healthbanc! Your Wellness Journey Starts Now",
+                    Message = emailTemplate,
+                    Email = user.Email
+                });
+
                 return await _tokenService.GetAuthenticationResultForUserAsync(user);
             }
             else
