@@ -121,7 +121,7 @@
             </td>
         </tr>
         <tr style="text-align: center; background-color: #ecf1fa;width: 100%">
-            <td colspan="3" style="padding: 2%;width: 100%">
+            <td style="padding: 2%;width: 100%">
                 <span style="
                 width: 100%;
               font-size: 20px;
@@ -135,26 +135,26 @@
             </td>
         </tr>
         <tr style="text-align: justify;width: 100%">
-            <td colspan="3" style="text-align: justify; font-weight: bolder;width: 100%">
+            <td style="text-align: justify; font-weight: bolder;width: 100%">
                 <h3>Healthbanc: Purchase Receipt</h3>
             </td>
         </tr>
         <tr style="text-align: center;width: 100%">
-            <td colspan="3" style="text-align: center;font-size: 13px;width: 100%">
+            <td style="text-align: center;font-size: 13px;width: 100%">
                 <span>  Hi @Model.Name</span>
                 <p>Great news! Your recent purchase on Healthbanc was successful. Here are the details:</p>
             </td>
         </tr>
         <tr id="welcome_header" style="text-align: justify;width: 100%">
-            <td colspan="3">
+            <td >
                 <h4>Order Summary</h4>
             </td>
         </tr>
-        <tr style="width: 100%;margin-top: 3em;clear: both;">
-            <td style="width: 55%;margin: 0% 1%;font-size: 14px">&nbsp;Product Name&nbsp;</td>
-            <td style="width: 55%;margin: 0% 1%;font-size: 14px">&nbsp;Vendor Name&nbsp;</td>
-            <td style="width: 5%;margin: 0% 1%;font-size: 14px">&nbsp;Quantity&nbsp;</td>
-            <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:right">&nbsp;Price</td>
+        <tr style="width: 100%;margin-top: 3em;margin-bottom: 2em; clear: both;">
+            <td style="width: 55%;margin: 0% 1%;font-size: 14px;text-align: center">&nbsp;Product Name&nbsp;</td>
+            <td style="width: 55%;margin: 0% 1%;font-size: 14px;text-align: center">&nbsp;Vendor Name&nbsp;</td>
+            <td style="width: 5%;margin: 0% 1%;font-size: 14px;text-align: center">&nbsp;Quantity&nbsp;</td>
+            <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:center">&nbsp;Price</td>
         </tr>
         @{
             foreach (var item in @Model.InvoiceItems)
@@ -170,29 +170,32 @@
         }
           <tr style="width: 100%;margin-top: 3em; ">
             <td style="width: 55%;margin: 0% 1%;font-size: 14px">Transaction Fee</td>
-            <td  style="width: 5%;margin: 0% 1%;"></td>
+            <td style="width: 5%;margin: 0% 1%;"></td>
+            <td style="width: 5%;margin: 0% 1%;"></td>
             <td style="width: 32%;margin: 0% 1%;font-size: 14px;text-align:right">&nbsp; &nbsp; @string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.TransactionCharge)</td>
          </tr><tr>&nbsp;</tr>
         
          <tr style="width: 100%;margin-top: 3em; ">
             <td style="width: 35%;margin: 0% 1%;font-size: 16px">SubTotal</td>
-            <td  style="width: 2%;margin: 0% 1%;"></td>
+            <td style="width: 2%;margin: 0% 1%;"></td>
+            <td style="width: 2%;margin: 0% 1%;"></td>
             <td style="width: 60%;margin: 0% 1%;font-size: 16px;text-align:right">&nbsp; &nbsp; @string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.SubTotal)</td>
          </tr>
           <tr style="width: 100%;margin-top: 3em; ">
             <td style="width: 35%;margin: 0% 1%;font-size: 16px">Total</td>
-            <td  style="width: 2%;margin: 0% 1%;"></td>
+            <td style="width: 2%;margin: 0% 1%;"></td>
+            <td style="width: 2%;margin: 0% 1%;"></td>
             <td style="width: 60%;margin: 0% 1%;font-size: 16px;text-align:right">&nbsp; &nbsp; @string.Format(new CultureInfo("en-NG", false), "{0:c0}", Model.Total)</td>
          </tr>
          <tr>
              <td>
-                 <p>Transaction Id : @Model.InvoiceItems.FirstOrDefault().TransactionId</p>
-                <p>Transaction Date : @Model.InvoiceItems.FirstOrDefault().TransactionDate</p>
+                <p style="font-size: 13px" >Transaction Id : @Model.InvoiceItems.FirstOrDefault().TransactionId</p>
+                <p style="font-size: 13px">Transaction Date : @Model.InvoiceItems.FirstOrDefault().TransactionDate</p>
              </td>
          </tr>
                   
         <tr>
-            <td colspan="3" style="font-size: 13px;text-align: center;">
+            <td style="font-size: 13px;text-align: center;">
                 <p>Got questions, feedback, or just want to chat? Shoot us an email at healthbancng@sterling.ng or give us a call at +234-905-386-5787.</p>
                 <p style="color: black">
                     Thank you for choosing Healthbanc. Cheers to a healthier, happier you!
@@ -204,7 +207,7 @@
             </td>
         </tr>
         <tr  style="text-align: center; background-color: #ecf1fa">
-            <td colspan="3">
+            <td >
                 <p>© 2023 Healthbanc. All Rights Reserved</p>
             </td>
         </tr>

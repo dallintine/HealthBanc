@@ -269,7 +269,7 @@ namespace Application.Payment
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/partnerTemplate.html";
             var htmlTemplate = File.ReadAllText(path);
             var emailTemplate = htmlTemplate.Replace("{{VendorName}}", invoiceItem.VendorName).Replace("{{Name}}", name)
-                .Replace("{{Email}}", email).Replace("{{Phonenumber}}", phonenumber).Replace("{{ProductName}}", invoiceItem.ProductName)
+                .Replace("{{Email}}", email).Replace("{{Phonenumber}}", phonenumber ?? " ").Replace("{{ProductName}}", invoiceItem.ProductName)
                 .Replace("{{Date}}", invoiceItem.TransactionDate).Replace("{{TransactionId}}", invoiceItem.TransactionId);
 
             await _emailService.EmailRequest(new EmailRequest
