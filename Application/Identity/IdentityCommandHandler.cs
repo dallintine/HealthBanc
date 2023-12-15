@@ -168,7 +168,7 @@ namespace Application.Identity
                     var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName).Replace("{{OTP}}", otpCode);
                     await _emailService.EmailRequest(new EmailRequest
                     {
-                        Subject = "Activate Your Healbanc Account",
+                        Subject = "Activate Your Healthbanc Account",
                         Message = emailTemplate,
                         Email = user.Email
                     });
@@ -232,6 +232,16 @@ namespace Application.Identity
                 {
                     await _userManager.AddToRoleAsync(user, Roles.User.ToString());
                     await _userManager.UpdateAsync(user);
+
+                    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/welcomeTemplate.html";
+                    var htmlTemplate = File.ReadAllText(path);
+                    var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName);
+                    await _emailService.EmailRequest(new EmailRequest
+                    {
+                        Subject = "Welcome to Healthbanc! Your Wellness Journey Starts Now",
+                        Message = emailTemplate,
+                        Email = user.Email
+                    });
                 }
                 else
                 {
@@ -242,16 +252,6 @@ namespace Application.Identity
             }
             if (user.OAuthSubject == OAuthSubject.Goggle.ToString())
             {
-                var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/welcomeTemplate.html";
-                var htmlTemplate = File.ReadAllText(path);
-                var emailTemplate = htmlTemplate.Replace("{{Name}}", user.FirstName);
-                await _emailService.EmailRequest(new EmailRequest
-                {
-                    Subject = "Welcome to Healthbanc! Your Wellness Journey Starts Now",
-                    Message = emailTemplate,
-                    Email = user.Email
-                });
-
                 return await _tokenService.GetAuthenticationResultForUserAsync(user);
             }
             else

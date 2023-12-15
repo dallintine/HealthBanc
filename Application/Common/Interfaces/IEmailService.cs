@@ -14,6 +14,6 @@ namespace Application.Common.Interfaces
         [AutomaticRetry(Attempts = 0)]
         Task PaymentConfirmationEmail(string userName, string email);
         [AutomaticRetry(Attempts = 0)]
-        Task PlanStepsEmail(string userName, string email, string service, string vendorName, string productName);
+        Task PlanStepsEmail(string userName, string email, string service, string vendorName, string productName, string serviceName);
     }
 }

@@ -104,7 +104,7 @@ namespace Application.Payment
                         {
                             await SendPartnerEmail(gymInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name, _emailSettings.IFitnessEmail);
                             BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Physicals.ToString(),
-                                gymInvoiceItem.VendorName,gymInvoiceItem.ProductName), DateTimeOffset.Now.AddMinutes(3));
+                                gymInvoiceItem.VendorName,gymInvoiceItem.ProductName,gymInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
                         }
 
                         var mealInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.HeathlyMeal.ToString().ToLower()).FirstOrDefault();
@@ -112,7 +112,7 @@ namespace Application.Payment
                         {
                             await SendPartnerEmail(mealInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name,_emailSettings.SoFreshEmail);
                             BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.HeathlyMeal.ToString(),
-                                mealInvoiceItem.VendorName, mealInvoiceItem.ProductName), DateTimeOffset.Now.AddMinutes(3));
+                                mealInvoiceItem.VendorName, mealInvoiceItem.ProductName,mealInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
                         }
 
                         var diagniosticInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.Diagnostics.ToString().ToLower()).FirstOrDefault();
@@ -120,7 +120,7 @@ namespace Application.Payment
                         {
                             await SendPartnerEmail(diagniosticInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name,_emailSettings.HealthtrackerEmail);
                             BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Diagnostics.ToString(),
-                                diagniosticInvoiceItem.VendorName , diagniosticInvoiceItem.ProductName), DateTimeOffset.Now.AddMinutes(3));
+                                diagniosticInvoiceItem.VendorName , diagniosticInvoiceItem.ProductName,diagniosticInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
                         }
                     }
                 }
@@ -269,7 +269,7 @@ namespace Application.Payment
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/partnerTemplate.html";
             var htmlTemplate = File.ReadAllText(path);
             var emailTemplate = htmlTemplate.Replace("{{VendorName}}", invoiceItem.VendorName).Replace("{{Name}}", name)
-                .Replace("{{Email}}", email).Replace("{{Phonenumber}}", phonenumber ?? " ").Replace("{{ProductName}}", invoiceItem.ProductName)
+                .Replace("{{Email}}", email).Replace("{{PhoneNumber}}", phonenumber ?? " ").Replace("{{ProductName}}", invoiceItem.ProductName)
                 .Replace("{{Date}}", invoiceItem.TransactionDate).Replace("{{TransactionId}}", invoiceItem.TransactionId);
 
             await _emailService.EmailRequest(new EmailRequest

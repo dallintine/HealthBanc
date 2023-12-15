@@ -66,7 +66,7 @@ namespace Infrastructure.Notifications
         }
 
         [AutomaticRetry(Attempts = 0)]
-        public async Task PlanStepsEmail(string userName, string email, string service, string vendorName , string productName)
+        public async Task PlanStepsEmail(string userName, string email, string service, string vendorName , string productName,string serviceName)
         {
             string path = null;
             if (service == ServicesEnum.Physicals.ToString())
@@ -100,7 +100,8 @@ namespace Infrastructure.Notifications
                     subject = $"Next Steps for Your {productName} Purchase on Healthbanc";
                 }
                 var htmlTemplate = File.ReadAllText(path);
-                var emailTemplate = htmlTemplate.Replace("{{Name}}", userName).Replace("{{ProductName}}",productName).Replace("{{VendorName}}",vendorName);
+                var emailTemplate = htmlTemplate.Replace("{{Name}}", userName).Replace("{{ProductName}}",productName).Replace("{{VendorName}}",vendorName)
+                    .Replace("{{ServiceName}}", vendorName);
                 await EmailRequest(new EmailRequest
                 {
                     Subject = subject,
