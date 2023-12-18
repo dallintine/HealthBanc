@@ -292,7 +292,7 @@ namespace Persistence.Seed
                             }
                         },
                     },
-                     new Plan
+                    new Plan
                     {
                         Name = "Sandwich Combo",
                         Price =    6239.69M,
@@ -308,7 +308,7 @@ namespace Persistence.Seed
                             }
                         },
                     },
-                      new Plan
+                    new Plan
                     {
                         Name = "Apple Chicken Salad",
                         Price =    4059.00M,
@@ -324,7 +324,7 @@ namespace Persistence.Seed
                             }
                         },
                     },
-                     new Plan
+                    new Plan
                     {
                         Name = "Grilled Catfish Salad",
                         Price =    4059.00M,
@@ -340,7 +340,7 @@ namespace Persistence.Seed
                             }
                         },
                     },
-                      new Plan
+                    new Plan
                     {
                         Name = "Fresh Fiesta Chicken",
                         Price =    3395.31M,
@@ -356,7 +356,7 @@ namespace Persistence.Seed
                             }
                         },
                     },
-                        new Plan
+                    new Plan
                     {
                         Name = "Fresh Fiesta beef",
                         Price =    3395.31M,
@@ -369,6 +369,86 @@ namespace Persistence.Seed
                             new PlanDescription
                             {
                                 Name = "Beef, Carrot, Lettuce, Cabbage, Potatoes & Fiesta dressing"
+                            }
+                        },
+                    },
+                    new Plan
+                    {
+                        Name = "Exotic Cuty Basket ",
+                        Price =    16200.00M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/edebd5f9-89ec-40ba-9329-55c59d6cc04a_exoticcuty.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Fruit basket containing an assortment of local and exotic fruits "
+                            }
+                        },
+                    },
+                    new Plan
+                    {
+                        Name = "Dainty Combo platter",
+                        Price =    18037.50M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/be524a1e-ae4a-4052-9829-483bdbd3f108_daintycombo.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Food platter containing mini sweet n Spicy salad tray, Fiesta Chicken wrap, 25cl smoothie bottle, Parfait, Fruit cup, Strawberries and grapes"
+                            }
+                        },
+                    },
+                    new Plan
+                    {
+                        Name = "Tropical classic Basket",
+                        Price =    29062.50M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/1f9b7228-957c-4173-99e6-0705e693c130_tropicalclassic.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Fruit basket including an assortment of local and exotic fruits"
+                            }
+                        },
+                    },
+                    new Plan
+                    {
+                        Name = "Value Basket",
+                        Price =    30900.00M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/f475c514-2a1e-48b6-9fa1-49a886e5bbd6_valuebasket.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Fruit basket including an assortment of local and exotic fruits "
+                            }
+                        },
+                    },
+                    new Plan
+                    {
+                        Name = "Exotic splash Basket",
+                        Price =    30900.00M,
+                        MarkUpRate = 0.05,
+                        ImageURL ="https://pharmhallstracct.blob.core.windows.net/logfolder/8b5c05a4-b629-40f5-9d60-44026291881e_exoticspalsh.png",
+                        VendorId = secondVendor.Id,
+                        ServiceId= secondService.Id,
+                        PlanDescriptions = new List<PlanDescription>
+                        {
+                            new PlanDescription
+                            {
+                                Name = "Fruit basket containing an assortment of local and exotic fruits"
                             }
                         },
                     }

@@ -16,5 +16,7 @@ namespace Application.Plans.Commands
         public decimal Price { get; set; }
         public decimal Discount { get; set; }
         public double MarkUpRate { get; set; }
+        public string ImageURL { get; set; }
+        public string Tag { get; set; }
     }
 }

@@ -41,6 +41,8 @@ public class PlanCommandHandler : IRequestHandler<CreatePlanCommand, BaseRespons
             MarkUpRate = request.MarkUpRate,
             Price = request.Price,
             ServiceId = request.ServiceId,
+            ImageURL = request.ImageURL,
+            Tag = request.Tag
         };
         _context.Plans.Add(plan);
         await _context.SaveChangesAsync(cancellationToken);
