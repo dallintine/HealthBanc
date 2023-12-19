@@ -247,10 +247,14 @@ namespace Application.Payment
 
             BackgroundJob.Schedule(() => _emailService.PaymentConfirmationEmail(userName, userEmail), DateTimeOffset.Now.AddMinutes(1));
 
-            var gymInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.Physicals.ToString().ToLower()).FirstOrDefault();
-            if (gymInvoiceItem != null)
+            var gymInvoiceItemList = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.Physicals.ToString().ToLower()).ToList();
+            if (gymInvoiceItemList != null && gymInvoiceItemList.Count > 0)
             {
-                await SendPartnerEmail(gymInvoiceItem, userEmail, userPhonenumber, userName, _emailSettings.IFitnessEmail);
+                foreach(var item in gymInvoiceItemList)
+                {
+                    await SendPartnerEmail(item, userEmail, userPhonenumber, userName, _emailSettings.IFitnessEmail);
+                }
+                var gymInvoiceItem = gymInvoiceItemList.FirstOrDefault();
                 BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(userName, userEmail, ServicesEnum.Physicals.ToString(),
                     gymInvoiceItem.VendorName, gymInvoiceItem.ProductName, gymInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
             }
