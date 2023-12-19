@@ -282,7 +282,7 @@ namespace Application.Payment
             var htmlTemplate = File.ReadAllText(path);
             var emailTemplate = htmlTemplate.Replace("{{VendorName}}", invoiceItem.VendorName).Replace("{{Name}}", name)
                 .Replace("{{Email}}", email).Replace("{{PhoneNumber}}", phonenumber ?? " ").Replace("{{ProductName}}", invoiceItem.ProductName)
-                .Replace("{{Date}}", invoiceItem.TransactionDate).Replace("{{TransactionId}}", invoiceItem.TransactionId);
+                .Replace("{{Date}}", invoiceItem.TransactionDate).Replace("{{TransactionId}}", invoiceItem.TransactionId).Replace("{{Unit}}",invoiceItem.Quantity.ToString());
 
             await _emailService.EmailRequest(new EmailRequest
             {
