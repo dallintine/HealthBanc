@@ -68,59 +68,62 @@ namespace Application.Payment
                 {
 
                     _logger.LogInformation($"WebbHokk Command Request [Reference : {request.Data.Reference} ]");
-                    var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Vendor)
-                        .ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Data.Reference);
-                    if (transaction != null)
+                    if(request.@event.ToLower() == "charge.success".ToLower())
                     {
-                        transaction.IsCompleted = true;
-                        foreach (var subscription in transaction.Subscriptions)
+                        var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Vendor)
+                            .ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Data.Reference);
+                        if (transaction != null)
                         {
-                            subscription.Status = SubscriptionStatus.Pending.ToString();
-                            subscription.IsSuccessful = true;
-                            subscription.UpdatedAt = DateTime.Now;
-                        }
-                        _context.Transactions.Update(transaction);
-                        await _context.SaveChangesAsync();
+                            transaction.IsCompleted = true;
+                            foreach (var subscription in transaction.Subscriptions)
+                            {
+                                subscription.Status = SubscriptionStatus.Pending.ToString();
+                                subscription.IsSuccessful = true;
+                                subscription.UpdatedAt = DateTime.Now;
+                            }
+                            _context.Transactions.Update(transaction);
+                            await _context.SaveChangesAsync();
 
-                        var invoiceItems = transaction.Subscriptions.Select(x => new InvoiceItem
-                        {
-                            ServiceName = x.Plan.Service.Name,
-                            PlanName = x.Plan.Name,
-                            Price = x.Amount,
-                            Quantity = x.Quantity,
-                            ProductName = x.Plan.Name,
-                            VendorName = x.Plan.Vendor.Name,
-                            TotalPrice = (x.Amount * x.Quantity),
-                            TransactionDate = x.CreatedAt.ToLocalTime().ToString(),
-                            TransactionId = x.PaymentReference
-                        }).ToList();
+                            var invoiceItems = transaction.Subscriptions.Select(x => new InvoiceItem
+                            {
+                                ServiceName = x.Plan.Service.Name,
+                                PlanName = x.Plan.Name,
+                                Price = x.Amount,
+                                Quantity = x.Quantity,
+                                ProductName = x.Plan.Name,
+                                VendorName = x.Plan.Vendor.Name,
+                                TotalPrice = (x.Amount * x.Quantity),
+                                TransactionDate = x.CreatedAt.ToLocalTime().ToString(),
+                                TransactionId = x.PaymentReference
+                            }).ToList();
 
-                        var name = $"{transaction.ApplicationUser.FirstName} {transaction.ApplicationUser.LastName}";
+                            var name = $"{transaction.ApplicationUser.FirstName} {transaction.ApplicationUser.LastName}";
 
-                        BackgroundJob.Schedule(() => _emailService.PaymentConfirmationEmail(name, transaction.ApplicationUser.Email), DateTimeOffset.Now.AddMinutes(1));
+                            BackgroundJob.Schedule(() => _emailService.PaymentConfirmationEmail(name, transaction.ApplicationUser.Email), DateTimeOffset.Now.AddMinutes(1));
 
-                        var gymInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ","") == ServicesEnum.Physicals.ToString().ToLower()).FirstOrDefault();
-                        if (gymInvoiceItem != null)
-                        {
-                            await SendPartnerEmail(gymInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name, _emailSettings.IFitnessEmail);
-                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Physicals.ToString(),
-                                gymInvoiceItem.VendorName,gymInvoiceItem.ProductName,gymInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
-                        }
+                            var gymInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.Physicals.ToString().ToLower()).FirstOrDefault();
+                            if (gymInvoiceItem != null)
+                            {
+                                await SendPartnerEmail(gymInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name, _emailSettings.IFitnessEmail);
+                                BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Physicals.ToString(),
+                                    gymInvoiceItem.VendorName, gymInvoiceItem.ProductName, gymInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
+                            }
 
-                        var mealInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.HeathlyMeal.ToString().ToLower()).FirstOrDefault();
-                        if (mealInvoiceItem != null)
-                        {
-                            await SendPartnerEmail(mealInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name,_emailSettings.SoFreshEmail);
-                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.HeathlyMeal.ToString(),
-                                mealInvoiceItem.VendorName, mealInvoiceItem.ProductName,mealInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
-                        }
+                            var mealInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.HeathlyMeal.ToString().ToLower()).FirstOrDefault();
+                            if (mealInvoiceItem != null)
+                            {
+                                await SendPartnerEmail(mealInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name, _emailSettings.SoFreshEmail);
+                                BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.HeathlyMeal.ToString(),
+                                    mealInvoiceItem.VendorName, mealInvoiceItem.ProductName, mealInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
+                            }
 
-                        var diagniosticInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.Diagnostics.ToString().ToLower()).FirstOrDefault();
-                        if (diagniosticInvoiceItem != null)
-                        {
-                            await SendPartnerEmail(diagniosticInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name,_emailSettings.HealthtrackerEmail);
-                            BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Diagnostics.ToString(),
-                                diagniosticInvoiceItem.VendorName , diagniosticInvoiceItem.ProductName,diagniosticInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
+                            var diagniosticInvoiceItem = invoiceItems.Where(x => x.ServiceName.ToLower().Replace(" ", "") == ServicesEnum.Diagnostics.ToString().ToLower()).FirstOrDefault();
+                            if (diagniosticInvoiceItem != null)
+                            {
+                                await SendPartnerEmail(diagniosticInvoiceItem, transaction.ApplicationUser.Email, transaction.ApplicationUser.PhoneNumber, name, _emailSettings.HealthtrackerEmail);
+                                BackgroundJob.Schedule(() => _emailService.PlanStepsEmail(name, transaction.ApplicationUser.Email, ServicesEnum.Diagnostics.ToString(),
+                                    diagniosticInvoiceItem.VendorName, diagniosticInvoiceItem.ProductName, diagniosticInvoiceItem.ServiceName), DateTimeOffset.Now.AddMinutes(3));
+                            }
                         }
                     }
                 }
