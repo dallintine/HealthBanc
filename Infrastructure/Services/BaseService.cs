@@ -17,9 +17,9 @@ namespace Infrastructure.Services
         public List<Claim> Claims;
         public BaseService(IHttpContextAccessor accessor)
         {
-            IpAddress = accessor?.HttpContext?.Connection.RemoteIpAddress.ToString();
-            Device = accessor.HttpContext != null ? GetDevice(accessor.HttpContext.Request.Headers["User-Agent"]) : null;
-            Claims = accessor.HttpContext.User?.Claims != null ? accessor.HttpContext.User?.Claims?.ToList() : null;
+            IpAddress = accessor?.HttpContext != null ? accessor?.HttpContext?.Connection.RemoteIpAddress.ToString() : null;
+            Device = accessor?.HttpContext != null ? GetDevice(accessor.HttpContext.Request.Headers["User-Agent"]) : null;
+            Claims = accessor?.HttpContext != null ? accessor.HttpContext.User?.Claims?.ToList() : null;
         }
 
         private static string GetDevice(StringValues userAgent)
