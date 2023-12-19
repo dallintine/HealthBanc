@@ -35,20 +35,28 @@ namespace Infrastructure.Notifications
 
         public async Task<bool> EmailRequest(EmailRequest emailRequest)
         {
-            _logger.LogInformation($"Email Request [ Subject :  {emailRequest.Subject} | Email : {emailRequest.Email}]\n");
-            emailRequest.Message = emailRequest.Message.Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl).Replace("{{Year}}", DateTime.Now.Year.ToString())
-                .Replace("{{SupportEmail}}",_emailSettings.SupportEmail).Replace("{{SupportPhonenumber}}",_emailSettings.SupportPhonenumber);
-
-            var httpClient = _httpClientFactory.CreateClient("EmailClient");
-            HttpContent content = new StringContent(JsonConvert.SerializeObject(emailRequest), Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync($"{_emailSettings.EmailNotificationNotify}", content);
-            var apiResponse = await response.Content.ReadAsStringAsync();
-            _logger.LogInformation($"Email Response : {apiResponse} | StatusCode : {response.StatusCode} \n");
-            if (response.IsSuccessStatusCode)
+            try
             {
-                return true;
+                _logger.LogInformation($"Email Request [ Subject :  {emailRequest.Subject} | Email : {emailRequest.Email}]\n");
+                emailRequest.Message = emailRequest.Message.Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl).Replace("{{Year}}", DateTime.Now.Year.ToString())
+                    .Replace("{{SupportEmail}}", _emailSettings.SupportEmail).Replace("{{SupportPhonenumber}}", _emailSettings.SupportPhonenumber);
+
+                var httpClient = _httpClientFactory.CreateClient("EmailClient");
+                HttpContent content = new StringContent(JsonConvert.SerializeObject(emailRequest), Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync($"{_emailSettings.EmailNotificationNotify}", content);
+                var apiResponse = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Email Response : {apiResponse} | StatusCode : {response.StatusCode} \n");
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                return false;
             }
-            return false;
+            catch(Exception ex)
+            {
+                _logger.LogError($"An error occurred while trying to send mail [Exception : {ex.ToString()}]");
+                return false;
+            }
         }
 
         [AutomaticRetry(Attempts = 0)]
