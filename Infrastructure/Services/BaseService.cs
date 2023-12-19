@@ -19,7 +19,7 @@ namespace Infrastructure.Services
         {
             IpAddress = accessor?.HttpContext?.Connection.RemoteIpAddress.ToString();
             Device = accessor.HttpContext != null ? GetDevice(accessor.HttpContext.Request.Headers["User-Agent"]) : null;
-            Claims = accessor.HttpContext.User?.Claims?.ToList();
+            Claims = accessor.HttpContext.User?.Claims != null ? accessor.HttpContext.User?.Claims?.ToList() : null;
         }
 
         private static string GetDevice(StringValues userAgent)

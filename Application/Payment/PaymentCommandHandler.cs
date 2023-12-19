@@ -30,7 +30,6 @@ namespace Application.Payment
 
     {
         private readonly ILogger<PaymentCommandHandler> _logger;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IPaystackService _paystackService;
         private readonly ApplicationDbContext _context;
         private readonly ITemplateService _templateService;
@@ -40,12 +39,11 @@ namespace Application.Payment
         private readonly EmailSettings _emailSettings;
         private readonly PaystackSettings _paystackSettings;
 
-        public PaymentCommandHandler(ILogger<PaymentCommandHandler> logger, UserManager<ApplicationUser> userManager, IPaystackService paystackService, ApplicationDbContext context,
+        public PaymentCommandHandler(ILogger<PaymentCommandHandler> logger, IPaystackService paystackService, ApplicationDbContext context,
             ITemplateService templateService, IWebHostEnvironment environment, IEmailService emailService, ITokenService tokenService,IOptions<PaystackSettings> paystackSettings,
             IOptions<EmailSettings> emailSettings)
         {
             _logger = logger;
-            _userManager = userManager;
             _paystackService = paystackService;
             _context = context;
             _templateService = templateService;

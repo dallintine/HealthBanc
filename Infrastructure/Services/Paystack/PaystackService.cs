@@ -20,16 +20,14 @@ namespace Infrastructure.Paystack
     {
         private readonly ILogger<PaystackService> _logger;
         private readonly IHttpConnection _httpConnection;
-        private readonly AppEndpointSettings _appEndpointSettings;
         private readonly PaystackSettings _paystackSettings;
 
         public PaystackService(ILogger<PaystackService> logger, IHttpConnection httpConnection, IOptions<PaystackSettings> paystackSettings ,
-            IOptions<AppEndpointSettings> appEndpointSettings, IHttpContextAccessor accessor) 
+            IHttpContextAccessor accessor) 
             : base(accessor)
         {
             _logger = logger;
             _httpConnection = httpConnection;
-            _appEndpointSettings = appEndpointSettings.Value;
             _paystackSettings = paystackSettings.Value;
         }
 
