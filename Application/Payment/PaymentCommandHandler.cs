@@ -67,7 +67,7 @@ namespace Application.Payment
                 var ipAddress = _tokenService.GetIP();
                 if (paystackIpaddress.Contains(ipAddress))
                 {
-                    _logger.LogInformation($"WebbHokk Command Request [Reference : {request.Data.Reference} ]");
+                    _logger.LogInformation($"WebbHokk Command Request [Reference : {request.Data.Reference} | {JsonConvert.SerializeObject(request)} ]");
                     if(request.@event.ToLower() == "charge.success".ToLower())
                     {
                         BackgroundJob.Enqueue(() => EnqueSuccesfulTransaction(request.Data.Reference));
