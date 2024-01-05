@@ -86,7 +86,7 @@ namespace Persistence.Seed
                     new Plan
                     {
                         Tag = "Monthly Plan",
-                        Price = 17394.83M,
+                        Price = 22214.33M,
                         MarkUpRate = 0.05,
                         VendorId = vendor.Id,
                         Name = "Monthly Fitness Package",
@@ -116,14 +116,14 @@ namespace Persistence.Seed
                     new Plan
                     {
                         Tag = "Quarterly Plan",
-                        Price = 43251.60M,
+                        Price = 57867.60M,
                         MarkUpRate = 0.05,
                         VendorId = vendor.Id,
                         Name = "Quarterly Fitness Package",
                           ImageURL ="https://pharmhallstracct.blob.core.windows.net/revampimages/c351e468-eda3-461b-87b7-47fb43483d16_quarterlygym.png",
                          PlanDescriptions = new List<PlanDescription>
                         {
-                            new PlanDescription
+                             new PlanDescription
                             {
                                 Name = "All Day Access"
                             },
@@ -133,11 +133,11 @@ namespace Persistence.Seed
                             },
                               new PlanDescription
                             {
-                                Name = "One Guest Pass per Month"
+                                Name = "NO Guest Passes"
                             },
                                new PlanDescription
                             {
-                                Name = "10 Days Per Annum Freeze Subscription Request."
+                                Name = "NO Freeze Subscription Request."
                             }
                         },
                         ServiceId= service.Id
@@ -145,7 +145,7 @@ namespace Persistence.Seed
                     new Plan
                     {
                         Tag = "Annual Plan",
-                        Price = 134865.15M,
+                        Price = 175584.15M,
                         MarkUpRate = 0.05,
                         VendorId = vendor.Id,
                         Name = "Annual Fitness Package",
@@ -162,11 +162,11 @@ namespace Persistence.Seed
                             },
                               new PlanDescription
                             {
-                                Name = "Two Guest Pass per Month"
+                                Name = "NO Guest Passes"
                             },
                                new PlanDescription
                             {
-                                Name = "20 Days Per Annum Freeze Subscription Request."
+                                Name = "NO Freeze Subscription Request."
                             }
                         },
                         ServiceId= service.Id
@@ -174,7 +174,7 @@ namespace Persistence.Seed
                     new Plan
                     {
                         Name = "Registration Fee",
-                        Price = 8342.25M,
+                        Price = 10442.25M,
                         MarkUpRate = 0.05,
                         VendorId = vendor.Id,
                         ServiceId= service.Id,
