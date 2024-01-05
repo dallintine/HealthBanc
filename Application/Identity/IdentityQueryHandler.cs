@@ -68,7 +68,7 @@ namespace Application.Identity
             var passwordCheck = await _signInManager.PasswordSignInAsync(user, decryptedPassword.Item2, false, true);
             if (passwordCheck.IsLockedOut)
             {
-                _logger.LogInformation($"Login terminated [Reason : USer is locked out | Email : {decryptedEmail.Item2}] \n");
+                _logger.LogInformation($"Login terminated [Reason : User is locked out | Email : {decryptedEmail.Item2}] \n");
                 return BaseResponse.Failure("12", " Your account is locked please try again with correct email and/or password in 60 minutes");
             }
             if (!passwordCheck.Succeeded)

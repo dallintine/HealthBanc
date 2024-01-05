@@ -8,8 +8,11 @@ namespace Application.Common.ConfigSettings
 {
     public class SterlingOtpSettings
     {
-        public string HashKey { get; set; }
+        public string SecretKey { get; set; }
         public string Url { get; set; }
-        public string Action { get; set; }
+        public string SetUpKey { get; set; }
+        public string QRCodeURL { get; set; }
+        public string PairURL { get; set; }
+        public string ValidateURL { get; set; }
     }
 }

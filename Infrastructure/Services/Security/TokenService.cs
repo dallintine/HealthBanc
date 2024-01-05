@@ -91,6 +91,8 @@ namespace Infrastructure.Security
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.Now.AddMonths(5);
             user.LastLoginDate = DateTime.Now;
+            user.LockoutEnd = null;
+            await _userManager.ResetAccessFailedCountAsync(user);
             await _userManager.UpdateAsync(user);
 
             var logInResponse = new LoginResponseDTO
@@ -201,32 +203,6 @@ namespace Infrastructure.Security
                 _context.UserSessions.Update(session);
             }
             await _context.SaveChangesAsync();
-        }
-
-        public async Task<BaseResponse> ValidateAdminPasswordAuth(string username , string password)
-        {
-            var httpClient = _httpClientFactory.CreateClient("Fiorano");
-            var loginCredentials = new ADCredentialsRoot
-            {
-                AD_Credentials = new ADCredentials()
-            };
-            loginCredentials.AD_Credentials.AD_Username = username;
-            loginCredentials.AD_Credentials.AD_Password = password;
-            HttpContent content = new StringContent(JsonConvert.SerializeObject(loginCredentials), Encoding.UTF8, "application/json");
-
-            var authentication = await httpClient.PostAsync(_appSettings.FiorianoADAuthentication, content);
-            string apiResponse = await authentication.Content.ReadAsStringAsync();
-            if (authentication.IsSuccessStatusCode)
-            {
-                var result = JsonConvert.DeserializeObject<ADResponseRoot>(apiResponse);
-                if (result.AD_Response.Status == "TRUE" && result.AD_Response.Response.ResponseCode == "00")
-                {
-                    return BaseResponse.Success();
-                }
-                return BaseResponse.Failure( "12" ,"Login detail is invalid, please try again with correct credentials");
-            }
-            _logger.LogInformation("Could not connnect with ADCredentials password sevice");
-            return BaseResponse.Failure("06" , "Could not connect to Password ADService");
         }
     }
 }

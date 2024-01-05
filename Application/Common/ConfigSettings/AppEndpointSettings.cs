@@ -9,6 +9,7 @@ namespace Application.Common.ConfigSettings
     public class AppEndpointSettings
     {
         public string FrontendBaseUrl { get; set; }
+        public string FrontendAdminBaseUrl { get; set; }
         public string ResetPassword { get; set; }
         public string ApiBaseUrl { get; set; }
         public string Login { get; set; }

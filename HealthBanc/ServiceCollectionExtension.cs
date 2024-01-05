@@ -185,6 +185,7 @@ namespace HealthBanc
              .AddTransientHttpErrorPolicy(x =>
              x.WaitAndRetryAsync(1, _ => TimeSpan.FromMilliseconds(300)));
 
+
             //----------------------------------------  Configuration Settings -------------------------------------------------//
 
             services.Configure<AppEndpointSettings>(configuration.GetSection("AppEndpointSettings"));

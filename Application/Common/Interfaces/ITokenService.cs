@@ -17,6 +17,5 @@ namespace Application.Common.Interfaces
         List<Claim> GetClaims();
         string GetIP();
         ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
-        Task<BaseResponse> ValidateAdminPasswordAuth(string username, string password);
     }
 }
