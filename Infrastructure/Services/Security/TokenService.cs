@@ -105,7 +105,6 @@ namespace Infrastructure.Security
                 RefreshToken = refreshToken
             };
 
-            await _userManager.ResetAccessFailedCountAsync(user);
             await SaveSession(Device, IpAddress, user.Id, logInResponse.ExpiryTime);
             return BaseResponse<LoginResponseDTO>.Success(logInResponse);
         }
