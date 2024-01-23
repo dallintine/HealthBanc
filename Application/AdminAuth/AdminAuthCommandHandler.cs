@@ -137,8 +137,8 @@ IRequestHandler<ResetPasswordCommand, BaseResponse>
             await _context.SaveChangesAsync(cancellationToken);
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(admin);
-            string passwordResetLink = $"{_appEndpointSettings.FrontendAdminBaseUrl}{_appEndpointSettings.ResetPassword}?email={HttpUtility.UrlEncode(request.Email)}" +
-                $"&resetToken={HttpUtility.UrlEncode(token)}";
+            string passwordResetLink = $"{_appEndpointSettings.FrontendAdminBaseUrl}{_appEndpointSettings.AdminChangePassword}?email={HttpUtility.UrlEncode(request.Email)}" +
+                $"&emailToken={HttpUtility.UrlEncode(token)}";
             var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/resetPassword.html";
             var htmlTemplate = File.ReadAllText(path);
             var resetPasswordTemplate = htmlTemplate.Replace("{{Name}}", admin.FirstName).Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl)
