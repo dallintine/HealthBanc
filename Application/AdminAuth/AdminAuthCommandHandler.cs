@@ -78,10 +78,6 @@ IRequestHandler<ResetPasswordCommand, BaseResponse>
         {
             return BaseResponse.Failure("06", "Kindly set up your account password");
         }
-        if (decryptedEmail.Item2 == _defaultAdminSettings.Email)
-        {
-            return await _tokenService.GetAuthenticationResultForUserAsync(admin);
-        }
         if (_defaultAdminSettings.OTPValidation)
         {
             var otpValidation = await _otpService.ValidateAdminOTPAuth(request.OTP, admin.UniqueUsername);
