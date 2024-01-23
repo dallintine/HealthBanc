@@ -56,7 +56,7 @@ namespace HealthBanc.Controllers.V1._00
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         [ProducesResponseType(400, Type = typeof(BaseResponse))]
-        public async Task<IActionResult> Create(CreateProspectivePartnerCommand createCommand)
+        public async Task<IActionResult> CreateProspectivePartnerCommand(CreateProspectivePartnerCommand createCommand)
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(createCommand));
