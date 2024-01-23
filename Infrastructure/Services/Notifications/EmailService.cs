@@ -77,7 +77,7 @@ namespace Infrastructure.Notifications
         public async Task PlanStepsEmail(string userName, string email, string service, string vendorName , string productName,string serviceName)
         {
             string path = null;
-            if (service == ServicesEnum.Physicals.ToString())
+            if (service == ServicesEnum.Fitness.ToString())
             {
                 _logger.LogInformation("Sending physical plan steps");
                 path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/gym.html";
