@@ -68,12 +68,12 @@ namespace Application.Payment
                     _logger.LogInformation($"WebbHokk Command Request [Reference : {request.Data.Reference} | {JsonConvert.SerializeObject(request)} ]");
                     if(request.@event.ToLower() == "charge.success".ToLower())
                     {
-                        var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Vendor)
+                        var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Orders).ThenInclude(x => x.Plan).ThenInclude(x => x.Vendor)
                             .ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Data.Reference);
                         if (transaction != null)
                         {
                             transaction.IsCompleted = true;
-                            foreach (var subscription in transaction.Subscriptions)
+                            foreach (var subscription in transaction.Orders)
                             {
                                 subscription.Status = SubscriptionStatus.Pending.ToString();
                                 subscription.IsSuccessful = true;
@@ -82,7 +82,7 @@ namespace Application.Payment
                             _context.Transactions.Update(transaction);
                             await _context.SaveChangesAsync();
 
-                            var invoiceItems = transaction.Subscriptions.Select(x => new InvoiceItem
+                            var invoiceItems = transaction.Orders.Select(x => new InvoiceItem
                             {
                                 ServiceName = x.Plan.Service.Name,
                                 PlanName = x.Plan.Name,
@@ -116,12 +116,12 @@ namespace Application.Payment
             var validatePayment = await _paystackService.VerifyPayment(request.Reference);
             if (!validatePayment.Status) return BaseResponse.Failure("06", validatePayment.Message);
 
-            var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Subscriptions).ThenInclude(x => x.Plan).ThenInclude(x => x.Vendor)
+            var transaction = await _context.Transactions.Include(x => x.ApplicationUser).Include(x => x.Orders).ThenInclude(x => x.Plan).ThenInclude(x => x.Vendor)
                 .ThenInclude(x => x.Service).SingleOrDefaultAsync(x => x.Reference == request.Reference);
             if (transaction != null)
             {
                 transaction.IsCompleted = true;
-                foreach (var subscription in transaction.Subscriptions)
+                foreach (var subscription in transaction.Orders)
                 {
                     subscription.Status = SubscriptionStatus.Pending.ToString();
                     subscription.IsSuccessful = true;
@@ -130,7 +130,7 @@ namespace Application.Payment
                 _context.Transactions.Update(transaction);
                 await _context.SaveChangesAsync();
 
-                var invoiceItems = transaction.Subscriptions.Select(x => new InvoiceItem
+                var invoiceItems = transaction.Orders.Select(x => new InvoiceItem
                 {
                     ServiceName = x.Plan.Service.Name,
                     PlanName = x.Plan.Name,
@@ -182,12 +182,12 @@ namespace Application.Payment
                 ApplicationUserId = userId
             };
 
-            var subscriptionList = new List<Subscription>();
+            var subscriptionList = new List<Order>();
             foreach (var item in request.InitializePaymentDTOs)
             {
                 var plan = await _context.Plans.FindAsync(item.PlanId);
                 if (plan is null) return BaseResponse.Failure("25", "No plan record found");
-                subscriptionList.Add(new Subscription
+                subscriptionList.Add(new Order
                 {
                     ApplicationUserId = transaction.ApplicationUserId,
                     PlanId = plan.Id,
@@ -217,7 +217,7 @@ namespace Application.Payment
             await _context.SaveChangesAsync();
 
             subscriptionList.ForEach(s => s.TransactionId = transaction.Id);
-            _context.Subscriptions.AddRange(subscriptionList);
+            _context.Orders.AddRange(subscriptionList);
             await _context.SaveChangesAsync();
 
             var paymentResponse = new InitializePaymentResponse();

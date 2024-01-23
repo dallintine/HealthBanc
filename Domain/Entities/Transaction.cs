@@ -15,6 +15,6 @@ namespace Domain.Entities
         public string Email { get; set; }
         public decimal Amount { get; set; }
         public bool IsCompleted { get; set; }
-        public List<Subscription> Subscriptions { get; set; }
+        public List<Order> Orders { get; set; }
     }
 }

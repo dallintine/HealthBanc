@@ -38,11 +38,7 @@ public class VendorCommandHandler : IRequestHandler<CreateVendorCommand, BaseRes
             _logger.LogInformation($"Create Vendor request terminated [Reason : Invalid Service Id] \n");
             return BaseResponse.Failure("25", "Service not found");
         }
-        vendor = new Vendor
-        {
-            Name = request.Name,
-            SettlementAccount = request.SettlementAccount,
-        };
+        vendor = new Vendor { Name = request.Name, SettlementAccount = request.SettlementAccount, ServiceId = request.ServiceId, Description = request.Description };
         _context.Vendors.Add(vendor);
         await _context.SaveChangesAsync(cancellationToken);
         return BaseResponse.Success();
@@ -53,8 +49,9 @@ public class VendorCommandHandler : IRequestHandler<CreateVendorCommand, BaseRes
         _logger.LogInformation($"Edit Vendor request processing [Payload : {JsonConvert.SerializeObject(request)}] \n");
         var vendor = await _context.Vendors.SingleOrDefaultAsync(x => x.Id == request.Id && !x.IsDeleted, cancellationToken);
         if (vendor is null) return BaseResponse.Failure("25", "No record found");
-        vendor.Name = request.Name;
-        vendor.SettlementAccount = request.SettlementAccount;
+        vendor.Name = request.Name ?? vendor.Name;
+        vendor.SettlementAccount = request.SettlementAccount ?? vendor.SettlementAccount;
+        vendor.Description = request.Description ?? vendor.Description; 
         _context.Vendors.Update(vendor);
         await _context.SaveChangesAsync(cancellationToken);
         return BaseResponse.Success();

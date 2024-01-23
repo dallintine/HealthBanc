@@ -33,6 +33,28 @@ namespace HealthBanc.Controllers.V1._00
         }
 
         /// <summary>
+        /// Get Vendor
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<VendorDTO>))]
+        public async Task<IActionResult> Get([FromQuery] GetVendorQuery request)
+        {
+            return HandleResult(await Mediator.Send(request));
+        }
+
+        /// <summary>
+        /// Vendor Purchase History
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<VendorPurchaseHistoryDTO>))]
+        public async Task<IActionResult> PurchaseHistory([FromQuery] GetVendorPurchaseHistory request )
+        {
+            return HandleResult(await Mediator.Send(request));
+        }
+
+        /// <summary>
         /// Create Product
         /// </summary>
         /// <param name="createCommand"></param>

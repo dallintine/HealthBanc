@@ -14,7 +14,7 @@ namespace Application.Vendors.Validators
         {
             RuleFor(x => x.Id).NotEmpty().NotNull();
             RuleFor(x => x.Name).NotEmpty().NotNull();
-            RuleFor(x => x.SettlementAccount).NotEmpty().NotNull().Length(10, 10).Must(x => long.TryParse(x, out var val)).WithMessage("Invalid Settlement Account.");
+            RuleFor(x => x.SettlementAccount).Length(10, 10).Must(x => long.TryParse(x, out var val)).WithMessage("Invalid Settlement Account.");
         }
     }
 }

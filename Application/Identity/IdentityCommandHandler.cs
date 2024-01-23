@@ -140,6 +140,14 @@ namespace Application.Identity
             var email = await _userManager.FindByEmailAsync(decryptedEmail.Item2);
             if (email is null)
             {
+                bool hasReferrer = false;
+                if(request.ReferralCode != null)
+                {
+                    var referrer = await _context.Users.FindAsync(new object[] { long.Parse(request.ReferralCode.TrimStart(new Char[] { '0' })) },
+                        cancellationToken: cancellationToken);
+                    if(referrer is null) return BaseResponse.Failure("25", "Referral Code is invalid");
+                    hasReferrer = true;
+                }
                 var user = new ApplicationUser
                 {
                     UserName = decryptedEmail.Item2,
@@ -149,6 +157,7 @@ namespace Application.Identity
                     LastName = request.LastName,
                     PhoneNumber = request.PhoneNumber,
                     LastLoginDate = DateTime.Now,
+                    State = request.State,
                     OAuthSubject = OAuthSubject.HealthBanc.ToString()
                 };
 
@@ -158,6 +167,15 @@ namespace Application.Identity
                     await _userManager.AddToRoleAsync(user, Roles.User.ToString());
                     await _userManager.UpdateAsync(user);
                     _context.Update(user);
+                    if (hasReferrer)
+                    {
+                        var referral = new Referral
+                        {
+                            ParentUserId = long.Parse(request.ReferralCode.TrimStart(new Char[] { '0' })),
+                            ChildUserId = user.Id,
+                        };
+                        _context.Referrals.Add(referral);
+                    }
                     await _context.SaveChangesAsync();
 
                     var createOTP = await _otpService.CreateOTP(user.Id, OTPActions.ConfirmAccount.ToString());

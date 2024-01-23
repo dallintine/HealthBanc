@@ -54,12 +54,12 @@ namespace Persistence.Seed
                 }
             }
 
-            var service = await context.Services.SingleOrDefaultAsync(x => x.Name == "Physicals");
+            var service = await context.Services.SingleOrDefaultAsync(x => x.Name == "Fitness");
             if (service == null)
             {
                 service = new Service
                 {
-                    Name = "Physicals",
+                    Name = "Fitness",
                     Tag = "Receive discounts on both your gym registration fee and package prices.",
                     ImageUrl = "https://pharmhallstracct.blob.core.windows.net/revampimages/7f1e7013-99b6-4937-9342-550decfb9aae_dumbell.png",
                     ServiceDetailURL = "https://pharmhallstracct.blob.core.windows.net/revampimages/f5ba27e0-9642-4cc1-bb97-4524ec5476e7_gymproductdetail.png",

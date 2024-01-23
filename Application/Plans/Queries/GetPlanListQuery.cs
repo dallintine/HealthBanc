@@ -12,6 +12,7 @@ namespace Application.Plans.Queries
 {
     public class GetPlanListQuery : PaginationQuery, IRequest<PageBaseResponse<List<PlanDTO>>>
     {
-        public long ServiceId { get; set; }
+        public long? ServiceId { get; set; }
+        public long? VendorId { get; set; }
     }
 }

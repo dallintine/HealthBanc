@@ -13,11 +13,16 @@ namespace Domain.Entities
         public string UniqueUsername { get; set; }
         public string LastName { get; set; }
         public string OAuthSubject { get; set; }
+        public string ProfileImageURL { get; set; }
         public string Address { get; set; }
+        public string State { get; set; }
+        public List<Referral> Referrals { get; set; }
         public DateTime LastLoginDate {get;set;}
+        public DateTime? DateOfBirth { get;set;}
         public DateTime RefreshTokenExpiryTime { get; set; }
         public string RefreshToken { get; set; }
-        public List<Subscription> Subscriptions { get; set; }
+        public List<Order> Orders { get; set; }
+        public HealthDetail HealthDetail { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
         public bool IsDeleted { get; set; }

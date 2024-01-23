@@ -2,6 +2,7 @@
 using Application.Common.Interfaces;
 using Application.Customer.DTO;
 using Application.Customer.Queries;
+using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Data;
@@ -14,15 +15,21 @@ using System.Threading.Tasks;
 namespace Application.Customer
 {
     public class CustomerQueryHandler : IRequestHandler<GetCustomerListQuery, PageBaseResponse<List<CustomerDTO>>> , 
-        IRequestHandler<ExportCustomerListQuery , BaseResponse<byte[]>>
+        IRequestHandler<ExportCustomerListQuery , BaseResponse<byte[]>>,
+        IRequestHandler<GetCustomerProfileQuery, BaseResponse<CustomerProfileDTO>>,
+        IRequestHandler<GetProfileIdQuery, BaseResponse<CustomerIdDTO>>
     {
         private readonly ApplicationDbContext _context;
         private readonly IFileService _fileService;
+        private readonly ITokenService _tokenService;
+        private readonly IMapper _mapper;
 
-        public CustomerQueryHandler(ApplicationDbContext context, IFileService fileService)
+        public CustomerQueryHandler(ApplicationDbContext context, IFileService fileService,ITokenService tokenService,IMapper mapper)
         {
             _context = context;
             _fileService = fileService;
+            _tokenService = tokenService;
+            _mapper = mapper;
         }
 
         public  async Task<PageBaseResponse<List<CustomerDTO>>> Handle(GetCustomerListQuery request, CancellationToken cancellationToken)
@@ -100,6 +107,28 @@ namespace Application.Customer
             }).ToList();
             var fileData = _fileService.GenerateGenericExcelFile(customersData, $"customerdata-{Guid.NewGuid().ToString()}");
             return BaseResponse<byte[]>.Success(fileData,"00" ,"Customer data would be processed and sent to your email address");
+        }
+
+        public async  Task<BaseResponse<CustomerProfileDTO>> Handle(GetCustomerProfileQuery request, CancellationToken cancellationToken)
+        {
+            var userId = _tokenService.GetClaims().FirstOrDefault(x => x.Type == "UserId")?.Value;
+            var user = await _context.Users.Include(x => x.HealthDetail).SingleOrDefaultAsync(x => x.Id == long.Parse(userId), cancellationToken: cancellationToken);
+
+            var profileDTO = _mapper.Map<CustomerProfileDTO>(user);
+
+            return BaseResponse<CustomerProfileDTO>.Success(profileDTO);
+        }
+
+        public async Task<BaseResponse<CustomerIdDTO>> Handle(GetProfileIdQuery request, CancellationToken cancellationToken)
+        {
+            var userId = _tokenService.GetClaims().FirstOrDefault(x => x.Type == "UserId")?.Value;
+            var user = await _context.Users.FindAsync(new object[] { long.Parse(userId) }, cancellationToken: cancellationToken);
+
+            return BaseResponse<CustomerIdDTO>.Success(new CustomerIdDTO
+            {
+                ProfileImageURL = user.ProfileImageURL,
+                CustomerID = user.Id.ToString().PadLeft(6, '0')
+            });
         }
     }
 }

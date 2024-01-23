@@ -8,7 +8,7 @@ namespace Domain.Enums
 {
     public enum ServicesEnum
     {
-        Physicals,
+        Fitness,
         HeathlyMeal,
         Diagnostics
     }

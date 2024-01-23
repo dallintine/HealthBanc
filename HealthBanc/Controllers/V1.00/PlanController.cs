@@ -35,6 +35,30 @@ namespace HealthBanc.Controllers.V1._00
         }
 
         /// <summary>
+        /// Basic Catalog List
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Cached(500)]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<List<PlanDTO>>))]
+        public async Task<IActionResult> BasicCatalog()
+        {
+            return HandleResult(await Mediator.Send(new GetBasicCatalogQuery()));
+        }
+
+        /// <summary>
+        /// Top Discount Plans
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Cached(500)]
+        [ProducesResponseType(200, Type = typeof(BaseResponse<List<TopDiscountedPlanDTO>>))]
+        public async Task<IActionResult> TopDiscounts()
+        {
+            return HandleResult(await Mediator.Send(new TopDiscountedPlanQuery()));
+        }
+
+        /// <summary>
         /// Create Plan
         /// </summary>
         /// <param name="createCommand"></param>

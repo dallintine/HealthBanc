@@ -17,6 +17,7 @@ namespace Application.Identity.Validators
             RuleFor(x => x.LastName).NotEmpty().NotNull();
             RuleFor(x => x.Address).NotEmpty().NotNull();
             RuleFor(x => x.Password).NotEmpty().NotNull();
+            RuleFor(x => x.State).NotEmpty().NotNull();
             RuleFor(x => x.PhoneNumber).NotEmpty().NotNull();
         }
     }

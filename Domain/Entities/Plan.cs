@@ -26,7 +26,7 @@ namespace Domain.Entities
         public string ExternalLinkName { get; set; }
         public string ExternalLinkURL { get; set; }
         public bool OptionalFee { get; set; }
-        public List<Subscription> Subscriptions { get; set; }
+        public List<Order> Orders { get; set; }
         public List<PlanDescription> PlanDescriptions { get; set; }
     }
 }

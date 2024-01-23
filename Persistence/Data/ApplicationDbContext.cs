@@ -1,14 +1,8 @@
 ﻿using Domain.Entities;
-using Domain.Entities.Common;
 using Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Persistence.Data
 {
@@ -21,14 +15,18 @@ namespace Persistence.Data
             this.accessor = accessor;
         }
 
+        public DbSet<HealthDetail> HealthDetails { get; set; }
+        public DbSet<ProspectivePartner> ProspectivePartners { get; set; }
         public DbSet<Audit> Audits { get; set; }
-        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<Referral> Referrals { get; set; }
+        public DbSet<Card> Cards { get; set; }
+        public DbSet<Domain.Entities.Transaction> Transactions { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<Plan> Plans { get; set; }
         public DbSet<OneTimePassword> OneTimePasswords { get; set; }
         public DbSet<ErrorLog> ErrorLogs { get; set; }
-        public DbSet<Subscription> Subscriptions { get; set; }
+        public DbSet<Order> Orders { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<PlanDescription> PlanDescriptions { get; set; }
 
@@ -91,6 +89,11 @@ namespace Persistence.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<ApplicationUser>()
+            .HasMany(c => c.Referrals)
+            .WithOne(e => e.ParentUser)
+            .IsRequired();
         }
     }
 }

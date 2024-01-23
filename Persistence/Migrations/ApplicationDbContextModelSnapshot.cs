@@ -65,6 +65,9 @@ namespace Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime");
 
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
@@ -74,6 +77,9 @@ namespace Persistence.Migrations
 
                     b.Property<string>("FirstName")
                         .HasColumnType("longtext");
+
+                    b.Property<long?>("HealthDetailId")
+                        .HasColumnType("bigint");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("tinyint(1)");
@@ -110,6 +116,9 @@ namespace Persistence.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("ProfileImageURL")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("RefreshToken")
                         .HasColumnType("longtext");
 
@@ -117,6 +126,9 @@ namespace Persistence.Migrations
                         .HasColumnType("datetime");
 
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("State")
                         .HasColumnType("longtext");
 
                     b.Property<bool>("TwoFactorEnabled")
@@ -133,6 +145,8 @@ namespace Persistence.Migrations
                         .HasColumnType("varchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("HealthDetailId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -178,63 +192,57 @@ namespace Persistence.Migrations
                     b.ToTable("Audits");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Common.LogResponse", b =>
+            modelBuilder.Entity("Domain.Entities.Card", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    b.Property<string>("ActionName")
+                    b.Property<long>("ApplicationUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("AuthorizationCode")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ContentType")
+                    b.Property<string>("Bank")
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("DateLogged")
+                    b.Property<string>("CardHolder")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("CardType")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime");
 
-                    b.Property<string>("HostName")
+                    b.Property<string>("Email")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Port")
+                    b.Property<string>("ExpMonth")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("QueryString")
+                    b.Property<string>("ExpYear")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("RequestDetails")
+                    b.Property<bool>("IsDefaultCard")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("LastFourDigit")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("RequestHeader")
+                    b.Property<string>("Signature")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("RequestId")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("RequestMethod")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ResponseDetails")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ResponseHeader")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Route")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ServiceName")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("StatusCode")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("longtext");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime");
 
                     b.HasKey("Id");
 
-                    b.ToTable("LogResponses");
+                    b.ToTable("Cards");
                 });
 
             modelBuilder.Entity("Domain.Entities.ErrorLog", b =>
@@ -272,6 +280,35 @@ namespace Persistence.Migrations
                     b.ToTable("ErrorLogs");
                 });
 
+            modelBuilder.Entity("Domain.Entities.HealthDetail", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Allergies")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("Height")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("Weight")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HealthDetails");
+                });
+
             modelBuilder.Entity("Domain.Entities.OneTimePassword", b =>
                 {
                     b.Property<long>("Id")
@@ -305,6 +342,67 @@ namespace Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("OneTimePasswords");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Order", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<long>("ApplicationUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsSuccessful")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("OptionalFee")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("PaymentReference")
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("PlanId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<long>("ServiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("TransactionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<long>("VendorId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("PlanId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("VendorId");
+
+                    b.ToTable("Orders");
                 });
 
             modelBuilder.Entity("Domain.Entities.Plan", b =>
@@ -392,6 +490,36 @@ namespace Persistence.Migrations
                     b.ToTable("PlanDescriptions");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Referral", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ChildUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<long>("ParentUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChildUserId");
+
+                    b.HasIndex("ParentUserId");
+
+                    b.ToTable("Referrals");
+                });
+
             modelBuilder.Entity("Domain.Entities.Service", b =>
                 {
                     b.Property<long>("Id")
@@ -428,65 +556,6 @@ namespace Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Services");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Subscription", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<long>("ApplicationUserId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("IsSuccessful")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("OptionalFee")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("PaymentReference")
-                        .HasColumnType("longtext");
-
-                    b.Property<long>("PlanId")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<long>("ServiceId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("longtext");
-
-                    b.Property<long>("TransactionId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime");
-
-                    b.Property<long>("VendorId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
-
-                    b.HasIndex("PlanId");
-
-                    b.HasIndex("TransactionId");
-
-                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("Domain.Entities.Transaction", b =>
@@ -688,6 +757,48 @@ namespace Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("Domain.Entities.HealthDetail", "HealthDetail")
+                        .WithMany()
+                        .HasForeignKey("HealthDetailId");
+
+                    b.Navigation("HealthDetail");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Order", b =>
+                {
+                    b.HasOne("Domain.Entities.ApplicationUser", "ApplicationUser")
+                        .WithMany("Orders")
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Plan", "Plan")
+                        .WithMany("Orders")
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Transaction", null)
+                        .WithMany("Orders")
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Vendor", "vendor")
+                        .WithMany()
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApplicationUser");
+
+                    b.Navigation("Plan");
+
+                    b.Navigation("vendor");
+                });
+
             modelBuilder.Entity("Domain.Entities.Plan", b =>
                 {
                     b.HasOne("Domain.Entities.Service", "Service")
@@ -716,29 +827,23 @@ namespace Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.Subscription", b =>
+            modelBuilder.Entity("Domain.Entities.Referral", b =>
                 {
-                    b.HasOne("Domain.Entities.ApplicationUser", "ApplicationUser")
-                        .WithMany("Subscriptions")
-                        .HasForeignKey("ApplicationUserId")
+                    b.HasOne("Domain.Entities.ApplicationUser", "ChildUser")
+                        .WithMany()
+                        .HasForeignKey("ChildUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Plan", "Plan")
-                        .WithMany("Subscriptions")
-                        .HasForeignKey("PlanId")
+                    b.HasOne("Domain.Entities.ApplicationUser", "ParentUser")
+                        .WithMany("Referrals")
+                        .HasForeignKey("ParentUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Transaction", null)
-                        .WithMany("Subscriptions")
-                        .HasForeignKey("TransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("ChildUser");
 
-                    b.Navigation("ApplicationUser");
-
-                    b.Navigation("Plan");
+                    b.Navigation("ParentUser");
                 });
 
             modelBuilder.Entity("Domain.Entities.Transaction", b =>
@@ -816,14 +921,16 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.ApplicationUser", b =>
                 {
-                    b.Navigation("Subscriptions");
+                    b.Navigation("Orders");
+
+                    b.Navigation("Referrals");
                 });
 
             modelBuilder.Entity("Domain.Entities.Plan", b =>
                 {
-                    b.Navigation("PlanDescriptions");
+                    b.Navigation("Orders");
 
-                    b.Navigation("Subscriptions");
+                    b.Navigation("PlanDescriptions");
                 });
 
             modelBuilder.Entity("Domain.Entities.Service", b =>
@@ -833,7 +940,7 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Transaction", b =>
                 {
-                    b.Navigation("Subscriptions");
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Domain.Entities.Vendor", b =>

@@ -10,9 +10,11 @@ namespace Domain.Entities
     public class Vendor : BaseEntity
     {
         public string Name { get; set; }
+        public string Description { get; set; }
         public string SettlementAccount { get; set; }
         public long ServiceId { get; set; }
         public Service Service { get; set; }
         public List<Plan> Plans { get; set; }
+        public List<Order> Orders { get; set; }
     }
 }

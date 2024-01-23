@@ -1,18 +1,10 @@
 ﻿using Application.Common.DTO;
 using Application.Dashboard.DTO;
 using Application.Dashboard.Queries;
-using Application.Subscriptions.DTO;
-using Application.Subscriptions.Queries;
 using AutoMapper;
-using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Dashboard;
 
@@ -33,7 +25,7 @@ public class DashboardQueryHandler : IRequestHandler<GetDashboardSummaryQuery, B
         {
             request.StartDate = new DateTime();
         }
-        var subQuery = _context.Subscriptions.Include(x => x.Plan).Where(x => !x.IsDeleted && x.CreatedAt.Date >= request.StartDate.Value.Date);
+        var subQuery = _context.Orders.Include(x => x.Plan).Where(x => !x.IsDeleted && x.CreatedAt.Date >= request.StartDate.Value.Date);
         var customerQuery = _context.Users.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date && !x.IsDeleted);
         var vendorQuery = _context.Vendors.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date && !x.IsDeleted);
 

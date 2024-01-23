@@ -11,6 +11,7 @@ namespace Application.Vendors.Commands
     public class CreateVendorCommand : IRequest<BaseResponse>
     {
         public string Name { get; set; }
+        public string Description { get; set; }
         public string SettlementAccount { get; set; }
         public long ServiceId { get; set; }
     }
