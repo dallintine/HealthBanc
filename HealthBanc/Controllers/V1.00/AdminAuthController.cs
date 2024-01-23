@@ -1,4 +1,5 @@
 ﻿using Application.AdminAuth.Commands;
+using Application.AdminAuth.Queries;
 using Application.Common.DTO;
 using Application.Identity;
 using Application.Identity.DTO;
@@ -62,6 +63,20 @@ namespace HealthBanc.Controllers.V1._00
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(new ResetPasswordCommand { Email = email, EmailToken = emailToken, Password = resetPassword.Password }));
+        }
+
+
+        /// <summary>
+        /// Send ResetPassword Mails
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> SendPasswordResetMails()
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(new SendAdminResetEmailQuery()));
         }
     }
 }
