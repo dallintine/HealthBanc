@@ -35,7 +35,7 @@ namespace Application.Plans
             {
                 plans = plans.Where(x => x.VendorId == request.VendorId.Value);
             }
-            if (String.IsNullOrEmpty(request.SearchText))
+            if (!String.IsNullOrEmpty(request.SearchText))
             {
                 plans = plans.Where(x => x.Name.Contains(request.SearchText));
             }

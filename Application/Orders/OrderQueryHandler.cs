@@ -41,7 +41,7 @@ namespace Application.Orders
 
             request.StartDate ??= new DateTime();
             Func<Order, bool> query = x =>
-                  (string.IsNullOrEmpty(request.Status) || x.Status.ToLower() == request.Status.ToLower())
+                  (!string.IsNullOrEmpty(request.Status) || x.Status.ToLower() == request.Status.ToLower())
                    && (request.VendorId == null || x.VendorId == request.VendorId)
                    && (request.PlanId == null || x.PlanId == request.PlanId)
                    && (request.UserId == null || x.ApplicationUserId == request.UserId);
@@ -97,7 +97,7 @@ namespace Application.Orders
                 request.StartDate = new DateTime();
             }
             Func<Order, bool> query = x =>
-                  (string.IsNullOrEmpty(request.Status) || x.Status.ToLower() == request.Status.ToLower());
+                  (!string.IsNullOrEmpty(request.Status) || x.Status.ToLower() == request.Status.ToLower());
             var querySubscriptions = _context.Orders.Include(x => x.ApplicationUser).Include(x => x.Plan).Include(x => x.Plan.Vendor).Where(query);
 
             querySubscriptions = querySubscriptions.Where(x => x.CreatedAt.Date >= request.StartDate.Value.Date);
