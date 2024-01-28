@@ -108,5 +108,37 @@ namespace HealthBanc.Controllers.V1._00
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(profile));
         }
+
+        /// <summary>
+        /// Update Customer Phonenumber
+        /// </summary>s
+        /// <param name="command"></param>
+        /// <returns></returns>
+        [HttpPatch("[action]")]
+        [Authorize(Roles = "User")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(404, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> UpdatePhoneNumber(UpdatePhoneNumberCommand command)
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(command));
+        }
+
+        /// <summary>
+        /// Update Customer Address
+        /// </summary>s
+        /// <param name="command"></param>
+        /// <returns></returns>
+        [HttpPatch("[action]")]
+        [Authorize(Roles = "User")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        [ProducesResponseType(400, Type = typeof(BaseResponse))]
+        [ProducesResponseType(404, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> UpdateAddress(UpdateDeliveryAddressCommand command)
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(command));
+        }
     }
 }

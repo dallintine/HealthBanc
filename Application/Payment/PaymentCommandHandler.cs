@@ -194,6 +194,7 @@ namespace Application.Payment
                     ServiceId = plan.ServiceId,
                     VendorId = plan.VendorId,
                     IsSuccessful = false,
+                    Note = request.Note,
                     Amount = ((plan.Price - plan.Discount) * item.Quantity),
                     OptionalFee = plan.OptionalFee,
                     Quantity = item.Quantity,
@@ -203,11 +204,12 @@ namespace Application.Payment
             };
 
             // Check for multiple plans of the same product
-            var groupedSubList = subscriptionList.GroupBy(x => x.ServiceId);
-            if (groupedSubList.Count() != subscriptionList.Count(x => !x.OptionalFee))
-            {
-                return BaseResponse.Failure("06", "Plans of the same service cannot be purchased or added to the cart at the same time");
-            }
+            //var groupedSubList = subscriptionList.GroupBy(x => x.ServiceId);
+            //if (groupedSubList.Count() != subscriptionList.Count(x => !x.OptionalFee))
+            //{
+            //    return BaseResponse.Failure("06", "Plans of the same service cannot be purchased or added to the cart at the same time");
+            //}
+
             // calculate total sum
             var totalAmount = subscriptionList.Sum(x => (x.Amount));
             totalAmount += ( _paystackSettings.Charges * totalAmount);

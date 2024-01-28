@@ -19,6 +19,7 @@ namespace Domain.Entities
         public long ServiceId { get; set; }
         public string Status { get; set; }
         public decimal Amount { get; set; }
+        public string Note { get; set; }
         public bool OptionalFee { get; set; }
         public long TransactionId { get; set; }
         public string PaymentReference { get; set; }

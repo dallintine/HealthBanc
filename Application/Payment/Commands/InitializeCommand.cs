@@ -12,5 +12,6 @@ namespace Application.Payment.Commands
     public class InitializeCommand : IRequest<BaseResponse>
     {
         public List<InitializePaymentDTO> InitializePaymentDTOs { get; set; }
+        public string Note { get; set; }
     }
 }

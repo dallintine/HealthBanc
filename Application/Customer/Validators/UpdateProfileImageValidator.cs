@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Application.Customer.Validators
 {
-    internal class UpdateProfileImageValidator : AbstractValidator<UpdateProfileImage>
+    public class UpdateProfileImageValidator : AbstractValidator<UpdateProfileImage>
     {
         public UpdateProfileImageValidator()
         {

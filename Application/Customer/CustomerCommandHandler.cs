@@ -17,7 +17,9 @@ using System.Threading.Tasks;
 namespace Application.Customer
 {
     public class CustomerCommandhandler : IRequestHandler<UpdateCustomerProfile, BaseResponse>,
-        IRequestHandler<UpdateProfileImage, BaseResponse<ImagesURLDTO>>
+        IRequestHandler<UpdateProfileImage, BaseResponse<ImagesURLDTO>>,
+        IRequestHandler<UpdatePhoneNumberCommand, BaseResponse>,
+        IRequestHandler<UpdateDeliveryAddressCommand, BaseResponse>
     {
         private readonly ITokenService _tokenService;
         private readonly ApplicationDbContext _context;
@@ -77,6 +79,30 @@ namespace Application.Customer
             await _context.SaveChangesAsync(cancellationToken);
 
             return BaseResponse<ImagesURLDTO>.Success(imageURLDTO.Data);
+        }
+
+        public async Task<BaseResponse> Handle(UpdatePhoneNumberCommand request, CancellationToken cancellationToken)
+        {
+            var userId = _tokenService.GetClaims().FirstOrDefault(x => x.Type == "UserId")?.Value;
+            var user = await _context.Users.FindAsync(new object[] { long.Parse(userId) }, cancellationToken: cancellationToken);
+
+            user.PhoneNumber = request.PhoneNumber;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync(cancellationToken);
+            return BaseResponse.Success();
+        }
+
+        public async Task<BaseResponse> Handle(UpdateDeliveryAddressCommand request, CancellationToken cancellationToken)
+        {
+            var userId = _tokenService.GetClaims().FirstOrDefault(x => x.Type == "UserId")?.Value;
+            var user = await _context.Users.FindAsync(new object[] { long.Parse(userId) }, cancellationToken: cancellationToken);
+
+            user.Address = request.DeliveryAddress;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync(cancellationToken);
+            return BaseResponse.Success();
         }
     }
 }

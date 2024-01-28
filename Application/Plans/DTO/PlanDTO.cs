@@ -19,6 +19,8 @@ namespace Application.Plans.DTO
         public string ExternalLinkName { get; set; }
         public string ExternalLinkURL { get; set; }
         public bool OptionalFee { get; set; }
+        public bool IsRenewable { get; set; }
+        public bool SubscriptionDuration { get; set; }
         public List<PlanDescriptionDTO> PlanDescriptionDTOs { get; set; }
     }
 }
