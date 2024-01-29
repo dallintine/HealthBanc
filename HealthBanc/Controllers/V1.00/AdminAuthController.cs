@@ -71,7 +71,7 @@ namespace HealthBanc.Controllers.V1._00
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         public async Task<IActionResult> SendPasswordResetMails()
         {

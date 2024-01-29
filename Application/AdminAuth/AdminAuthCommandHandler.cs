@@ -155,6 +155,7 @@ IRequestHandler<ResetPasswordCommand, BaseResponse>
 
     public async Task<BaseResponse> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation($"{request.EmailToken}");
         var user = await _userManager.FindByEmailAsync($"{request.Email}.admin");
         if (user is null)
         {
