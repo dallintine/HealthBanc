@@ -71,12 +71,25 @@ namespace HealthBanc.Controllers.V1._00
         /// </summary>
         /// <returns></returns>
         [HttpGet("[action]")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(200, Type = typeof(BaseResponse))]
         public async Task<IActionResult> SendPasswordResetMails()
         {
             if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
             return HandleResult(await Mediator.Send(new SendAdminResetEmailQuery()));
+        }
+
+        /// <summary>
+        /// Send ResetPassword Mails
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("[action]")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(200, Type = typeof(BaseResponse))]
+        public async Task<IActionResult> ResendPasswordResetMail([FromForm] ResendAdminResetEmailQuery query)
+        {
+            if (!ModelState.IsValid) return BadRequest(ResponseHelper.BuildResponse("30", ModelState));
+            return HandleResult(await Mediator.Send(query));
         }
     }
 }

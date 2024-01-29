@@ -20,7 +20,8 @@ using System.Web;
 
 namespace Application.AdminAuth
 {
-    public class AdminAuthQueryHandler : IRequestHandler<SendAdminResetEmailQuery, BaseResponse>
+    public class AdminAuthQueryHandler : IRequestHandler<SendAdminResetEmailQuery, BaseResponse>,
+        IRequestHandler<ResendAdminResetEmailQuery, BaseResponse>
     {
         private readonly ApplicationDbContext _context;
         private readonly IEmailService _emailService;
@@ -40,27 +41,33 @@ namespace Application.AdminAuth
 
         public async Task<BaseResponse> Handle(SendAdminResetEmailQuery request, CancellationToken cancellationToken)
         {
-            //var admins = await _context.Users.Where(x => x.Email.Contains(".admin") && !x.IsDeleted && !x.EmailConfirmed).ToListAsync(cancellationToken: cancellationToken);
+            var admins = await _context.Users.Where(x => x.Email.Contains(".admin") && !x.IsDeleted && x.EmailConfirmed).ToListAsync(cancellationToken: cancellationToken);
 
-            //foreach (var admin  in admins)
-            //{
-            //    var userEmail = admin.Email.Replace(".admin", "");
-            //    var token = await _userManager.GeneratePasswordResetTokenAsync(admin);
-            //    string passwordResetLink = $"{_appEndpointSettings.FrontendAdminBaseUrl}{_appEndpointSettings.AdminChangePassword}?email={HttpUtility.UrlEncode(userEmail)}" +
-            //        $"&emailToken={HttpUtility.UrlEncode(token)}";
-            //    var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/resetPassword.html";
-            //    var htmlTemplate = File.ReadAllText(path);
-            //    var resetPasswordTemplate = htmlTemplate.Replace("{{Name}}", admin.FirstName).Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl)
-            //        .Replace("{{ResetLink}}", passwordResetLink);
-            //    await _emailService.EmailRequest(new EmailRequest
-            //    {
-            //        Subject = "Set Password",
-            //        Message = resetPasswordTemplate,
-            //        Email = userEmail
-            //    });
-            //}
+            foreach (var admin in admins)
+            {
+                var userEmail = admin.Email.Replace(".admin", "");
+                var token = await _userManager.GeneratePasswordResetTokenAsync(admin);
+                string passwordResetLink = $"{_appEndpointSettings.FrontendAdminBaseUrl}{_appEndpointSettings.AdminChangePassword}?email={HttpUtility.UrlEncode(userEmail)}" +
+                    $"&emailToken={HttpUtility.UrlEncode(token)}";
+                var path = Path.Combine(_environment.WebRootPath, "EmailTemplates") + "/resetPassword.html";
+                var htmlTemplate = File.ReadAllText(path);
+                var resetPasswordTemplate = htmlTemplate.Replace("{{Name}}", admin.FirstName).Replace("{{BaseUrl}}", _appEndpointSettings.FrontendBaseUrl)
+                    .Replace("{{ResetLink}}", passwordResetLink);
+                await _emailService.EmailRequest(new EmailRequest
+                {
+                    Subject = "Set Password",
+                    Message = resetPasswordTemplate,
+                    Email = userEmail
+                });
+            }
 
-            var admin = await _context.Users.FirstOrDefaultAsync(x => x.Email == "hassan.hassan@sterling.ng.admin") ;
+            return BaseResponse.Success();
+        }
+
+        public async Task<BaseResponse> Handle(ResendAdminResetEmailQuery request, CancellationToken cancellationToken)
+        {
+            var admin = await _context.Users.FirstOrDefaultAsync(x => x.Email == $"{request.Email}.admin" && !x.IsDeleted, cancellationToken: cancellationToken);
+
             var userEmail = admin.Email.Replace(".admin", "");
             var token = await _userManager.GeneratePasswordResetTokenAsync(admin);
             string passwordResetLink = $"{_appEndpointSettings.FrontendAdminBaseUrl}{_appEndpointSettings.AdminChangePassword}?email={HttpUtility.UrlEncode(userEmail)}" +
